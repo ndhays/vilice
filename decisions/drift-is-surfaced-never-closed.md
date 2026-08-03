@@ -4,6 +4,12 @@
 > of [`one-primitive-composed.md`](one-primitive-composed.md), which had the rule buried
 > in a doc about something else and had argued both sides of it. Follows from
 > [`orchestrators-are-clients.md`](orchestrators-are-clients.md).
+>
+> **Built 2026-08-03.** `Install#count` is the intention, `serving_count` is what the boxes
+> report, and `placement_gap` is the signed distance between them. The gap is rendered as
+> two halves that never merge, and `POST /installs/:id/targets` is the act that closes it.
+> The schema is in [`../blueprint/console/data-model.md`](../blueprint/console/data-model.md);
+> how it renders is in [`../blueprint/console/interface.md`](../blueprint/console/interface.md).
 
 ## The question
 
@@ -60,6 +66,25 @@ they get woken by a page that says three boxes were asked for and two are servin
 We take that trade deliberately. It is the same trade as no-shell and
 record-before-act: convenience given up for the ability to say, afterwards, exactly what
 happened and who is answerable for it.
+
+## Where the mechanism is
+
+Naming it, because an article that can't point at code isn't applied:
+
+- **The two halves never merge.** `Install#count` is the claim; `Install#serving_count`
+  counts only targets the *box* reports running, on a machine still reachable. The gap is
+  `placement_gap`, and it is kept out of `install_status` on purpose, so an intention can
+  never be rendered through the status glyph.
+- **Placing is not closing.** `POST /installs/:id/targets` creates a `pending` target and
+  records a `placed install` act. The gap does not move. It narrows only when observe
+  reconciles the target to `running` — which is to say, when the box says so. This is the
+  property that makes the layer honest rather than decorative: the console cannot close its
+  own gap by asserting anything.
+- **There is no converger.** No job, no callback, no scheduled pass writes a target or
+  issues a deploy. `FleetObserveJob` reads and reconciles *reality*; it never acts on the
+  intention. The only writer is a person pressing a button, and the button appears solely
+  when the gap is negative — the over-served case gets no one-click trim, because silently
+  removing a running app is the exact failure this decision refuses.
 
 ## Two corollaries
 

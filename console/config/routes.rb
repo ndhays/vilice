@@ -18,7 +18,13 @@ Rails.application.routes.draw do
   # Installs — placement: this app, on these boxes. Top-level, because a placement
   # doesn't belong to a client (decisions/console-layers.md). A project is optional
   # context, passed as `?project_id=` the way machines#new already takes one.
-  resources :installs, only: %i[ index new create show ]
+  resources :installs, only: %i[ index new create show ] do
+    # Place this install on one more box — the act that closes a placement gap. Never
+    # automatic: the console shows the gap and a person presses the button
+    # (decisions/drift-is-surfaced-never-closed.md). Scaling *down* needs no route of
+    # its own — that's the existing `remove` verb on a target.
+    resources :targets, only: %i[ new create ], controller: "install_targets"
+  end
 
   # Projects → Project view (installs, machines, activity). The project lens over
   # placement, not its container.

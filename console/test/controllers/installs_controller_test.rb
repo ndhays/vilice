@@ -92,8 +92,13 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".placement input[type=radio][name=placement][value=?]", "fleet"
     assert_select ".placement input[name=machine_source][value=?]", "existing"
     assert_select ".placement input[name=machine_source][value=?]", "new"
-    # New-box and fleet are previewed stubs, not yet built.
-    assert_select ".placement .stub-note", { count: 2, text: /coming soon/i }
+    # Fleet is no longer a stub: the count is the real intention, and stating it opens a
+    # gap you close one act at a time. What's still previewed is the new-box path and the
+    # shared front edge.
+    assert_select ".placement input[type=number][name=?]", "install[count]"
+    assert_select ".placement .stub-note", 2
+    assert_select ".placement .stub-note", { text: /coming soon/i, count: 1 }   # new box
+    assert_select ".placement .stub-note", { text: /front edge/i, count: 1 }    # balancer
   end
 
   test "create installs the app's latest version, then hands off to the deploy ceremony" do

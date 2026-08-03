@@ -65,7 +65,12 @@ and placement next to it.
 - **Status** (the "Now" page in this doc's older wording) — the fleet pulse. Calm by default ("12 installs, all healthy · last act 4m
   ago"); exceptions rise to the top, the healthy fold to a count. The unit of concern is
   the **install** — installs in a bad-but-actionable state (failed / machine-unreachable /
-  drift) lead the page, rendered through the same row as the project and fleet lists.
+  drift), plus those **short of their intention**, lead the page, rendered through the same
+  row as the project and fleet lists. A placement gap is a separate test rather than another
+  `install_status` value, and the row shows it *beside* the health glyph, never inside it:
+  the glyph is the health of what is running, the gap is the distance from what was asked
+  for. Serving *more* boxes than asked for is a gap too, but not an outage — it stays off
+  this page and shows on the install.
   Unreachable **machines** follow as the root cause: one down box explains many down
   installs, and it's fixed there. Carries the live head of the chain.
 - **Record** — the full timeline, filterable by actor / action / target / time. The
@@ -80,6 +85,19 @@ and placement next to it.
   — an install with no client is a legitimate state, not missing data. The Install page
   is the app-actions home
   ([`decisions/install-the-app-actions-home.md`](../../decisions/install-the-app-actions-home.md)).
+
+  **The page has two halves, and they must not look alike.** An *Intention* panel states
+  what was asked for — `asked for 3 boxes · serving 1` — and a *Where it runs* panel shows
+  what the boxes report. The intention panel is dashed and unfilled, borrowing the
+  read-only treatment, because the solid card is reserved for things a box actually said.
+  The asked-for half stays muted; the serving half carries the colour, since that is the
+  part that is true. Merging them into one number is the failure mode the whole layer
+  exists to avoid
+  ([`decisions/drift-is-surfaced-never-closed.md`](../../decisions/drift-is-surfaced-never-closed.md)).
+
+  When the gap is negative the panel offers **Place on another box** — one act, through
+  the ordinary ceremony. Nothing converges on its own, and the button never appears for
+  the over-served case, where the honest move is `remove`, not a silent trim.
 - **Machines → Machine** — the box lens, and it is **pack-shaped**: sections exist
   because the box reports the pack (`steward packs`), not because the console assumed
   it. A box running only the core shows no Apps section — not greyed out, absent,

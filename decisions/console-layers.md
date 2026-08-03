@@ -139,7 +139,25 @@ stands on its own terms and this decision does not disturb it.
 |---|---|
 | Machine view, pack-shaped, stateless deploy | **built** |
 | `steward packs` / `actors` — the box's own facts, read live | **built** |
-| Drift as a surfaced, never-closed gap | decided, **pending** |
+| Drift as a surfaced, never-closed gap | **built** — `Install#count`, `placement_gap`, and the act that closes it |
 | `Install.project` inversion, installs at `/installs` | **built** — the prerequisite |
-| `steward-intentions` engine | **pending** |
+| Balancer + exposure (the rest of the placement ring) | settled, **pending** |
+| `Machine → Project` inversion | **pending** — tenancy's own prerequisite, see below |
+| `steward-intentions` engine | **pending** — the layer works; extracting it does not block anything |
 | `steward-projects` engine | **pending** |
+
+## Tenancy has a prerequisite too, and it is not packaging
+
+`Install` no longer depends on `Project`, but **`Machine` still does** — `belongs_to :owner,
+class_name: "Project"`, `has_many :projects`, `granted_projects`, `permits?(project)`, plus
+`ProjectMachine` and `MachineGrant`, which are entirely Project-shaped.
+
+So the console cannot currently be run with tenancy declined: not because a machine needs an
+owner (`owner` is already optional), but because the `Machine` class will not load without
+the `Project` constant. The floor depends on the outermost ring, which is exactly the
+inversion this decision says each ring must not require.
+
+That makes `steward-projects` **not** an extraction job yet. The order is: cut `Machine`'s
+dependence on `Project` first — the same move already made for `Install`, one layer down and
+harder, because ownership and sharing are genuinely tenancy concepts that currently live on
+`Machine` — and only then is mounting-or-not a packaging question.

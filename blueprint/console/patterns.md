@@ -154,11 +154,15 @@ witnessed *mutate*).
 | AppConfig (deploy spec, env/secret/volume/health) | **built** |
 | Install binding — single placement, **existing** box | **built** |
 | Observe reconciliation (reality vs plan) | **built** |
-| Install UI placement step | **interim stub** (Single/Fleet); reworks to Box × Exposure × scale |
+| Intention (`Install#count`) + placement gap, surfaced never closed | **built** |
+| Closing a gap as an act (`POST /installs/:id/targets`) | **built** |
+| `replicable?` gate — stateless-only replication, derived from volumes | **built** |
+| Install UI placement step | **interim stub** (Single/Fleet + a real count); reworks to Box × Exposure × scale |
 | MachineSpec + ProviderAdapter (provisioning, "New Box") | settled, **pending** |
 | AppConfig as a versioned artifact (digest identity + slot timeline) | principle settled, **pending** |
 | Accessories (linked Redis/Postgres) — `accessories` block in the AppConfig | in scope, **pending** |
-| Multi-placement (count > 1) + Balancer | settled, **pending** |
+| Balancer (the shared front edge N placements sit behind) | settled, **pending** |
+| Exposure (On the Edge vs Behind a Balancer) | settled, **pending** |
 | Private-network jump (`via` / ProxyJump) | settled, **pending** |
 | Managed cloud LB (out-of-spine) | settled, **pending** |
 

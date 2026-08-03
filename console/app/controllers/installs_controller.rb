@@ -79,12 +79,15 @@ class InstallsController < ApplicationController
   # app at a chosen version (default the app's latest). App-derived fields fill in any the
   # operator left blank.
   def install_attrs
-    p = params.require(:install).permit(:name, :hostname, :port, :health, :image, :app_id, :version_id, :volumes)
+    p = params.require(:install).permit(:name, :hostname, :port, :health, :image, :app_id,
+                                        :version_id, :volumes, :count)
     config = build_config(p)
+    # The intention. Blank means the single-box default, not zero.
+    count = p[:count].presence || 1
 
     if allow_custom? && p[:app_id].blank? && p[:image].present?
       { name: p[:name], hostname: p[:hostname], port: p[:port], health: p[:health],
-        image: p[:image], config: config }
+        image: p[:image], config: config, count: count }
     else
       app     = App.find_by(id: p[:app_id])
       # The version must belong to the chosen app; fall back to its latest.
@@ -92,7 +95,7 @@ class InstallsController < ApplicationController
       { app: app, version: version, image: version&.image,
         name: p[:name].presence || app&.name, hostname: p[:hostname],
         port: p[:port].presence || app&.port, health: p[:health].presence || app&.health,
-        config: config }
+        config: config, count: count }
     end
   end
 

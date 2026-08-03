@@ -126,6 +126,21 @@ open heartbeat question.
 - `name`, `image` (digest-pinned), `hostname`, `port`, `health`, `config` (jsonb) — `config`
   holds the non-scalar spec: `env` and `volumes` (`Install#volumes`), the declarations that
   version with the app, not the data.
+- `count` (default 1) — **the intention**: how many boxes should serve this. A claim about
+  what was asked for, never a reading of what is. Nothing reconciles it
+  (→ [drift-is-surfaced-never-closed.md](../../decisions/drift-is-surfaced-never-closed.md)):
+  the gap it opens is closed by a named act or it stays open.
+  - `Install#serving_count` is the other half — targets the **box** reports running, on a
+    machine we can still reach. A target we placed but that isn't up yet does not count,
+    and neither does one on an unreachable box.
+  - `Install#placement_gap` is `serving − count`, signed: negative is short, positive is
+    more than asked for. `in_step?` is the zero case. **Deliberately not folded into
+    `install_status`** — an intention is not a state, and the UI keeps them apart.
+  - `Install#replicable?` gates `count > 1`, and is **derived, not stored**: an install is
+    replicable when it declares no volumes. Replication is stateless-only (a volume is data
+    on *that box's* disk, so N replicas are N diverging datasets), and deriving it from the
+    spec means the gate can never disagree with the spec the way a flag could. A stateful
+    install is refused a count above 1 at validation, not merely discouraged in the form.
 - **Validated against the box, since these deploy verbatim** (same as `App`, mirroring
   `steward` `validateState`): `name` is box-safe `[A-Za-z0-9_-]` — it's the box's own
   identifier (`apps/<name>.json`, volumes, unit), prefilled from the app name and not
@@ -152,6 +167,12 @@ open heartbeat question.
 - A successful deploy pins `desired_image` (what we asked Steward to run); `current_image`
   is reconciled from what the box reports (observe), not written by the deploy — so
   `in_sync?` is honest drift, not an assumption.
+- **Creating a target is the act that closes a placement gap** (`InstallTargetsController`,
+  `POST /installs/:id/targets`): a person picks a box, the placement is recorded, and the
+  deploy follows through the ordinary witnessed ceremony. Placing alone does **not** close
+  the gap — the target starts `pending`, and the gap narrows only when the box reports it
+  serving. There is no scale-*down* action here on purpose: taking an app off a box is the
+  existing `remove` verb, already witnessed.
 
 ### `Label` — universal key/value metadata
 - polymorphic `labelable` (`Project` or `Machine`), `key` (required), `value` (optional)

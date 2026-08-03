@@ -1,0 +1,44 @@
+<% content_for :title, "Place #{@install.name} on another box — Steward Console" %>
+
+<%= breadcrumb [ [ "Installs", installs_path ], [ @install.name, install_path(@install) ],
+                 [ "Place on a box", nil ] ] %>
+
+<h1><%= icon "box", size: 20 %> Place <%= @install.name %> on another box</h1>
+
+<%# The gap, stated plainly at the top of the thing that closes it. This page exists
+    because nothing closes it automatically — see decisions/drift-is-surfaced-never-closed.md. %>
+<p class="addr"><%= placement_gap_line(@install, verbose: true) %></p>
+
+<div class="panel mutate">
+  <div class="kicker">Place · then witnessed</div>
+  <% if @machines.any? %>
+    <p class="note">Adding a box records the placement, then hands off to the deploy
+      ceremony — the deploy itself is witnessed like any other act.</p>
+    <%= form_with url: install_targets_path(@install), method: :post, class: "stack-form" do %>
+      <label class="field"><span>Machine</span>
+        <%= select_tag :machine_id,
+              options_from_collection_for_select(@machines, :id, :name),
+              prompt: "Choose a box" %>
+      </label>
+      <div class="form-actions">
+        <%= button_tag class: "btn mutate" do %>
+          <%= safe_join([ icon("earth", size: 14), "Place and Deploy" ], " ") %>
+        <% end %>
+        <%= button_link_to "Cancel", install_path(@install), class: "btn-quiet" %>
+      </div>
+    <% end %>
+  <% else %>
+    <%# Honest about which of the two reasons applies — "no boxes" and "already on every
+        box" look the same from here and mean very different things. %>
+    <p class="empty">
+      <% if @install.project %>
+        No box on <%= @install.project.name %> is free to take this — every operate-scoped
+        box it owns already runs <%= @install.name %>, or there are none.
+        <%= link_to "Add a machine", new_machine_path(project_id: @install.project) %>.
+      <% else %>
+        No operate-scoped box in the fleet is free to take this.
+        <%= link_to "Add a machine", new_machine_path %>.
+      <% end %>
+    </p>
+  <% end %>
+</div>

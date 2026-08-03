@@ -14,6 +14,28 @@
 .panel.readonly .kicker { color: var(--muted); }
 .panel.readonly .note { font-size: 0.9rem; }
 
+/* ── Intention: what was asked for, never what is ────────────────────────────
+   Deliberately unlike the observe panel. The border is dashed and the background
+   bare, because this half is a *claim* and the solid card is reserved for things
+   the box reported. A reader must be able to tell the two apart at a glance, or
+   drift stops meaning anything (decisions/drift-is-surfaced-never-closed.md). */
+.panel.intent { background: transparent; border: 1px dashed var(--line); }
+.panel.intent .kicker { color: var(--muted); }
+.panel.intent .intent-head { font-size: 1.05rem; margin: 0.2rem 0 0.35rem; }
+.panel.intent .note { font-size: 0.85rem; margin-top: 0.4rem; }
+
+/* The gap itself: two halves, never one merged number. The asked-for half stays
+   muted (it is only a claim); the serving half carries the colour, because that
+   is the part that is true. */
+.intent-line { font-size: 0.85rem; white-space: nowrap; }
+.intent-line .intent-asked   { color: var(--muted); }
+.intent-line .intent-serving { font-weight: 600; }
+.intent-line.in-step .intent-serving { color: var(--ok); }
+.intent-line.short   .intent-serving { color: var(--warn); }
+.intent-line.over    .intent-serving { color: var(--warn); }
+/* In a list row it trails the name, quiet until it disagrees. */
+.rows .cell-name .intent-line { margin-left: 0.5rem; }
+
 /* ── The mutate ceremony ─────────────────────────────────────────────────────
    Act entry points in the mutate panel, the preview card, and the outcome an
    act settles to on its record entry. */

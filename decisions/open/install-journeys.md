@@ -91,7 +91,22 @@ the value half and the `required?`/`default` fields are the open #14-B work in
 ## Replicas / scale — the build, not the model
 
 The model is settled ([`../one-primitive-composed.md`](../one-primitive-composed.md),
-canonical in [`patterns.md`](../../blueprint/console/patterns.md)) and the data model is
-ready. What remains is build: the balancer's reconciled Caddy + rollout orchestration,
-provisioning the backends, and the private-backend jump. The install UI still ships an
-**interim Single/Fleet stub** and reworks to **Box × Exposure × scale**.
+canonical in [`patterns.md`](../../blueprint/console/patterns.md)).
+
+**The count half is now built.** `Install#count` is the intention, the gap against what the
+boxes report is surfaced and never auto-closed
+([`../drift-is-surfaced-never-closed.md`](../drift-is-surfaced-never-closed.md)), and
+**Place on another box** is the act that closes it — so an install can genuinely span N
+boxes today, one recorded placement at a time. The stateless-only gate is enforced.
+
+What remains is the **shared edge**, which is what makes N boxes behave as one service
+rather than N addresses: the Balancer's reconciled Caddy config, rollout orchestration
+across targets, provisioning the backends, and the private-backend jump. Exposure (*On the
+Edge* vs *Behind a Balancer*) arrives with it — until then every placement is its own edge.
+The install UI still ships the **interim Single/Fleet framing** (now with a real count) and
+reworks to **Box × Exposure × scale**.
+
+Open, and newly answerable: **should a placement gap page someone?** The decision says
+nobody gets woken by a self-healing system because there isn't one — they get woken by "three
+asked for, two serving." The console now knows that number. Whether it should notify, and
+through what, is untouched.

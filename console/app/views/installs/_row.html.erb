@@ -12,6 +12,11 @@
   <span class="cell-name">
     <%= install_status_icon(install) %>
     <%= link_to install.name, install, class: "row-name" %>
+    <%# The placement gap sits *beside* the status glyph, never inside it. The glyph is
+        the health of what is running; this is the distance from what was asked for, and
+        merging the two would make an intention read as a state
+        (decisions/drift-is-surfaced-never-closed.md). Absent when in step. %>
+    <%= placement_gap_line(install) %>
   </span>
   <span class="cell-app mono">
     <% if install.app %>

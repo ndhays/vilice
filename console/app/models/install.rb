@@ -28,6 +28,13 @@ class Install < ApplicationRecord
                                    less_than_or_equal_to: 65535 }, allow_nil: true
   validates :health, format: { with: %r{\A/}, message: "must start with /" }, allow_blank: true
 
+  # How many boxes should serve this. The **intention** — a claim about what was asked
+  # for, never a reading of what is (decisions/drift-is-surfaced-never-closed.md).
+  # Nothing reconciles it: the gap it opens against reality is closed by a named act or
+  # it stays open.
+  validates :count, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+  validate :count_within_replication_limit
+
   # A volume is `<source>:<container-path>[:opts]` — a named volume (`storage`) or a host
   # path (`/srv/x`), then an absolute mount path. Mirrors the box's `Volume=` line
   # (steward/quadlet.go) and backup's `volumeSource` split, so a malformed mount fails here,
@@ -39,6 +46,30 @@ class Install < ApplicationRecord
   # Named volumes that survive every redeploy — the declaration, not the data. Stored in
   # the `config` blob alongside env (deploy-config-model.md: a volume is a *ref* to data).
   def volumes = Array(config["volumes"])
+
+  # ── The intention, and the gap ─────────────────────────────────────────────
+  # Replication is stateless-only (one-primitive-composed.md). A volume is data on *that
+  # box's* disk, so N replicas would be N diverging datasets — a stateful app is
+  # single-placement, full stop. Derived from the volumes it declares rather than a flag:
+  # a flag is a promise about the spec, and this is the spec.
+  def replicable? = volumes.empty?
+
+  # Where it was actually placed. A retired target is gone, not a placement at zero.
+  def live_targets = install_targets.reject(&:install_retired?)
+
+  # **Reality** — boxes the app is genuinely serving from, per what the box reported
+  # (InstallTarget#status is observe-reconciled, not written by the deploy). An install
+  # running on a box we can no longer reach is not counted as serving.
+  def serving_count
+    live_targets.count { |t| t.install_running? && !t.machine.seen_unreachable? }
+  end
+
+  # The gap, signed: negative is short of the intention, positive is more than was asked
+  # for. Zero is in step. Deliberately not folded into `install_status` — an intention is
+  # not a state, and the UI has to keep them visibly apart.
+  def placement_gap = serving_count - count
+
+  def in_step? = placement_gap.zero?
 
   # The desired-state envelope Steward's `deploy` reads on stdin
   # (steward/deploy.go `deployEnvelope`/`appSpec`). The Install *is* the spec; a
@@ -54,6 +85,15 @@ class Install < ApplicationRecord
   end
 
   private
+
+  # The stateless-only gate, enforced rather than merely offered in the form: a spec that
+  # declares a volume may not also ask for more than one box.
+  def count_within_replication_limit
+    return if replicable? || count.to_i <= 1
+
+    errors.add(:count, "must be 1 — #{name.presence || 'this app'} declares a volume, " \
+                       "and replicas would each keep their own copy of that data.")
+  end
 
   def volumes_well_formed
     bad = volumes.reject { |v| v.to_s.match?(VOLUME_FORMAT) }

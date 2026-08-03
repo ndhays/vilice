@@ -85,6 +85,31 @@ module ApplicationHelper
     tag.span(state == "unplaced" ? "not placed" : state, class: "badge state-#{state}")
   end
 
+  # ── The intention, rendered as a gap ───────────────────────────────────────
+  # "asked for 3 · serving 2" — the two halves side by side, never merged into one
+  # number and never styled as a status badge
+  # (decisions/drift-is-surfaced-never-closed.md: an intention never renders as state).
+  # The asked-for half is marked as a claim; the serving half is what the boxes report.
+  # Returns nil when in step and single-placement — the common case earns no chrome.
+  def placement_gap_line(install, verbose: false)
+    gap = install.placement_gap
+    return if gap.zero? && install.count == 1 && !verbose
+
+    asked   = tag.span("asked for #{pluralize(install.count, 'box')}", class: "intent-asked")
+    serving = tag.span("serving #{install.serving_count}", class: "intent-serving")
+    tag.span(safe_join([ asked, " · ", serving ], ""),
+             class: "intent-line #{gap.zero? ? 'in-step' : (gap.negative? ? 'short' : 'over')}",
+             title: placement_gap_word(install))
+  end
+
+  def placement_gap_word(install)
+    gap = install.placement_gap
+    return "In step — as many boxes serving as were asked for." if gap.zero?
+    return "Short by #{gap.abs} — fewer boxes serving than were asked for. Closing this is an act." if gap.negative?
+
+    "#{gap} more serving than were asked for. Removing one is an act."
+  end
+
   # The install's rolled-up health as a single glyph — the at-a-glance signal that
   # leads the install row. Worst-but-actionable wins across live targets.
   #

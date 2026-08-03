@@ -31,9 +31,39 @@
   </p>
 <% end %>
 
+<%# ── The intention ─────────────────────────────────────────────────────────
+    What was *asked for*, kept deliberately apart from the panel below, which is what
+    the boxes report. Two visibly different things, because the moment they read as one
+    the distinction that makes drift meaningful disappears
+    (decisions/drift-is-surfaced-never-closed.md).
+
+    Nothing here reconciles. The gap is stated and a person closes it, or it stays open. %>
+<div class="panel intent">
+  <div class="kicker">Intention · asked for, not observed</div>
+  <p class="intent-head"><%= placement_gap_line(@install, verbose: true) %></p>
+  <p class="note muted"><%= placement_gap_word(@install) %></p>
+
+  <% unless @install.in_step? %>
+    <% if @install.placement_gap.negative? %>
+      <p><%= button_link_to "Place on another box", new_install_target_path(@install),
+               icon: "plus", class: "btn" %></p>
+    <% else %>
+      <p class="note muted">More boxes are serving this than were asked for. Take one off
+        with <strong>Remove</strong> below, or raise the intention to match.</p>
+    <% end %>
+  <% end %>
+
+  <% unless @install.replicable? %>
+    <p class="note muted"><%= icon "hard-drive", size: 13 %>
+      Single-placement: this app declares a volume, so replicas would each keep their own
+      copy of that data.</p>
+  <% end %>
+</div>
+
 <%# Where it runs — each live target box, its state, image drift, and the witnessed
-    verbs. The Install is the app-actions home; the act still runs on the box (the
-    SSH target), and returns here. See decisions/install-the-app-actions-home.md. %>
+    verbs. This half is *reality*: the box's own report, reconciled by observe. The
+    Install is the app-actions home; the act still runs on the box (the SSH target), and
+    returns here. See decisions/install-the-app-actions-home.md. %>
 <div class="panel mutate">
   <div class="kicker">Where it runs · witnessed</div>
   <% if @targets.any? %>

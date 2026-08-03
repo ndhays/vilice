@@ -83,9 +83,13 @@ fleet-wide placement and nothing asks you to invent a client first. The flow lea
 [`one-primitive-composed.md`](../../decisions/one-primitive-composed.md)):
 
 1. **Machine Configuration** — the first step (where it runs).
-   - **Single machine** vs **Fleet** — not a mode, a **count** (1 vs N). Fleet is N boxes
-     behind a Caddy front edge; there is no Fleet object, and scaling later is just the
-     number. *(Fleet is a previewed stub; replication is stateless-only.)*
+   - **Single machine** vs **Fleet** — not a mode, a **count** (1 vs N). There is no Fleet
+     object, and scaling later is just the number. The count is **real**: it is the
+     intention, and stating 3 opens a gap the moment fewer than 3 boxes are serving. You
+     close it one recorded act at a time (**Place on another box**), never automatically.
+     The count field appears only for **replicable** installs — one that declares a volume
+     is single-placement, enforced at validation. *(Still previewed: the shared Caddy front
+     edge in front of those N boxes.)*
    - For Single: **an existing box** — the project's, or any operate-scoped box in the
      fleet when there is no project — or **a new box** (provision via Hetzner, a previewed
      stub). The built path is single + existing box.
@@ -102,6 +106,13 @@ One transaction writes the `Install` + `InstallTarget` + an `added install` act,
 off to the deploy ceremony with the image prefilled. Setup is control-plane; the deploy
 stays witnessed. The button reads **Install** the first time, **Deploy** thereafter — never
 "Build" (which would read as making an image).
+
+**Scaling is the same journey, one box at a time.** An install asking for more boxes than
+are serving shows the gap on its own page and on Status; **Place on another box** picks a
+candidate, records a `placed install` act, and hands off to the same deploy ceremony. The
+gap does not narrow when the placement is made — only when the box reports the app running,
+because the right-hand side of the comparison is always the box. Scaling down is the
+existing `remove` verb, which retires the target.
 
 > Most fields are **prefilled — confirm/override, not entry.** The progressive-reveal
 > single-page form (reveal each section as the prior choice is made, with a Preflight panel

@@ -130,8 +130,12 @@ that is itself that primitive, made visible because it is shared and long-lived.
 *that box's* disk; N replicas = N diverging datasets. So the count control only appears for
 apps the App Library marks **replicable**; a stateful app (declares a volume) is
 single-placement, full stop. That one flag removes a decision from the operator *and*
-closes the footgun. (The `App#replicable`/volume declaration is the next small change;
-tracked as the gate, not yet built.)
+closes the footgun. (**Built 2026-08-03**, and *derived rather than stored*: an install is
+replicable when it declares no volumes — `Install#replicable?`. This doc floated an
+`App#replicable` flag; the flag would have been a promise *about* the spec, and it could
+disagree with the spec it describes. Deriving it from the volumes the install actually
+declares cannot. The gate is a validation, so a stateful install is refused a count above 1
+rather than merely discouraged in the form.)
 
 ## Plan vs reality is the UI
 

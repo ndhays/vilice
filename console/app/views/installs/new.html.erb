@@ -80,11 +80,22 @@
       </div>
     </div>
 
-    <div class="fleet-only stub">
+    <%# Fleet: the count is real now — it is the *intention*, and it opens a gap the
+        moment it exceeds the boxes actually serving. What is still a stub is the
+        balancer: N boxes behind one front edge (decisions/one-primitive-composed.md).
+        So you can state "three boxes" here and place them one act at a time; nothing
+        yet puts a shared edge in front of them. %>
+    <div class="fleet-only">
+      <label class="field"><span>How many boxes
+        <%= hint "The intention — how many boxes should serve this app. Placing each one is a separate recorded act; nothing is provisioned automatically." %></span>
+        <%= f.number_field :count, value: @install.count || 1, min: 1, max: 50 %>
+        <small class="muted">Only applies to stateless apps. An app that declares a
+          volume is single-placement — replicas would each keep their own copy.</small>
+      </label>
       <p class="stub-note"><%= icon "clock", size: 14 %>
-        <span><strong>Fleet — coming soon.</strong> Steward Console will create N stateless boxes
-        behind a Caddy front edge and balance across them. Scaling later is one number:
-        change how many.</span></p>
+        <span><strong>The shared front edge is still coming.</strong> You can state a count
+        and place each box yourself; a Caddy balancer in front of them, with a routing
+        table reconciled from the installs behind it, is not built yet.</span></p>
     </div>
   </fieldset>
 
