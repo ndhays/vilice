@@ -106,7 +106,7 @@ The steward user's one narrow root escalation: applying OS updates.
 0 on success; 1 on failure (with \fB\-\-json\fR, a structured {code, retryable}
 result on stdout); 2 on a usage error.
 .SH SEE ALSO
-.UR https://switchyard.agoraforge.org
+.UR https://steward.agoraforge.org
 The Steward documentation
 .UE`)
 }

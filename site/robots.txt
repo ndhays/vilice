@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://switchyard.agoraforge.org/sitemap.xml
+Sitemap: https://steward.agoraforge.org/sitemap.xml

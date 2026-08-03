@@ -38,7 +38,7 @@ over their own SSH, so recovery never depends on the web UI.
 installs it:
 
 ```bash
-curl -fsSL https://switchyard.agoraforge.org/install.sh | sudo bash -s -- 0.2.0beta
+curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- 0.2.0beta
 ```
 
 <details>
@@ -46,20 +46,20 @@ curl -fsSL https://switchyard.agoraforge.org/install.sh | sudo bash -s -- 0.2.0b
 
 Confirm the binary is genuinely the published one before running it as root. The check
 matches the release tarball against its ed25519 signature with our public key — and you
-fetch that key from the **source repository on Codeberg**, a *different* host than the
+fetch that key from the **source repository on GitHub**, a *different* host than the
 release server, so no single compromised server can hand you a matching key and binary
 at once:
 
 ```bash
 V=0.2.0beta
-base=https://switchyard.agoraforge.org/releases/steward/$V/steward-linux-amd64.tar.gz
+base=https://steward.agoraforge.org/releases/steward/$V/steward-linux-amd64.tar.gz
 
 # the binary + its signature, from the release host
 curl -fsSLO "$base"
 curl -fsSLO "$base.sig"
 
 # the public key, from the source repo (a different provider)
-curl -fsSL https://codeberg.org/agoraforge/switchyard-monorepo/raw/branch/main/steward/release-key.pub -o release-key.pub
+curl -fsSL https://raw.githubusercontent.com/ndhays/steward/main/steward/release-key.pub -o release-key.pub
 
 # verify before trusting
 openssl pkeyutl -verify -rawin -pubin -inkey release-key.pub \
@@ -96,7 +96,7 @@ There is no `steward upgrade` command. Upgrading is the same signed install, poi
 a newer version, followed by `prepare`:
 
 ```bash
-curl -fsSL https://switchyard.agoraforge.org/install.sh | sudo bash -s -- 0.2.0beta
+curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- 0.2.0beta
 sudo steward prepare --yes
 steward doctor
 ```
@@ -223,7 +223,7 @@ Steward Console reads the record the same way.
 
 ## Build From Source
 
-Work on Steward from source — it lives in the [monorepo](https://codeberg.org/agoraforge/switchyard-monorepo)
+Work on Steward from source — it lives in the [monorepo](https://github.com/ndhays/steward)
 under `steward/`:
 
 ```bash

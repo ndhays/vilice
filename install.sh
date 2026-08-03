@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Download, verify (ed25519), and install the steward binary.
 #
-#   curl -fsSL https://switchyard.agoraforge.org/install.sh | sudo bash -s -- <version>
+#   curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- <version>
 #
 # Or locally, against a file:// release dir and the committed public key:
 #   RELEASE_HOST="file://$PWD/release/published" PUBKEY_FILE=steward/release-key.pub \
@@ -12,12 +12,12 @@ set -euo pipefail
 
 VERSION="${1:-${VERSION:-}}"
 # One site, releases under /releases/.
-RELEASE_HOST="${RELEASE_HOST:-https://switchyard.agoraforge.org/releases}"
+RELEASE_HOST="${RELEASE_HOST:-https://steward.agoraforge.org/releases}"
 INSTALL_PATH="${INSTALL_PATH:-/usr/local/bin/steward}"
 # Where to get the public key. By default fetch it from the source repo (a
 # different host than the release server, so no single server hands you both a
 # matching key and binary). Override with a local file via PUBKEY_FILE.
-PUBKEY_URL="${PUBKEY_URL:-https://codeberg.org/agoraforge/switchyard-monorepo/raw/branch/main/steward/release-key.pub}"
+PUBKEY_URL="${PUBKEY_URL:-https://raw.githubusercontent.com/ndhays/steward/main/steward/release-key.pub}"
 PUBKEY_FILE="${PUBKEY_FILE:-}"
 
 if [ -z "$VERSION" ]; then

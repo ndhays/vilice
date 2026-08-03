@@ -79,6 +79,29 @@ its own commit, and a period where the old locations still serve. It is not a
 find-and-replace, and bundling it into a rebrand is how that property gets broken by
 accident.
 
+> **Superseded, 2026-08-03. Both moved.** The repo is now
+> `https://github.com/ndhays/steward`, and the release/docs host is
+> `steward.agoraforge.org`. `install.sh` fetches the key from
+> `raw.githubusercontent.com/ndhays/steward` and the binary from
+> `steward.agoraforge.org/releases`.
+>
+> **Why the caution above did not apply: there was no install base.** It argued for a
+> transition period so existing installs would not be stranded mid-flight. But nobody has
+> ever installed Steward — `0.2.0beta` was never reachable, because the release key lived
+> only on a feature branch and the old `main` did not serve it at all. A path no one could
+> use is not a path that needs to keep serving. The thing that made this a trust-path
+> change rather than a find-and-replace was the *migration*, and there was nothing to
+> migrate.
+>
+> **The property the caution was protecting survives.** The key and the binary still come
+> from two different providers — GitHub and `agoraforge.org` — so no single compromised
+> server hands you a matching pair. That is what mattered; the specific hostnames never
+> did.
+>
+> Moving both at once also closes the last place the retired name was still load-bearing.
+> Keeping `switchyard.agoraforge.org` would have meant every install command a reader
+> copies naming a project that no longer exists.
+
 ## What is still open
 
 **The collision scan has not been run.** "Steward" is a common English word with real
