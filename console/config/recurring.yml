@@ -1,0 +1,24 @@
+# examples:
+#   periodic_cleanup:
+#     class: CleanSoftDeletedRecordsJob
+#     queue: background
+#     args: [ 1000, { batch_size: 500 } ]
+#     schedule: every hour
+#   periodic_cleanup_with_command:
+#     command: "SoftDeletedRecord.due.delete_all"
+#     priority: 2
+#     schedule: at 5am every day
+
+production:
+  clear_solid_queue_finished_jobs:
+    command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
+    schedule: every hour at minute 12
+
+  # The heartbeat: read every box so the Status page reflects reachability + drift
+  # without waiting for someone to open each machine. Reconciliation rides the read
+  # (decisions/observe-reconciliation.md). v1 cadence is a flat interval; tuning
+  # (batching/backoff) is open (decisions/open/status-signals.md).
+  fleet_observe:
+    class: FleetObserveJob
+    queue: default
+    schedule: every 5 minutes

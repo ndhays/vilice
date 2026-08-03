@@ -1,0 +1,24 @@
+<%# One library app as a compact list row — name, latest version, labels, install. %>
+<li class="row">
+  <span class="cell-name">
+    <%= check_box_tag "ids[]", app.id, false, id: nil, class: "row-select",
+          aria: { label: "Select #{app.name}" },
+          data: { selection_target: "item", action: "selection#toggle" } %>
+    <span class="row-icon"><%= icon "box", size: 15 %></span>
+    <%= link_to app.name, app, class: "row-name" %>
+  </span>
+  <span class="cell-version">
+    <% if (v = app.latest_version) %>
+      <span class="mono"><%= v.tag %></span><span class="tag latest">latest</span>
+      <% if (extra = app.versions.size - 1) > 0 %>
+        <span class="more-versions">+<%= extra %> additional <%= "version".pluralize(extra) %></span>
+      <% end %>
+    <% else %>
+      <span class="muted">no version</span>
+    <% end %>
+  </span>
+  <span class="cell-labels"><%= label_badges(app) %></span>
+  <span class="cell-actions">
+    <%= button_link_to "Edit", edit_app_path(app), icon: "pencil", class: "btn-quiet" %>
+  </span>
+</li>

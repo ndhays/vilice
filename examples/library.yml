@@ -1,0 +1,125 @@
+# Steward Console App Library — demo / example apps.
+#
+# Import via Apps → Import (a file or a URL), or seed it. The format is what
+# Library.export produces (app/models/library.rb): additive on import — apps upsert by
+# name, versions by tag, nothing is deleted.
+#
+# These ten double as the deploy contract's integration tests: each is a real public
+# image that exercises an axis (see the per-app note). All pass the two hard rules —
+# an **unprivileged port (>=1024)** and an **HTTP health path** (Steward's health gate
+# does an HTTP GET, so pure-TCP services like Postgres/Redis can't be deployed through
+# it as-is — they'd need a TCP/exec health mode Steward doesn't have yet).
+#
+# Image refs here are catalog *defaults* (repo:tag). The deploy ceremony pins the exact
+# `@sha256:` digest at deploy time — a published/production manifest would pin digests.
+format: 1
+apps:
+  - name: harness-rails
+    description: The integration-test workhorse — one image, behavior driven by env knobs (health timing, env/file secrets, a volume counter, a crash, a memory balloon).
+    port: 8080
+    health: /healthz
+    # env declares the inputs the app needs — names only, no values. A `secret` entry is
+    # delivered off-record; a secret_file is mounted off-record. Values are set at install.
+    env:
+      - key: DEMO_GREETING
+      - key: SECRET_TOKEN
+        secret: true
+    secret_files:
+      - name: DEMO_FILE
+        path: /run/secrets/demo
+    versions:
+      - tag: latest
+        image: ghcr.io/agoraforge/harness-rails:latest
+        latest: true
+
+  - name: nginx
+    description: Static web server, rootless — the trivial known-good baseline / smoke test.
+    port: 8080
+    health: /
+    versions:
+      - tag: stable
+        image: docker.io/nginxinc/nginx-unprivileged:stable
+        latest: true
+
+  - name: httpbin
+    description: HTTP request-and-response inspector — proves routing and the health gate with zero state.
+    port: 8080
+    health: /
+    versions:
+      - tag: latest
+        image: docker.io/mccutchen/go-httpbin:latest
+        latest: true
+
+  - name: prometheus
+    description: Metrics database (Go) — real health endpoint; pairs with Grafana.
+    port: 9090
+    health: /-/healthy
+    versions:
+      - tag: latest
+        image: docker.io/prom/prometheus:latest
+        latest: true
+
+  - name: grafana
+    description: Dashboards — a recognizable, non-root app with a real health endpoint and a volume.
+    port: 3000
+    health: /api/health
+    env:
+      - key: GF_SECURITY_ADMIN_PASSWORD
+        secret: true
+    versions:
+      - tag: latest
+        image: docker.io/grafana/grafana:latest
+        latest: true
+
+  - name: code-server
+    description: VS Code in the browser — a real app that takes a PASSWORD secret (env-secret axis).
+    port: 8080
+    health: /healthz
+    env:
+      - key: PASSWORD
+        secret: true
+    versions:
+      - tag: latest
+        image: docker.io/codercom/code-server:latest
+        latest: true
+
+  - name: stirling-pdf
+    description: PDF toolkit (Java/Spring) — the slow-JVM-boot and memory axis; mostly stateless.
+    port: 8080
+    health: /
+    versions:
+      - tag: latest
+        image: docker.io/stirlingtools/stirling-pdf:latest
+        latest: true
+
+  - name: uptime-kuma
+    description: Self-hosted uptime monitor with embedded SQLite — a stateful web app, volume survives the flip.
+    port: 3001
+    health: /
+    versions:
+      - tag: "1"
+        image: docker.io/louislam/uptime-kuma:1
+        latest: true
+
+  - name: n8n
+    description: Workflow automation (Node) — a real app with a /healthz and SQLite default.
+    port: 5678
+    health: /healthz
+    versions:
+      - tag: latest
+        image: docker.io/n8nio/n8n:latest
+        latest: true
+
+  - name: zot
+    description: Self-hosted OCI registry (Go) — deploy it, then deploy from it to exercise the private-registry source. Config + htpasswd as file secrets (see examples/zot).
+    port: 5000
+    health: /v2/
+    secret_files:
+      - name: config
+        path: /etc/zot/config.json
+      - name: htpasswd
+        path: /etc/zot/htpasswd
+    versions:
+      - tag: latest
+        image: ghcr.io/project-zot/zot-linux-amd64:latest
+        latest: true

@@ -1,0 +1,29 @@
+<%= form_with model: app, class: "stack-form" do |f| %>
+  <% if app.errors.any? %>
+    <div class="flash alert"><%= app.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <label class="field">
+    <span>Name <%= hint "Letters, digits, dashes, and underscores only (it becomes the app's name on the box)." %></span>
+    <%= f.text_field :name, required: true, autocomplete: "off",
+          pattern: "[A-Za-z0-9_-]+", title: "Letters, digits, dashes, and underscores only" %>
+  </label>
+  <p class="muted form-note">App <strong>images</strong> live on app <em>versions</em> (add them after creating the app).</p>
+  <div class="field-row">
+    <label class="field"><span>Port <%= hint "The port the app listens on inside its container. Use 1024–65535 — ports below 1024 are privileged (root-only), and the app runs unprivileged." %></span>
+      <%= f.number_field :port, placeholder: "8080", min: 1024, max: 65535 %></label>
+    <label class="field"><span>Health Path <%= hint "A URL path that returns 200 when the app is healthy (e.g. /up). The deploy probes it and waits for a healthy response before routing traffic." %></span>
+      <%= f.text_field :health, class: "mono", placeholder: "/up", pattern: "/.*",
+            title: "A path starting with /" %></label>
+  </div>
+  <label class="field">
+    <span>Description</span>
+    <%= f.text_field :description, autocomplete: "off" %>
+  </label>
+
+  <div class="form-actions">
+    <%= f.submit class: "btn mutate" %>
+    <%# Cancel returns where you came from: the app when editing, the library when new. %>
+    <%= button_link_to "Cancel", (app.persisted? ? app : apps_path), class: "btn-quiet" %>
+  </div>
+<% end %>

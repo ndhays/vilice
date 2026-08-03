@@ -1,0 +1,164 @@
+/* The two sides of the spine, made visible. */
+.panel { border-radius: 10px; padding: 1.1rem 1.35rem; margin-bottom: 1.5rem; }
+.panel.observe { background: var(--card); border: 1px solid var(--line); }
+.panel.mutate  { background: var(--mutate-bg); border: 1px solid var(--mutate-line); }
+.panel .kicker {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; margin-bottom: 0.5rem;
+}
+.panel.observe .kicker { color: var(--observe); }
+.panel.mutate  .kicker { color: var(--mutate); }
+.panel.mutate .note { color: var(--mutate); font-size: 0.85rem; margin-top: 0.5rem; }
+/* Read-only (observe key): calm, not the amber witnessed treatment. */
+.panel.readonly { background: var(--card); border: 1px dashed var(--line); }
+.panel.readonly .kicker { color: var(--muted); }
+.panel.readonly .note { font-size: 0.9rem; }
+
+/* ── The mutate ceremony ─────────────────────────────────────────────────────
+   Act entry points in the mutate panel, the preview card, and the outcome an
+   act settles to on its record entry. */
+.acts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.4rem 0 0.2rem; }
+
+/* Maintenance window + the Apply Now act, in the mutate panel. The schedule is the
+   headline; "N pending" carries the package list in its title (hover), not inline. */
+.maintenance { margin: 0.2rem 0 0.4rem; }
+.maint-line { display: flex; align-items: center; gap: 0.35rem; font-weight: 600; margin: 0 0 0.2rem; }
+.maint-line.muted { font-weight: 400; }
+.maint-note { font-size: 0.85rem; margin: 0 0 0.5rem; }
+.maint-pending { font-size: 0.85rem; color: var(--mutate); margin: 0.3rem 0; cursor: default; }
+.updates-current { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.3rem; }
+.panel.mutate .kicker.apps-head { margin-top: 1rem; }
+.acts-apps { list-style: none; margin: 0.3rem 0 0; padding: 0; }
+.acts-app {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0;
+  border-top: 1px solid var(--mutate-line);
+}
+.acts-app-name { display: flex; align-items: center; gap: 0.35rem; font-weight: 600; }
+.acts-app-name .icon { color: var(--mutate); }
+.acts-app-verbs { margin-left: auto; display: flex; gap: 0.3rem; }
+
+/* a lower-key button for the inline per-app verbs and Cancel */
+.btn-quiet {
+  display: inline-block; border: 1px solid var(--line); color: var(--ink);
+  background: var(--card); border-radius: 7px; padding: 0.25rem 0.6rem;
+  font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.btn-quiet:hover { text-decoration: none; border-color: var(--mutate); color: var(--mutate); }
+.btn-quiet.mutate:hover { background: var(--mutate-bg); }
+.btn-quiet.danger { color: var(--muted); }
+.btn-quiet.danger:hover { border-color: var(--bad); color: var(--bad); background: var(--bad-soft); }
+.btn.danger { border-color: var(--bad); color: var(--bad); }
+.btn.danger:hover { background: var(--bad-soft); border-color: var(--bad); }
+
+/* the preview card — the confirm step, styled like a witnessed surface */
+.ceremony {
+  background: var(--mutate-bg); border: 1px solid var(--mutate-line);
+  border-radius: 10px; padding: 1.1rem 1.35rem; margin-bottom: 1.5rem;
+}
+.ceremony .kicker {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--mutate); margin-bottom: 0.5rem;
+}
+.ceremony-intro { margin: 0 0 0.7rem; }
+.ceremony .note { color: var(--mutate); font-size: 0.85rem; }
+.ceremony-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.9rem; }
+
+/* deploy lane sits ahead of lifecycle, with a thin divider between */
+.acts-app-verbs { align-items: center; }
+.verb-sep { width: 1px; align-self: stretch; background: var(--mutate-line); margin: 0.1rem 0.15rem; }
+
+/* the running/desired image under a target on the install page — quiet, indented
+   under the box name, mono (machine truth). Drift reads in the line itself. */
+.target-image { color: var(--muted); font-size: 0.8rem; margin: 0 0 0.5rem 1.85rem; }
+
+/* Apps on a box — read-only list on the machine page: the app (→ its install) and
+   the project it serves. Neutral (not the amber act styling); acting is elsewhere. */
+.box-apps { list-style: none; margin: 0.3rem 0 1.5rem; padding: 0; }
+.box-apps li { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--line); }
+.box-apps li:first-child { border-top: none; }
+.box-apps .app-name { display: flex; align-items: center; gap: 0.4rem; font-weight: 600; min-width: 0; }
+.box-apps .app-name .icon { color: var(--muted); flex: none; }
+.box-apps .app-project { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+
+/* the compose form (deploy: pick the digest) inside the ceremony card */
+.compose { display: flex; flex-direction: column; gap: 0.7rem; }
+.compose-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.compose-field > span { font-size: 0.78rem; font-weight: 600; color: var(--mutate); }
+.compose-field input {
+  font: inherit; font-family: var(--mono); font-size: 0.85rem; padding: 0.4rem 0.55rem;
+  border: 1px solid var(--mutate-line); border-radius: 7px; background: var(--card); color: var(--ink);
+}
+.compose-field input:focus-visible { outline: none; border-color: var(--mutate); }
+.compose-field small { font-family: inherit; }
+.compose-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.compose-row .compose-field { flex: 1 1 12rem; }
+.compose-narrow { flex: 0 1 7rem !important; }
+
+/* the resolved desired-state, shown in the deploy preview */
+.spec { margin: 0.6rem 0; display: grid; gap: 0.2rem; }
+.spec > div { display: flex; gap: 0.6rem; font-size: 0.85rem; }
+.spec dt { flex: 0 0 5rem; color: var(--muted); margin: 0; }
+.spec dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+/* the settled (or pending) outcome on a chain entry */
+.outcome { font-size: 0.72rem; font-weight: 700; margin-left: 0.4rem; display: inline-flex; align-items: center; gap: 0.2rem; }
+.outcome.running { color: var(--muted); font-style: italic; font-weight: 600; }
+.outcome.ok { color: var(--ok); }
+.outcome.failed { color: var(--bad); text-transform: uppercase; letter-spacing: 0.04em; }
+.chain-entry.is-failed .chain-what { color: var(--bad); }
+.chain-entry.is-pending { opacity: 0.85; }
+
+/* The name the box reports for itself, close under the machine name — machine truth. */
+.hostname { color: var(--muted); font-size: 0.85rem; margin: 0.1rem 0 0.6rem; display: flex; align-items: center; gap: 0.3rem; }
+
+/* Hardening shown as a lock (keep the dot colors). */
+.hardening-line { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--muted); margin-top: 0.6rem; }
+.harden-lock { display: inline-flex; vertical-align: -0.15em; }
+.harden-lock.green  { color: var(--dot-green); }
+.harden-lock.yellow { color: var(--dot-yellow); }
+.harden-lock.gray   { color: var(--dot-gray); }
+
+.metrics { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.5rem; }
+.metrics li { background: var(--inset); border-radius: 8px; padding: 0.5rem 0.75rem; }
+.metrics .k { color: var(--muted); font-size: 0.78rem; display: block; }
+.metrics .v { font-weight: 600; font-family: var(--mono); }
+
+/* An address / identifier line under a title (replaces prose subtitles). */
+.addr { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.25rem; }
+.label-row { margin: 0 0 1.25rem; }
+.addr:has(+ .label-row) { margin-bottom: 0.5rem; }
+
+/* ── Chain integrity — un-bypassability, made visible ───────────────────── */
+.integrity { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; margin: 0 0 0.9rem; }
+.integrity.ok  { color: var(--ok); }
+.integrity.bad { color: var(--bad); font-weight: 600; }
+.integrity.off { color: var(--muted); }
+
+/* ── The chain — the record as a timeline (the observe spine) ────────────── */
+.chain { list-style: none; margin: 0; padding: 0; }
+.chain-entry { display: flex; gap: 0.7rem; padding: 0.45rem 0; position: relative; }
+/* the rail connecting the dots */
+.chain-entry::before {
+  content: ""; position: absolute; left: 0.74rem; top: 0; bottom: 0;
+  width: 1px; background: var(--line);
+}
+.chain-entry:first-child::before { top: 0.85rem; }
+.chain-entry:last-child::before  { bottom: auto; height: 0.85rem; }
+.chain-dot {
+  flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  display: grid; place-items: center; z-index: 1;
+  background: var(--inset); color: var(--muted); border: 1px solid var(--line);
+}
+.chain-entry.mutate .chain-dot {
+  color: var(--mutate); background: var(--mutate-bg); border-color: var(--mutate-line);
+}
+.chain-body { min-width: 0; padding-top: 0.1rem; }
+.chain-what { font-weight: 500; }
+.chain-meta { color: var(--muted); font-size: 0.85rem; margin-top: 0.05rem; }
+.chain-meta a { color: var(--accent); }
+.chain-actor { color: var(--ink); }
+
+/* a small inline tag (lower-key than a badge) for "witnessed" on mutate acts */
+.tag { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.tag.witnessed { color: var(--mutate); margin-left: 0.4rem; }
+

@@ -1,0 +1,249 @@
+require "test_helper"
+
+# The four journeys, end to end: auth-gated, observe reads, and the witnessed
+# mutate path. The SSH transport is stubbed so tests stay offline.
+class JourneysTest < ActionDispatch::IntegrationTest
+  setup do
+    @user    = users(:one)
+    @project  = Project.create!(name: "Acme", starred: true)
+    @observer = Machine.create!(name: "obs", ssh_host: "10.0.0.3", ssh_private_key: "k", owner: @project)
+    @operator = Machine.create!(name: "op", ssh_host: "10.0.0.4", scope: "operate", ssh_private_key: "k")
+    ProjectMachine.create!(project: @project, machine: @observer)
+  end
+
+  test "everything is behind the login" do
+    get root_path
+    assert_redirected_to new_session_path
+    get machines_path
+    assert_redirected_to new_session_path
+  end
+
+  test "home, projects, and settings render when signed in" do
+    sign_in_as @user
+    Event.record!(actor: "alice", action: "deployed", machine: @observer, summary: "deployed nginx")
+    get root_path
+    assert_response :success
+    assert_select "h1", /status/i
+    assert_select ".latest .chain-entry", 1            # live head of the record, in eyeline
+    assert_select ".section-link[href=?]", record_path
+
+    get record_path
+    assert_response :success
+    assert_select "h1", /record/i
+
+    get projects_path
+    assert_response :success
+    get project_path(@project)
+    assert_response :success
+    assert_select "h1", /Acme/
+
+    get settings_path
+    assert_response :success
+  end
+
+  test "Status leads with installs that need a look and the machines behind them" do
+    sign_in_as @user
+    down = Machine.create!(name: "down", ssh_host: "10.0.0.9", ssh_private_key: "k",
+                           status: "unreachable", owner: @project)
+    failing = @project.installs.create!(name: "acme-web")
+    failing.install_targets.create!(machine: down, status: "failed")
+    healthy = @project.installs.create!(name: "acme-ok")
+    healthy.install_targets.create!(machine: @observer, status: "running")
+
+    get root_path
+    assert_response :success
+    # The bad install surfaces through the shared install row; the healthy one stays quiet.
+    assert_select ".install-rows a[href=?]", install_path(failing), text: "acme-web"
+    assert_select ".install-rows a[href=?]", install_path(healthy), count: 0
+    # The unreachable box is called out separately, through the shared machine row.
+    assert_select ".machine-rows a[href=?]", machine_path(down), text: "down"
+    assert_select ".all-clear", count: 0
+  end
+
+  test "the record filters by selector and time, and keeps the query in the form" do
+    sign_in_as @user
+    Event.record!(actor: "alice", action: "deployed", machine: @observer, summary: "deployed nginx", at: 1.hour.ago)
+    Event.record!(actor: "ci", action: "rolled back", at: 40.days.ago)
+
+    get record_path(q: "actor=alice", since: "7d")
+    assert_response :success
+    assert_select ".filter-bar"
+    assert_select "input[name=q][value=?]", "actor=alice"          # query echoed back
+    assert_select "select[name=since] option[selected][value=?]", "7d"
+    assert_select ".chain-entry", 1                                 # only alice, in window
+    assert_select ".result-count", /1 entry/
+
+    get record_path                                                # unfiltered shows both
+    assert_select ".chain-entry", 2
+  end
+
+  test "machine show reads observe status (cached), without touching the network" do
+    sign_in_as @user
+    canned = { ok: true, data: { "data" => { "machine" => { "hostname" => "obs.local", "load1" => "0.1" } } }, at: Time.current }
+    record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
+    stub_observe(status: canned, record: record) { get machine_path(@observer) }
+    assert_response :success
+    assert_select ".panel.observe", /obs\.local/
+    assert_select ".panel.readonly", /observe.*key/i  # observe machine: read-only, not amber
+    assert_select ".integrity.ok"                      # the chain-integrity line
+  end
+
+  test "refresh re-reads and redirects (observe, changes nothing)" do
+    sign_in_as @user
+    stub_returning(Steward::Observe, :status, { ok: true, data: {}, at: Time.current }) do
+      get refresh_machine_path(@observer)
+    end
+    assert_redirected_to machine_path(@observer)
+  end
+
+  test "the ceremony previews the exact record line without writing anything" do
+    sign_in_as @user
+    assert_no_difference -> { Event.count } do
+      get new_machine_mutation_path(@operator, act: "apply-updates")
+    end
+    assert_response :success
+    assert_select ".ceremony"
+    assert_select ".chain-entry.is-pending .chain-what", /applied updates/  # the would-be line
+    assert_select "form[action=?]", machine_mutation_path(@operator)           # Confirm POSTs
+  end
+
+  test "an unknown or invalid act is refused" do
+    sign_in_as @user
+    get new_machine_mutation_path(@operator, act: "rm-rf")
+    assert_redirected_to machine_path(@operator)
+  end
+
+  test "mutate is refused on an observe-only machine and issues nothing" do
+    sign_in_as @user
+    assert_no_difference -> { Event.count } do
+      post machine_mutation_path(@observer, act: "apply-updates")
+    end
+    assert_redirected_to machine_path(@observer)
+    assert_match(/operate/i, flash[:alert])
+  end
+
+  test "mutate records the event pending before it runs, then settles it (Invariant 2)" do
+    sign_in_as @user
+    # Stub only the transport: the Event must be written even though we don't hit SSH.
+    stub_returning(Steward, :read, { ok: true, data: { "ok" => true }, at: Time.current }) do
+      assert_difference -> { Event.count }, 1 do
+        post machine_mutation_path(@operator, act: "apply-updates")
+      end
+    end
+    assert_redirected_to machine_path(@operator)
+    event = Event.latest.first
+    assert_equal @operator.id, event.machine_id
+    assert_equal @user.email_address, event.actor
+    assert_equal "applied updates", event.action
+    assert_equal "ok", event.outcome          # settled on the same entry
+    assert event.finished_at.present?
+  end
+
+  test "a failed command settles the entry failed with the box's reason" do
+    sign_in_as @user
+    stub_returning(Steward, :read, { ok: false, error: "podman: no such app", at: Time.current }) do
+      post machine_mutation_path(@operator, act: "apply-updates")
+    end
+    event = Event.latest.first
+    assert_equal "failed", event.outcome
+    assert_equal "podman: no such app", event.detail
+    assert_match(/failed/i, flash[:alert])
+  end
+
+  test "machine page lists its apps read-only, linking to the install (no act verbs)" do
+    sign_in_as @user
+    project = Project.create!(name: "Globex")
+    install = project.installs.create!(name: "globex-api")
+    install.install_targets.create!(machine: @operator, status: "running")
+
+    canned = { ok: true, data: { "data" => { "machine" => { "hostname" => "op.local" } } }, at: Time.current }
+    record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
+    stub_observe(status: canned, record: record) { get machine_path(@operator) }
+    assert_response :success
+    assert_select ".box-apps a[href=?]", install_path(install), text: "globex-api"
+    assert_select ".box-apps a", text: "Globex"        # the project it serves
+    assert_select ".acts-app-verbs", count: 0          # acting on an app happens from its project
+    assert_select "a", text: "Re-deploy", count: 0
+  end
+
+  test "a lifecycle act targets an app on the machine and records the install" do
+    sign_in_as @user
+    project = Project.create!(name: "Globex")
+    app = project.installs.create!(name: "globex-api")
+    app.install_targets.create!(machine: @operator, status: "running")
+    stub_returning(Steward, :read, { ok: true, data: {}, at: Time.current }) do
+      post machine_mutation_path(@operator, act: "restart", install_id: app.id)
+    end
+    event = Event.latest.first
+    assert_equal "restarted", event.action
+    assert_equal app.id, event.install_id
+    assert_equal "ok", event.outcome
+  end
+
+  test "deploy composes (a form, no write), then previews the resolved spec" do
+    sign_in_as @user
+    app = deployable_app
+
+    assert_no_difference -> { Event.count } do
+      get new_machine_mutation_path(@operator, act: "deploy", install_id: app.id)
+    end
+    assert_select "form.compose"
+    assert_select "input[name=image]"
+
+    get new_machine_mutation_path(@operator, act: "deploy", install_id: app.id,
+          image: "ghcr.io/acme/web@sha256:new")
+    assert_select ".ceremony .spec"
+    assert_select ".chain-entry.is-pending .chain-what", /deployed web/
+  end
+
+  test "deploy records pending, pipes the envelope, settles ok, and pins desired_image" do
+    sign_in_as @user
+    app    = deployable_app
+    target = app.install_targets.find_by(machine: @operator)
+
+    with_fake_steward do |steward|
+      steward.on(/deploy web/, data: { "ok" => true })
+      assert_difference -> { Event.count }, 1 do
+        post machine_mutation_path(@operator, act: "deploy", install_id: app.id,
+              image: "ghcr.io/acme/web@sha256:new")
+      end
+      assert_match "@sha256:new", steward.stdin_for(/deploy web/), "envelope on stdin"
+    end
+
+    event = Event.latest.first
+    assert_equal "deployed", event.action
+    assert_equal "ok", event.outcome
+    assert_equal "ghcr.io/acme/web@sha256:new", target.reload.desired_image
+  end
+
+  test "rollback issues the parameterless command and records it" do
+    sign_in_as @user
+    app = deployable_app
+    stub_returning(Steward, :read, { ok: true, data: {}, at: Time.current }) do
+      post machine_mutation_path(@operator, act: "rollback", install_id: app.id)
+    end
+    assert_equal "rolled back", Event.latest.first.action
+  end
+
+  test "remove records the act and retires the target on success" do
+    sign_in_as @user
+    app    = deployable_app
+    target = app.install_targets.find_by(machine: @operator)
+    stub_returning(Steward, :read, { ok: true, data: {}, at: Time.current }) do
+      post machine_mutation_path(@operator, act: "remove", install_id: app.id)
+    end
+    assert_equal "removed", Event.latest.first.action
+    assert_equal "retired", target.reload.status
+  end
+
+  private
+
+  # An app with a running target on the operate machine, ready to deploy.
+  def deployable_app
+    project = Project.create!(name: "Proj-#{SecureRandom.hex(3)}")
+    app = project.installs.create!(name: "web", image: "ghcr.io/acme/web@sha256:old",
+                                   hostname: "acme.example", port: 8080, health: "/up")
+    app.install_targets.create!(machine: @operator, status: "running")
+    app
+  end
+end

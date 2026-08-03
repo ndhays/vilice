@@ -1,0 +1,11 @@
+<%# One env-var chip: a name you click to mark secret (a lock appears), and × to remove.
+    The hidden inputs carry it in the form; apps#app_params reads the indexed env_rows.
+    The template clones this with i="NEW" and key="KEYNAME" for new chips. %>
+<span class="chip<%= " is-secret" if secret %>" data-env-editor-target="chip"
+      data-action="click->env-editor#toggleSecret">
+  <input type="hidden" name="app[env_rows][<%= i %>][key]" value="<%= key %>">
+  <input type="hidden" name="app[env_rows][<%= i %>][secret]" value="<%= secret ? "1" : "0" %>" class="secret-flag">
+  <%= icon "lock", size: 11, css_class: "chip-lock" %>
+  <span class="chip-key mono"><%= key %></span>
+  <button type="button" class="chip-x" data-action="env-editor#removeChip" aria-label="Remove">&times;</button>
+</span>

@@ -1,0 +1,77 @@
+
+/* A plain vertical form (App Library add/edit). */
+.stack-form { max-width: 34rem; }
+.stack-form .field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.8rem; }
+.stack-form .field > span { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.stack-form .field input {
+  font: inherit; font-size: 0.9rem; padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink);
+}
+.stack-form .field input.mono { font-family: var(--mono); font-size: 0.85rem; }
+.stack-form .field input:focus-visible { outline: none; border-color: var(--accent); }
+
+/* Custom select — on-brand chrome (matches the inputs), native options + dropdown.
+   The chevron is an inline SVG; mid-gray reads on both themes. */
+.stack-form .field select, .select {
+  appearance: none; -webkit-appearance: none;
+  font: inherit; font-size: 0.9rem; color: var(--ink); cursor: pointer; max-width: 100%;
+  padding: 0.45rem 2rem 0.45rem 0.6rem;
+  border: 1px solid var(--line); border-radius: 7px;
+  background-color: var(--card);
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%236b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>');
+  background-repeat: no-repeat; background-position: right 0.55rem center; background-size: 0.8rem;
+}
+.stack-form .field select:focus-visible, .select:focus-visible { outline: none; border-color: var(--accent); }
+
+/* Attach-an-existing-machine row on the project page: a select + a compact button. */
+.attach-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+.attach-row .select { max-width: 22rem; }
+
+.stack-form .field-row { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+.stack-form .field-row .field { flex: 1 1 9rem; }
+.stack-form .form-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; }
+
+/* Sign-in — a centred, branded card on the unauthenticated layout. */
+.auth { min-height: 78vh; display: grid; place-items: center; padding: 1rem; }
+.auth-card {
+  width: 100%; max-width: 22rem; padding: 1.75rem;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+}
+.auth-card .stack-form { max-width: none; }
+.auth-card .form-actions { justify-content: space-between; flex-wrap: wrap; row-gap: 0.6rem; margin-top: 0.9rem; }
+.auth-brand { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem; font-size: 1.15rem; font-weight: 700; }
+.auth-brand .mark { color: var(--accent); display: inline-flex; }
+/* Optional heading under the brand (reset pages) — sits closer to the mark. */
+.auth-title { margin: -0.5rem 0 1.1rem; font-size: 1rem; font-weight: 600; }
+.auth-link { font-size: 0.85rem; color: var(--muted); }
+.auth-link:hover { color: var(--accent); }
+
+/* ── Install form — the progressive-reveal flow + its catalog picker ──────── */
+.install-form .step { border: none; padding: 0; margin: 0 0 1.5rem; }
+.install-form .step > legend { font-weight: 600; padding: 0; margin-bottom: 0.5rem; }
+
+/* Step 1 — the catalog: a searchable card of apps; custom image sits outside it. */
+.pick-card {
+  border: 1px solid var(--line); border-radius: 10px; background: var(--card);
+  padding: 0.4rem; margin: 0.35rem 0 0.6rem;
+}
+.pick-search {
+  width: 100%; box-sizing: border-box; margin-bottom: 0.4rem;
+  padding: 0.4rem 0.55rem; border: 1px solid var(--line); border-radius: 7px;
+  background: var(--inset); color: var(--ink); font-size: 0.85rem;
+}
+.pick-search:focus-visible { outline: none; border-color: var(--accent); }
+.pick-list { display: flex; flex-direction: column; gap: 0.3rem; max-height: 17rem; overflow-y: auto; margin: 0; }
+
+.pick-option {
+  display: flex; align-items: center; gap: 0.45rem; cursor: pointer;
+  padding: 0.5rem 0.75rem; line-height: 1.2;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+}
+.pick-option:hover { background: var(--inset); }
+.pick-option:has(input:checked) { border-color: var(--accent); background: var(--inset); }
+.pick-option .row-icon { color: var(--muted); display: inline-flex; flex: none; }
+.pick-option .row-name { font-weight: 600; }
+.pick-option input[type="radio"] { flex: none; margin: 0; }
+.pick-custom { margin: 0.1rem 0 0.6rem; }
+

@@ -1,0 +1,43 @@
+<% content_for :title, "Record — Steward Console" %>
+
+<h1><%= icon "disc", size: 20 %> Record</h1>
+
+<%# Forensics filter: selector grammar over actor/action/target/project + a time
+    window. Quote a value with spaces (project="Acme Corp"). A plain GET form so a
+    filtered record is a shareable link. %>
+<%= form_with url: record_path, method: :get, class: "filter-bar" do |f| %>
+  <span class="filter-search">
+    <%= icon "search", size: 15 %>
+    <%= f.search_field :q, value: @q, autocomplete: "off", spellcheck: false,
+          placeholder: %(project="Acme Corp" target=node-001 actor=alice  — or free text) %>
+  </span>
+  <%= f.select :since,
+        options_for_select([ [ "All time", "" ] ] + RecordController::RANGES.keys.map { |k| [ "Last #{k}", k ] }, @since),
+        {}, class: "filter-range", onchange: "this.form.requestSubmit()" %>
+  <%= f.submit "Search", class: "btn" %>
+  <% if @q.present? || @since || @picked.any? %>
+    <%= link_to "Clear", record_path, class: "filter-clear" %>
+  <% end %>
+
+  <%# Action filter — toggle pills (multi-select; any picked action matches). %>
+  <% if @actions.any? %>
+    <div class="action-chips">
+      <% @actions.each do |a| %>
+        <label class="chip <%= "on" if @picked.include?(a) %>">
+          <%= check_box_tag "actions[]", a, @picked.include?(a), onchange: "this.form.requestSubmit()" %>
+          <%= a %>
+        </label>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>
+
+<p class="result-count muted">
+  <%= pluralize(@chain.size, "entry", plural: "entries") %><%= " in the last #{@since}" if @since %><%= " · #{@picked.to_sentence}" if @picked.any? %><%= " · matching “#{@q}”" if @q.present? %>
+</p>
+
+<% if @chain.empty? && (@q.present? || @since || @picked.any?) %>
+  <p class="empty">No acts match this filter. <%= link_to "Clear it", record_path %>.</p>
+<% else %>
+  <%= render "events/chain", items: @chain %>
+<% end %>

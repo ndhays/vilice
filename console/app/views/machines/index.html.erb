@@ -1,0 +1,32 @@
+<% content_for :title, "Machines — Steward Console" %>
+
+<%= page_header "All Machines" do %>
+  <%= button_link_to "Add Machine", new_machine_path, icon: "plus", class: "btn" %>
+<% end %>
+
+<%= render layout: "shared/list_toolbar",
+      locals: { search_url: machines_path, q: @q, placeholder: "name  ·  key=value label",
+                selectable: false, hidden: { unowned: (@only_unowned ? 1 : nil) } } do %><% end %>
+
+<%# The "unowned" toggle — same pill style as the Record action filters. Like
+    Unread in an inbox: filter to boxes with no owner, with a light presence count
+    when any exist, so a free box is never lost. %>
+<div class="action-chips filter-row">
+  <%= link_to machines_path(unowned: (@only_unowned ? nil : 1), q: @q),
+        class: "chip #{'on' if @only_unowned}" do %>
+    <%= icon "circle-slash", size: 14 %> Unowned
+    <% if @unowned_count.positive? %><span class="chip-count"><%= @unowned_count %></span><% end %>
+  <% end %>
+</div>
+
+<% if @machines.any? %>
+  <ul class="rows machine-rows">
+    <%= render partial: "machines/row", collection: @machines, as: :machine %>
+  </ul>
+<% elsif @only_unowned %>
+  <p class="empty">No unowned machines — every box has a home.</p>
+<% elsif @q.present? %>
+  <p class="empty">No machines match this search.</p>
+<% else %>
+  <p class="empty">No machines yet.</p>
+<% end %>

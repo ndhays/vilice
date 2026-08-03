@@ -1,0 +1,65 @@
+<% content_for :title, "#{@app.name} — Steward Console" %>
+
+<%= breadcrumb [ [ "App Library", apps_path ], [ @app.name, nil ] ] %>
+<h1><%= icon "box", size: 20 %> <%= @app.name %></h1>
+<% if @app.description.present? %><p class="muted"><%= @app.description %></p><% end %>
+<div class="spec-row">
+  <% if @app.port %>
+    <span class="spec"><span class="spec-k">Port</span><span class="spec-v mono"><%= @app.port %></span></span>
+  <% end %>
+  <span class="spec"><span class="spec-k">Health</span><span class="spec-v mono"><%= @app.health.presence || "/" %></span></span>
+  <%= link_to "Edit", edit_app_path(@app), class: "spec-edit" %>
+</div>
+<div class="label-row"><%= render "labels/editor", labelable: @app %></div>
+
+<%= render "apps/inputs", app: @app %>
+
+<div class="panel">
+  <div class="kicker">Versions</div>
+  <% if @versions.any? %>
+    <ul class="version-list">
+      <li class="version version-head">
+        <span class="version-tag">Version</span>
+        <span class="version-image">Image</span>
+        <span class="version-actions"></span>
+      </li>
+      <% @versions.each do |v| %>
+        <li class="version<%= " is-latest" if v.latest? %>">
+          <span class="version-tag mono">
+            <%= v.tag %><% if v.latest? %><span class="tag latest">latest</span><% end %>
+          </span>
+          <span class="version-image" data-controller="clipboard" data-clipboard-text-value="<%= v.image %>">
+            <span class="version-image-text mono" title="<%= v.image %>"><%= v.image %></span>
+            <button type="button" class="copy-btn" data-action="clipboard#copy" aria-label="Copy image">
+              <%= icon "copy", size: 13, css_class: "icon-copy" %><%= icon "check", size: 13, css_class: "icon-copied" %>
+            </button>
+          </span>
+          <span class="version-actions">
+            <% unless v.latest? %>
+              <%= button_to latest_app_version_path(@app, v), method: :patch, class: "btn-quiet" do %>
+                <%= safe_join([ icon("book-check", size: 14), "Make Latest" ], " ") %>
+              <% end %>
+            <% end %>
+            <%= button_to app_version_path(@app, v), method: :delete, class: "btn-quiet danger",
+                  data: { turbo_confirm: "Remove #{@app.name} #{v.tag}?" } do %>
+              <%= safe_join([ icon("trash-2", size: 14), "Remove" ], " ") %>
+            <% end %>
+          </span>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="empty">No versions yet — add one to install this app.</p>
+  <% end %>
+
+  <%= form_with model: [ @app, @version ], scope: :version, class: "version-add" do |f| %>
+    <% if @version.errors.any? %>
+      <div class="flash alert"><%= @version.errors.full_messages.to_sentence %></div>
+    <% end %>
+    <%= f.text_field :tag, placeholder: "v1.2.0", required: true, autocomplete: "off" %>
+    <%= f.text_field :image, class: "mono", placeholder: "ghcr.io/acme/web@sha256:…",
+          required: true, autocomplete: "off", spellcheck: false %>
+    <label class="version-latest"><%= check_box_tag "make_latest", "1", true %> latest</label>
+    <%= f.submit "Add Version", class: "btn mutate" %>
+  <% end %>
+</div>

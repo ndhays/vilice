@@ -1,0 +1,35 @@
+<% content_for :title, "Projects — Steward Console" %>
+
+<%= page_header "Projects" do %>
+  <%= button_link_to "Add Project", new_project_path, icon: "plus", class: "btn" %>
+<% end %>
+
+<%= render layout: "shared/list_toolbar",
+      locals: { search_url: projects_path, q: @q, placeholder: "name  ·  key=value label",
+                selectable: false } do %><% end %>
+
+<% if @q.present? %>
+  <% if @projects.any? %>
+    <ul class="rows project-rows">
+      <%= render partial: "projects/row", collection: @projects, as: :project %>
+    </ul>
+  <% else %>
+    <p class="empty">No projects match this search.</p>
+  <% end %>
+<% else %>
+  <% if @starred.any? %>
+    <h2 class="starred-heading"><span class="star">★</span> Starred</h2>
+    <ul class="rows project-rows">
+      <%= render partial: "projects/row", collection: @starred, as: :project %>
+    </ul>
+  <% end %>
+
+  <% if @projects.any? %>
+    <% if @starred.any? %><h2>All Projects</h2><% end %>
+    <ul class="rows project-rows">
+      <%= render partial: "projects/row", collection: @projects, as: :project %>
+    </ul>
+  <% elsif @starred.empty? %>
+    <p class="empty">No projects yet.</p>
+  <% end %>
+<% end %>

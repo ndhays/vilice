@@ -1,0 +1,191 @@
+<%# A project is optional context, and it comes from the URL — never a dropdown here
+    (blueprint/console/journeys.md). With one, the crumb trail and the machine list
+    stay inside that client; without one, this is plain fleet-wide placement and
+    nothing asks you to invent a client first (decisions/console-layers.md). %>
+<% content_for :title, @project ? "Create New Install — #{@project.name}" : "Create New Install" %>
+
+<% if @project %>
+  <%= breadcrumb [ [ "Projects", projects_path ], [ @project.name, project_path(@project) ], [ "Add Install", nil ] ] %>
+  <h1>Create New Install for <%= @project.name %></h1>
+<% else %>
+  <%= breadcrumb [ [ "Installs", installs_path ], [ "Add Install", nil ] ] %>
+  <h1>Create New Install</h1>
+<% end %>
+
+<%= form_with url: installs_path(project_id: @project&.id), scope: :install, method: :post,
+      class: "stack-form install-form", data: { controller: "install-form" } do |f| %>
+  <% if @install.errors.any? %>
+    <div class="flash alert"><%= @install.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <%# Placement first — where it runs. One primitive: "single vs fleet" is just a count,
+      and the box is chosen or created here (decisions/one-primitive-composed.md). Single
+      + existing box is the built path; new-box (Hetzner) and fleet are previewed stubs.
+      The reveals are pure CSS (:has) — no JS, degrades to all-visible. %>
+  <fieldset class="step placement">
+    <legend>Machine Configuration</legend>
+    <div class="radio-cards">
+      <div class="radio-row">
+        <label class="radio">
+          <input type="radio" name="placement" value="single" checked>
+          <%= icon "hard-drive", size: 22 %>
+          <span class="radio-label">Single machine</span>
+          <small class="radio-hint">One box runs the app.</small>
+        </label>
+        <label class="radio">
+          <input type="radio" name="placement" value="fleet">
+          <%= icon "boxes", size: 22 %>
+          <span class="radio-label">Fleet</span>
+          <small class="radio-hint">Several boxes, one front door.</small>
+        </label>
+      </div>
+    </div>
+
+    <div class="single-only">
+      <div class="radio-cards source-pick">
+        <div class="radio-row">
+          <label class="radio">
+            <input type="radio" name="machine_source" value="existing" checked>
+            <%= icon "hard-drive", size: 20 %>
+            <span class="radio-label">Existing box</span>
+            <small class="radio-hint"><%= @project ? "One on this project." : "Any box in the fleet." %></small>
+          </label>
+          <label class="radio">
+            <input type="radio" name="machine_source" value="new">
+            <%= icon "plus", size: 20 %>
+            <span class="radio-label">New box</span>
+            <small class="radio-hint">Provision via Hetzner.</small>
+          </label>
+        </div>
+      </div>
+
+      <div class="source-existing">
+        <label class="field"><span>Machine</span>
+          <% if @machines.any? %>
+            <%= f.collection_select :machine_id, @machines, :id, :name, { prompt: "Choose a machine" }, {} %>
+          <% elsif @project %>
+            <p class="muted">No machines on this project yet — create a new box, or
+              <%= link_to "add an existing one", new_machine_path(project_id: @project.id) %>.</p>
+          <% else %>
+            <p class="muted">No boxes carry an operate key yet —
+              <%= link_to "add a machine", new_machine_path %> first.</p>
+          <% end %>
+        </label>
+      </div>
+
+      <div class="source-new stub">
+        <p class="stub-note"><%= icon "clock", size: 14 %>
+          <span><strong>Create a new box (Hetzner) — coming soon.</strong> Steward Console will
+          provision the box, install Steward, authorize its key, then deploy.</span></p>
+      </div>
+    </div>
+
+    <div class="fleet-only stub">
+      <p class="stub-note"><%= icon "clock", size: 14 %>
+        <span><strong>Fleet — coming soon.</strong> Steward Console will create N stateless boxes
+        behind a Caddy front edge and balance across them. Scaling later is one number:
+        change how many.</span></p>
+    </div>
+  </fieldset>
+
+  <fieldset class="step">
+    <legend>Application</legend>
+    <% if @apps.any? %>
+      <div class="pick-card">
+        <input type="search" class="pick-search" placeholder="Search apps…" autocomplete="off"
+               aria-label="Search apps"
+               data-install-form-target="search" data-action="input->install-form#filter">
+        <div class="pick-list">
+          <% @apps.each do |app| %>
+            <label class="pick-option">
+              <%= f.radio_button :app_id, app.id,
+                    data: { action: "install-form#pickApp",
+                            versions: app.versions.newest_first.map { |v| { id: v.id, tag: v.tag, latest: v.latest } }.to_json,
+                            name: app.name, port: app.port, health: app.health } %>
+              <span class="row-icon"><%= icon "box", size: 15 %></span>
+              <span class="row-name"><%= app.name %></span>
+              <% if (v = app.latest_version) %>
+                <span class="mono"><%= v.tag %></span><span class="tag latest">latest</span>
+              <% end %>
+              <%= label_badges(app) %>
+            </label>
+          <% end %>
+        </div>
+      </div>
+    <% else %>
+      <p class="muted">No installable apps — <%= link_to "add a version to a library app", apps_path %> first.</p>
+    <% end %>
+
+    <% if @allow_custom %>
+      <label class="pick-option pick-custom">
+        <%= f.radio_button :app_id, "", checked: false,
+              data: { action: "install-form#pickApp", custom: "true" } %>
+        <span class="row-icon"><%= icon "box", size: 15 %></span>
+        <span class="row-name">Custom image</span>
+        <span class="muted">enter an image below</span>
+      </label>
+    <% end %>
+
+    <label class="field" data-install-form-target="versionField">
+      <span>App Version</span>
+      <%= f.select :version_id, [], {}, data: { install_form_target: "version" } %>
+    </label>
+
+    <% if @allow_custom %>
+      <label class="field" data-install-form-target="imageField">
+        <span>Custom image <%= hint "A digest-pinned container image, e.g. ghcr.io/acme/web@sha256:…" %></span>
+        <%= f.text_field :image, value: @install.image, class: "mono", autocomplete: "off",
+              spellcheck: false, placeholder: "ghcr.io/acme/web@sha256:…" %>
+      </label>
+    <% end %>
+  </fieldset>
+
+  <div data-install-form-target="rest">
+    <fieldset class="step">
+      <legend>Hostname <%= hint "The public domain where the app will be served, e.g. app.example.com." %></legend>
+      <label class="field">
+        <%= f.text_field :hostname, value: @install.hostname, class: "mono",
+              autocomplete: "off", placeholder: "app.example.com" %>
+        <small class="muted">Where the app will be served. (DNS is checked before deployment.)</small>
+      </label>
+    </fieldset>
+
+    <fieldset class="step">
+      <legend>Details</legend>
+      <p class="form-note muted">Prefilled from the app's defaults — change any to override for this install.</p>
+      <label class="field"><span>App Name</span>
+        <%= f.text_field :name, value: @install.name, data: { install_form_target: "name" },
+              autocomplete: "off", pattern: "[A-Za-z0-9_-]+",
+              title: "Letters, digits, dashes, and underscores — the app's name on the box" %></label>
+      <div class="field-row">
+        <label class="field">
+          <span>Port <%= hint "The port the app listens on inside its container." %></span>
+          <%= f.number_field :port, value: @install.port, data: { install_form_target: "port" },
+                min: 1024, max: 65535 %>
+        </label>
+        <label class="field">
+          <span>Health <%= hint "A path that returns 200 when the app is healthy (e.g. /up). The deploy waits for it before going live." %></span>
+          <%= f.text_field :health, value: @install.health, class: "mono",
+                data: { install_form_target: "health" }, placeholder: "/up", pattern: "/.*",
+                title: "A path starting with /" %>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset class="step">
+      <legend>Storage <%= hint "Named volumes that survive every redeploy — the box keeps the data on disk while the code is replaced." %></legend>
+      <label class="field">
+        <%= f.text_area :volumes, value: @install.volumes.join("\n"), rows: 2, class: "mono",
+              autocomplete: "off", spellcheck: false, placeholder: "storage:/rails/storage" %>
+        <small class="muted">Optional. One <span class="mono">name:/path/in/container</span> per line — data that outlives deploys (a database, uploads). Leave blank for a stateless app.</small>
+      </label>
+    </fieldset>
+
+    <div class="form-actions">
+      <%= button_tag class: "btn mutate" do %>
+        <%= safe_join([ icon("earth", size: 14), "Create Install and Deploy" ], " ") %>
+      <% end %>
+      <%= button_link_to "Cancel", @project ? project_path(@project) : installs_path, class: "btn-quiet" %>
+    </div>
+  </div>
+<% end %>

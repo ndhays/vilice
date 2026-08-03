@@ -1,0 +1,33 @@
+<%# Preview the record entry — the confirm step IS the record-before-act
+    invariant made visible. Nothing is written until Confirm. The line below is
+    rendered with the same chain styling it will have once committed. %>
+<%= turbo_frame_tag "ceremony" do %>
+  <div class="ceremony">
+    <div class="kicker">Confirm · this writes to the record</div>
+    <p class="ceremony-intro">You're about to witness this act on
+      <strong><%= @machine.name %></strong>. It will be recorded, then run:</p>
+
+    <%= render "events/chain", items: [ @mutation.preview_item ] %>
+
+    <%# For deploy, show the resolved desired state the box will converge to. %>
+    <% if @mutation.needs_compose? %>
+      <dl class="spec">
+        <div><dt>image</dt><dd class="mono"><%= @mutation.image %></dd></div>
+        <div><dt>hostname</dt><dd class="mono"><%= @mutation.hostname.presence || "—" %></dd></div>
+        <div><dt>port</dt><dd class="mono"><%= @mutation.port || "—" %></dd></div>
+        <div><dt>health</dt><dd class="mono"><%= @mutation.health.presence || "/" %></dd></div>
+      </dl>
+    <% end %>
+
+    <p class="note">Issues <code><%= @mutation.command %></code> over scoped SSH<%= " (spec on stdin)" if @mutation.stdin %>.</p>
+
+    <% confirm = { act: @mutation.act.verb, install_id: @mutation.install&.id, from: @from } %>
+    <% confirm.merge!(image: @mutation.image, hostname: @mutation.hostname, port: @mutation.port, health: @mutation.health) if @mutation.needs_compose? %>
+    <div class="ceremony-actions">
+      <%= button_to safe_join([ icon("check", size: 14), "Confirm — write & run" ], " "),
+            machine_mutation_path(@machine), method: :post, class: "btn mutate", params: confirm %>
+      <%= link_to "Cancel", @return_path,
+            class: "btn-quiet", data: { turbo_frame: "ceremony" } %>
+    </div>
+  </div>
+<% end %>

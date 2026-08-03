@@ -1,0 +1,31 @@
+// Steward Console documentation site. One site serves the docs AND the signed
+// releases (under /releases/) — no separate release domain.
+//
+// Content lives in content/*.md (easily editable, separate from presentation).
+// page.ori is the HTML layout. Versions are pulled from the subprojects by
+// versions.js at build time. `npm run build` copies this virtual tree to dist/.
+//
+// NOTE: /releases/ mirrors ../release/published, which is produced by
+// `make -C ../steward release`. Run that before `npm run build` to include them.
+{
+  // Component versions, read from the subproject sources.
+  (versions) = versions.js
+
+  // Each markdown file becomes an HTML page wrapped in the shared layout.
+  index.html = page.ori(Origami.mdHtml(content/index.md), versions)
+  console.html = page.ori(Origami.mdHtml(content/console.md), versions)
+  packs.html = page.ori(Origami.mdHtml(content/packs.md), versions)
+
+  // Static assets (stylesheet, favicon) copied as-is to /assets/.
+  assets
+
+  // The signed release artifacts, served at /releases/…
+  releases = ../release/published
+
+  // The verifying installer, served at /install.sh
+  "install.sh" = ../install.sh
+
+  // Standard crawl files, served at the root.
+  "robots.txt" = robots.txt
+  "sitemap.xml" = sitemap.xml
+}

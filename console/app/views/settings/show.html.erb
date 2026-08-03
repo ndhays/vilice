@@ -1,0 +1,80 @@
+<% content_for :title, "Settings — Steward Console" %>
+
+<h1>Settings</h1>
+
+<div class="fleet-info">
+  <p class="muted">Signed in as <span class="mono"><%= @user.email_address %></span> ·
+    <%= pluralize(@project_count, "project") %> ·
+    <%= pluralize(@machine_count, "machine") %> (<%= @shared_count %> shared)</p>
+</div>
+
+<%# One form over all setting cards; a single Save sits outside the cards. %>
+<%= form_with model: @setting, url: settings_path, method: :patch do |f| %>
+  <div class="card setting">
+    <div class="title">Installs</div>
+    <label class="toggle">
+      <%= f.check_box :installs_library_only %>
+      <span>Only allow installs from the App Library (no custom images)</span>
+    </label>
+  </div>
+
+  <%= button_tag class: "btn" do %>
+    <%= safe_join([ icon("save", size: 14), "Save Settings" ], " ") %>
+  <% end %>
+<% end %>
+
+<%# Account — change your own password (separate form from the fleet settings above). %>
+<div class="card setting account">
+  <div class="title">Change Password</div>
+  <%= form_with url: settings_password_path, method: :patch, class: "stack-form" do |f| %>
+    <label class="field"><span>Current password</span>
+      <%= f.password_field :current_password, required: true, autocomplete: "current-password",
+            maxlength: 72 %></label>
+    <label class="field"><span>New password</span>
+      <%= f.password_field :password, required: true, autocomplete: "new-password",
+            maxlength: 72 %></label>
+    <label class="field"><span>Repeat new password</span>
+      <%= f.password_field :password_confirmation, required: true, autocomplete: "new-password",
+            maxlength: 72 %></label>
+    <%= button_tag class: "btn" do %>
+      <%= safe_join([ icon("lock", size: 14), "Change Password" ], " ") %>
+    <% end %>
+  <% end %>
+</div>
+
+<% if Rails.env.local? %>
+  <div class="card setting danger-zone">
+    <div class="title">Danger zone (development only)</div>
+    <%= button_to settings_data_path, method: :delete, class: "btn-quiet danger",
+          form: { data: { turbo_confirm: "Erase ALL fleet data? This cannot be undone." } } do %>
+      <%= safe_join([ icon("trash-2", size: 14), "Erase All Data" ], " ") %>
+    <% end %>
+  </div>
+<% end %>
+
+<section class="about">
+  <h2>About</h2>
+  <p class="muted"><strong>Steward Console</strong> is the control plane for your app's fleet — projects, machines,
+    and apps in one place, with every change written to an accountable record.<br/><br/>
+    <strong>Steward</strong> is its command-line companion: a single Go binary (no daemon)
+    that runs scoped deploys and operations against your machines.</p>
+
+  <dl class="about-meta">
+    <div>
+      <dt>Documentation Website</dt>
+      <dd><a href="https://switchyard.agoraforge.org">switchyard.agoraforge.org</a></dd>
+    </div>
+    <div>
+      <dt>Code Repository</dt>
+      <dd><a href="https://codeberg.org/agoraforge/console">codeberg.org/agoraforge/console</a></dd>
+    </div>
+    <div>
+      <dt>Version</dt>
+      <dd class="mono"><%= @version %></dd>
+    </div>
+    <div>
+      <dt>License</dt>
+      <dd>AGPL-3.0</dd>
+    </div>
+  </dl>
+</section>

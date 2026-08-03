@@ -1,0 +1,233 @@
+<% content_for :title, "#{@machine.name} — Steward Console" %>
+
+<%= breadcrumb [["Machines", machines_path], [@machine.name, nil]] %>
+
+<h1>
+  <%# On the box this Steward Console runs on, lead with a location pin, not the machine
+      glyph — it reads as "you are here" at a glance. %>
+  <%= icon(you_are_here?(@status) ? "map-pin" : "hard-drive", size: 20) %>
+  <%= @machine.name %>
+  <%= status_badge(@machine) %>
+  <%= scope_badge(@machine) %>
+  <%= sharing_badge(@machine) %>
+  <%= owner_badge(@machine) %>
+  <% if you_are_here?(@status) %>
+    <%# NOTE: acting on the self box is the OOM-sensitive path (Steward Console deploying
+        its own box) — the mutate ceremony will need self-aware handling here
+        (warn/guard) before #20 self-deploy. See decisions/open/ui-shape.md. %>
+    <span class="badge self" title="The box this Steward Console is running on">you are here</span>
+  <% end %>
+</h1>
+<% if @status.online? && @status.hostname.present? %>
+  <%# The name the box reports for itself — machine truth (mono). Pulled over a
+      verified SSH connection, so a wrong box surfaces on its own (host-key
+      failure or an obviously-wrong name); no separate match/mismatch check. %>
+  <div class="hostname mono" title="as reported by the machine">
+    <%= icon "hard-drive", size: 12 %> <%= @status.hostname %>
+  </div>
+<% end %>
+<%= health_line(@status) %>
+<p class="addr">
+  <span class="mono"><%= ssh_address(@machine) %></span>
+  <% if @machine.projects.any? %>
+    · <%= safe_join(@machine.projects.map { |p| link_to(p.name, p) }, ", ") %>
+  <% end %>
+</p>
+<div class="label-row"><%= render "labels/editor", labelable: @machine %></div>
+
+<%# Access — Steward Console's scoped key for this box, and the line to authorize it.
+    Steward Console generates the key (private encrypted); the operator runs this on the
+    box once to let Steward Console in. See machine-onboarding.md / Access (#16). %>
+<% if @machine.authorize_command %>
+  <details class="access" <%= "open" unless @status.online? %>>
+    <summary><%= icon "shield", size: 13 %> Steward Console's key · authorize on the box</summary>
+    <p class="note">Run this once on the box (as the operator) to let Steward Console in:</p>
+    <pre class="raw cmd"><%= @machine.authorize_command %></pre>
+    <p class="note muted">Steward Console holds the matching private key (encrypted) and never root.</p>
+  </details>
+<% end %>
+
+<%= render "machines/sharing", machine: @machine, projects: @projects %>
+
+<%# ── Packs — what code the box says may run on it ────────────────────── %>
+<div class="panel observe">
+  <div class="kicker">Observe · packs (what may run here)</div>
+  <% if !@packs.reachable? %>
+    <p class="muted">Unreachable — <%= @packs.error %>. What runs here is unknown, not none.</p>
+  <% elsif @packs.all.empty? %>
+    <p class="muted">
+      No packs authorized — this box runs the core and nothing else. It can record,
+      verify, and admit actors; it cannot deploy.
+    </p>
+  <% else %>
+    <ul class="metrics">
+      <% @packs.active.each do |pack| %>
+        <li>
+          <span class="k"><%= icon "package", size: 13 %> <%= pack["name"] %></span>
+          <span class="v"><%= pack["state"] %></span>
+        </li>
+      <% end %>
+    </ul>
+    <% if @packs.problems.any? %>
+      <% @packs.problems.each do |pack| %>
+        <p class="muted">
+          <strong><%= pack["name"] %> — <%= pack["state"] %>.</strong> <%= pack["note"] %>
+        </p>
+      <% end %>
+    <% end %>
+    <p class="muted"><%= @packs.manifest_path %></p>
+  <% end %>
+</div>
+
+<%# ── Observe ─────────────────────────────────────────────────────────── %>
+<div class="panel observe">
+  <div class="kicker">Observe · live status (cached)</div>
+  <% if @status.online? %>
+    <strong><%= @status.hostname %></strong>
+    <ul class="metrics">
+      <li><span class="k"><%= icon "cpu", size: 13 %> load</span><span class="v"><%= @status.load1 %></span></li>
+      <li><span class="k"><%= icon "memory-stick", size: 13 %> memory used</span><span class="v"><%= @status.mem_percent %>%</span></li>
+      <li><span class="k"><%= icon "container", size: 13 %> disk used</span><span class="v"><%= @status.disk_percent %>%</span></li>
+      <li><span class="k"><%= icon "clock", size: 13 %> uptime</span><span class="v"><%= distance_of_time_in_words(0, @status.uptime_sec) %></span></li>
+    </ul>
+    <%# Hardening posture, read from the fact the box published (not a live check). %>
+    <%= hardening_line(@status) %>
+    <details>
+      <summary>raw</summary>
+      <pre class="raw"><%= JSON.pretty_generate(@status.raw) %></pre>
+    </details>
+  <% else %>
+    <p>Couldn't read this machine.</p>
+    <pre class="raw"><%= @status.error %></pre>
+  <% end %>
+  <p><%= button_link_to "Read Now", refresh_machine_path(@machine), icon: "eye", class: "btn" %></p>
+</div>
+
+<%# ── Apps on this box — read-only. App lifecycle (deploy, start/stop, remove, …)
+    happens on the Install page; here we just list what runs where, and link
+    through. See decisions/install-the-app-actions-home.md. The project is shown
+    only when there is one — an install needs no client. %>
+<% if @installs.any? %>
+  <h2>Apps</h2>
+  <ul class="box-apps">
+    <% @installs.each do |install| %>
+      <li>
+        <span class="app-name"><%= icon "box", size: 14 %>
+          <%= link_to install.name, install %></span>
+        <span class="app-project">
+          <%= link_to install.project.name, install.project if install.project %>
+        </span>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+
+<%# ── Apps on this box — steward-app's surface ─────────────────────────── %>
+<%# Exists only where the box reports the pack, and lists what the *box* says is
+    running, not what we think it should be. No Project required: a machine-view
+    deploy sends an AppConfig and keeps nothing. %>
+<% if @packs.apps? %>
+  <div class="panel observe">
+    <div class="kicker">Observe · apps (steward-app)</div>
+    <% if !@status.online? %>
+      <p class="muted">Unreachable — what is running here is unknown, not none.</p>
+    <% elsif @status.apps.empty? %>
+      <p class="muted">No apps on this box.</p>
+    <% else %>
+      <ul class="box-apps">
+        <% @status.apps.each do |app| %>
+          <li>
+            <span class="app-name"><%= icon "box", size: 14 %> <%= app["name"] %></span>
+            <span class="app-project"><%= app["image"] %></span>
+            <% if @machine.operate? %>
+              <%= button_to "Remove", machine_box_app_path(@machine, app["name"]),
+                    method: :delete, class: "btn-quiet",
+                    form: { data: { turbo_confirm: "Remove #{app['name']} from #{@machine.name}? This is a recorded act on the box." } } %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <% if @machine.operate? %>
+      <p><%= link_to "Deploy an app", new_machine_box_app_path(@machine), class: "btn" %></p>
+    <% else %>
+      <p class="muted">This machine's key carries observe scope — reads only.</p>
+    <% end %>
+  </div>
+<% end %>
+
+<%# ── Mutate (operate) vs. read-only (observe) ─────────────────────────── %>
+<% if @machine.operate? %>
+  <div class="panel mutate">
+    <div class="kicker">Mutate · witnessed</div>
+    <p>This machine's key carries <strong>operate</strong> scope. Machine-level acts are
+       previewed, then recorded before they run. App lifecycle lives on each app's project.</p>
+
+    <%# Maintenance is the surface: when the box patches/reboots on its own, and an "apply
+        now" when there's something pending. The package list is a hover detail, not the
+        headline. (Reschedule — changing the time — is the next slice.) %>
+    <% if @status.online? %>
+      <div class="maintenance">
+        <% if @status.maintenance_known? %>
+          <p class="maint-line"><%= icon "stethoscope", size: 14 %>
+            <strong>Maintenance — daily at <%= @status.maintenance_time %></strong></p>
+          <p class="muted maint-note">Security patches apply automatically<%=
+            ", and the box reboots then if a kernel update needs it" if @status.auto_reboot? %>.</p>
+        <% else %>
+          <p class="muted maint-line"><%= icon "stethoscope", size: 14 %> No automatic maintenance window set.</p>
+        <% end %>
+
+        <% if @status.updates_available? %>
+          <p class="maint-pending" title="<%= @status.update_packages.join("\n") %>">
+            <%= pluralize(@status.update_count, "update") %> pending<%= " — apply now, or wait for the window" if @status.maintenance_known? %>.
+          </p>
+          <div class="acts">
+            <%= link_to safe_join([ icon("stethoscope", size: 14), "Apply Now" ], " "),
+                  new_machine_mutation_path(@machine, act: "apply-updates"),
+                  class: "btn mutate", data: { turbo_frame: "ceremony" } %>
+          </div>
+          <p class="note">Runs <code>steward apply-updates</code> over scoped SSH.</p>
+        <% else %>
+          <p class="muted updates-current"><%= icon "circle-check", size: 14 %> Up to date.</p>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="muted">Can't read this box right now, so no acts are offered.</p>
+    <% end %>
+  </div>
+
+  <%# The ceremony lands here: pick an act → this frame fills with the preview of
+      the exact record line, then Confirm writes & runs it. %>
+  <%= turbo_frame_tag "ceremony" %>
+<% else %>
+  <div class="panel readonly">
+    <div class="kicker">Read-only</div>
+    <p class="note">This machine holds an <strong>observe</strong> key — Steward Console can
+       read it, but can't act on it. Grant <strong>operate</strong> to enable changes here.</p>
+  </div>
+<% end %>
+
+<h2>Record</h2>
+<%= record_integrity(@record) %>
+<%= render "events/chain", items: @chain, within: @machine %>
+
+<%# ── Remove — forget this box in the control plane. The box keeps running; this only
+    deletes Steward Console's record of it. An honest confirm, no blocking. %>
+<% remove_note = "Remove #{@machine.name} from Steward Console?\n\n" \
+                 "The box keeps running — this only forgets it here, and Steward Console's key " \
+                 "stays authorized until you revoke it on the box." %>
+<% remove_note += "\n\n#{pluralize(@installs.size, 'app')} deployed here will lose their deployment record." if @installs.any? %>
+<details class="access danger-remove">
+  <summary><%= icon "trash-2", size: 13 %> Remove this Machine</summary>
+  <p class="note">This only forgets <strong><%= @machine.name %></strong> in Steward Console — the box
+    keeps running, and Steward Console's key stays authorized until you revoke it on the box:</p>
+  <pre class="raw cmd"><%= @machine.revoke_command %></pre>
+  <% if @installs.any? %>
+    <p class="note muted"><%= pluralize(@installs.size, "app") %> deployed here
+      (<%= @installs.map(&:name).join(", ") %>) will lose their deployment record.</p>
+  <% end %>
+  <%= button_to safe_join([ icon("trash-2", size: 14), %(Remove "#{@machine.name}") ], " "),
+        machine_path(@machine), method: :delete, class: "btn danger",
+        data: { turbo_confirm: remove_note } %>
+</details>

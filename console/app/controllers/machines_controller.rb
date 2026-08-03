@@ -1,0 +1,174 @@
+class MachinesController < ApplicationController
+  before_action :set_machine, only: %i[ show refresh destroy sharing transfer ]
+
+  # All Machines — the fleet. Searchable by name/label; an "unowned" toggle filters
+  # to boxes with no owner (released/fleet-registered), with a light presence count
+  # so they're never lost (decisions/machine-ownership.md, list-search.md).
+  def index
+    @q             = params[:q]
+    @only_unowned  = params[:unowned].present?
+    @unowned_count = Machine.unowned.count
+
+    machines = @q.present? ? Machine.search(@q) : Machine.all
+    machines = machines.unowned if @only_unowned
+    @machines = machines.order(:name).includes(:projects, :owner, :labels)
+  end
+
+  # ── Onboarding (Add Machine) ───────────────────────────────────────────────
+  # Register an already-Steward-ready box: generate Steward Console's scoped keypair, then
+  # surface the `steward authorize` line to run on it. See machine-onboarding.md.
+  def new
+    @project  = Project.find_by(id: params[:project_id]) # when adding from a project's install flow
+    @projects = Project.order(:name) unless @project     # dropdown to pick an owner (optional)
+    @machine  = Machine.new(ssh_user: "steward", ssh_port: 22, scope: "operate")
+  end
+
+  def create
+    @project = Project.find_by(id: params[:project_id])
+    # Steward Console always connects as the steward user (scoped keys authenticate as it),
+    # so it's not a form choice.
+    @machine = Machine.new(machine_params.merge(ssh_user: "steward"))
+    # The name isn't typed — it mirrors the box. We can't read the box yet (it hasn't
+    # authorized our key), so seed it with the SSH host; the first observe renames it to
+    # the box's reported hostname (decisions/machine-name-mirrors-the-box.md).
+    @machine.name = @machine.ssh_host if @machine.name.blank?
+    keys = SshKeypair.generate(comment: "console@#{@machine.name}")
+    @machine.ssh_private_key = keys[:private]
+    @machine.ssh_public_key  = keys[:public]
+
+    # Owner: the project in the URL (install flow), or the one picked from the dropdown
+    # (optional — blank "Unassigned" leaves the box unowned).
+    owner = @project || Project.find_by(id: params.dig(:machine, :owner_id).presence)
+
+    if save_recording(@machine, link_to: owner)
+      notice = "Added #{@machine.name}. Run the authorize line on the box to connect it."
+      redirect_to(@project ? new_install_path(project_id: @project) : @machine, notice: notice)
+    else
+      @projects = Project.order(:name) unless @project
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  # The per-machine deep dive. Observe reads are cached (Decision 3): the live
+  # status, and the box's own record. The chain merges the two records — this
+  # machine's Steward Console events (authored) with the box record (witnessed).
+  def show
+    @status   = MachineStatus.from(Steward::Observe.status(@machine))
+    # What the box says may run on it. The machine view is pack-shaped: sections
+    # exist because the box reports the pack, not because we assumed it has one.
+    @packs    = PackState.new(Steward::Observe.packs(@machine))
+    @record   = Steward::Observe.record(@machine)
+    @chain    = chain_for(@machine, @record)
+    @installs = @machine.installs.includes(:project).order(:name) # placements on this box (project optional)
+    @projects = Project.order(:name) # for the ownership / sharing controls
+  end
+
+  # ── Observe ──────────────────────────────────────────────────────────────
+  # Re-read the machine's live status, bypassing the cache. A read: changes
+  # nothing on the box.
+  def refresh
+    Steward::Observe.status(@machine, refresh: true)
+    redirect_to @machine, notice: "Read #{@machine.name} from Steward."
+  end
+
+  # ── Remove ─────────────────────────────────────────────────────────────────
+  # Forget this box in the control plane. The box keeps running; this only deletes
+  # Steward Console's record of it (its key stays authorized on the box until revoked
+  # there). A recorded own-record act. `events: :nullify` keeps the record intact;
+  # the join, targets, snapshots, and labels cascade.
+  def destroy
+    # Don't let a box that's still serving apps be forgotten — the apps would keep
+    # running with the control plane blind to them (decisions/open/status-signals.md).
+    # Remove the installs first (or migrate them away, once that verb exists).
+    live = @machine.install_targets.where.not(status: "retired").includes(:install)
+    if live.any?
+      apps = live.map { |t| t.install.name }.uniq
+      return redirect_to @machine,
+        alert: "#{@machine.name} still runs #{apps.to_sentence} — remove #{apps.one? ? "that app" : "those apps"} first."
+    end
+
+    name = @machine.name
+    Machine.transaction do
+      @machine.destroy!
+      Event.record!(actor: Current.user.email_address, action: "removed machine",
+                    summary: "Removed #{name} from Steward Console")
+    end
+    redirect_to machines_path,
+                notice: "Removed #{name}. The box keeps running — revoke Steward Console's key on it to cut access."
+  end
+
+  # ── Sharing & ownership (the Access panel) ─────────────────────────────────
+  # Set how the box is shared: dedicated (owner only) / everyone / list (owner +
+  # allowlist). A recorded own-record act. machine-ownership.md.
+  def sharing
+    mode = params.require(:machine).permit(:sharing)[:sharing]
+    Machine.transaction do
+      @machine.update!(sharing: mode)
+      Event.record!(actor: Current.user.email_address, action: "set sharing",
+                    machine: @machine, summary: "Set #{@machine.name} sharing to #{mode}")
+    end
+    redirect_to @machine, notice: "Updated sharing for #{@machine.name}."
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to @machine, alert: e.message
+  end
+
+  # Transfer ownership to another project, or release to no one (unowned). Never a
+  # silent change — always this explicit, recorded act. Releasing is what unblocks
+  # deleting the former owner. Existing installs are untouched.
+  def transfer
+    owner = Project.find_by(id: params.dig(:machine, :owner_id).presence)
+    Machine.transaction do
+      @machine.update!(owner: owner)
+      summary = owner ? "Transferred #{@machine.name} to #{owner.name}" :
+                        "Released #{@machine.name} — now unowned"
+      Event.record!(actor: Current.user.email_address,
+                    action: owner ? "transferred machine" : "released machine",
+                    machine: @machine, project: owner, summary: summary)
+    end
+    redirect_to @machine, notice: owner ? "Transferred to #{owner.name}." : "Released — now unowned."
+  end
+
+  private
+
+  def set_machine
+    @machine = Machine.find(params[:id])
+  end
+
+  def machine_params
+    # No :name — it's not typed; it mirrors the box (seeded from ssh_host, then the
+    # box's hostname on first read). See create + observe-reconciliation.
+    params.require(:machine).permit(:ssh_host, :ssh_port, :scope)
+  end
+
+  # Persist the new machine and record it atomically, optionally linking it to a
+  # project — which then *owns* the box (the common case: you register a box for a
+  # client from their install flow). A fleet-registered box (no project) is born
+  # unowned, surfaced on the machines page. Report invalid on failure.
+  def save_recording(machine, link_to: nil)
+    Machine.transaction do
+      machine.owner = link_to if link_to
+      machine.save!
+      ProjectMachine.create!(project: link_to, machine: machine) if link_to
+      summary = "Added #{machine.name} (#{machine.scope})"
+      summary += " to #{link_to.name}" if link_to
+      Event.record!(actor: Current.user.email_address, action: "added machine",
+                    machine: machine, project: link_to, summary: summary)
+    end
+    true
+  rescue ActiveRecord::RecordInvalid => e
+    @machine.errors.add(:base, e.message) if @machine.errors.empty?
+    false
+  end
+
+  # Merge the two records into one newest-first timeline: this machine's
+  # Steward Console events (authored) + the box's own record (witnessed, unless our
+  # own client issued it). See decisions/two-records.md.
+  def chain_for(machine, record)
+    client = ENV.fetch("STEWARD_CLIENT_NAME", "console")
+    own = machine.events.latest.includes(:project, :install).limit(40)
+                 .map { |e| ChainItem.from_event(e) }
+    box = (record.dig(:data, "data", "entries") || [])
+            .map { |e| ChainItem.from_record_entry(e, client: client) }
+    (own + box).sort_by(&:at).reverse.first(40)
+  end
+end

@@ -1,0 +1,42 @@
+<% content_for :title, "Deploy an app — #{@machine.name}" %>
+
+<h1><%= icon "box", size: 20 %> Deploy an app to <%= link_to @machine.name, @machine %></h1>
+
+<p class="muted">
+  Paste the app's <a href="/packs.html#appconfig">AppConfig</a>. It is sent to the box
+  and <strong>not kept here</strong> — what happens next is read back from the machine,
+  whose record is the record. Nothing on this page becomes a stored plan.
+</p>
+
+<% if @error.present? %>
+  <div class="panel mutate">
+    <h2><%= icon "triangle-alert", size: 16 %> Not deployed</h2>
+    <p><%= @error %></p>
+  </div>
+<% end %>
+
+<%= form_with url: machine_box_apps_path(@machine), method: :post do |f| %>
+  <div class="field">
+    <%= f.label :name, "App name" %>
+    <%= f.text_field :name, value: @name, autocomplete: "off", spellcheck: false,
+          placeholder: "web", required: true %>
+    <p class="hint">Letters, digits, dashes, underscores. This is the name the box files it under.</p>
+  </div>
+
+  <div class="field">
+    <%= f.label :config, "AppConfig (JSON)" %>
+    <%= f.text_area :config, value: @config, rows: 16, spellcheck: false,
+          placeholder: '{ "image": "…@sha256:…", "hostnames": ["app.example.com"], "port": 8080 }' %>
+    <p class="hint">
+      Secret <em>values</em> in here ride stdin to the box — they never reach the
+      recorded command line, and they are not logged or stored by the console.
+    </p>
+  </div>
+
+  <div class="panel mutate">
+    <div class="kicker">Mutate · witnessed</div>
+    <p>Deploying is a recorded act: an entry is written on the box before it runs.</p>
+    <%= f.submit "Deploy to #{@machine.name}", class: "btn" %>
+    <%= link_to "Cancel", @machine, class: "btn-quiet" %>
+  </div>
+<% end %>

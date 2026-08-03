@@ -1,0 +1,134 @@
+/*
+ * Steward Console — the human interface to the platform.
+ *
+ * The spine is observe vs mutate, and the UI is built to make that line visible:
+ *   .observe  — neutral, calm. Reading the record changes nothing.
+ *   .mutate   — bordered, amber, labelled "witnessed". Acting is accountable.
+ */
+
+/*
+ * Theme tokens. One semantic layer; skins/dark themes override these variables
+ * and nothing else has to change. The default skin is light; [data-theme="dark"]
+ * (set on <html> by the toggle, or by the OS when no choice is stored) swaps the
+ * surfaces while keeping the observe/mutate accent language intact.
+ */
+/*
+ * The palette has three jobs, kept apart on purpose:
+ *   accent  — interactive identity: links, buttons, active nav, focus. Auburn
+ *             in light, neon in dark. This is what you click.
+ *   observe — the read side of the spine (calm blue). Panels, kickers, badges.
+ *   mutate  — the write side of the spine (witnessed amber). Panels, badges.
+ * Plus warm neutrals (light) / cool neutrals (dark) so the accent reads
+ * intentional, and a fixed health scale (green/yellow/red).
+ */
+:root {
+  /* neutral grayscale — boring on purpose; the red is a hint, not the mood */
+  --ink: #18181b;          /* primary text  (16:1 on bg) */
+  --muted: #52525b;        /* secondary text (7.4:1 on bg — AA) */
+  --line: #e4e4e7;         /* hairlines, borders */
+  --bg: #fafafa;           /* page */
+  --card: #ffffff;         /* raised surface */
+  --inset: #f4f4f5;        /* recessed surface (metrics, code) */
+
+  --mono: ui-monospace, SFMono-Regular, Menlo, "Cascadia Code", "Liberation Mono", monospace;
+
+  /* accent — a serious admin red, used sparingly (5.9:1 on white — AA) */
+  --accent: #b91c1c;
+  --accent-bright: #991b1b; /* hover — darker, stays AA */
+  --accent-soft: #fef2f2;   /* wash / hover fill */
+
+  /* observe — calm steel-blue, kept off the chrome (5.6:1 — AA) */
+  --observe: #2f6396;
+  --observe-soft: #eef3f8;
+  /* mutate — witnessed amber (5.2:1 — AA) */
+  --mutate: #b45309;
+  --mutate-bg: #fdf6ec;
+  --mutate-line: #ecca8e;
+  --mutate-soft: #f7ead0;
+
+  --ok: #157f3c;           /* 4.8:1 — AA */
+  --bad: #b91c1c;
+  --bad-soft: #fef2f2;
+  --warn: #b45309;
+
+  /* health dots — graphical (need 3:1, not text contrast) */
+  --dot-green: #16a34a;
+  --dot-yellow: #b88407;
+  --dot-red: #d23f31;
+  --dot-gray: #9ca3af;
+
+  --raw-bg: #1e1e22;       /* neutral dark code surface */
+  --raw-ink: #e4e4e7;
+
+  /* the sidebar rail — a neutral near-black admin rail, red spark on the
+   * active item (the admin-console signature beside a bright canvas) */
+  --rail-bg: #18181b;
+  --rail-ink: #e4e4e7;
+  --rail-muted: #a1a1aa;   /* 7:1 on rail — AA */
+  --rail-line: #27272a;
+  --rail-active-bg: rgba(255, 255, 255, 0.08);
+  --rail-active-ink: #ffffff;
+  --rail-accent: #ef4444;  /* red spark on the active item */
+}
+
+[data-theme="dark"] {
+  /* cool near-black neutrals */
+  --ink: #e5e8ec;
+  --muted: #8b94a1;
+  --line: #262c35;
+  --bg: #0e1116;
+  --card: #161a21;
+  --inset: #1c212a;
+
+  /* accent — neon lime-green: the terminal-coder signal you click */
+  --accent: #74e88c;
+  --accent-bright: #9bf2ab;
+  --accent-soft: #112619;
+
+  /* observe — a brighter blue, distinct from both the lime accent and amber */
+  --observe: #8ec0ff;
+  --observe-soft: #16233d;
+  --mutate: #fbbf24;
+  --mutate-bg: #241d0e;
+  --mutate-line: #7c5b12;
+  --mutate-soft: #2e2410;
+
+  --ok: #4ade80;
+  --bad: #f87171;
+  --bad-soft: #2a1416;
+  --warn: #fbbf24;
+
+  --dot-green: #34d399;
+  --dot-yellow: #facc15;
+  --dot-red: #f87171;
+  --dot-gray: #6b7280;
+
+  --raw-bg: #05080d;
+  --raw-ink: #cdd6e3;
+
+  /* rail — near-black with a magenta spark; lime + magenta = the coder duotone */
+  --rail-bg: #0a0d11;
+  --rail-ink: #cdd6e3;
+  --rail-muted: #828e9e;   /* 5.9:1 on rail — AA */
+  --rail-line: #1a1f27;
+  --rail-active-bg: rgba(232, 121, 249, 0.12);
+  --rail-active-ink: #f4e9fb;
+  --rail-accent: #e879f9;  /* magenta glow on the active item */
+}
+
+/* Follow the OS when the operator hasn't picked a theme explicitly. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --ink: #e5e8ec; --muted: #8b94a1; --line: #262c35;
+    --bg: #0e1116; --card: #161a21; --inset: #1c212a;
+    --accent: #74e88c; --accent-bright: #9bf2ab; --accent-soft: #112619;
+    --observe: #8ec0ff; --observe-soft: #16233d;
+    --mutate: #fbbf24; --mutate-bg: #241d0e; --mutate-line: #7c5b12; --mutate-soft: #2e2410;
+    --ok: #4ade80; --bad: #f87171; --bad-soft: #2a1416; --warn: #fbbf24;
+    --dot-green: #34d399; --dot-yellow: #facc15; --dot-red: #f87171; --dot-gray: #6b7280;
+    --raw-bg: #05080d; --raw-ink: #cdd6e3;
+    --rail-bg: #0a0d11; --rail-ink: #cdd6e3; --rail-muted: #828e9e;
+    --rail-line: #1a1f27; --rail-active-bg: rgba(232, 121, 249, 0.12);
+    --rail-active-ink: #f4e9fb; --rail-accent: #e879f9;
+  }
+}

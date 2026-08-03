@@ -1,0 +1,29 @@
+<%# Labels on a machine or project. One set of tags; the Edit toggle reveals a
+    per-label trash and the add form. Each change is recorded with attribution. %>
+<% add_url = case labelable
+   when Machine then machine_labels_path(labelable)
+   when App then app_labels_path(labelable)
+   else project_labels_path(labelable)
+   end %>
+<div class="labels-editor" data-controller="labels">
+  <span class="labels-title">Labels</span>
+  <span class="labels">
+    <% labelable.labels.sort_by(&:key).each do |label| %>
+      <span class="label">
+        <span class="lk"><%= label.key %></span><% if label.value.present? %><span class="lv"><%= label.value %></span><% end %>
+        <%= link_to label_path(label), class: "label-del", title: "Remove (recorded)",
+              data: { turbo_method: :delete, turbo_confirm: "Remove #{label} (recorded)?" } do %><%= icon "trash-2", size: 12 %><% end %>
+      </span>
+    <% end %>
+  </span>
+
+  <button type="button" class="labels-toggle" data-action="labels#toggle">
+    <%= icon "pencil", size: 13, css_class: "icon-edit" %><%= icon "check", size: 14, css_class: "icon-done" %><span data-labels-target="toggleText">Edit</span>
+  </button>
+
+  <%= form_with url: add_url, method: :post, class: "labels-add" do %>
+    <input type="text" name="label[key]" placeholder="key" required>
+    <input type="text" name="label[value]" placeholder="value (optional)">
+    <%= submit_tag "Add", class: "btn" %>
+  <% end %>
+</div>

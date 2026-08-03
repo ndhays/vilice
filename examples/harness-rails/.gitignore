@@ -1,0 +1,19 @@
+# See https://help.github.com/articles/ignoring-files for more about ignoring files.
+
+# Ephemeral files and runtime state.
+/log/*
+/tmp/*
+/storage/*
+!/log/.keep
+!/tmp/.keep
+
+# Bundled gems installed into the app.
+/.bundle
+/vendor/bundle
+
+# Local dev secret Rails writes when no master key is present.
+/tmp/local_secret.txt
+
+# Keys never belong in the repo — this app ships none.
+/config/master.key
+/config/credentials/*.key

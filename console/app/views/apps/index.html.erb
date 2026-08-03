@@ -1,0 +1,56 @@
+<% content_for :title, "App Library — Steward Console" %>
+
+<%= page_header "App Library", icon: "library-big" do %>
+  <%= button_link_to "Add App", new_app_path, icon: "plus", class: "btn sm" %>
+
+  <span class="head-divider" aria-hidden="true"></span>
+
+  <%# Import — a small menu, since a manifest can come from a file or a URL (the
+      marketplace path). Degrades to two plain forms with no JS. %>
+  <details class="menu">
+    <summary class="btn sm"><%= safe_join([ icon("file-up", size: 14), "Import Library" ], " ") %></summary>
+    <div class="menu-pop">
+      <%= form_with url: import_apps_path, method: :post, html: { multipart: true }, class: "menu-form" do |f| %>
+        <span class="menu-label">From a file</span>
+        <%= f.file_field :file, accept: ".yml,.yaml", required: true %>
+        <%= f.submit "Import file", class: "btn-quiet" %>
+      <% end %>
+      <div class="menu-rule"></div>
+      <%= form_with url: import_apps_path, method: :post, class: "menu-form" do |f| %>
+        <span class="menu-label">From a URL</span>
+        <%= f.url_field :url, placeholder: "https://applibrary.agoraforge.org/…", required: true %>
+        <%= f.submit "Import URL", class: "btn-quiet" %>
+      <% end %>
+    </div>
+  </details>
+
+  <% if App.exists? %>
+    <%= button_link_to "Export Library", export_apps_path, icon: "file-down", class: "btn sm" %>
+  <% end %>
+<% end %>
+
+<% if @apps.any? || @q.present? %>
+  <div class="list-managed" data-controller="selection">
+    <%= render layout: "shared/list_toolbar",
+          locals: { search_url: apps_path, q: @q, placeholder: "name  ·  key=value label" } do %>
+      <%= button_tag type: "submit", form: "apps-bulk", class: "btn-quiet danger",
+            formnovalidate: true, disabled: true, data: { selection_target: "action" } do %>
+        <%= safe_join([ icon("trash-2", size: 14), "Remove" ], " ") %>
+      <% end %>
+    <% end %>
+
+    <% if @apps.any? %>
+      <%= form_with url: remove_selected_apps_path, method: :delete, id: "apps-bulk",
+            data: { turbo_confirm: "Remove the selected apps from the App Library?" } do %>
+        <ul class="rows app-rows">
+          <%= render partial: "apps/row", collection: @apps, as: :app %>
+        </ul>
+      <% end %>
+    <% else %>
+      <p class="empty">No apps match this search.</p>
+    <% end %>
+  </div>
+<% else %>
+  <p class="empty">No apps yet. <%= link_to "Add one", new_app_path %>, or
+    <a href="https://applibrary.agoraforge.org">browse shared libraries</a> to import.</p>
+<% end %>

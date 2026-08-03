@@ -1,0 +1,89 @@
+/* ── Breadcrumb — the file-system path feel ─────────────────────────────── */
+.breadcrumb {
+  display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 0.82rem; color: var(--muted); margin-bottom: 1.1rem;
+}
+.breadcrumb .crumb { color: var(--muted); }
+.breadcrumb a.crumb:hover { color: var(--accent); text-decoration: none; }
+.breadcrumb .crumb.current { color: var(--ink); font-weight: 600; }
+.breadcrumb .crumb-sep { color: var(--line); }
+
+h1 {
+  font-size: 1.6rem; margin: 0 0 1rem; letter-spacing: -0.02em; line-height: 1.15;
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+/* …but when a health/address/label line follows, it belongs with the title. */
+h1:has(+ .health-line), h1:has(+ .addr), h1:has(+ .label-row), h1:has(+ .spec-row) { margin-bottom: 0.3rem; }
+/* Optically settle the title icon + badges against a lowercase title (their
+ * boxes center higher than lowercase x-height, so nudge them down to meet it).
+ * Scope the icon nudge to the *direct* title icon — not icons inside badges. */
+h1 > .icon { margin-top: 3px; }
+h1 > .badge { margin-top: 5px; }
+h2 { font-size: 1.15rem; margin: 2.5rem 0 1rem; }
+.subtitle { color: var(--muted); margin: 0 0 1.5rem; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.card .title { font-weight: 600; line-height: 1.2; display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+.card .meta { color: var(--muted); font-size: 0.9rem; }
+
+.card .meta.mono { overflow-wrap: anywhere; }
+.card-actions { display: flex; gap: 0.4rem; margin-top: 0.75rem; }
+
+/* Projects et al. — a real responsive card grid. */
+.grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+
+/* A page header with a primary action pushed to the right (App Library, …). */
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.page-head h1 { margin: 0; }
+.head-actions { display: flex; align-items: center; gap: 0.5rem; }
+/* A hairline that sets a primary action (Add) apart from secondary ones (Import/Export). */
+.head-divider { width: 1px; height: 1.4rem; background: var(--line); margin: 0 0.15rem; }
+/* A section heading (h2) with an action on the right (e.g. project Installs + Add). */
+/* A section heading + its action on one line, vertically centred and evenly
+   spaced from the content above and below — consistent whether the list is empty
+   or full. The h2 carries no margin of its own so it centres cleanly on the button. */
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 1.6rem 0 0.7rem; }
+.section-head h2 { margin: 0; }
+
+/* Settings — fleet info at the top, then one card per setting, one Save below. */
+.fleet-info { margin: 0.4rem 0 1.75rem; }
+.fleet-info .kicker {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); margin-bottom: 0.3rem;
+}
+.fleet-info p { margin: 0; }
+.card.setting { padding: 1.1rem 1.35rem; }
+.card.setting .title { margin-bottom: 0.85rem; }
+.card.setting.account { margin-top: 2rem; }
+.card.setting.danger-zone { margin-top: 2rem; }
+.toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.toggle input { width: 1rem; height: 1rem; accent-color: var(--accent); flex: none; }
+
+/* About — not a card: a plain colophon with business-card headings. */
+.about { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.about h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+.about p { max-width: 46rem; }
+.about-meta { margin: 1.25rem 0 0; display: grid; gap: 1rem 2.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, max-content)); }
+.about-meta dt {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); margin-bottom: 0.2rem;
+}
+.about-meta dd { margin: 0; font-size: 0.9rem; }
+
+/* Access — Steward Console's key + the authorize line for a machine. */
+.access { margin: 0.6rem 0 1rem; border: 1px solid var(--line); border-radius: 9px; padding: 0.6rem 0.85rem; background: var(--card); }
+.access summary { cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; }
+.access summary .icon { color: var(--observe); }
+.access .note { margin: 0.5rem 0 0.3rem; font-size: 0.88rem; }
+.access pre.cmd { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.78rem; }
+.danger-remove { margin-top: 1.75rem; }
+.danger-remove summary .icon { color: var(--bad); }
+.danger-remove .btn { margin-top: 0.6rem; }

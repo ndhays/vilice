@@ -1,0 +1,12 @@
+# Keep the build context (and the image) small and key-free.
+.git
+.gitignore
+tmp/
+log/
+test/
+storage/
+.bundle/
+vendor/bundle/
+config/master.key
+config/credentials*.yml.enc
+*.md

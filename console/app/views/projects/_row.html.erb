@@ -1,0 +1,16 @@
+<%# One project as a compact list row — reused by the Projects index (starred and
+    all). What the row is for: the client, how much it runs, who to contact.
+    Reuses the .rows machinery (see lists.css, .project-rows). %>
+<li class="row">
+  <span class="cell-name">
+    <span class="row-icon"><%= icon "handshake", size: 15 %></span>
+    <%= link_to project.name, project, class: "row-name" %>
+    <% if project.starred? %><span class="star" title="starred">★</span><% end %>
+  </span>
+  <span class="cell-counts">
+    <%= pluralize(project.installs.size, "install") %> ·
+    <%= pluralize(project.machines.size, "machine") %>
+  </span>
+  <span class="cell-labels"><%= label_badges(project) %></span>
+  <span class="cell-contact"><%= project.contact_name %></span>
+</li>

@@ -1,0 +1,48 @@
+<%# Reusable list toolbar — one line: a master select-all + live count, a search
+    box, then a slot for bulk actions. Native-adjacent: like a file manager's list
+    header (select on the left, find in the middle, act-on on the right).
+
+    Render it *inside* an element carrying `data-controller="selection"` that also
+    wraps the list, so the Stimulus controller can see both the toolbar and the rows.
+    Bulk buttons live in the yielded block; give each `form: <form_id>` (so it acts on
+    the list's form, which lives outside this toolbar) and `data: { selection_target:
+    "action" }` (so it disables until rows are picked).
+
+    Locals:
+      select_label: — count text when nothing is picked (default "Select all")
+      search_url:   — GET path for the search form (omit to drop search)
+      q:            — current query
+      placeholder:  — search placeholder %>
+<div class="list-toolbar">
+  <% if local_assigns[:search_url] %>
+    <%= form_with url: search_url, method: :get, class: "toolbar-search" do |f| %>
+      <%# Carry sibling filters (e.g. an active toggle) through a search submit. %>
+      <% (local_assigns[:hidden] || {}).each do |k, v| %>
+        <%= hidden_field_tag k, v if v.present? %>
+      <% end %>
+      <span class="filter-search">
+        <%= icon "search", size: 15 %>
+        <%= f.search_field :q, value: local_assigns[:q], autocomplete: "off",
+              spellcheck: false, placeholder: local_assigns[:placeholder] %>
+      </span>
+      <%= f.submit "Search", class: "btn sm" %>
+      <% if local_assigns[:q].present? %>
+        <%= link_to "Clear", search_url, class: "filter-clear" %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <span class="toolbar-spacer"></span>
+
+  <%# Selection sits with the action it feeds: select-all, then the bulk buttons.
+      Omit it (selectable: false) for a search-only toolbar with no bulk actions. %>
+  <% if local_assigns.fetch(:selectable, true) %>
+    <div class="toolbar-actions">
+      <label class="toolbar-select">
+        <input type="checkbox" data-selection-target="all" data-action="selection#toggleAll">
+        <span class="toolbar-count" data-selection-target="count"><%= local_assigns[:select_label] || "Select All" %></span>
+      </label>
+      <%= yield %>
+    </div>
+  <% end %>
+</div>

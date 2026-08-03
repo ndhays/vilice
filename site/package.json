@@ -1,0 +1,15 @@
+{
+  "name": "steward-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Steward documentation site, built with Web Origami.",
+  "scripts": {
+    "prebuild": "node scripts/check-release.js",
+    "build": "ori copy site.ori, clear files:dist",
+    "serve": "ori serve site.ori"
+  },
+  "dependencies": {
+    "@weborigami/origami": "^0.6.17"
+  }
+}

@@ -1,0 +1,25 @@
+<%# The witnessed app verbs for one install on one machine. Rendered by both the
+    machine page (the box / sysadmin lens) and the install page (the app / Steward Console
+    lens) — see decisions/install-the-app-actions-home.md. `from` tells the ceremony
+    where to return ("install" → the install page; anything else → the machine page).
+    Each link fills the page's #ceremony frame with the preview. Locals: install,
+    machine, from. %>
+<span class="acts-app-verbs">
+  <%# Already running here, so deploy reads "Re-deploy"; first-install from the
+      Library reads "Install". %>
+  <%= link_to "Re-deploy",
+        new_machine_mutation_path(machine, act: "deploy", install_id: install.id, from: from),
+        class: "btn-quiet mutate deploy-verb", data: { turbo_frame: "ceremony" } %>
+  <%= link_to "Roll back",
+        new_machine_mutation_path(machine, act: "rollback", install_id: install.id, from: from),
+        class: "btn-quiet mutate deploy-verb", data: { turbo_frame: "ceremony" } %>
+  <span class="verb-sep"></span>
+  <% Mutation::LIFECYCLE.each do |verb| %>
+    <%= link_to verb.capitalize,
+          new_machine_mutation_path(machine, act: verb, install_id: install.id, from: from),
+          class: "btn-quiet mutate", data: { turbo_frame: "ceremony" } %>
+  <% end %>
+  <%= link_to "Remove",
+        new_machine_mutation_path(machine, act: "remove", install_id: install.id, from: from),
+        class: "btn-quiet danger", data: { turbo_frame: "ceremony" } %>
+</span>

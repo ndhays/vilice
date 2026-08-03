@@ -1,0 +1,28 @@
+<%# The chain — the two records merged into one timeline, newest first
+    (decisions/two-records.md). Each entry is a named actor doing one act at one
+    time. Mutations carry the amber dot; acts only *witnessed* from the box record
+    (not issued by this Steward Console) are marked as such. %>
+<% within = local_assigns[:within] %>
+<% if items.any? %>
+  <ol class="chain">
+    <% items.each do |item| %>
+      <li class="chain-entry <%= event_kind(item) %><%= " is-#{item.outcome}" if item.outcome.present? %>">
+        <span class="chain-dot"><%= icon event_icon_name(item), size: 13 %></span>
+        <div class="chain-body">
+          <div class="chain-line">
+            <span class="chain-what"><%= item.summary %></span>
+            <% if item.witnessed? %><span class="tag witnessed" title="Seen in the box record — not issued by this Steward Console">witnessed</span><% end %>
+            <%= outcome_tag(item) %>
+          </div>
+          <div class="chain-meta">
+            <span class="chain-actor mono"><%= item.actor %></span>
+            <% if (ctx = event_context(item, within: within)) %> · <%= ctx %><% end %>
+            · <time title="<%= item.at %>"><%= time_ago_in_words(item.at) %> ago</time>
+          </div>
+        </div>
+      </li>
+    <% end %>
+  </ol>
+<% else %>
+  <p class="empty">Nothing recorded yet.</p>
+<% end %>

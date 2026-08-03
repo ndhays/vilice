@@ -1,0 +1,25 @@
+# Go
+/steward/bin/
+/steward/dist/
+# stray binary from a bare `go build .` (canonical build → bin/)
+/steward/steward
+*.test
+*.out
+
+# Release artifacts (regenerated; signed binaries published elsewhere)
+/release/published/
+
+# Docs site
+/site/node_modules/
+/site/dist/
+
+# OS / editor cruft
+.DS_Store
+*.swp
+*~
+
+# A local App Library manifest (exported/imported via the App Library page). Kept
+# out of the repo — share libraries via a marketplace, not a commit. See
+# decisions/open/app-library.md.
+/console/db/library.yml
+/console/db/library/

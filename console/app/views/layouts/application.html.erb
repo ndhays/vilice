@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Steward Console" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%# Apply the stored skin before paint so there's no flash of the wrong theme. %>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t) document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Steward Console">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
+    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%# Stylesheets, loaded in cascade order: tokens first, then base, then
+        structure, then components. See app/assets/stylesheets/README.md. %>
+    <%= stylesheet_link_tag "tokens", "base", "layout", "forms", "lists", "record",
+          "widgets", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body>
+    <% if authenticated? %>
+      <div class="layout">
+        <nav class="sidebar">
+          <%= link_to root_path, class: "brand" do %>
+            <span class="mark">
+              <svg width="22" height="22" viewBox="0 0 70 70" fill="none" aria-hidden="true">
+                <rect x="10" y="8" width="50" height="10" rx="5" fill="currentColor" opacity="0.25"/>
+                <circle cx="55" cy="13" r="5" fill="currentColor"/>
+                <rect x="10" y="24" width="50" height="10" rx="5" fill="currentColor" opacity="0.25"/>
+                <circle cx="15" cy="29" r="5" fill="currentColor"/>
+                <rect x="10" y="40" width="50" height="10" rx="5" fill="currentColor" opacity="0.25"/>
+                <circle cx="55" cy="45" r="5" fill="currentColor"/>
+                <rect x="10" y="56" width="50" height="10" rx="5" fill="currentColor" opacity="0.6"/>
+              </svg>
+            </span>Steward Console
+          <% end %>
+          <%= link_to root_path, class: "nav #{'active' if controller_name == 'home'}" do %>
+            <%= icon "activity", size: 16 %>Status
+          <% end %>
+          <%= link_to projects_path, class: "nav #{'active' if controller_name == 'projects'}" do %>
+            <%= icon "handshake", size: 16 %>Projects
+          <% end %>
+          <%= link_to machines_path, class: "nav #{'active' if controller_name == 'machines'}" do %>
+            <%= icon "hard-drive", size: 16 %>Machines
+          <% end %>
+          <%# Placement sits between the box it lands on and the client it's for —
+              each ring optional above the one below (decisions/console-layers.md). %>
+          <%= link_to installs_path, class: "nav #{'active' if controller_name == 'installs'}" do %>
+            <%= icon "box", size: 16 %>Installs
+          <% end %>
+          <%= link_to record_path, class: "nav #{'active' if controller_name == 'record'}" do %>
+            <%= icon "disc", size: 16 %>Record
+          <% end %>
+          <%= link_to access_path, class: "nav #{'active' if controller_name == 'access'}" do %>
+            <%= icon "key-round", size: 16 %>Access
+          <% end %>
+          <%= link_to apps_path, class: "nav #{'active' if controller_name == 'apps'}" do %>
+            <%= icon "library-big", size: 16 %>App Library
+          <% end %>
+          <%= link_to settings_path, class: "nav #{'active' if controller_name == 'settings'}" do %>
+            <%= icon "settings", size: 16 %>Settings
+          <% end %>
+          <span class="spacer"></span>
+          <div class="rail-foot">
+            <button type="button" class="theme-toggle" title="Toggle light / dark"
+                    data-controller="theme" data-action="theme#toggle" aria-label="Toggle theme">
+              <%= icon "moon", size: 16, css_class: "icon-moon" %><%= icon "sun", size: 16, css_class: "icon-sun" %>
+            </button>
+            <span class="spacer"></span>
+            <%= button_to session_path, method: :delete, class: "btn" do %>
+              <%= safe_join([ icon("log-out", size: 14), "Sign Out" ], " ") %>
+            <% end %>
+          </div>
+        </nav>
+
+        <div class="main">
+          <main>
+            <% if flash[:notice] %><div class="flash notice"><%= flash[:notice] %></div><% end %>
+            <% if flash[:alert] %><div class="flash alert"><%= flash[:alert] %></div><% end %>
+            <%= yield %>
+          </main>
+        </div>
+      </div>
+    <% else %>
+      <main>
+        <% if flash[:notice] %><div class="flash notice"><%= flash[:notice] %></div><% end %>
+        <% if flash[:alert] %><div class="flash alert"><%= flash[:alert] %></div><% end %>
+        <%= yield %>
+      </main>
+    <% end %>
+  </body>
+</html>

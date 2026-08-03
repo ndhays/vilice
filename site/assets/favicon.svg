@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Steward">
+  <rect width="64" height="64" rx="12" fill="#1c2230"/>
+  <g fill="none" stroke="#e7b15b" stroke-width="5" stroke-linecap="round">
+    <!-- main rail -->
+    <path d="M10 40 H54"/>
+    <!-- diverging rail (the switch) -->
+    <path d="M10 40 Q34 40 54 20"/>
+  </g>
+  <!-- ties -->
+  <g stroke="#566079" stroke-width="3" stroke-linecap="round">
+    <path d="M16 46 V34"/>
+    <path d="M28 46 V34"/>
+    <path d="M40 46 V34"/>
+  </g>
+  <!-- switch point -->
+  <circle cx="10" cy="40" r="4.5" fill="#e7b15b"/>
+</svg>

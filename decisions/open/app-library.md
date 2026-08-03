@@ -1,0 +1,58 @@
+# Steward Console — App Library (open items)
+
+> The App Library is **built and graduated**: the operator-facing flow is in
+> [`blueprint/console/journeys.md`](../../blueprint/console/journeys.md), the model
+> (`App → Version`, the three-tier `App → Install → InstallTarget`, the manifest) in
+> [`blueprint/console/data-model.md`](../../blueprint/console/data-model.md), and the
+> manifest *why* in [`../app-library-manifest.md`](../app-library-manifest.md). What remains
+> here is the **governing principle** and the open items.
+
+**Last touched:** 2026-06-16.
+
+---
+
+## The governing principle: two separate layers
+
+These are **different features on different layers**, not two answers to one question — and
+keeping them apart is the point. It explains why the allowlist below is a separate, open,
+Steward-side item rather than a property of the (built) library.
+
+- **Steward Console App Library — bookmarking / curation.** Built. A directory the admin curates;
+  saved definitions used to install quickly and consistently. A convenience layer. **Not a
+  security boundary.**
+- **Steward image allowlist — security.** Separate, simple, maybe later. The box refuses any
+  image not on an authorized allowlist (`authorized_keys`, but for images) —
+  **un-bypassable**. Its own Steward-side feature + decision. The `installs_library_only`
+  setting *may* later be backed by it for real teeth, but the two ship independently.
+
+Convenience lives in Steward Console; un-bypassability lives on the box (the scoped `operate` key
+is the real ceiling today — a key-holder can `steward deploy <any-image>` directly).
+
+## Open
+
+- **Env value-half (#14-B).** The declaration half is built (`App.env` as `{ key, secret }`,
+  `App.secret_files`). Still open: the install/redeploy form collects the **values** (env
+  recorded; secret + file values off-record on stdin) and `Install#deploy_envelope` carries
+  `secrets`/`secret_files`/`secret_values`. The env schema sits on the **App** (stable across
+  versions); per-version overrides and the dropped `default`/`required?` fields are a later
+  option. See [`console-open-questions.md`](console-open-questions.md).
+- **Image granularity** — repo-level (any digest from `ghcr.io/acme/web`) vs. digest-level.
+  Lean repo-level + digest-pinned deploys for v1.
+- **Global vs. per-project** library — lean global v1; per-project later (multi-tenant).
+- **Registry tag auto-discovery**, version notes / yank.
+- **Marketplace** — a shared, online library index (`applibrary.agoraforge.org`).
+  Import-from-URL is built (`Library.fetch` + the Import menu); the **index** is what's
+  missing, plus an *official* manifest field for categories (separate from local labels).
+  Hardening note: `fetch` is admin-only/admin-trusted and does **not** yet refuse private
+  address ranges (SSRF).
+- **Seed from a repo manifest** — a checked-in `db/library.yml` that seeds installs.
+  Deferred; a local library file is gitignored for now (share via the marketplace).
+- **Demo library + harness — built, threads paused (2026-06-15).** `examples/library.yml`
+  (10 apps) and the integration-test app `examples/harness-rails/` are committed. Paused: a
+  **Node twin** (`examples/harness-node/`), a **websocket `/ws` drain** endpoint, **digest-
+  pinning** the library images, and a **seed convenience** to load `examples/library.yml`. A
+  Steward gap surfaced: the health gate is HTTP-only, so pure-TCP services (Postgres/Redis)
+  can't deploy — see
+  [`steward-open-questions.md`](steward-open-questions.md).
+- **The Steward allowlist itself** — whether/when it lands, and whether
+  `installs_library_only` then drives it.

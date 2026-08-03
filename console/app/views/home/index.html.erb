@@ -1,0 +1,48 @@
+<% content_for :title, "Status — Steward Console" %>
+
+<h1><%= icon "activity", size: 20 %> Status</h1>
+
+<% if @problem_installs.any? || @down_machines.any? %>
+  <%# Installs that need a look — the unit of concern, rendered through the same
+      row as the project and fleet pages so the page reads the same everywhere.
+      The leading glyph carries the precise word (failed / unreachable / drift). %>
+  <% if @problem_installs.any? %>
+    <section>
+      <h2 class="section-kicker"><%= icon "triangle-alert", size: 15 %> Needs a look</h2>
+      <ul class="rows install-rows">
+        <%= render partial: "installs/row", collection: @problem_installs, as: :install,
+              locals: { show_project: true } %>
+      </ul>
+    </section>
+  <% end %>
+
+  <%# Unreachable machines — the root cause behind the installs above. One down box
+      explains many down installs, and you fix it here, so it's called out on its own. %>
+  <% if @down_machines.any? %>
+    <section class="status-section">
+      <h2 class="section-kicker"><%= icon "hard-drive", size: 15 %> Unreachable machines</h2>
+      <ul class="rows machine-rows">
+        <%= render partial: "machines/row", collection: @down_machines, as: :machine %>
+      </ul>
+    </section>
+  <% end %>
+<% else %>
+  <div class="all-clear">
+    <%= icon "circle-check", size: 20 %>
+    <div>
+      <strong>All clear.</strong>
+      <div class="muted"><%= pluralize(@install_count, "install") %> ·
+        <%= pluralize(@machine_count, "machine") %></div>
+    </div>
+  </div>
+<% end %>
+
+<%# The live head of the record — the most recent acts across the fleet, in
+    eyeline. The full, filterable record is one click away. %>
+<section class="latest">
+  <h2 class="section-kicker">
+    <%= icon "disc", size: 15 %> Latest
+    <%= link_to "Full Record →", record_path, class: "section-link" %>
+  </h2>
+  <%= render "events/chain", items: @recent %>
+</section>

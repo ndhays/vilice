@@ -1,0 +1,24 @@
+<% content_for :title, "Sign In — Steward Console" %>
+
+<div class="auth">
+  <div class="auth-card">
+    <%= render "shared/auth_brand" %>
+
+    <%= form_with url: session_path, class: "stack-form" do |form| %>
+      <label class="field"><span>Email</span>
+        <%= form.email_field :email_address, required: true, autofocus: true,
+              autocomplete: "username", value: params[:email_address],
+              placeholder: "you@example.com" %></label>
+      <label class="field"><span>Password</span>
+        <%= form.password_field :password, required: true, maxlength: 72,
+              autocomplete: "current-password", placeholder: "••••••••" %></label>
+
+      <div class="form-actions">
+        <%= button_tag class: "btn mutate" do %>
+          <%= safe_join([ icon("log-in", size: 14), "Sign In" ], " ") %>
+        <% end %>
+        <%= link_to "Forgot password?", new_password_path, class: "auth-link" %>
+      </div>
+    <% end %>
+  </div>
+</div>

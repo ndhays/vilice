@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 70 70" color="#0f172a">
+  <title>Steward Console</title>
+  <defs>
+    <mask id="serverMask">
+      <rect width="70" height="70" fill="white"/>
+      <circle cx="54" cy="61" r="2" fill="black"/>
+      <circle cx="48" cy="61" r="2" fill="black"/>
+    </mask>
+  </defs>
+  <rect x="10" y="8" width="50" height="10" rx="5" fill="currentColor" opacity="0.2"/>
+  <circle cx="55" cy="13" r="5" fill="currentColor"/>
+  <rect x="10" y="24" width="50" height="10" rx="5" fill="currentColor" opacity="0.2"/>
+  <circle cx="15" cy="29" r="5" fill="currentColor"/>
+  <rect x="10" y="40" width="50" height="10" rx="5" fill="currentColor" opacity="0.2"/>
+  <circle cx="55" cy="45" r="5" fill="currentColor"/>
+  <rect x="10" y="56" width="50" height="10" rx="2.5" fill="currentColor" mask="url(#serverMask)"/>
+</svg>

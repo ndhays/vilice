@@ -1,0 +1,199 @@
+/* Machines — a compact list. Almost like files: an icon, a name, then the
+ * machine truth (address, last seen) trailing off, muted and mono. The boxed
+ * card is the compact feel; one shared grid (subgrid per row) lines the columns
+ * up across rows without spreading the row full-width. */
+.rows {
+  list-style: none; margin: 0; padding: 0;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--card); overflow: visible;
+  display: grid;
+  grid-template-columns: minmax(7rem, max-content) max-content minmax(1rem, 1fr) max-content max-content;
+}
+.rows .row {
+  position: relative;
+  grid-column: 1 / -1;
+  display: grid; grid-template-columns: subgrid;
+  align-items: center; gap: 0.4rem 0.85rem; line-height: 1.2;
+  padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--line);
+}
+.rows .row:last-child { border-bottom: none; }
+.rows .row:hover { background: var(--inset); }
+.rows .cell-name { display: flex; align-items: center; gap: 0.4rem; min-width: 0; }
+.rows .row-icon { color: var(--muted); display: inline-flex; flex: none; }
+.rows .row-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* "You are here" — a map pin tucked into the row's top-left corner, like a stuck tack. */
+.rows .self-pin {
+  color: var(--accent); display: inline-flex; flex: none;
+  position: absolute; left: -0.5rem; top: 0.75rem; transform: rotate(-90deg);
+}
+.rows .cell-badges { display: flex; align-items: center; gap: 0.35rem; }
+.rows .cell-labels { min-width: 0; }
+
+/* Machines — a calm compact row: identity + reachability glyph + name · labels
+   (compact) · owning project · last seen · scope glyph (a quiet trailing marker).
+   Detail is a click in. */
+.rows.machine-rows { grid-template-columns: minmax(7rem, max-content) minmax(1rem, 1fr) max-content max-content max-content; }
+.rows .cell-scope { justify-self: end; display: inline-flex; }
+.rows .scope-ico { display: inline-flex; flex: none; color: var(--muted); }
+.rows .cell-owner { font-size: 0.85rem; white-space: nowrap; justify-self: end; }
+.rows .cell-owner .owner-link { color: var(--muted); }
+.rows .cell-owner .owner-link:hover { color: var(--fg); }
+/* Compact labels: smaller, with a quiet "+N" overflow. */
+.labels.compact .label { font-size: 0.7rem; }
+.labels.compact .label.more { color: var(--muted); border-style: dashed; }
+
+/* App Library — a stacked list (reuses .rows machinery) with its own 4 columns,
+   a touch taller than the machine list, and a versions panel on the app page. */
+.rows.app-rows { grid-template-columns: minmax(8rem, max-content) max-content minmax(1rem, 1fr) max-content; }
+.rows.app-rows .row { padding: 0.55rem 0.95rem; min-height: 3rem; align-items: center; }
+.rows .cell-version { display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; white-space: nowrap; }
+.more-versions { font-size: 0.72rem; font-weight: 700; color: var(--muted); }
+.rows .cell-actions { display: flex; gap: 0.35rem; justify-content: flex-end; }
+.tag.latest { color: var(--ok); text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* A per-row select for bulk curation — muted until the row is hovered or picked. */
+.row-select { flex: none; accent-color: var(--accent); cursor: pointer; opacity: 0.4; }
+.rows .row:hover .row-select, .row-select:checked, .row-select:focus-visible { opacity: 1; }
+
+/* Versions read as a small table: a bordered frame, a muted header row, ruled rows
+   with roomy columns, the latest row tinted, and actions aligned right. */
+.version-list { list-style: none; margin: 0.4rem 0 1rem; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.version { display: flex; align-items: center; gap: 1.25rem; padding: 0.55rem 0.85rem; border-top: 1px solid var(--line); }
+.version:first-child { border-top: none; }
+.version.is-latest { background: var(--inset); }
+.version-head {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); background: var(--inset);
+}
+.version-tag { flex: 0 0 auto; min-width: 10rem; display: flex; align-items: center; gap: 0.4rem; }
+.version-image { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 0.3rem; }
+.version-image-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 0.8rem; }
+.version-actions { flex: none; display: flex; gap: 0.4rem; margin-left: auto; }
+
+/* Click-to-copy the digest — muted until hover, a green check on success (1.2s). */
+.copy-btn {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 1.4rem; height: 1.4rem; padding: 0; border: none; border-radius: 5px;
+  background: none; color: var(--muted); cursor: pointer;
+}
+.copy-btn:hover { color: var(--accent); background: var(--accent-soft); }
+.copy-btn .icon-copied { display: none; }
+.version-image.copied .copy-btn .icon-copy { display: none; }
+.version-image.copied .copy-btn .icon-copied { display: inline; color: var(--ok); }
+.version-add { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.4rem; }
+.version-add input {
+  font: inherit; font-size: 0.85rem; padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink);
+}
+.version-add input.mono { font-family: var(--mono); flex: 1 1 16rem; }
+.version-latest { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); }
+.form-note { margin: -0.4rem 0 0.8rem; font-size: 0.85rem; }
+
+/* App inputs editor — env vars (with a secret flag) + secret files. A flush config
+   section (not a card like Versions): no border, no inset padding. Each row is a key
+   (and a path, for files) with a remove button; "Add" clones a template row. */
+.inputs { margin: 0 0 1.75rem; }
+.inputs .kicker {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.5rem;
+}
+.inputs .kicker.sub { margin-top: 1.4rem; }
+
+/* Env vars as chips: click a chip to mark it secret (a lock shows + amber tint); type a
+   name to add one. Files below stay as name+path rows (.kv-*). */
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
+.chips:empty { display: none; }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.22rem 0.35rem 0.22rem 0.6rem; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card); cursor: pointer;
+  font-family: var(--mono); font-size: 0.82rem; user-select: none;
+}
+.chip .chip-lock { display: none; }
+.chip.is-secret { border-color: var(--mutate-line); background: var(--mutate-bg); color: var(--mutate); }
+.chip.is-secret .chip-lock { display: inline-flex; }
+.chip-x {
+  border: none; background: none; cursor: pointer; color: var(--muted);
+  display: inline-flex; align-items: center; padding: 0 0.15rem; font-size: 1.05rem; line-height: 1;
+}
+.chip-x:hover { color: var(--danger, #c0392b); }
+.chip-add { display: flex; align-items: center; gap: 0.5rem; }
+.chip-add input {
+  font: inherit; font-size: 0.85rem; padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink);
+}
+.chip-hint { font-size: 0.8rem; margin: 0.35rem 0 0; }
+.kv-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.5rem; }
+.kv-row { display: flex; align-items: center; gap: 0.5rem; }
+.kv-row input[type="text"] {
+  font: inherit; font-size: 0.85rem; padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink);
+}
+.kv-row .kv-key { flex: 0 1 16rem; font-family: var(--mono); }
+.kv-row .kv-path { flex: 1 1 18rem; font-family: var(--mono); }
+.kv-secret { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+.kv-del {
+  display: inline-flex; align-items: center; padding: 0.3rem; margin-left: auto;
+  border: none; background: none; color: var(--muted); cursor: pointer; border-radius: 6px;
+}
+.kv-del:hover { color: var(--danger, #c0392b); background: var(--card); }
+.kv-add { margin-bottom: 0.5rem; }
+.rows .cell-host, .rows .cell-seen { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+
+/* Installs — a state-forward list (reuses .rows machinery): status glyph + name ·
+   app/version · hostname (flexes, links out) · whose work it is · the box it runs
+   on. The project column is empty on a project's own page (show_project: false). */
+.rows.install-rows { grid-template-columns: minmax(8rem, max-content) minmax(6rem, max-content) minmax(1rem, 1fr) max-content max-content; }
+.rows.install-rows .row { padding: 0.55rem 0.95rem; min-height: 3rem; align-items: center; }
+.rows .cell-app { color: var(--muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rows .cell-project { font-size: 0.85rem; white-space: nowrap; }
+.rows .cell-project .owner-link { color: var(--muted); }
+.rows .cell-project .owner-link:hover { color: var(--fg); }
+.rows .cell-where { font-size: 0.85rem; white-space: nowrap; justify-self: end; }
+
+/* The leading status glyph carries its own colour (overrides .row-icon's muted).
+   Built from stored state — see ApplicationHelper::INSTALL_STATUS. */
+.rows .row-icon.status-ico.ok    { color: var(--ok); }
+.rows .row-icon.status-ico.warn  { color: var(--warn); }
+.rows .row-icon.status-ico.bad   { color: var(--bad); }
+.rows .row-icon.status-ico.muted { color: var(--muted); }
+
+/* Hostname links out to the live site (new tab). The external-link glyph sits
+   just after the host, quiet until hover. */
+.cell-host .host-link { display: inline-flex; align-items: center; gap: 0.25rem; }
+.cell-host .host-link svg { color: var(--muted); }
+.cell-host .host-link:hover svg { color: inherit; }
+
+/* Projects — a compact list (reuses .rows machinery): name · counts · labels · contact. */
+.rows.project-rows { grid-template-columns: minmax(8rem, max-content) max-content minmax(1rem, 1fr) max-content; }
+.rows.project-rows .row { padding: 0.55rem 0.95rem; min-height: 3rem; align-items: center; }
+.rows .cell-counts { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+.rows .cell-contact { color: var(--muted); font-size: 0.85rem; white-space: nowrap; justify-self: end; }
+
+.badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+.badge.reachable { color: var(--ok); }
+.badge.unreachable { color: var(--bad); }
+.badge.unknown { color: var(--muted); }
+.badge.scope-observe { color: var(--observe); }
+.badge.scope-operate { color: var(--mutate); }
+.badge.shared { color: var(--warn); }
+/* Install state — running is good, failed is bad, in-flight/queued is warn,
+   not-yet-placed is quiet. The protagonist of the install row. */
+.badge.state-running { color: var(--ok); }
+.badge.state-failed { color: var(--bad); }
+.badge.state-deploying, .badge.state-pending { color: var(--warn); }
+.badge.state-unplaced { color: var(--muted); }
+
+/* Tighten the badge box so LATEST sits centred next to the version, and pin it
+ * flush (the `.latest` section margin in widgets.css must not bleed onto it). */
+.tag { line-height: 1; }
+.tag.latest { margin-top: 0; }
+

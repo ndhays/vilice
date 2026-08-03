@@ -1,0 +1,90 @@
+<% content_for :title, "#{@project.name} — Steward Console" %>
+
+<%= breadcrumb [["Projects", projects_path], [@project.name, nil]] %>
+
+<h1>
+  <%= icon "handshake", size: 20 %> <%= @project.name %>
+  <%= button_to star_project_path(@project), method: :patch,
+        class: "star-btn #{'on' if @project.starred?}" do %>
+    <%= icon "star", size: 15 %><%= @project.starred? ? "Unstar" : "Star" %>
+  <% end %>
+  <%= button_link_to "Edit", edit_project_path(@project), icon: "pencil", class: "btn-quiet" %>
+  <%= button_to project_path(@project), method: :delete, class: "btn-quiet danger",
+        form: { data: { turbo_confirm: "Delete #{@project.name}? This can't be undone." } } do %>
+    <%= safe_join([ icon("trash-2", size: 14), "Delete" ], " ") %>
+  <% end %>
+</h1>
+<% if @project.contact_name.present? || @project.contact_email.present? %>
+  <p class="addr">
+    <%= @project.contact_name %><% if @project.contact_email.present? %>
+      <% if @project.contact_name.present? %>·<% end %>
+      <span class="mono"><%= @project.contact_email %></span>
+    <% end %>
+  </p>
+<% end %>
+<div class="label-row"><%= render "labels/editor", labelable: @project %></div>
+
+<%# Section order = altitude. At the project level the apps are the protagonist:
+    Installs (what runs) → Machines (where it runs, the paired substrate) → Record
+    (the project's ledger — bounded to a head + a link to the full filtered view).
+    The record is the spine globally (Home/`/record`); here it's the footer ledger. %>
+<div class="section-head">
+  <h2>Installs</h2>
+  <%= button_link_to "Add Install", new_install_path(project_id: @project), icon: "plus", class: "btn" %>
+</div>
+<% if @installs.any? %>
+  <ul class="rows install-rows">
+    <%= render partial: "installs/row", collection: @installs, as: :install %>
+  </ul>
+<% else %>
+  <p class="empty">No installs yet.</p>
+<% end %>
+
+<%# Owned — this project's own hardware. Owner is implied by the section, so the
+    owner column is suppressed here. %>
+<div class="section-head">
+  <h2>Owned Machines</h2>
+  <%= button_link_to "New Machine", new_machine_path(project_id: @project), icon: "plus", class: "btn" %>
+</div>
+<% if @owned_machines.any? %>
+  <ul class="rows machine-rows">
+    <%= render partial: "machines/row", collection: @owned_machines, as: :machine,
+          locals: { show_owner: false } %>
+  </ul>
+<% else %>
+  <p class="empty">No machines owned by this project yet.</p>
+<% end %>
+
+<%# Shared — boxes another project owns, shared with this one. The owner links out
+    to the owning project (its context). Attach an existing permitted box below. %>
+<div class="section-head">
+  <h2>Shared Machines</h2>
+</div>
+<% if @shared_machines.any? %>
+  <ul class="rows machine-rows">
+    <%= render partial: "machines/row", collection: @shared_machines, as: :machine %>
+  </ul>
+<% else %>
+  <p class="empty">None shared with this project.</p>
+<% end %>
+
+<%# Attach an existing box this project is permitted on — a box it owns but hasn't
+    linked yet, or one shared with it. The join enforces the guardrail server-side. %>
+<% if @attachable.any? %>
+  <%= form_with url: project_project_machines_path(@project), method: :post, class: "attach-row" do %>
+    <%= select_tag :machine_id,
+          options_from_collection_for_select(@attachable, :id, :name),
+          prompt: "Attach an existing machine…", class: "select" %>
+    <%= button_tag class: "btn sm" do %>
+      <%= safe_join([ icon("plus", size: 14), "Attach" ], " ") %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<div class="section-head">
+  <h2>Record</h2>
+  <% if @record_total > ProjectsController::RECORD_HEAD %>
+    <%= link_to "Full Record →", record_path(q: %(project="#{@project.name}")), class: "section-link" %>
+  <% end %>
+</div>
+<%= render "events/chain", items: @chain, within: @project %>

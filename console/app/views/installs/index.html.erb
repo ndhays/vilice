@@ -1,0 +1,18 @@
+<% content_for :title, "Installs — Steward Console" %>
+
+<%# Placement, fleet-wide: what should run where. One ring above the machine view
+    (which reads a single box) and one below Projects (which is a lens on tenancy,
+    not a container) — decisions/console-layers.md. An install here may have no
+    project at all; that column is simply blank. %>
+<%= page_header "Installs" do %>
+  <%= button_link_to "Add Install", new_install_path, icon: "plus", class: "btn" %>
+<% end %>
+
+<% if @installs.any? %>
+  <ul class="rows install-rows">
+    <%= render partial: "installs/row", collection: @installs, as: :install,
+          locals: { show_project: true } %>
+  </ul>
+<% else %>
+  <p class="empty">No installs yet — place an app on a box to start.</p>
+<% end %>

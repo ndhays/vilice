@@ -1,0 +1,53 @@
+<%# One install as a compact list row. State-forward: the rolled-up status glyph
+    leads (install_status_icon), then the app/version deployed, the hostname it
+    serves (a link OUT to the live site, new tab), whose work it is, and the box it
+    runs on. The name links to the Install show page — the app-actions home; the
+    machine link is pure navigation (acts live on the Install, never the machine —
+    see decisions/install-the-app-actions-home.md). Reuses the .rows machinery.
+
+    `show_project: false` drops the project column where it'd just repeat the page's
+    own project (mirrors machines/_row's show_owner). %>
+<% show_project = local_assigns.fetch(:show_project, false) %>
+<li class="row">
+  <span class="cell-name">
+    <%= install_status_icon(install) %>
+    <%= link_to install.name, install, class: "row-name" %>
+  </span>
+  <span class="cell-app mono">
+    <% if install.app %>
+      <%= install.app.name %><% if install.version %> · <%= install.version.tag %><% end %>
+    <% else %>
+      <span class="muted">custom image</span>
+    <% end %>
+  </span>
+  <span class="cell-host mono">
+    <% if install.hostname.present? %>
+      <%= link_to "https://#{install.hostname}", target: "_blank", rel: "noopener",
+            class: "host-link", title: "Open #{install.hostname} in a new tab" do %>
+        <%= install.hostname %><%= icon "external-link", size: 12 %>
+      <% end %>
+    <% else %>
+      —
+    <% end %>
+  </span>
+  <%# Always render the cell so the subgrid columns line up; empty when suppressed.
+      An install with no project is a placement with no tenant — a legitimate state,
+      so it reads as a quiet dash, not as missing data. %>
+  <span class="cell-project">
+    <% if show_project %>
+      <% if install.project %>
+        <%= link_to install.project.name, install.project, class: "owner-link" %>
+      <% else %>
+        <span class="muted">—</span>
+      <% end %>
+    <% end %>
+  </span>
+  <span class="cell-where">
+    <% targets = install.install_targets.reject(&:install_retired?) %>
+    <% if targets.any? %>
+      <%= safe_join(targets.map { |t| link_to(t.machine.name, t.machine) }, ", ") %>
+    <% else %>
+      <span class="muted">—</span>
+    <% end %>
+  </span>
+</li>

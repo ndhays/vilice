@@ -1,0 +1,3 @@
+# Raw scanner output is regenerable and noisy — never committed. The committed
+# attestation is log.md (the human verdict), not these dumps.
+out/

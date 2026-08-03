@@ -1,0 +1,346 @@
+.btn {
+  display: inline-block; border: 1px solid var(--accent); color: var(--accent);
+  background: var(--card); border-radius: 7px; padding: 0.25rem 0.65rem;
+  font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { text-decoration: none; color: var(--accent-bright); background: var(--accent-soft); }
+.btn.mutate { border-color: var(--mutate); color: var(--mutate); background: var(--mutate-bg); }
+.btn.mutate:hover { background: var(--mutate-soft); }
+/* `.sm` is now an alias of the base button — kept so existing `btn sm` call sites
+   stay valid; the compact size is the default everywhere. */
+.btn.sm { padding: 0.25rem 0.65rem; font-size: 0.85rem; border-radius: 7px; }
+
+pre.raw { background: var(--raw-bg); color: var(--raw-ink); padding: 1rem; border-radius: 8px; overflow: auto; font-size: 0.82rem; }
+.flash { padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
+.flash.notice { background: var(--observe-soft); color: var(--observe); }
+.flash.alert { background: var(--bad-soft); color: var(--bad); }
+.empty { color: var(--muted); font-style: italic; }
+.muted { color: var(--muted); }
+.star { color: #eab308; }
+.starred-heading { display: flex; align-items: center; gap: 0.4rem; }
+
+/* Status "all clear" — calm, reassuring; the default state of a healthy fleet. */
+.all-clear {
+  display: flex; align-items: center; gap: 0.75rem;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 1.1rem 1.35rem; color: var(--ink);
+}
+.all-clear > .icon { color: var(--ok); flex: none; }
+.all-clear .muted { font-size: 0.9rem; margin-top: 0.1rem; }
+
+/*
+ * ── Mono: machine truth ─────────────────────────────────────────────────
+ * Monospace marks a *literal value the system emits or you'd copy/type* —
+ * hostnames, ssh addresses, image digests, ids, paths, versions, label
+ * key/values, metric readings, raw output. Proportional (the body font) is for
+ * human framing — titles, names, narratives, prose. The two type families echo
+ * the spine: the exact record vs. the human reading of it. When in doubt: could
+ * you paste it into a terminal? Mono. Is it a sentence? Sans.
+ */
+.mono { font-family: var(--mono); font-size: 0.92em; letter-spacing: -0.01em; }
+
+/* ── Icons ──────────────────────────────────────────────────────────────── */
+.icon { vertical-align: -0.15em; flex: none; }
+
+/* ── Health dots ────────────────────────────────────────────────────────── */
+/* A small calm signal. Loud only when something is wrong. */
+.dot {
+  display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%;
+  background: var(--dot-gray); flex: none; vertical-align: 0.02em;
+}
+.dot-green  { background: var(--dot-green); }
+.dot-yellow { background: var(--dot-yellow); }
+.dot-red    { background: var(--dot-red); }
+.dot-gray   { background: var(--dot-gray); }
+
+/* ── Entity health line (header narrative) ──────────────────────────────── */
+.health-line {
+  display: flex; align-items: center; gap: 0.5rem;
+  color: var(--muted); font-size: 0.95rem; margin: 0.15rem 0 1.25rem;
+}
+.health-line.warn { color: var(--warn); }
+.health-line.crit { color: var(--bad); font-weight: 600; }
+
+/* Hardening posture line (observe panel) — same calm shape as the health line. */
+.hardening-line {
+  display: flex; align-items: center; gap: 0.5rem;
+  color: var(--muted); font-size: 0.9rem; margin: 0.15rem 0 0.75rem;
+}
+.hardening-line .muted { opacity: 0.75; }
+
+/* "You are here" — the box Steward Console itself runs on (identity, not observe). */
+.badge.self { color: var(--accent); border-style: dashed; }
+
+/*
+ * Labels — operator metadata, a different *kind* of thing from badges, so a
+ * different shape: a Hetzner-style segmented two-tone rectangle (not a colored
+ * pill). Key on a muted ground, value on the surface, no separator glyph.
+ *   Badges (pills, colored, uppercase) = the system's own truth — observed
+ *     state (reachability) and the key's capability (scope).
+ *   Labels (rectangles, neutral, mono) = tags you assign, to group and search.
+ */
+.labels { display: inline-flex; flex-wrap: wrap; gap: 0.35rem; }
+.label {
+  display: inline-flex; align-items: stretch; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 5px;
+  font-family: var(--mono); font-size: 0.72rem; line-height: 1.7;
+}
+.label .lk { padding: 0 0.42rem; background: var(--inset); color: var(--muted); }
+.label .lv { padding: 0 0.42rem; background: var(--card); color: var(--ink); border-left: 1px solid var(--line); }
+
+/* Spec chips (port / health) — the label-chip idiom reused: a muted key segment and
+ * a value segment, so it reads "Port│8080" instead of "port 8080 · health /". */
+.spec-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0 0 0.6rem; }
+.spec { display: inline-flex; align-items: stretch; overflow: hidden; border: 1px solid var(--line); border-radius: 5px; font-size: 0.78rem; line-height: 1.85; }
+.spec-k { padding: 0 0.5rem; background: var(--inset); color: var(--muted); font-weight: 600; }
+.spec-v { padding: 0 0.5rem; background: var(--card); color: var(--ink); border-left: 1px solid var(--line); }
+.spec-edit { font-size: 0.85rem; margin-left: 0.15rem; }
+
+/* Editing labels — one set of tags; the toggle reveals remove + add in place. */
+.labels-editor { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+/* A heading so the row reads "Labels … Edit" instead of a lone Edit button. */
+.labels-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.labels-toggle {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  border: none; background: none; cursor: pointer;
+  color: var(--muted); font: inherit; font-size: 0.82rem; padding: 0.1rem 0.3rem; border-radius: 6px;
+}
+.labels-toggle:hover { color: var(--accent); background: var(--accent-soft); }
+/* Edit -> Done swaps the pencil for a check. */
+.labels-editor .icon-done { display: none; }
+.labels-editor.editing .icon-edit { display: none; }
+.labels-editor.editing .icon-done { display: inline; }
+
+/* Star/Unstar (focus toggle) in a project title — a labelled button (GitHub
+ * style), so the action and current state read at a glance. Filled gold star
+ * when starred; a tactile press on click. */
+h1 .button_to { margin: 0 0 0 0.2rem; display: inline-flex; vertical-align: middle; }
+.star-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font: inherit; font-size: 0.85rem; font-weight: 600; line-height: 1;
+  padding: 0.35rem 0.7rem; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  transition: transform 0.1s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.star-btn .icon { color: var(--muted); flex: none; transition: color 0.15s ease; }
+.star-btn:hover { border-color: #eab308; }
+.star-btn:hover .icon { color: #eab308; }
+.star-btn.on .icon { color: #eab308; fill: #eab308; }
+.star-btn:active { transform: scale(0.94); }
+
+/* the per-label trash, an inline segment shown only in edit mode */
+.label .label-del {
+  display: none; align-items: center; padding: 0 0.38rem;
+  border-left: 1px solid var(--line); color: var(--muted);
+}
+.label .label-del:hover { color: var(--bad); background: var(--bad-soft); text-decoration: none; }
+.labels-editor.editing .label .label-del { display: inline-flex; }
+
+/* the add form, revealed below on its own line in edit mode */
+.labels-add { display: none; flex-basis: 100%; gap: 0.4rem; margin-top: 0.1rem; flex-wrap: wrap; }
+.labels-editor.editing .labels-add { display: flex; }
+.labels-add input {
+  font: inherit; font-size: 0.85rem; padding: 0.25rem 0.5rem;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink);
+}
+.badge .icon { vertical-align: -0.12em; margin-right: 0.2rem; }
+
+/* ── Record filter ──────────────────────────────────────────────────────────
+   Selector-grammar search over actor/action/target + a time window. A filtered
+   record is a shareable link. */
+.filter-bar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+/* Search box and time dropdown share a height so the row reads as one control. */
+.filter-search, .filter-range { min-height: 2.4rem; }
+.filter-search {
+  display: flex; align-items: center; gap: 0.4rem; flex: 1 1 18rem;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+  padding: 0 0.6rem; color: var(--muted);
+}
+.filter-search input {
+  flex: 1; font: inherit; font-size: 0.9rem; padding: 0.45rem 0; min-width: 0;
+  border: none; background: none; color: var(--ink);
+}
+.filter-search input:focus-visible { outline: none; }
+.filter-search:focus-within { border-color: var(--accent); }
+.filter-range {
+  font: inherit; font-size: 0.9rem; padding: 0 0.5rem; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 8px; background: var(--card); cursor: pointer;
+}
+.filter-clear { font-size: 0.85rem; color: var(--muted); }
+.filter-clear:hover { color: var(--accent); }
+.result-count { font-size: 0.85rem; margin: 0 0 0.75rem; }
+
+/* Action filter — toggle pills, multi-select. The label is the pill; its hidden
+ * checkbox carries the state. Picked pills light up in the accent. */
+.action-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; flex-basis: 100%; }
+.action-chips .chip {
+  display: inline-flex; align-items: center;
+  font-size: 0.82rem; padding: 0.2rem 0.65rem; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); color: var(--muted); background: var(--card); user-select: none;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.action-chips .chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+.action-chips .chip:hover { border-color: var(--accent); color: var(--ink); }
+.action-chips .chip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.action-chips .chip:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* List toolbar — the reusable manage-a-list bar (shared/_list_toolbar): select-all
+ * + live count on the left, search in the middle, bulk actions on the right. One
+ * line, like a file manager's list header. Paired with the `selection` controller. */
+.list-toolbar { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.toolbar-select {
+  display: inline-flex; align-items: center; gap: 0.3rem; flex: none;
+  font-size: 0.85rem; color: var(--muted); cursor: pointer; user-select: none;
+}
+.toolbar-select input { accent-color: var(--accent); cursor: pointer; }
+.toolbar-search { display: flex; align-items: center; gap: 0.5rem; flex: 1 1 16rem; }
+.toolbar-spacer { flex: 1 1 0; }
+.toolbar-actions { display: flex; align-items: center; gap: 0.7rem; flex: none; }
+
+/* A header menu — a button that drops a small popover of forms (Import: file or
+ * URL). Reusable: any `details.menu > summary + .menu-pop`. No JS; pure disclosure. */
+details.menu { position: relative; }
+details.menu > summary { cursor: pointer; list-style: none; }
+details.menu > summary::-webkit-details-marker { display: none; }
+.menu-pop {
+  position: absolute; right: 0; z-index: 20; margin-top: 0.4rem; min-width: 16rem;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  padding: 0.8rem; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--card); box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+}
+.menu-form { display: flex; flex-direction: column; gap: 0.4rem; }
+.menu-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+.menu-rule { border-top: 1px solid var(--line); }
+
+/* Disabled buttons — bulk actions before anything's picked. Quiet and inert. */
+.btn:disabled, .btn-quiet:disabled { opacity: 0.45; cursor: default; }
+.btn:disabled:hover, .btn-quiet:disabled:hover { background: var(--card); border-color: var(--line); color: var(--muted); }
+
+/* Status "Latest" — the live head of the record, in eyeline on the home page. A
+ * small-caps section heading with an optional trailing link. (Distinct from
+ * layout.css's .section-head, which is an h2 + action — they used to collide.) */
+.latest { margin-top: 1.75rem; }
+/* Spacing between the Status page's exception blocks (installs, then machines). */
+.status-section { margin-top: 1.75rem; }
+.section-kicker {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); margin: 0 0 0.75rem; padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+.section-kicker .icon { color: var(--muted); }
+.section-link { margin-left: auto; font-size: 0.78rem; font-weight: 600; text-transform: none; letter-spacing: 0; }
+
+/* ── Theme toggle ───────────────────────────────────────────────────────── */
+.theme-toggle {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  padding: 0.2rem; line-height: 0; border-radius: 6px;
+}
+.theme-toggle:hover { color: var(--ink); background: var(--inset); }
+/* Show the icon for the theme you'd switch *to*. */
+.theme-toggle .icon-sun { display: none; }
+[data-theme="dark"] .theme-toggle .icon-sun { display: inline; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .theme-toggle .icon-sun { display: inline; }
+  :root:not([data-theme]) .theme-toggle .icon-moon { display: none; }
+}
+
+/* ── Field help glyph + CSS tooltip (native title was unreliable) ─────────── */
+.hint {
+  position: relative; color: var(--muted); cursor: pointer;
+  display: inline-flex; vertical-align: middle;
+}
+.hint svg { display: block; margin-top: -2px; }
+.hint::after {
+  content: attr(data-tip);
+  position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%);
+  width: max-content; max-width: 15rem; text-align: left;
+  background: var(--ink); color: var(--bg);
+  font-size: 0.72rem; font-weight: 400; line-height: 1.35;
+  letter-spacing: normal; text-transform: none;
+  padding: 0.4rem 0.55rem; border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  opacity: 0; pointer-events: none; transition: opacity 0.12s ease; z-index: 20;
+}
+.hint:hover::after, .hint:focus-visible::after { opacity: 1; }
+
+/* Machine ownership & sharing (machines/_sharing) + the unowned filter toggle
+   (machines/index). The guardrail UI from machine-ownership.md. */
+.badge.unowned { color: var(--bad); }
+
+/* The "unowned" toggle reuses the Record action-chip pill (.action-chips .chip).
+   A light presence count when free boxes exist, like Unread in an inbox. */
+.filter-row { margin: 0 0 0.9rem; }
+.action-chips .chip { gap: 0.35rem; text-decoration: none; }
+.action-chips .chip .chip-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.1rem; height: 1.1rem; padding: 0 0.3rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 700; background: var(--inset); color: var(--muted);
+}
+.action-chips .chip.on .chip-count { background: var(--accent-soft); color: var(--accent); }
+
+.access-panel .own-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  margin-bottom: 0.9rem; }
+.access-panel .own-label { color: var(--muted); font-size: 0.85rem; }
+.access-panel .own-name { font-weight: 600; }
+.access-panel .inline-form { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+.sharing-modes { border: 0; padding: 0; margin: 0 0 0.7rem; display: grid; gap: 0.4rem; }
+.sharing-modes .radio { display: grid; grid-template-columns: auto 1fr; gap: 0 0.5rem;
+  align-items: baseline; padding: 0.4rem 0.6rem; border: 1px solid var(--line);
+  border-radius: 8px; cursor: pointer; }
+.sharing-modes .radio.on { border-color: var(--mutate); background: var(--mutate-soft, transparent); }
+.sharing-modes .radio-label { font-weight: 600; }
+.sharing-modes .radio-hint { grid-column: 2; color: var(--muted); font-size: 0.82rem; }
+
+/* When the owner is fixed (adding from a project), show it like a read-only field:
+   the bold field label, then the icon + project name on the line below. */
+.owner-value { display: flex; align-items: center; gap: 0.4rem; margin: 0; }
+.owner-value .icon { color: var(--muted); }
+
+/* Radio cards — selectable option cards laid out side by side, each a vertical stack:
+   a glyph, a bold label, and a hint, with a custom radio dot in the corner. The
+   selected card lights live (no JS) via :has(). Reusable; used for the scope picker. */
+.radio-cards { border: 0; padding: 0; margin: 0; }
+.radio-cards legend { padding: 0; margin: 0 0 0.35rem; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.radio-cards .radio-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+.radio-cards .radio { position: relative; display: flex; flex-direction: column; align-items: flex-start;
+  gap: 0.3rem; padding: 0.85rem; padding-right: 2rem; border: 1px solid var(--line);
+  border-radius: 10px; cursor: pointer; }
+.radio-cards .radio:hover { border-color: var(--accent); }
+.radio-cards .radio:has(input:checked) { border-color: var(--mutate); background: var(--mutate-soft, transparent); }
+/* A normal radio, tucked in the top-right corner. */
+.radio-cards .radio input { position: absolute; top: 0.7rem; right: 0.7rem; margin: 0;
+  accent-color: var(--mutate); cursor: pointer; }
+.radio-cards .radio .icon { color: var(--muted); }
+.radio-cards .radio:has(input:checked) .icon { color: var(--mutate); }
+.radio-cards .radio-label { font-weight: 600; }
+.radio-cards .radio-hint { color: var(--muted); font-size: 0.8rem; }
+
+/* Install placement — reveal the sub-section that matches the radio choice, no JS.
+   Defaults (single + existing box) are checked in the HTML, so :has matches on load. */
+.placement .single-only, .placement .fleet-only,
+.placement .source-existing, .placement .source-new { display: none; }
+.placement:has(input[name="placement"][value="single"]:checked) .single-only { display: block; }
+.placement:has(input[name="placement"][value="fleet"]:checked) .fleet-only { display: block; }
+.placement:has(input[name="machine_source"][value="existing"]:checked) .source-existing { display: block; }
+.placement:has(input[name="machine_source"][value="new"]:checked) .source-new { display: block; }
+.placement .source-pick, .placement .single-only > * + * { margin-top: 0.6rem; }
+/* The built path is single + existing box; on a stubbed path, hide the deploy button so
+   it can't dead-end (the stub note explains why). */
+.install-form:has(input[name="machine_source"][value="new"]:checked) .form-actions,
+.install-form:has(input[name="placement"][value="fleet"]:checked) .form-actions { display: none; }
+
+/* A previewed-but-unbuilt path: a dashed, muted note so it reads as "coming", not broken. */
+.stub-note { display: flex; align-items: flex-start; gap: 0.45rem; margin: 0;
+  border: 1px dashed var(--line); border-radius: 8px; padding: 0.6rem 0.75rem;
+  color: var(--muted); font-size: 0.88rem; }
+.stub-note .icon { color: var(--muted); flex: none; margin-top: 0.1rem; }
+
+.allowlist { margin-top: 0.9rem; }
+.allowlist h3 { font-size: 0.9rem; margin: 0 0 0.4rem; }
+.grant-rows { list-style: none; padding: 0; margin: 0 0 0.6rem; display: grid; gap: 0.3rem; }
+.grant-rows li { display: flex; align-items: center; justify-content: space-between;
+  gap: 0.5rem; padding: 0.3rem 0.5rem; border: 1px solid var(--line); border-radius: 7px; }

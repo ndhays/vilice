@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Load a Steward Console demo scenario and, with --serve, boot the server with the
+# fake-observe seam on — so machine health renders without a real box.
+#
+#   bin/scenario --list              list the scenarios
+#   bin/scenario all_broken          load the all_broken world
+#   bin/scenario all_clear --serve   load all_clear, then start the server
+#
+# See db/seeds/README.md.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if [[ "${1:-}" == "" || "${1:-}" == "--list" ]]; then
+  echo "Scenarios:"
+  ls db/seeds/*.rb | xargs -n1 basename | sed 's/\.rb$//' | grep -v '^shared$' | sed 's/^/  /'
+  exit 0
+fi
+
+scenario="$1"; shift || true
+export SCENARIO="$scenario"
+export STEWARD_FAKE_OBSERVE=1
+
+echo "Loading scenario: $scenario"
+bin/rails db:seed
+
+if [[ "${1:-}" == "--serve" ]]; then
+  echo "Booting with fake-observe on (STEWARD_FAKE_OBSERVE=1)…"
+  exec bin/rails server -b 0.0.0.0
+fi

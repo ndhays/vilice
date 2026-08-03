@@ -1,0 +1,49 @@
+<%# The app's declared inputs — env vars (some secret) and secret files. Names only; the
+    operator supplies values at install. "Secrets are env vars": one list, a secret flag.
+    Saving is a recorded own-record act (apps#update). %>
+<div class="inputs" data-controller="env-editor">
+  <div class="kicker">Environment &amp; Secrets</div>
+  <p class="muted form-note">
+    Add required environment variable names for more reliable installs. Tick
+    "secret" for variables that should be delivered to the machine off-record (not logged).
+  </p>
+
+  <%= form_with model: app, class: "inputs-form" do %>
+    <% if app.errors.any? %>
+      <div class="flash alert"><%= app.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <div class="chips" data-env-editor-target="envChips">
+      <% app.env.each_with_index do |e, i| %>
+        <%= render "apps/env_chip", i: i, key: e["key"], secret: e["secret"] %>
+      <% end %>
+    </div>
+    <div class="chip-add">
+      <input type="text" data-env-editor-target="envInput" data-action="keydown->env-editor#keydown"
+             placeholder="VARIABLE_NAME" class="mono" autocomplete="off" spellcheck="false">
+      <button type="button" class="btn-quiet" data-action="env-editor#addEnv">
+        <%= icon "plus", size: 13 %> Add Variable
+      </button>
+    </div>
+    <p class="muted chip-hint">Click a variable to mark it secret.</p>
+
+    <div class="kicker sub">Secret Files</div>
+    <p class="muted form-note">
+      Files mounted into the container (a config, an htpasswd) — name and absolute path.
+      The contents are off-record, supplied at install.
+    </p>
+    <div class="kv-list" data-env-editor-target="fileList">
+      <% app.secret_files.each_with_index do |f, i| %>
+        <%= render "apps/file_row", i: i, name: f["name"], path: f["path"] %>
+      <% end %>
+    </div>
+    <button type="button" class="btn-quiet kv-add" data-action="env-editor#addFile">
+      <%= icon "plus", size: 13 %> Add File
+    </button>
+
+    <div class="form-actions"><%= submit_tag "Save Inputs", class: "btn mutate" %></div>
+  <% end %>
+
+  <template data-env-editor-target="envTemplate"><%= render "apps/env_chip", i: "NEW", key: "KEYNAME", secret: false %></template>
+  <template data-env-editor-target="fileTemplate"><%= render "apps/file_row", i: "NEW", name: nil, path: nil %></template>
+</div>

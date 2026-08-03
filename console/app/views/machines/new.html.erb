@@ -1,0 +1,57 @@
+<% content_for :title, "Add Machine — Steward Console" %>
+
+<%= breadcrumb [ [ "Machines", machines_path ], [ "Add Machine", nil ] ] %>
+<h1>Add Machine</h1>
+
+<%= form_with model: @machine, url: machines_path, class: "stack-form" do |f| %>
+  <% if @project %>
+    <%= hidden_field_tag :project_id, @project.id %>
+    <div class="field">
+      <span>Machine Owner</span>
+      <p class="owner-value"><%= icon "handshake", size: 15 %> <strong><%= @project.name %></strong></p>
+    </div>
+  <% else %>
+    <label class="field"><span>Machine Owner</span>
+      <%= select_tag "machine[owner_id]",
+            options_from_collection_for_select(@projects, :id, :name),
+            include_blank: "Unassigned", class: "select" %></label>
+  <% end %>
+  <% if @machine.errors.any? %>
+    <div class="flash alert"><%= @machine.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="field-row">
+    <label class="field"><span>SSH Host</span>
+      <%= f.text_field :ssh_host, class: "mono", required: true, autocomplete: "off",
+            placeholder: "box.example.com or 5.78.218.105" %></label>
+    <label class="field compose-narrow"><span>Port</span>
+      <%= f.number_field :ssh_port %></label>
+  </div>
+
+  <% scope_copy = {
+       "observe" => [ "eye",        "Observe", "Read only — status and the record." ],
+       "operate" => [ "settings-2", "Operate", "Deploy, rollback, start/stop." ],
+       "grant"   => [ "key-round",  "Grant",   "Operate, plus admit and revoke other keys." ]
+     } %>
+  <fieldset class="field radio-cards">
+    <legend>Scope</legend>
+    <div class="radio-row">
+      <% Machine.scopes.keys.each do |scope| %>
+        <% glyph, label, hint = scope_copy[scope] %>
+        <label class="radio">
+          <%= f.radio_button :scope, scope %>
+          <%= icon glyph, size: 22 %>
+          <span class="radio-label"><%= label %></span>
+          <small class="radio-hint"><%= hint %></small>
+        </label>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <div class="form-actions">
+    <%= button_tag class: "btn mutate" do %>
+      <%= safe_join([ icon("hard-drive", size: 14), "Add Machine" ], " ") %>
+    <% end %>
+    <%= button_link_to "Cancel", machines_path, class: "btn-quiet" %>
+  </div>
+<% end %>

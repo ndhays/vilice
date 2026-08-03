@@ -1,0 +1,77 @@
+<%# The trail follows tenancy when there is any: through the client that owns this
+    work, else straight down from Installs. Placement stands on its own — an install
+    with no project is not an install missing one (decisions/console-layers.md). %>
+<% content_for :title, [ @install.name, @project&.name, "Steward Console" ].compact.join(" — ") %>
+
+<% if @project %>
+  <%= breadcrumb [["Projects", projects_path], [@project.name, project_path(@project)], [@install.name, nil]] %>
+<% else %>
+  <%= breadcrumb [["Installs", installs_path], [@install.name, nil]] %>
+<% end %>
+
+<h1>
+  <%= icon "box", size: 20 %>
+  <%= @install.name %>
+  <%= install_state_badge(@install) %>
+</h1>
+<p class="addr">
+  <% if @project %><%= link_to @project.name, @project %> · <% end %>
+  <% if @install.app %>
+    <%= link_to @install.app.name, @install.app %><% if @install.version %> ·
+      <span class="mono"><%= @install.version.tag %></span><% end %>
+  <% else %>
+    custom image
+  <% end %>
+  <% if @install.hostname.present? %> · <span class="mono"><%= @install.hostname %></span><% end %>
+</p>
+<% if @install.volumes.any? %>
+  <p class="addr">
+    <%= icon "hard-drive", size: 13 %>
+    <% @install.volumes.each do |v| %><span class="mono"><%= v %></span> <% end %>
+  </p>
+<% end %>
+
+<%# Where it runs — each live target box, its state, image drift, and the witnessed
+    verbs. The Install is the app-actions home; the act still runs on the box (the
+    SSH target), and returns here. See decisions/install-the-app-actions-home.md. %>
+<div class="panel mutate">
+  <div class="kicker">Where it runs · witnessed</div>
+  <% if @targets.any? %>
+    <ul class="acts-apps">
+      <% @targets.each do |target| %>
+        <li class="acts-app">
+          <span class="acts-app-name">
+            <%= icon "hard-drive", size: 13 %>
+            <%= link_to target.machine.name, target.machine %>
+            <span class="badge state-<%= target.status %>"><%= target.status %></span>
+          </span>
+          <% if target.machine.operate? %>
+            <%= render "installs/acts", install: @install, machine: target.machine, from: "install" %>
+          <% else %>
+            <span class="note muted">observe only — grant operate to act here</span>
+          <% end %>
+        </li>
+        <div class="target-image mono">
+          <% if target.in_sync? %>
+            running <%= short_image(target.current_image) %>
+          <% elsif target.current_image.present? %>
+            running <%= short_image(target.current_image) %> · desired <%= short_image(target.desired_image) %> (drift)
+          <% elsif target.desired_image.present? %>
+            desired <%= short_image(target.desired_image) %>, not yet running
+          <% else %>
+            <%= short_image(@install.image) %>
+          <% end %>
+        </div>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="note">Not placed on a box yet.</p>
+  <% end %>
+</div>
+
+<%# The ceremony lands here: pick a verb above → this frame fills with the preview
+    of the exact record line, then Confirm writes & runs it. %>
+<%= turbo_frame_tag "ceremony" %>
+
+<h2>Record</h2>
+<%= render "events/chain", items: @chain, within: @project %>

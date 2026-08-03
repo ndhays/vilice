@@ -1,0 +1,24 @@
+<% content_for :title, "Add Project — Steward Console" %>
+
+<%= breadcrumb [ [ "Projects", projects_path ], [ "Add Project", nil ] ] %>
+<h1>Add Project</h1>
+
+<%= form_with model: @project, url: projects_path, class: "stack-form" do |f| %>
+  <% if @project.errors.any? %>
+    <div class="flash alert"><%= @project.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <label class="field"><span>Project Name</span>
+    <%= f.text_field :name, required: true, autocomplete: "off" %></label>
+  <div class="field-row">
+    <label class="field"><span>Contact Name</span>
+      <%= f.text_field :contact_name, autocomplete: "off" %></label>
+    <label class="field"><span>Contact Email</span>
+      <%= f.email_field :contact_email, class: "mono", autocomplete: "off" %></label>
+  </div>
+
+  <div class="form-actions">
+    <%= f.submit "Create Project", class: "btn mutate" %>
+    <%= button_link_to "Cancel", projects_path, class: "btn-quiet" %>
+  </div>
+<% end %>

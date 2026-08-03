@@ -1,0 +1,63 @@
+<% content_for :title, "Access — Steward Console" %>
+
+<h1><%= icon "key-round", size: 20 %> Access</h1>
+
+<p class="muted">
+  Who may act on each box, at what scope. Read straight from the box's
+  <code>authorized_keys</code> — that file <em>is</em> the ledger, so this page asks
+  rather than remembers.
+</p>
+
+<% if @unpinned_total.positive? %>
+  <div class="panel mutate">
+    <h2><%= icon "triangle-alert", size: 16 %> <%= pluralize(@unpinned_total, "key") %> not written by Steward</h2>
+    <p>
+      These carry no forced command, so whoever holds them reaches the box without
+      passing the gate — nothing they do is scoped, and nothing they do is recorded.
+      They were added outside Steward and can only be removed the same way.
+    </p>
+  </div>
+<% end %>
+
+<% if @machines.empty? %>
+  <p class="empty">No machines yet. <%= link_to "Add one", new_machine_path %>.</p>
+<% end %>
+
+<% @ledgers.each do |machine, ledger| %>
+  <div class="panel observe">
+    <h2><%= link_to machine.name, machine %></h2>
+
+    <% if !ledger.reachable? %>
+      <p class="muted">
+        <%= icon "unplug", size: 15 %>
+        Unreachable — <%= ledger.error %>. The grants below are unknown, not absent.
+      </p>
+    <% elsif ledger.actors.empty? %>
+      <p class="muted">No scoped keys — nobody can reach this box through Steward.</p>
+    <% else %>
+      <table class="ledger">
+        <thead>
+          <tr><th>Actor</th><th>Scope</th><th>Key</th><th>Fingerprint</th></tr>
+        </thead>
+        <tbody>
+          <% ledger.unpinned.each do |a| %>
+            <tr class="unpinned">
+              <td colspan="2"><strong>not a Steward grant</strong></td>
+              <td><%= a["key_type"].presence || "unreadable" %></td>
+              <td><code><%= a["fingerprint"].presence || a["raw"] %></code></td>
+            </tr>
+          <% end %>
+          <% ledger.granted.each do |a| %>
+            <tr>
+              <td><%= a["client"] %></td>
+              <td><span class="scope-<%= a["scope"] %>"><%= a["scope"] %></span></td>
+              <td><%= a["key_type"] %><%= " · #{a["comment"]}" if a["comment"].present? %></td>
+              <td><code><%= a["fingerprint"] %></code></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <p class="muted"><%= ledger.path %></p>
+    <% end %>
+  </div>
+<% end %>
