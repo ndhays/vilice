@@ -79,24 +79,33 @@ its own commit, and a period where the old locations still serve. It is not a
 find-and-replace, and bundling it into a rebrand is how that property gets broken by
 accident.
 
-> **Superseded, 2026-08-03. Both moved.** The repo is now
-> `https://github.com/ndhays/steward`, and the release/docs host is
-> `steward.agoraforge.org`. `install.sh` fetches the key from
-> `raw.githubusercontent.com/ndhays/steward` and the binary from
-> `steward.agoraforge.org/releases`.
+> **Superseded, 2026-08-03. Both renamed; the providers did not change.** The repo is
+> `https://codeberg.org/agoraforge/steward` (was `switchyard-monorepo`, same host), and
+> the release host is `steward.agoraforge.org` (was `switchyard.agoraforge.org`).
+> `install.sh` fetches the key from the repo's raw path and the binary from the release
+> host, exactly as before.
 >
 > **Why the caution above did not apply: there was no install base.** It argued for a
 > transition period so existing installs would not be stranded mid-flight. But nobody has
 > ever installed Steward — `0.2.0beta` was never reachable, because the release key lived
 > only on a feature branch and the old `main` did not serve it at all. A path no one could
-> use is not a path that needs to keep serving. The thing that made this a trust-path
-> change rather than a find-and-replace was the *migration*, and there was nothing to
-> migrate.
+> use is not a path that needs to keep serving. What made this a trust-path change rather
+> than a find-and-replace was the *migration*, and there was nothing to migrate.
 >
-> **The property the caution was protecting survives.** The key and the binary still come
-> from two different providers — GitHub and `agoraforge.org` — so no single compromised
-> server hands you a matching pair. That is what mattered; the specific hostnames never
-> did.
+> **The property the caution was protecting survives**, and trivially so: the key still
+> comes from Codeberg and the binary from `agoraforge.org`. Two providers, as before. The
+> specific names were never the point.
+>
+> **One constraint this surfaced, worth stating because it was never written down: the
+> source repo has to be publicly readable.** The move was briefly made to a *private*
+> repo, which silently breaks the chain of custody — `install.sh` fetches the key with an
+> unauthenticated `curl`, running on a stranger's box that holds no credentials, so a
+> private repo answers 404 and nothing can verify. A deploy key does not help; it
+> authenticates a developer for git, not an installer over HTTPS. So "fetch the key from
+> the source repo" carries a hidden requirement, and the only ways out of it are to
+> publish the repo, serve the key from some other public host that isn't the release
+> server, or bake the key into the installer — and the last one collapses the two
+> providers back into one, which is the thing this whole arrangement exists to prevent.
 >
 > Moving both at once also closes the last place the retired name was still load-bearing.
 > Keeping `switchyard.agoraforge.org` would have meant every install command a reader

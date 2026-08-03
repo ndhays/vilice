@@ -30,7 +30,7 @@
         <a href="/index.html">Documentation</a>
         <a href="/packs.html">Packs</a>
         <a href="/console.html">Console</a>
-        <a href="https://github.com/ndhays/steward">GitHub <span aria-hidden="true">↗</span></a>
+        <a href="https://codeberg.org/agoraforge/steward">Codeberg <span aria-hidden="true">↗</span></a>
       </nav>
     </header>
     <main id="main">
@@ -47,7 +47,7 @@
         &nbsp;·&nbsp;
         Site built with <a href="https://weborigami.org">Web Origami</a>
         &nbsp;·&nbsp;
-        <a href="https://github.com/ndhays/steward">ndhays/steward</a>
+        <a href="https://codeberg.org/agoraforge/steward">agoraforge/steward</a>
       </span>
     </footer>
     <script src="/assets/copy.js" defer></script>

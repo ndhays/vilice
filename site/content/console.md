@@ -77,7 +77,7 @@ machines — others in the fleet, or, slightly meta, the very box it runs on.
 
 ## Run From Source
 
-Steward Console lives in the [monorepo](https://github.com/ndhays/steward) under
+Steward Console lives in the [monorepo](https://codeberg.org/agoraforge/steward) under
 `console/`:
 
 ```bash

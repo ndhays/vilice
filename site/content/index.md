@@ -46,7 +46,7 @@ curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- 0.2.0beta
 
 Confirm the binary is genuinely the published one before running it as root. The check
 matches the release tarball against its ed25519 signature with our public key — and you
-fetch that key from the **source repository on GitHub**, a *different* host than the
+fetch that key from the **source repository on Codeberg**, a *different* host than the
 release server, so no single compromised server can hand you a matching key and binary
 at once:
 
@@ -59,7 +59,7 @@ curl -fsSLO "$base"
 curl -fsSLO "$base.sig"
 
 # the public key, from the source repo (a different provider)
-curl -fsSL https://raw.githubusercontent.com/ndhays/steward/main/steward/release-key.pub -o release-key.pub
+curl -fsSL https://codeberg.org/agoraforge/steward/raw/branch/main/steward/release-key.pub -o release-key.pub
 
 # verify before trusting
 openssl pkeyutl -verify -rawin -pubin -inkey release-key.pub \
@@ -223,7 +223,7 @@ Steward Console reads the record the same way.
 
 ## Build From Source
 
-Work on Steward from source — it lives in the [monorepo](https://github.com/ndhays/steward)
+Work on Steward from source — it lives in the [monorepo](https://codeberg.org/agoraforge/steward)
 under `steward/`:
 
 ```bash
