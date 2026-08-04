@@ -92,13 +92,15 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".placement input[type=radio][name=placement][value=?]", "fleet"
     assert_select ".placement input[name=machine_source][value=?]", "existing"
     assert_select ".placement input[name=machine_source][value=?]", "new"
-    # Fleet is no longer a stub: the count is the real intention, and stating it opens a
-    # gap you close one act at a time. What's still previewed is the new-box path and the
-    # shared front edge.
+    # Fleet is no longer a stub: exposure is a real choice and the count it gates is the
+    # real intention. What's still previewed is the new-box path, and the fact that the
+    # console doesn't manage the balancer an app can be marked as sitting behind.
+    assert_select ".placement input[type=radio][name=?][value=?]", "install[exposure]", "edge"
+    assert_select ".placement input[type=radio][name=?][value=?]", "install[exposure]", "balanced"
     assert_select ".placement input[type=number][name=?]", "install[count]"
     assert_select ".placement .stub-note", 2
-    assert_select ".placement .stub-note", { text: /coming soon/i, count: 1 }   # new box
-    assert_select ".placement .stub-note", { text: /front edge/i, count: 1 }    # balancer
+    assert_select ".placement .stub-note", { text: /coming soon/i, count: 1 }        # new box
+    assert_select ".placement .stub-note", { text: /manage the balancer/i, count: 1 }
   end
 
   test "create installs the app's latest version, then hands off to the deploy ceremony" do
@@ -244,6 +246,81 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
       } }
     end
     assert_response :unprocessable_entity
+  end
+
+  # ── Restating the intention (decisions/drift-is-surfaced-never-closed.md) ─────
+
+  test "edit reaches the intention and not the spec" do
+    sign_in_as @user
+    install = @project.installs.create!(name: "web", image: "img@sha256:abc")
+
+    get edit_install_path(install)
+    assert_response :success
+    assert_select "input[name=?][value=?]", "install[exposure]", "balanced"
+    assert_select "input[type=number][name=?]", "install[count]"
+    # The spec is not editable here — a different concern, and not what this act records.
+    assert_select "input[name=?]", "install[image]", false
+    assert_select "input[name=?]", "install[name]", false
+    assert_select "textarea[name=?]", "install[volumes]", false
+  end
+
+  test "restating the intention records the act and moves the gap" do
+    sign_in_as @user
+    install = @project.installs.create!(name: "web", image: "img@sha256:abc")
+    install.install_targets.create!(machine: @operator, status: "running")
+    @operator.update!(status: "reachable")
+    assert install.reload.in_step?
+
+    assert_difference -> { Event.count }, 1 do
+      patch install_path(install), params: { install: { count: 3, exposure: "balanced" } }
+    end
+    assert_redirected_to install_path(install)
+
+    install.reload
+    assert_equal 3, install.count
+    assert install.exposure_balanced?
+    assert_equal(-2, install.placement_gap, "asking for more opens a gap")
+
+    event = Event.latest.first
+    assert_equal "restated intention", event.action
+    assert_equal "web: asked for 1 box, edge → 3 boxes, balanced", event.summary
+    assert_nil event.outcome, "a control-plane act with no box has nothing to settle"
+  end
+
+  # The corollary that matters most: a changed number is not a destructive call.
+  test "asking for fewer boxes removes nothing" do
+    sign_in_as @user
+    install = @project.installs.create!(name: "web", image: "img@sha256:abc",
+                                        count: 3, exposure: "balanced")
+    install.install_targets.create!(machine: @operator, status: "running")
+
+    assert_no_difference [ -> { InstallTarget.count },
+                           -> { InstallTarget.where(status: "retired").count } ] do
+      patch install_path(install), params: { install: { count: 1, exposure: "edge" } }
+    end
+    assert_equal 1, install.reload.count
+    assert_equal "running", install.install_targets.sole.status,
+                 "the app is still on the box — removing it is a separate, witnessed act"
+  end
+
+  test "an intention the exposure can't deliver is refused" do
+    sign_in_as @user
+    install = @project.installs.create!(name: "web", image: "img@sha256:abc")
+
+    assert_no_difference -> { Event.count } do
+      patch install_path(install), params: { install: { count: 4, exposure: "edge" } }
+    end
+    assert_response :unprocessable_entity
+    assert_equal 1, install.reload.count
+  end
+
+  test "restating nothing records nothing" do
+    sign_in_as @user
+    install = @project.installs.create!(name: "web", image: "img@sha256:abc")
+
+    assert_no_difference -> { Event.count } do
+      patch install_path(install), params: { install: { count: 1, exposure: "edge" } }
+    end
   end
 
   # The constraint the inversion leans on: uniqueness lives on the box, so it holds

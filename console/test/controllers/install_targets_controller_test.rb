@@ -7,7 +7,8 @@ class InstallTargetsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user    = users(:one)
     @project = Project.create!(name: "Acme")
-    @install = @project.installs.create!(name: "web", image: "img@sha256:abc", count: 3)
+    @install = @project.installs.create!(name: "web", image: "img@sha256:abc",
+                                        count: 3, exposure: "balanced")
     @first   = operate_box("b1")
     @free    = operate_box("b2")
     @install.install_targets.create!(machine: @first, status: "running")

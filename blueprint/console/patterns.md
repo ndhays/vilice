@@ -156,13 +156,14 @@ witnessed *mutate*).
 | Observe reconciliation (reality vs plan) | **built** |
 | Intention (`Install#count`) + placement gap, surfaced never closed | **built** |
 | Closing a gap as an act (`POST /installs/:id/targets`) | **built** |
+| Restating the intention (`count`/`exposure`), touching no box | **built** |
 | `replicable?` gate — stateless-only replication, derived from volumes | **built** |
-| Install UI placement step | **interim stub** (Single/Fleet + a real count); reworks to Box × Exposure × scale |
+| Exposure (On the Edge vs Behind a Balancer) as the gate on count | **built** |
+| Install UI placement step | Box × Exposure × scale, minus the managed balancer |
 | MachineSpec + ProviderAdapter (provisioning, "New Box") | settled, **pending** |
 | AppConfig as a versioned artifact (digest identity + slot timeline) | principle settled, **pending** |
 | Accessories (linked Redis/Postgres) — `accessories` block in the AppConfig | in scope, **pending** |
 | Balancer (the shared front edge N placements sit behind) | settled, **pending** |
-| Exposure (On the Edge vs Behind a Balancer) | settled, **pending** |
 | Private-network jump (`via` / ProxyJump) | settled, **pending** |
 | Managed cloud LB (out-of-spine) | settled, **pending** |
 

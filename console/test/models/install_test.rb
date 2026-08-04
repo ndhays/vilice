@@ -65,7 +65,7 @@ class InstallTest < ActiveSupport::TestCase
 
   test "count defaults to one box and must be a positive integer" do
     assert_equal 1, Install.new.count
-    assert Install.new(name: "web", count: 3).valid?
+    assert Install.new(name: "web", count: 3, exposure: "balanced").valid?
     assert_not Install.new(name: "web", count: 0).valid?
     assert_not Install.new(name: "web", count: -1).valid?
   end
@@ -84,16 +84,44 @@ class InstallTest < ActiveSupport::TestCase
     assert stateful.valid?, "a stateful app may still be placed on one box"
   end
 
-  test "a stateless app may ask for several boxes" do
-    assert Install.new(name: "web", count: 4).valid?
+  test "a stateless app behind a balancer may ask for several boxes" do
+    assert Install.new(name: "web", count: 4, exposure: "balanced").valid?
     assert Install.new(name: "web").replicable?
+  end
+
+  # Exposure is the other gate on count, and the reason one exists at all: on the edge
+  # DNS points at a single box, so a second box cannot serve the same hostname.
+  test "an install defaults to the edge, one box" do
+    install = Install.new(name: "web")
+    assert install.exposure_edge?
+    assert_equal 1, install.count
+  end
+
+  test "the edge refuses a count above one" do
+    edge = Install.new(name: "web", count: 2)
+    assert_not edge.valid?
+    assert_match(/must be 1 on the edge/, edge.errors[:count].first)
+    assert_match(/behind a balancer/, edge.errors[:count].first)
+
+    edge.exposure = "balanced"
+    assert edge.valid?, "the same count is fine once DNS points at a balancer"
+  end
+
+  # Both gates are real, and the stateful one wins even behind a balancer — a balancer
+  # in front of N diverging datasets is still N diverging datasets.
+  test "a stateful app is single-placement even behind a balancer" do
+    install = Install.new(name: "db", count: 2, exposure: "balanced",
+                          config: { "volumes" => [ "data:/var/lib" ] })
+    assert_not install.valid?
+    assert_match(/own copy of that data/, install.errors[:count].first)
   end
 
   # The gap is signed, and reality comes from what the box reported — not from our
   # having asked. A target we placed but that isn't running yet doesn't count as serving.
   test "the placement gap counts boxes actually serving, not boxes asked for" do
     machine = Machine.create!(name: "b1", ssh_host: "10.0.0.1", scope: "operate", ssh_private_key: "k")
-    install = @project.installs.create!(name: "web", image: "img@sha256:abc", count: 2)
+    install = @project.installs.create!(name: "web", image: "img@sha256:abc",
+                                        count: 2, exposure: "balanced")
 
     assert_equal 0, install.serving_count
     assert_equal(-2, install.placement_gap)      # asked 2, serving 0

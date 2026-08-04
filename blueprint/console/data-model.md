@@ -126,6 +126,14 @@ open heartbeat question.
 - `name`, `image` (digest-pinned), `hostname`, `port`, `health`, `config` (jsonb) — `config`
   holds the non-scalar spec: `env` and `volumes` (`Install#volumes`), the declarations that
   version with the app, not the data.
+- `exposure` (`edge` | `balanced`, default **edge**) — how the app is reached, and the
+  reason a count above 1 can or can't mean anything. *On the edge*, DNS points at the box
+  and the box terminates its own TLS: one box, one IP, so `count` is pinned to 1 (scaling
+  here would need round-robin DNS, rejected). *Behind a balancer*, the box is a backend and
+  DNS points at the balancer, so more boxes are just more upstreams. **The console does not
+  manage a balancer yet** — marking an install balanced states the topology and unlocks the
+  count; pointing something at those boxes is the operator's, and a managed Balancer is
+  still pending.
 - `count` (default 1) — **the intention**: how many boxes should serve this. A claim about
   what was asked for, never a reading of what is. Nothing reconciles it
   (→ [drift-is-surfaced-never-closed.md](../../decisions/drift-is-surfaced-never-closed.md)):
@@ -136,6 +144,10 @@ open heartbeat question.
   - `Install#placement_gap` is `serving − count`, signed: negative is short, positive is
     more than asked for. `in_step?` is the zero case. **Deliberately not folded into
     `install_status`** — an intention is not a state, and the UI keeps them apart.
+  - **Two gates on `count`, both validations rather than form hints.** `exposure` must be
+    `balanced`, *and* the install must be replicable. Either one alone pins it to 1, and
+    the stateful gate wins even behind a balancer — a balancer in front of N diverging
+    datasets is still N diverging datasets.
   - `Install#replicable?` gates `count > 1`, and is **derived, not stored**: an install is
     replicable when it declares no volumes. Replication is stateless-only (a volume is data
     on *that box's* disk, so N replicas are N diverging datasets), and deriving it from the
@@ -167,6 +179,14 @@ open heartbeat question.
 - A successful deploy pins `desired_image` (what we asked Steward to run); `current_image`
   is reconciled from what the box reports (observe), not written by the deploy — so
   `in_sync?` is honest drift, not an assumption.
+- **The intention is editable; the spec is not, here.** `installs#edit`/`update` reach
+  `count` and `exposure` and nothing else, recorded as a `restated intention` act with
+  human attribution and no outcome to settle. Restating is not a deploy and not a removal:
+  asking for more opens a gap, asking for fewer closes one **without touching a box** —
+  targets keep running, and taking an app off a box stays the witnessed `remove` verb. A
+  cascade of destructive calls whose only trace is a changed number is exactly what
+  [drift-is-surfaced-never-closed.md](../../decisions/drift-is-surfaced-never-closed.md)'s
+  first corollary refuses.
 - **Creating a target is the act that closes a placement gap** (`InstallTargetsController`,
   `POST /installs/:id/targets`): a person picks a box, the placement is recorded, and the
   deploy follows through the ordinary witnessed ceremony. Placing alone does **not** close

@@ -1,0 +1,43 @@
+<%# The intention's two knobs, shared by the create form and the edit page so there is one
+    place that states the rules (decisions/one-primitive-composed.md).
+
+    Exposure comes first because it gates the count: on the edge, DNS points at the box,
+    so a second box cannot serve the same hostname and asking for one states something no
+    deploy will deliver. Both are refused at validation, not merely discouraged here. %>
+<div class="exposure-pick">
+  <div class="radio-cards">
+    <div class="radio-row">
+      <label class="radio">
+        <%= f.radio_button :exposure, "edge", checked: install.exposure_edge? %>
+        <%= icon "earth", size: 20 %>
+        <span class="radio-label">On the edge</span>
+        <small class="radio-hint">DNS points at the box, which terminates its own TLS.
+          One box.</small>
+      </label>
+      <label class="radio">
+        <%= f.radio_button :exposure, "balanced", checked: install.exposure_balanced? %>
+        <%= icon "boxes", size: 20 %>
+        <span class="radio-label">Behind a balancer</span>
+        <small class="radio-hint">The box is a backend; DNS points at the balancer in
+          front of it. One box or many.</small>
+      </label>
+    </div>
+  </div>
+
+  <label class="field"><span>How many boxes
+    <%= hint "The intention — how many boxes should serve this app. Placing each one is a separate recorded act; nothing is provisioned automatically." %></span>
+    <%= f.number_field :count, value: install.count || 1, min: 1, max: 50 %>
+    <small class="muted">Only above 1 when behind a balancer, and only for stateless
+      apps — an app that declares a volume is single-placement, since replicas would each
+      keep their own copy of that data.</small>
+  </label>
+
+  <%# Said plainly rather than implied: choosing "behind a balancer" states the topology,
+      it does not build one. The console does not yet manage a balancer, so the operator's
+      own (Cloudflare, a Caddy they run, a cloud LB) is what makes the count real. %>
+  <p class="stub-note"><%= icon "clock", size: 14 %>
+    <span><strong>The console doesn't manage the balancer yet.</strong> Marking an app
+    balanced says DNS points somewhere other than the box, and unlocks a count above 1 —
+    but pointing a balancer at those boxes is still yours to do. A managed balancer, with a
+    routing table reconciled from the installs behind it, is not built.</span></p>
+</div>

@@ -28,12 +28,19 @@ class Install < ApplicationRecord
                                    less_than_or_equal_to: 65535 }, allow_nil: true
   validates :health, format: { with: %r{\A/}, message: "must start with /" }, allow_blank: true
 
+  # How the app is reached, which is what decides whether a count above 1 can mean
+  # anything (decisions/one-primitive-composed.md). On the edge, DNS points at the box and
+  # the box terminates its own TLS — one box, one IP. Behind a balancer, the box is a
+  # backend and DNS points at the balancer, so more boxes are just more upstreams.
+  enum :exposure, { edge: "edge", balanced: "balanced" }, default: "edge", prefix: :exposure
+
   # How many boxes should serve this. The **intention** — a claim about what was asked
   # for, never a reading of what is (decisions/drift-is-surfaced-never-closed.md).
   # Nothing reconciles it: the gap it opens against reality is closed by a named act or
   # it stays open.
   validates :count, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
   validate :count_within_replication_limit
+  validate :count_within_exposure_limit
 
   # A volume is `<source>:<container-path>[:opts]` — a named volume (`storage`) or a host
   # path (`/srv/x`), then an absolute mount path. Mirrors the box's `Volume=` line
@@ -85,6 +92,16 @@ class Install < ApplicationRecord
   end
 
   private
+
+  # The exposure gate. An install on the edge is reached at its own address, so a second
+  # box cannot serve the same hostname — asking for one is stating something no amount of
+  # deploying will deliver. Refused here rather than allowed and left to disappoint.
+  def count_within_exposure_limit
+    return unless exposure_edge? && count.to_i > 1
+
+    errors.add(:count, "must be 1 on the edge — DNS points at one box. " \
+                       "Put it behind a balancer to run more than one.")
+  end
 
   # The stateless-only gate, enforced rather than merely offered in the form: a spec that
   # declares a volume may not also ask for more than one box.

@@ -87,9 +87,14 @@ fleet-wide placement and nothing asks you to invent a client first. The flow lea
      object, and scaling later is just the number. The count is **real**: it is the
      intention, and stating 3 opens a gap the moment fewer than 3 boxes are serving. You
      close it one recorded act at a time (**Place on another box**), never automatically.
-     The count field appears only for **replicable** installs — one that declares a volume
-     is single-placement, enforced at validation. *(Still previewed: the shared Caddy front
-     edge in front of those N boxes.)*
+   - **Exposure** decides whether that number may exceed 1. *On the edge*, DNS points at
+     the box and the count is pinned to 1; *behind a balancer*, the box is a backend and
+     the count is free. Both gates are validations, not hints — and the second gate is
+     statefulness: an install declaring a volume is single-placement either way.
+     *(Still previewed: a balancer the console actually manages. Marking an app balanced
+     states the topology; pointing something at those boxes is yours.)*
+   - Both are editable afterwards — **Change what's asked for** on the install, recorded as
+     a `restated intention` act. Asking for fewer boxes never removes anything.
    - For Single: **an existing box** — the project's, or any operate-scoped box in the
      fleet when there is no project — or **a new box** (provision via Hetzner, a previewed
      stub). The built path is single + existing box.

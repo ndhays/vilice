@@ -32,6 +32,30 @@ class InstallsController < ApplicationController
                        .map { |e| ChainItem.from_event(e) }
   end
 
+  # Restate the intention — how many boxes, and how it's reached. Deliberately narrow:
+  # this edits what was *asked for*, not what gets deployed. The spec (image, name,
+  # volumes) is a different concern and is not reachable here.
+  def edit
+    @install = Install.find(params[:id])
+  end
+
+  # Saying "three boxes" instead of "one" opens a gap. It does not deploy anything, and
+  # saying "one" instead of "three" does not remove anything — a cascade of destructive
+  # calls whose only trace is a changed number is exactly what
+  # decisions/drift-is-surfaced-never-closed.md refuses. The gap simply moves, and closing
+  # it either way stays a named act.
+  def update
+    @install = Install.find(params[:id])
+    before = intention_of(@install)
+
+    if @install.update(intention_attrs)
+      record_restated(before)
+      redirect_to @install, notice: "Intention updated. Nothing was deployed or removed."
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
   def create
     @install = Install.new(install_attrs.merge(project: @project))
     @machine = placeable_machines.find_by(id: params.dig(:install, :machine_id))
@@ -80,14 +104,15 @@ class InstallsController < ApplicationController
   # operator left blank.
   def install_attrs
     p = params.require(:install).permit(:name, :hostname, :port, :health, :image, :app_id,
-                                        :version_id, :volumes, :count)
+                                        :version_id, :volumes, :count, :exposure)
     config = build_config(p)
-    # The intention. Blank means the single-box default, not zero.
-    count = p[:count].presence || 1
+    # The intention. Blank means the single-box default on its own edge, not zero.
+    count    = p[:count].presence || 1
+    exposure = p[:exposure].presence || "edge"
 
     if allow_custom? && p[:app_id].blank? && p[:image].present?
       { name: p[:name], hostname: p[:hostname], port: p[:port], health: p[:health],
-        image: p[:image], config: config, count: count }
+        image: p[:image], config: config, count: count, exposure: exposure }
     else
       app     = App.find_by(id: p[:app_id])
       # The version must belong to the chosen app; fall back to its latest.
@@ -95,7 +120,7 @@ class InstallsController < ApplicationController
       { app: app, version: version, image: version&.image,
         name: p[:name].presence || app&.name, hostname: p[:hostname],
         port: p[:port].presence || app&.port, health: p[:health].presence || app&.health,
-        config: config, count: count }
+        config: config, count: count, exposure: exposure }
     end
   end
 
@@ -125,5 +150,26 @@ class InstallsController < ApplicationController
   def placement_summary
     where = @project ? " to #{@project.name}" : ""
     "Added #{@install.name}#{where} on #{@machine.name}"
+  end
+
+  # Only the intention. `count` and `exposure` and nothing else — a spec change would ride
+  # in on the same form otherwise, and this act is recorded as a restatement of intent.
+  def intention_attrs
+    params.require(:install).permit(:count, :exposure)
+  end
+
+  def intention_of(install) = "#{install.count} #{'box'.pluralize(install.count)}, #{install.exposure}"
+
+  # Restating what you asked for is a control-plane act with no box behind it — recorded
+  # with human attribution and no outcome to settle, like a label edit or a star.
+  def record_restated(before)
+    after = intention_of(@install)
+    return if before == after
+
+    Event.record!(
+      actor: Current.user.email_address, action: "restated intention",
+      project: @install.project, install: @install,
+      summary: "#{@install.name}: asked for #{before} → #{after}"
+    )
   end
 end

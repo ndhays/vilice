@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_03_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_03_180000) do
   create_table "apps", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "description"
@@ -63,6 +63,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_160000) do
     t.json "config", default: {}, null: false
     t.integer "count", default: 1, null: false
     t.datetime "created_at", null: false
+    t.string "exposure", default: "edge", null: false
     t.string "health"
     t.string "hostname"
     t.string "image"

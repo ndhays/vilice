@@ -88,7 +88,10 @@ Naming it, because an article that can't point at code isn't applied:
 
 ## Two corollaries
 
-**Deleting an intention must not touch a box.** Deleting a statement of desire is not an
+**Deleting an intention must not touch a box.** *(Built: `installs#update` restates
+`count`/`exposure` and reaches nothing else. Going from three boxes to one retires no
+target and issues no call — the gap simply closes. Removing an app is still `remove`.)*
+Deleting a statement of desire is not an
 act on a machine. A cascade that fires N destructive calls whose only trace is a
 vanished row is the same failure in a different costume. Removing the apps is a separate,
 explicit choice that *composes* N recorded removals — which is precisely the ceremony

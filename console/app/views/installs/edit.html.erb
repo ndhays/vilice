@@ -1,0 +1,33 @@
+<% content_for :title, "Restate #{@install.name}'s intention — Steward Console" %>
+
+<%= breadcrumb [ [ "Installs", installs_path ], [ @install.name, install_path(@install) ],
+                 [ "Intention", nil ] ] %>
+
+<h1><%= icon "box", size: 20 %> What <%= @install.name %> should be</h1>
+
+<p class="addr"><%= placement_gap_line(@install, verbose: true) %></p>
+
+<%# Not the mutate treatment. Nothing here reaches a box: this edits the claim, and the
+    claim is only ever closed by a separate, named act
+    (decisions/drift-is-surfaced-never-closed.md). %>
+<div class="panel intent">
+  <div class="kicker">Intention · nothing is deployed by saying this</div>
+
+  <%= form_with model: @install, url: install_path(@install), method: :patch,
+        class: "stack-form" do |f| %>
+    <% if @install.errors.any? %>
+      <div class="flash alert"><%= @install.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <%= render "installs/exposure_fields", f: f, install: @install %>
+
+    <p class="note muted">Asking for more boxes opens a gap you close one placement at a
+      time. Asking for fewer <strong>does not remove anything</strong> — take an app off a
+      box with <strong>Remove</strong>, which is witnessed like any other act.</p>
+
+    <div class="form-actions">
+      <%= button_tag "Save Intention", class: "btn" %>
+      <%= button_link_to "Cancel", install_path(@install), class: "btn-quiet" %>
+    </div>
+  <% end %>
+</div>

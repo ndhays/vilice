@@ -98,6 +98,11 @@ and placement next to it.
   When the gap is negative the panel offers **Place on another box** — one act, through
   the ordinary ceremony. Nothing converges on its own, and the button never appears for
   the over-served case, where the honest move is `remove`, not a silent trim.
+
+  The panel also states **exposure** — on the edge, or behind a balancer — because that is
+  what decides whether a count above 1 is allowed at all, and **Change what's asked for**
+  edits both. That page is styled as intention, not mutate, since saying a different number
+  reaches no box.
 - **Machines → Machine** — the box lens, and it is **pack-shaped**: sections exist
   because the box reports the pack (`steward packs`), not because the console assumed
   it. A box running only the core shows no Apps section — not greyed out, absent,

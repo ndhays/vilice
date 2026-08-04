@@ -99,12 +99,17 @@ boxes report is surfaced and never auto-closed
 **Place on another box** is the act that closes it — so an install can genuinely span N
 boxes today, one recorded placement at a time. The stateless-only gate is enforced.
 
-What remains is the **shared edge**, which is what makes N boxes behave as one service
-rather than N addresses: the Balancer's reconciled Caddy config, rollout orchestration
-across targets, provisioning the backends, and the private-backend jump. Exposure (*On the
-Edge* vs *Behind a Balancer*) arrives with it — until then every placement is its own edge.
-The install UI still ships the **interim Single/Fleet framing** (now with a real count) and
-reworks to **Box × Exposure × scale**.
+**Exposure is built too**, and it is what keeps the count honest: on the edge DNS points at
+one box, so `count` is pinned to 1 there and only a balanced install may ask for more. The
+install UI is now **Box × Exposure × scale**, and both halves of the intention are editable
+after the fact.
+
+What remains is the **Balancer itself**, which is what makes N boxes behave as one service
+rather than N addresses: the reconciled Caddy config, rollout orchestration across targets,
+provisioning the backends, and the private-backend jump. Until it exists, "behind a
+balancer" is a statement about topology that the operator satisfies with their own edge
+(Cloudflare, a Caddy they run, a cloud LB) — which is a real configuration, just not one
+the console manages.
 
 Open, and newly answerable: **should a placement gap page someone?** The decision says
 nobody gets woken by a self-healing system because there isn't one — they get woken by "three

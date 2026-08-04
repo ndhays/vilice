@@ -43,6 +43,19 @@
   <p class="intent-head"><%= placement_gap_line(@install, verbose: true) %></p>
   <p class="note muted"><%= placement_gap_word(@install) %></p>
 
+  <%# Exposure is the reason a count is or isn't allowed above 1, so it belongs here
+      rather than filed with the spec. %>
+  <p class="note muted">
+    <%= icon @install.exposure_edge? ? "earth" : "boxes", size: 13 %>
+    <% if @install.exposure_edge? %>
+      <strong>On the edge</strong> — DNS points at the box, which terminates its own TLS.
+      One box; put it behind a balancer to run more.
+    <% else %>
+      <strong>Behind a balancer</strong> — the box is a backend and DNS points at the
+      balancer in front of it. The console doesn't manage that balancer yet.
+    <% end %>
+  </p>
+
   <% unless @install.in_step? %>
     <% if @install.placement_gap.negative? %>
       <p><%= button_link_to "Place on another box", new_install_target_path(@install),
@@ -58,6 +71,9 @@
       Single-placement: this app declares a volume, so replicas would each keep their own
       copy of that data.</p>
   <% end %>
+
+  <p><%= button_link_to "Change what's asked for", edit_install_path(@install),
+           icon: "pencil", class: "btn-quiet" %></p>
 </div>
 
 <%# Where it runs — each live target box, its state, image drift, and the witnessed

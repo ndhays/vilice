@@ -88,6 +88,15 @@ when balanced, a **count**:
 provisions a backend, deploys, and the balancer picks it up — each step an act, not a
 background convergence. **The public/private choice is what unlocks scale.**
 
+> **Exposure built 2026-08-03**, as `Install#exposure` (`edge` | `balanced`, default
+> `edge`) gating `count` at validation. Restating it is `installs#update`, a recorded
+> `restated intention` act that reaches no box. What is *not* built is the Balancer
+> itself — so "behind a balancer" today states the topology and unlocks the count, and the
+> balancer in front of those boxes is the operator's own. Splitting it this way was
+> deliberate: without the gate, an install on the edge could ask for three boxes and get
+> three boxes all claiming one hostname that DNS points at once. The gate is the honest
+> half and it does not need the Balancer to exist.
+
 **Transitions.** Start an app *behind a balancer* (even at count 1) and scaling later never
 touches DNS — DNS already points at the balancer; up/down is just upstreams. The only
 cutover is the one-time **Edge → Balanced** move (DNS flips from the box to the balancer
