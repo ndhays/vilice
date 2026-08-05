@@ -163,6 +163,14 @@ machinery before a second plugin is how a small project spends a year on scaffol
   lives in the *absence* of paths, which does not port. The installer's chain of custody
   is also repo-shaped — `install.sh` fetches the release key from the source repo on
   purpose — so a new repo means a new key URL for no gain.
+
+  > **Superseded 2026-08-05** by [`the-core-is-handwritten.md`](the-core-is-handwritten.md).
+  > The operative words above were *"for no gain"*, and there is now a gain: a handwritten
+  > core is ownable, and therefore licensable, in a way generated code is not. The clause
+  > about un-bypassability living in the absence of paths is **not** superseded — it is the
+  > main risk the rewrite has to be careful about, and the existing tests are what guard it.
+  > The key-URL objection turned out not to apply: the core stays on Codeberg, so the URL
+  > does not move.
 - **`$PATH` discovery, git-style.** Above.
 - **Directory-only, no manifest** ("root owns the directory, that is enough"). It would
   mostly hold, and it makes the trust boundary a filesystem permission that a careless
