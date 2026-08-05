@@ -77,6 +77,9 @@ Rails.application.routes.draw do
       # release the owner. machine-ownership.md.
       patch :sharing
       patch :transfer
+      # Take (or drop) the balancer role — a box willing to front others. A recorded
+      # own-record act; it changes nothing on the box until routing is applied.
+      patch :balancer
     end
     # The sharing allowlist (sharing = list): which projects may pick up the box.
     resources :grants, only: %i[ create destroy ], controller: "machine_grants"

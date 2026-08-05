@@ -41,6 +41,10 @@ class MachineStatus
     @updates = (result.dig(:data, "data", "updates") if @ok) || {}
     # The automatic-maintenance window the box reports: { reboot_time, auto_reboot }.
     @maintenance = (result.dig(:data, "data", "maintenance") if @ok) || {}
+    # What the box says it fronts for *other* boxes — read off the routing fragment
+    # `steward route` wrote. This is the reality half of the balancer's plan-vs-reality
+    # loop; the plan is Machine#routing_table.
+    @routes = (result.dig(:data, "data", "routes") if @ok) || []
   end
 
   def online? = @ok
@@ -53,6 +57,11 @@ class MachineStatus
   # The apps the box itself reports running — not the installs we think it has.
   # The machine view renders these: it shows what is there, not what was intended.
   def apps = @apps
+
+  # The site addresses this box reports fronting. Same rule as `apps`: what the box
+  # says, never what we asked for. An unreachable box reports nothing, which the UI
+  # must read as *unknown* rather than *fronting nothing*.
+  def routes = @routes
 
   def mem_total_bytes = @machine["mem_total_kb"].to_i * 1024
   def mem_available_bytes = @machine["mem_available_kb"].to_i * 1024

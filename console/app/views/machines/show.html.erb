@@ -157,6 +157,50 @@
   </div>
 <% end %>
 
+<%# ── The edge, when this box is a balancer ─────────────────────────────────
+    Two halves again, and kept visibly apart: the table this box *should* serve, derived
+    from the installs that select it, and the addresses it *reports* fronting. Nothing
+    reconciles them — applying is an act (drift-is-surfaced-never-closed.md). %>
+<% if @machine.balancer? %>
+  <div class="panel intent">
+    <div class="kicker">Edge · derived from the installs behind it</div>
+    <% if @table.any? %>
+      <ul class="route-table">
+        <% @table.each do |r| %>
+          <li>
+            <span class="route-host mono"><%= r.hostnames.join(" ") %></span>
+            <span class="route-arrow">→</span>
+            <span class="route-ups mono"><%= r.upstreams.join(", ") %></span>
+            <%= link_to r.install.name, r.install, class: "route-install" %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="note muted">No install selects this balancer yet, so the table is empty —
+        applying it would tell the box to front nothing.</p>
+    <% end %>
+
+    <%# Reality. An unreachable box reports nothing, and "nothing" must not read as
+        "fronting nothing" — that's the dangerous misreading. %>
+    <p class="note muted">
+      <% if !@status.online? %>
+        Unreachable — what this box is fronting is <strong>unknown</strong>, not none.
+      <% elsif @status.routes.any? %>
+        Box reports fronting: <span class="mono"><%= @status.routes.join(", ") %></span>
+      <% else %>
+        Box reports fronting nothing yet.
+      <% end %>
+    </p>
+
+    <% if @machine.operate? %>
+      <p><%= button_link_to "Apply Routing", new_machine_mutation_path(@machine, act: "route"),
+               icon: "earth", class: "btn mutate" %></p>
+    <% else %>
+      <p class="note muted">This box holds an observe key — applying routes needs operate.</p>
+    <% end %>
+  </div>
+<% end %>
+
 <%# ── Mutate (operate) vs. read-only (observe) ─────────────────────────── %>
 <% if @machine.operate? %>
   <div class="panel mutate">

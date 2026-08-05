@@ -1,0 +1,1 @@
+{"routes":[{"hostnames":["smoke.example.com"],"upstreams":["10.0.9.1:80","10.0.9.2:80"]}]}

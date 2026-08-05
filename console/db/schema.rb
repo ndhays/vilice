@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_03_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_03_200000) do
   create_table "apps", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "description"
@@ -60,6 +60,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_180000) do
 
   create_table "installs", force: :cascade do |t|
     t.integer "app_id"
+    t.integer "balancer_id"
     t.json "config", default: {}, null: false
     t.integer "count", default: 1, null: false
     t.datetime "created_at", null: false
@@ -73,6 +74,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_180000) do
     t.datetime "updated_at", null: false
     t.integer "version_id"
     t.index ["app_id"], name: "index_installs_on_app_id"
+    t.index ["balancer_id"], name: "index_installs_on_balancer_id"
     t.index ["project_id"], name: "index_installs_on_project_id"
     t.index ["version_id"], name: "index_installs_on_version_id"
   end
@@ -100,6 +102,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_180000) do
   end
 
   create_table "machines", force: :cascade do |t|
+    t.boolean "balancer", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "last_seen_at"
     t.string "name", null: false
@@ -203,6 +206,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_180000) do
   add_foreign_key "install_targets", "installs"
   add_foreign_key "install_targets", "machines"
   add_foreign_key "installs", "apps"
+  add_foreign_key "installs", "machines", column: "balancer_id"
   add_foreign_key "installs", "projects"
   add_foreign_key "installs", "versions"
   add_foreign_key "machine_grants", "machines"

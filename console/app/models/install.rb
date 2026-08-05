@@ -34,6 +34,12 @@ class Install < ApplicationRecord
   # backend and DNS points at the balancer, so more boxes are just more upstreams.
   enum :exposure, { edge: "edge", balanced: "balanced" }, default: "edge", prefix: :exposure
 
+  # Which box fronts this install. Only meaningful when balanced — on the edge the app is
+  # reached at its own box and there is nothing in front of it. A Balancer is a Machine in
+  # a role, not a separate primitive (decisions/one-primitive-composed.md).
+  belongs_to :balancer, class_name: "Machine", optional: true
+  validate :balancer_fits_exposure
+
   # How many boxes should serve this. The **intention** — a claim about what was asked
   # for, never a reading of what is (decisions/drift-is-surfaced-never-closed.md).
   # Nothing reconciles it: the gap it opens against reality is closed by a named act or
@@ -92,6 +98,16 @@ class Install < ApplicationRecord
   end
 
   private
+
+  # A balancer only makes sense in front of something balanced, and only a box that has
+  # taken the role can be one. Both are refused rather than quietly ignored — an install
+  # pointing at a box that isn't fronting anything would look routed and not be.
+  def balancer_fits_exposure
+    return if balancer.nil?
+
+    errors.add(:balancer, "only applies behind a balancer — this install is on the edge") if exposure_edge?
+    errors.add(:balancer, "#{balancer.name} isn't marked as a balancer") unless balancer.balancer?
+  end
 
   # The exposure gate. An install on the edge is reached at its own address, so a second
   # box cannot serve the same hostname — asking for one is stating something no amount of

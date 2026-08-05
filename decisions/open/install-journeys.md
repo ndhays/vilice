@@ -104,12 +104,14 @@ one box, so `count` is pinned to 1 there and only a balanced install may ask for
 install UI is now **Box × Exposure × scale**, and both halves of the intention are editable
 after the fact.
 
-What remains is the **Balancer itself**, which is what makes N boxes behave as one service
-rather than N addresses: the reconciled Caddy config, rollout orchestration across targets,
-provisioning the backends, and the private-backend jump. Until it exists, "behind a
-balancer" is a statement about topology that the operator satisfies with their own edge
-(Cloudflare, a Caddy they run, a cloud LB) — which is a real configuration, just not one
-the console manages.
+**The self-hosted Balancer is built too.** A box takes the role, installs select it, its
+table is derived from those installs, and `steward route` applies it as a witnessed act.
+Selecting one stays optional — an operator with their own edge (Cloudflare, a cloud LB)
+just wants the count unlocked, and that is still a supported configuration.
+
+What remains: **rollout orchestration** across a balanced install's targets (today a deploy
+is per-box and N boxes is N acts, with no drain-then-flip across the set), the
+**managed-LB** realization, provisioning the backends, and the private-backend jump.
 
 Open, and newly answerable: **should a placement gap page someone?** The decision says
 nobody gets woken by a self-healing system because there isn't one — they get woken by "three

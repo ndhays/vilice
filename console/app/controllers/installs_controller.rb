@@ -104,7 +104,7 @@ class InstallsController < ApplicationController
   # operator left blank.
   def install_attrs
     p = params.require(:install).permit(:name, :hostname, :port, :health, :image, :app_id,
-                                        :version_id, :volumes, :count, :exposure)
+                                        :version_id, :volumes, :count, :exposure, :balancer_id)
     config = build_config(p)
     # The intention. Blank means the single-box default on its own edge, not zero.
     count    = p[:count].presence || 1
@@ -112,7 +112,8 @@ class InstallsController < ApplicationController
 
     if allow_custom? && p[:app_id].blank? && p[:image].present?
       { name: p[:name], hostname: p[:hostname], port: p[:port], health: p[:health],
-        image: p[:image], config: config, count: count, exposure: exposure }
+        image: p[:image], config: config, count: count, exposure: exposure,
+        balancer_id: p[:balancer_id].presence }
     else
       app     = App.find_by(id: p[:app_id])
       # The version must belong to the chosen app; fall back to its latest.
@@ -120,7 +121,8 @@ class InstallsController < ApplicationController
       { app: app, version: version, image: version&.image,
         name: p[:name].presence || app&.name, hostname: p[:hostname],
         port: p[:port].presence || app&.port, health: p[:health].presence || app&.health,
-        config: config, count: count, exposure: exposure }
+        config: config, count: count, exposure: exposure,
+        balancer_id: p[:balancer_id].presence }
     end
   end
 
@@ -155,10 +157,13 @@ class InstallsController < ApplicationController
   # Only the intention. `count` and `exposure` and nothing else — a spec change would ride
   # in on the same form otherwise, and this act is recorded as a restatement of intent.
   def intention_attrs
-    params.require(:install).permit(:count, :exposure)
+    params.require(:install).permit(:count, :exposure, :balancer_id)
   end
 
-  def intention_of(install) = "#{install.count} #{'box'.pluralize(install.count)}, #{install.exposure}"
+  def intention_of(install)
+    where = install.balancer ? " behind #{install.balancer.name}" : ""
+    "#{install.count} #{'box'.pluralize(install.count)}, #{install.exposure}#{where}"
+  end
 
   # Restating what you asked for is a control-plane act with no box behind it — recorded
   # with human attribution and no outcome to settle, like a label edit or a star.

@@ -118,6 +118,13 @@ and placement next to it.
   answer to "what is supposed to run here," which is the intention layer's job one ring
   out, where the gap against reality is visible rather than assumed away.
 
+  **A balancer box grows an Edge panel.** It shows the routing table derived from the
+  installs that select it — hostname → upstreams — beside the addresses the box *reports*
+  fronting, the same two-halves grammar as the intention layer. Applying is
+  **Apply Routing**, a witnessed act; nothing reconciles on its own. An unreachable
+  balancer reads as *unknown*, never as *fronting nothing*, which is the dangerous
+  misreading.
+
   The console validates only that the config is a JSON object and that its name
   matches the name being deployed under. Everything else is the box's to judge — it
   validates at the render boundary and refuses what it cannot render, and a second copy

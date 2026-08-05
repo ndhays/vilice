@@ -90,12 +90,12 @@ background convergence. **The public/private choice is what unlocks scale.**
 
 > **Exposure built 2026-08-03**, as `Install#exposure` (`edge` | `balanced`, default
 > `edge`) gating `count` at validation. Restating it is `installs#update`, a recorded
-> `restated intention` act that reaches no box. What is *not* built is the Balancer
-> itself — so "behind a balancer" today states the topology and unlocks the count, and the
-> balancer in front of those boxes is the operator's own. Splitting it this way was
-> deliberate: without the gate, an install on the edge could ask for three boxes and get
-> three boxes all claiming one hostname that DNS points at once. The gate is the honest
-> half and it does not need the Balancer to exist.
+> `restated intention` act that reaches no box. Splitting the gate out ahead of the
+> Balancer was deliberate: without it, an install on the edge could ask for three boxes and
+> get three boxes all claiming one hostname that DNS points at once. The gate is the honest
+> half and it did not need the Balancer to exist — which the next section then built.
+> Selecting a balancer stays *optional* even when balanced: an operator running their own
+> edge only wants the count unlocked.
 
 **Transitions.** Start an app *behind a balancer* (even at count 1) and scaling later never
 touches DNS — DNS already points at the balancer; up/down is just upstreams. The only
@@ -115,6 +115,24 @@ This is a deliberate, narrow exception to "no new noun": a Balancer earns first-
 by its own **lifecycle, cross-project sharing, and derived control surface** — but its
 *implementation* is still the Caddy-on-a-Machine primitive. It is a **role over Machine**,
 not a competing primitive.
+
+> **Built 2026-08-03, self-hosted.** `Machine#balancer` is the role — a boolean, no new
+> table, because a Balancer *is* a Machine and a parallel model would duplicate address,
+> key, scope and ownership and then have to be kept in step. `RoutingTable` derives the
+> table from the installs that select it; applying it is the `route` act.
+>
+> Two things this doc's wording needed pinning down. **"Reconciled from the installs behind
+> it" means derived on read, not converged in the background** — the table is computed when
+> shown and again when sent, and a person presses Apply
+> ([`drift-is-surfaced-never-closed.md`](drift-is-surfaced-never-closed.md)). And **only
+> boxes actually serving are upstreams**: a placed-but-not-running or unreachable box is
+> left out, because routing to it would turn a placement gap into a 502 when the whole point
+> is that the gap stays visible.
+>
+> It also needed a Steward verb, which the box did not have — every route the app pack could
+> write was `reverse_proxy 127.0.0.1:<port>`. `steward route` is that verb; see
+> [`../blueprint/steward/deploy.md`](../blueprint/steward/deploy.md). The managed-LB
+> realization is still pending.
 
 **Ownership and sharing are the Machine model, unchanged** ([machine-ownership.md](machine-ownership.md)):
 

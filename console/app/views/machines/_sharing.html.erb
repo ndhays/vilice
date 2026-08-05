@@ -62,3 +62,27 @@
     </div>
   <% end %>
 </div>
+
+<%# The balancer role — a box willing to front others. It sits with ownership rather than
+    with the app sections because it is a fact about the box, not about anything deployed
+    on it (decisions/one-primitive-composed.md: a role over Machine, not a new noun). %>
+<div class="panel observe">
+  <div class="kicker">Role</div>
+  <p class="note muted">
+    <% if machine.balancer? %>
+      This box fronts others: installs behind a balancer can select it, and its routing
+      table is derived from them.
+    <% else %>
+      An ordinary box. Mark it a balancer to let balanced installs sit behind it.
+    <% end %>
+  </p>
+  <%= form_with url: balancer_machine_path(machine), method: :patch, class: "inline-form" do %>
+    <%= hidden_field_tag "machine[balancer]", machine.balancer? ? "0" : "1" %>
+    <%= button_tag machine.balancer? ? "Stop being a balancer" : "Make this a balancer",
+          class: "btn sm" %>
+  <% end %>
+  <% if machine.balancer? && machine.fronted_installs.any? %>
+    <p class="note muted"><%= pluralize(machine.fronted_installs.size, "install") %> sit
+      behind it — dropping the role leaves them with no balancer, it doesn't delete them.</p>
+  <% end %>
+</div>

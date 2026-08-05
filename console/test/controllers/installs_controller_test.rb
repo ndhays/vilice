@@ -98,9 +98,11 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".placement input[type=radio][name=?][value=?]", "install[exposure]", "edge"
     assert_select ".placement input[type=radio][name=?][value=?]", "install[exposure]", "balanced"
     assert_select ".placement input[type=number][name=?]", "install[count]"
-    assert_select ".placement .stub-note", 2
-    assert_select ".placement .stub-note", { text: /coming soon/i, count: 1 }        # new box
-    assert_select ".placement .stub-note", { text: /manage the balancer/i, count: 1 }
+    # The balancer is real now too — a picker, not a note about something unbuilt. The
+    # new-box (Hetzner) path is the only previewed stub left in this step.
+    assert_select ".placement .balanced-only"
+    assert_select ".placement .stub-note", 1
+    assert_select ".placement .stub-note", { text: /coming soon/i, count: 1 }   # new box
   end
 
   test "create installs the app's latest version, then hands off to the deploy ceremony" do

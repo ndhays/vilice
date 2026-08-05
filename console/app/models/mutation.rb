@@ -40,6 +40,15 @@ class Mutation
     "remove"        => Act.new(verb: "remove", label: "Remove", past: "removed",
                                target: :install,
                                build: ->(_m, i) { "remove #{i.name} --json" }),
+    # The balancer's table, applied. Machine-scoped: it is about this box's edge, not
+    # about one app. The table rides stdin and is *derived* at send time from the
+    # installs that select this balancer — never stored, so it cannot drift from the
+    # placements it describes (decisions/one-primitive-composed.md). Applying is an act
+    # because nothing converges on its own
+    # (decisions/drift-is-surfaced-never-closed.md).
+    "route"         => Act.new(verb: "route", label: "Apply Routing", past: "routed",
+                               target: :machine,
+                               build: ->(_m, _i) { "route --json" }),
   }.freeze
 
   # The app-lifecycle acts, in the order they read on the machine page.
@@ -74,11 +83,13 @@ class Mutation
 
   def command = act.build.call(machine, install)
 
-  # Deploy ships the desired-state envelope on stdin once composed; nothing else does.
+  # Two acts ship desired state on stdin: deploy sends one app's spec, route sends the
+  # whole edge table. Both are derived at send time rather than read from a stored copy.
   def stdin
-    return nil unless act.verb == "deploy" && composed?
-
-    install.deploy_envelope(image: image, hostname: hostname, port: port, health: health).to_json
+    case act.verb
+    when "deploy" then composed? ? install.deploy_envelope(image: image, hostname: hostname, port: port, health: health).to_json : nil
+    when "route"  then RoutingTable.envelope(machine).to_json
+    end
   end
 
   def action = act.past
@@ -87,10 +98,21 @@ class Mutation
     case act.verb
     when "deploy"   then "deployed #{install.name} on #{machine.name} @#{short_digest}"
     when "rollback" then "rolled back #{install.name} on #{machine.name}"
+    when "route"    then route_summary
     else
       target = install ? "#{install.name} on #{machine.name}" : machine.name
       "#{act.past} #{target}"
     end
+  end
+
+  # The record line names what the edge will serve, not just that it was touched — "routed
+  # db-1" tells a later reader nothing about what changed.
+  def route_summary
+    routes = machine.routing_table
+    return "routed #{machine.name} — fronting nothing" if routes.empty?
+
+    hosts = routes.flat_map(&:hostnames).join(", ")
+    "routed #{machine.name} → #{hosts} across #{routes.sum { |r| r.upstreams.size }} upstreams"
   end
 
   # Compose fields — what the operator picks, each defaulting from the Install.

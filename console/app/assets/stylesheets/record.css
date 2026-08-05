@@ -184,3 +184,17 @@
 .tag { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
 .tag.witnessed { color: var(--mutate); margin-left: 0.4rem; }
 
+
+/* The balancer's derived routing table: hostname → upstreams, one row per install
+   behind it. Rendered in the intent panel because it is the *plan* half — what the
+   box reports fronting is shown as prose beneath it. */
+.route-table { list-style: none; margin: 0.4rem 0 0; padding: 0; }
+.route-table li {
+  display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;
+  padding: 0.35rem 0; border-bottom: 1px solid var(--line);
+}
+.route-table li:last-child { border-bottom: 0; }
+.route-table .route-host { font-weight: 600; }
+.route-table .route-arrow { color: var(--muted); }
+.route-table .route-ups { color: var(--muted); font-size: 0.85rem; }
+.route-table .route-install { margin-left: auto; font-size: 0.85rem; }

@@ -27,6 +27,12 @@ class Machine < ApplicationRecord
   has_many :granted_projects, through: :machine_grants, source: :project
   has_many :install_targets, dependent: :destroy
   has_many :installs, through: :install_targets
+  # Installs this box fronts — the balancer role (decisions/one-primitive-composed.md).
+  # Nullify, never destroy: turning a balancer off must not delete other people's
+  # placements. They fall back to needing one, which surfaces as an install that can't
+  # be routed rather than an install that vanished.
+  has_many :fronted_installs, class_name: "Install", foreign_key: :balancer_id,
+           inverse_of: :balancer, dependent: :nullify
   has_many :snapshots, dependent: :destroy
   has_many :events, dependent: :nullify
   has_many :labels, as: :labelable, dependent: :destroy
@@ -43,8 +49,18 @@ class Machine < ApplicationRecord
   validates :ssh_port, numericality: { only_integer: true, in: 1..65_535 }
 
   # Shared in any form — anything but dedicated (for counts and badges).
-  scope :shared,  -> { where.not(sharing: "dedicated") }
-  scope :unowned, -> { where(owner_id: nil) }
+  scope :shared,   -> { where.not(sharing: "dedicated") }
+  scope :unowned,  -> { where(owner_id: nil) }
+  # Boxes willing to front others. A balancer needs operate scope like any other box we
+  # send a command to — `route` is an operate-scoped verb.
+  scope :balancers, -> { where(balancer: true) }
+
+  def balancer? = balancer
+
+  # The table this box should be serving, derived from the installs that select it —
+  # never hand-authored (decisions/one-primitive-composed.md). This is the *plan* half;
+  # what the box reports fronting is the other. See RoutingTable.
+  def routing_table = RoutingTable.for(self)
 
   def unowned? = owner_id.nil?
 

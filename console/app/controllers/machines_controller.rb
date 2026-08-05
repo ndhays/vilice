@@ -1,5 +1,5 @@
 class MachinesController < ApplicationController
-  before_action :set_machine, only: %i[ show refresh destroy sharing transfer ]
+  before_action :set_machine, only: %i[ show refresh destroy sharing transfer balancer ]
 
   # All Machines — the fleet. Searchable by name/label; an "unowned" toggle filters
   # to boxes with no owner (released/fleet-registered), with a light presence count
@@ -61,6 +61,9 @@ class MachinesController < ApplicationController
     @chain    = chain_for(@machine, @record)
     @installs = @machine.installs.includes(:project).order(:name) # placements on this box (project optional)
     @projects = Project.order(:name) # for the ownership / sharing controls
+    # The edge table this box should serve, derived rather than stored. Empty for a box
+    # that isn't a balancer, so the panel simply doesn't render.
+    @table    = @machine.balancer? ? @machine.routing_table : []
   end
 
   # ── Observe ──────────────────────────────────────────────────────────────
@@ -126,6 +129,31 @@ class MachinesController < ApplicationController
                     machine: @machine, project: owner, summary: summary)
     end
     redirect_to @machine, notice: owner ? "Transferred to #{owner.name}." : "Released — now unowned."
+  end
+
+  # Take or drop the balancer role. A control-plane act with no box behind it: the box
+  # learns nothing until routing is applied, which is a separate witnessed act. Dropping
+  # the role nullifies the installs that selected it (never deletes them) — they surface
+  # as balanced installs with no balancer, which is a visible problem rather than a
+  # silent disappearance.
+  def balancer
+    taking = ActiveModel::Type::Boolean.new.cast(params.require(:machine)[:balancer])
+    orphaned = taking ? 0 : @machine.fronted_installs.count
+
+    Machine.transaction do
+      @machine.update!(balancer: taking)
+      Event.record!(actor: Current.user.email_address,
+                    action: taking ? "took balancer role" : "dropped balancer role",
+                    machine: @machine,
+                    summary: "#{@machine.name} #{taking ? 'is now a balancer' : 'is no longer a balancer'}")
+    end
+
+    notice = taking ? "#{@machine.name} can now front other boxes." :
+                      "#{@machine.name} is no longer a balancer."
+    notice += " #{helpers.pluralize(orphaned, 'install')} now have no balancer." if orphaned.positive?
+    redirect_to @machine, notice: notice
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to @machine, alert: e.message
   end
 
   private

@@ -54,6 +54,23 @@ open heartbeat question.
 - `owner_id` — the **owning Project** (nullable; a released/fleet-registered box is
   unowned). Deleting an owner is **blocked** until its boxes are transferred. → decision 1
 - `sharing` (`dedicated` | `everyone` | `list`, default **dedicated**) → see decision 1
+- `balancer:boolean` (default false) — **the Balancer role**, not a fourth primitive
+  ([one-primitive-composed.md](../../decisions/one-primitive-composed.md)). A balancer is
+  an ordinary box: same scoped key, same record, same ownership and sharing. What makes it
+  one is that installs select it and it is told a routing table. A separate Balancer model
+  would duplicate address, key, scope and ownership, then have to be kept in step with the
+  Machine it already is. Not exclusive — a balancer may still run apps.
+- `Machine#routing_table` is **derived, never stored** (`RoutingTable`): one route per
+  install that selects this balancer, whose upstreams are the boxes that install is
+  *actually serving from*. A placed-but-not-running or unreachable box is **not** an
+  upstream — routing to it would turn a placement gap into a 502, and the gap is meant to
+  stay visible. Upstreams address the backend's own edge on port 80, not the app's
+  container port (that port is published on the backend's loopback and unreachable from
+  the balancer); Caddy forwards the Host header, so the backend matches the same hostname
+  and hands off to the app.
+- Dropping the role **nullifies** the installs behind it, never destroys them — they
+  surface as balanced installs with no balancer, a visible problem rather than a silent
+  disappearance.
 - `ssh_private_key` — **encrypted** (Active Record Encryption) → see decision 2
 - `ssh_public_key` — the authorized half (not secret). Steward Console generates the keypair at
   onboarding (`SshKeypair`); the operator `steward authorize`s this pubkey on the box.
@@ -134,6 +151,10 @@ open heartbeat question.
   manage a balancer yet** — marking an install balanced states the topology and unlocks the
   count; pointing something at those boxes is the operator's, and a managed Balancer is
   still pending.
+- `balancer_id` (nullable) — which box fronts this install. Only valid when balanced, and
+  only pointing at a box that has taken the role; both refused rather than ignored, since
+  an install pointing at a box that fronts nothing would look routed and not be. Optional
+  even when balanced: an operator running their own edge just wants the count unlocked.
 - `count` (default 1) — **the intention**: how many boxes should serve this. A claim about
   what was asked for, never a reading of what is. Nothing reconciles it
   (→ [drift-is-surfaced-never-closed.md](../../decisions/drift-is-surfaced-never-closed.md)):

@@ -5,9 +5,10 @@
 > — and, just as importantly, what it deliberately is not.
 
 **Status:** Canonical **model**. The model is settled; implementation is staged. **Built:**
-AppConfig (the deploy spec) and the Install binding for *single placement on an existing
-box*. **Settled but pending:** MachineSpec + ProviderAdapter (provisioning), Balancer,
-multi-placement (count > 1), and the private-network jump. The *why* and roads not taken are
+AppConfig (the deploy spec), the Install binding incl. count and exposure, multi-placement,
+and the self-hosted Balancer. **Settled but pending:** MachineSpec + ProviderAdapter
+(provisioning), the managed-LB realization, rollout orchestration, and the private-network
+jump. The *why* and roads not taken are
 in [`one-primitive-composed.md`](../../decisions/one-primitive-composed.md) and
 [`provider-boundary.md`](../../decisions/provider-boundary.md). Last touched 2026-06-24.
 
@@ -111,7 +112,15 @@ Ownership/sharing is the **Machine model unchanged** ([`machine-ownership.md`](.
 dedicated to one project by default (isolation preserved), shareable to a list ("owned by
 Steward Console, usable by selected projects" = *unowned + sharing=list*). The self-hosted Caddy
 balancer is the provider-agnostic default and **doubles as the bastion** (next section); the
-managed LB is the opt-out for bought HA, and lives outside the SSH/record spine. *(Pending.)*
+managed LB is the opt-out for bought HA, and lives outside the SSH/record spine.
+
+**Self-hosted is built** (2026-08-03). `Machine#balancer` is the role, the table is derived
+by `RoutingTable` from the installs that select it, and applying it is the `route` act —
+`steward route` writing a second Caddy fragment on the box. "Reconciled from the installs
+behind it" means *derived on read*, not converged in the background: the table is computed
+when it is shown and when it is sent, and a person presses Apply
+([`drift-is-surfaced-never-closed.md`](../../decisions/drift-is-surfaced-never-closed.md)).
+The managed-LB realization is still pending.
 
 ## The boundary: what Steward Console must know — and must not care about
 
@@ -163,7 +172,8 @@ witnessed *mutate*).
 | MachineSpec + ProviderAdapter (provisioning, "New Box") | settled, **pending** |
 | AppConfig as a versioned artifact (digest identity + slot timeline) | principle settled, **pending** |
 | Accessories (linked Redis/Postgres) — `accessories` block in the AppConfig | in scope, **pending** |
-| Balancer (the shared front edge N placements sit behind) | settled, **pending** |
+| Balancer — role over Machine, derived table, applied as an act | **built** |
+| Rollout orchestration across a balanced install's targets | **pending** |
 | Private-network jump (`via` / ProxyJump) | settled, **pending** |
 | Managed cloud LB (out-of-spine) | settled, **pending** |
 

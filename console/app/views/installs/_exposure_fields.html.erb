@@ -32,12 +32,18 @@
       keep their own copy of that data.</small>
   </label>
 
-  <%# Said plainly rather than implied: choosing "behind a balancer" states the topology,
-      it does not build one. The console does not yet manage a balancer, so the operator's
-      own (Cloudflare, a Caddy they run, a cloud LB) is what makes the count real. %>
-  <p class="stub-note"><%= icon "clock", size: 14 %>
-    <span><strong>The console doesn't manage the balancer yet.</strong> Marking an app
-    balanced says DNS points somewhere other than the box, and unlocks a count above 1 —
-    but pointing a balancer at those boxes is still yours to do. A managed balancer, with a
-    routing table reconciled from the installs behind it, is not built.</span></p>
+  <%# Which balancer fronts it. Optional even when balanced: an operator may be running
+      their own edge (Cloudflare, a cloud LB) and only wants the count unlocked. Picking
+      one here is what puts this install into that box's derived routing table. %>
+  <label class="field balanced-only"><span>Balancer
+    <%= hint "The box that fronts this app. Its routing table is derived from the installs that select it — you apply that table as a witnessed act on the balancer's own page." %></span>
+    <% balancers = Machine.balancers.operate.order(:name) %>
+    <% if balancers.any? %>
+      <%= f.collection_select :balancer_id, balancers, :id, :name,
+            { include_blank: "None — my own edge" }, {} %>
+    <% else %>
+      <p class="muted">No box is marked as a balancer yet. Mark one on its machine page,
+        or leave this blank and point your own edge at the boxes.</p>
+    <% end %>
+  </label>
 </div>

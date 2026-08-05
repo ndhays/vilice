@@ -142,7 +142,7 @@ stands on its own terms and this decision does not disturb it.
 | Drift as a surfaced, never-closed gap | **built** — `Install#count`, `placement_gap`, and the act that closes it |
 | `Install.project` inversion, installs at `/installs` | **built** — the prerequisite |
 | Exposure — the gate that makes a count above 1 honest | **built** |
-| Balancer — the managed front edge those N boxes sit behind | settled, **pending** |
+| Balancer — the managed front edge those N boxes sit behind | **built** — `steward route` + the derived table |
 | `Machine → Project` inversion | **pending** — tenancy's own prerequisite, see below |
 | `steward-intentions` engine | **pending** — the layer works; extracting it does not block anything |
 | `steward-projects` engine | **pending** |
