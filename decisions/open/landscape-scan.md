@@ -101,6 +101,24 @@ Terraform, and managed PaaS (Fly.io, Render, Railway). I know the general shape 
 the self-hosting PaaS category. Only mention these where you are drawing a sharp,
 specific contrast with something above.
 
+Also **Cockpit** and **Flathub**, which are the two nearest neighbours and are worth
+naming separately because each is adjacent to a *different* layer:
+
+- **Cockpit** — the machine view's neighbour. Red Hat's per-box web console. It arrives at
+  the same statelessness we do (no database; live status read through systemd APIs), and
+  differs on all three things that matter: it is a privileged web app **on** every box, it
+  hands out a **terminal**, and it keeps **no record of its own actions** — its only audit
+  surface is reading the system's SELinux log. **Its multi-machine host switcher is
+  deprecated as of Cockpit 322**, which is the single most useful fact about it: the closest
+  prior art tried the fleet dimension and retreated to one box at a time. Cuts both ways —
+  support for "a fleet is N rows, because the box never knows it is in one", and a warning
+  that a well-resourced team found the fleet surface not worth maintaining.
+- **Flathub** — the App Library's neighbour, and prior art for the part of the model that is
+  still open ([`app-library.md`](app-library.md)): a curated catalog, a declarative
+  per-app manifest, a publishing pipeline, and a story for how a third party ships
+  definitions someone else installs. Worth mining for manifest shape and curation policy,
+  **not** for its build/sandbox model, which solves a desktop problem we do not have.
+
 ## Questions, in priority order
 
 1. **The name — collision only.** The name is **settled** on merit
