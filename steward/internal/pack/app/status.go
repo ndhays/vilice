@@ -66,6 +66,13 @@ func statusCmd(args []string) core.Result {
 		data["registries"] = regs
 		msg += "\n\n" + renderRegistries(regs)
 	}
+	// What this box fronts for *other* boxes, read off the fragment `route` wrote. This
+	// is the reality half of the edge: a control plane can compare it against the table
+	// it believes it sent, and see the gap rather than assume there isn't one.
+	if r := currentRoutes(); len(r) > 0 {
+		data["routes"] = r
+		msg += "\n\nFronting: " + strings.Join(r, ", ")
+	}
 	return core.Result{Code: "ok", Message: msg, Data: data}
 }
 

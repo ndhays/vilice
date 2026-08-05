@@ -42,6 +42,12 @@ func (Pack) Verbs() []core.Command {
 		{Name: "stop", Scope: core.ScopeOperate, Summary: "Stop an app", Usage: "<app>", Run: stopCmd},
 		{Name: "restart", Scope: core.ScopeOperate, Summary: "Restart an app", Usage: "<app>", Run: restartCmd},
 		{Name: "remove", Scope: core.ScopeOperate, Summary: "Take an app off the box", Usage: "<app>", Run: removeCmd},
+		// The edge half: this box fronting *other* boxes. Declarative and wholly
+		// replaced, like deploy — you send the table the box should serve. See route.go.
+		{Name: "route", Scope: core.ScopeOperate,
+			Summary: "Front other boxes: replace this box's routing table (table on stdin)",
+			Usage:   "< table.json   ({\"routes\":[{\"hostnames\":[…],\"upstreams\":[\"host:port\"]}]})",
+			Run:     routeCmd},
 		{Name: "backup", Scope: core.ScopeOperate, Summary: "Snapshot an app (or --all, or --machine)",
 			Usage: "<app> | --all | --machine | --repo <url>  (repo password on stdin)",
 			Flags: []string{"all", "machine", "repo"}, Run: backupCmd},

@@ -21,6 +21,7 @@ func TestAssembledSurface(t *testing.T) {
 		"apply-updates", "verify", "record", "actors", "packs",
 		// steward-app
 		"deploy", "rollback", "start", "stop", "restart", "remove",
+		"route",
 		"backup", "restore", "registry-login", "registry-logout",
 		"status", "logs", "doctor", "snapshot",
 	}

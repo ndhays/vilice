@@ -94,6 +94,40 @@ the deploy loop. *Behind a TLS-terminating CDN/proxy* (e.g. Cloudflare orange cl
 edge serves its own cert and intercepts the ACME challenge; that topology needs DNS-01
 and stays open (see [Open](#open)).
 
+### `steward route` — fronting other boxes
+
+Every route above is `reverse_proxy 127.0.0.1:<port>`: an app on *this* box, derived from
+what is deployed here. That cannot express the other shape — one box fronting several
+others — so `route` adds it.
+
+```
+steward route < table.json
+{"routes":[{"hostnames":["app.example.com"],"upstreams":["10.0.0.5:8080","10.0.0.6:8080"]}]}
+```
+
+- **A second fragment, not a second Caddy.** It writes `/etc/caddy/steward/routes.caddy`,
+  which the base config already picks up — `prepare` writes `import
+  /etc/caddy/steward/*.caddy`, a glob, so the extension point predates the verb. Apps own
+  `apps.caddy` and routes own `routes.caddy`; neither can clobber the other, and both
+  reload through the same admin API with no root.
+- **Declarative and wholly replaced**, like `deploy`: you send the table the box should
+  serve, and that becomes what it serves. There is no add-a-route or drop-a-route, because
+  a partial edit needs caller and box to agree about a starting state neither can see.
+  An **empty table is valid** and means "front nothing" — that is how a box leaves service.
+- **Validated before it is written.** A refused table leaves the previous fragment in
+  place, so the box keeps serving what it was serving rather than losing its routes to a
+  malformed request. A hostname in two routes is refused rather than silently resolved,
+  and an upstream must carry a port — there is no default worth guessing.
+- **Not secret.** Upstream addresses ride the recorded envelope, not the off-record
+  channel: what a box fronts is exactly the sort of thing the record should answer later.
+- `status` reports `routes` — read back off the fragment, so a control plane compares what
+  the box *is* fronting against the table it believes it sent, rather than assuming.
+
+Several upstreams on one directive is what makes Caddy balance across them. This is the
+box half of the console's Balancer role
+([`one-primitive-composed.md`](../../decisions/one-primitive-composed.md)); nothing here
+knows about a fleet, and the box is told its table by a named actor like everything else.
+
 ## `steward rollback <app>`
 
 Re-deploy the last-good image. Same path as `deploy`.
@@ -111,6 +145,7 @@ its `[Install]` section, since a generated Quadlet unit can't be `systemctl disa
 | `steward stop <app>` | Stop it and keep it down across reboot. |
 | `steward restart <app>` | Restart the active color in place. |
 | `steward remove <app>` | Stop and remove both colors' units, secrets, and state. |
+| `steward route` | Replace this box's table of routes to *other* boxes (table on stdin). |
 
 ## Backup & restore
 
