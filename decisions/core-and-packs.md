@@ -1,5 +1,13 @@
 # A trust core and verb packs
 
+> **Largely superseded 2026-08-06 by [`roles-not-packs.md`](roles-not-packs.md).** Packs are
+> dropped: the seam had nothing on the far side once the scope narrowed to hosting web apps,
+> and the handwritten core does the job the split was for. Still standing from this doc: the
+> **internal seam** between the trust core and the verbs, the **binary integrity check** (a
+> recorded digest checked before every verb), and the rule that a real second case triggers a
+> split rather than symmetry — which is what finally argued against packs themselves. Gone:
+> the discovery directory, the `$PATH` reasoning, the physical split, and `execveat`.
+>
 > Decided 2026-08-02. Steward splits into a small **core** — the gate, the record, the
 > ceiling — and **verb packs** it dispatches to. One binary for now, internally layered.
 > Discovery is one fixed root-owned directory; a root-owned manifest, not the directory,
