@@ -3,7 +3,7 @@ title: Documentation
 ---
 # Documentation
 
-**Contents:** [Install](#install) &middot; [Upgrade](#upgrade) &middot; [Authentication](#authentication--scoped-ssh) &middot; [Root Commands](#root-commands) &middot; [Steward Commands](#steward-commands) &middot; [Build From Source](#build-from-source)
+**Contents:** [Proof Of Concept](#a-proof-of-concept) &middot; [Install](#install) &middot; [Upgrade](#upgrade) &middot; [Authentication](#authentication--scoped-ssh) &middot; [Root Commands](#root-commands) &middot; [Steward Commands](#steward-commands) &middot; [Build From Source](#build-from-source)
 
 Steward is a single Go binary on every machine, and the layer with the privilege. Every
 action is a named actor, a declared scope, and a record written before it runs — **there
@@ -28,6 +28,28 @@ You rarely type any of this. [Steward Console](/console.html) drives it over sco
 running these same commands. It is also the breakglass surface: the operator always has it
 over their own SSH, so recovery never depends on the web UI.
 
+## A Proof Of Concept
+
+Most of the code in this project was **written by an LLM**, from a specification that came
+first and is still the canonical artifact — the blueprint is prose, and the code is a
+projection of it. Saying so plainly is more useful than letting a reader work it out from
+the commit history.
+
+It has a consequence worth stating. [Codeberg's Terms of Use](https://codeberg.org/Codeberg/org/src/branch/main/TermsOfUse.md)
+prohibit projects that mostly consist of generative-AI-written code, and this one does — so
+the repository lives on GitHub, and what is published today is a **proof of concept**: the
+thing that proved the design works, not the thing meant to be trusted forever.
+
+The intention is to **rewrite the Steward core by hand** from that same specification and
+host it on Codeberg, with an LLM as **editor and critic only** — reviewing code a human
+wrote, never writing it. The reason is ownership rather than optics: retyping does not
+change where code came from, but human authorship is what makes a licence mean anything,
+and a copyleft over code nobody can own is a weak instrument for a project whose whole
+argument is sovereignty.
+
+Until then: read the design, run it on a box you can afford to lose, and judge the idea
+rather than the artifact.
+
 ## Install
 
 > **You don't have to install Steward yourself.** Steward Console installs and drives it for
@@ -46,7 +68,7 @@ curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- 0.2.0beta
 
 Confirm the binary is genuinely the published one before running it as root. The check
 matches the release tarball against its ed25519 signature with our public key — and you
-fetch that key from the **source repository on Codeberg**, a *different* host than the
+fetch that key from the **source repository on GitHub**, a *different* host than the
 release server, so no single compromised server can hand you a matching key and binary
 at once:
 
@@ -59,7 +81,7 @@ curl -fsSLO "$base"
 curl -fsSLO "$base.sig"
 
 # the public key, from the source repo (a different provider)
-curl -fsSL https://codeberg.org/agoraforge/steward/raw/branch/main/steward/release-key.pub -o release-key.pub
+curl -fsSL https://raw.githubusercontent.com/ndhays/steward/main/steward/release-key.pub -o release-key.pub
 
 # verify before trusting
 openssl pkeyutl -verify -rawin -pubin -inkey release-key.pub \
@@ -75,8 +97,8 @@ sudo install -m 0755 steward /usr/local/bin/steward
 user and stay there:
 
 ```bash
-sudo steward harden     # optional OS lockdown — key-only SSH, UFW, fail2ban
-sudo steward prepare    # install Podman + Caddy, create the steward user, lay the record
+sudo steward harden          # optional OS lockdown — key-only SSH, UFW (sshd's port only), fail2ban
+sudo steward prepare host    # say what the box is for; installs what that needs, opens 80/443
 sudo -iu steward        # cross the seam once; everything past here runs as this user
 ```
 
@@ -97,7 +119,7 @@ a newer version, followed by `prepare`:
 
 ```bash
 curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- 0.2.0beta
-sudo steward prepare --yes
+sudo steward prepare host --yes
 steward doctor
 ```
 
@@ -156,7 +178,7 @@ unprivileged `steward` user.
 |---|---|
 | `steward harden` | Optional OS / `sshd` hardening. Comes first, before `prepare`, but kept **separate** — the accountability floor never lives here, so a box is accountable even un-hardened. |
 | `steward harden --check` | Verify the hardening posture and report drift (a read — changes and records nothing); exits non-zero if anything regressed. Publishes the result so `status` — and Steward Console — can show it. |
-| `steward prepare [--yes]` | Install Podman + Caddy and lay the **accountability floor** (the append-only record). Shows an apt-style size confirmation first; `--yes` skips it for automation. Required before any deploy. |
+| `steward prepare <host\|balancer> [--yes]` | Say what the box is for, install what that role needs, and lay the **accountability floor** (the append-only record). A **host** gets Podman, restic and Caddy; a **balancer** gets Caddy alone and runs no apps. The role is recorded, and re-preparing as a *different* role is refused. Opens the role's ports when a firewall is present. Shows an apt-style confirmation first; `--yes` skips it. Required before any deploy. |
 | `steward uninstall [--yes] [--remove-apps]` | Remove the gate and the scribe — the snapshot timer, every scoped key, the sudoers grant, the binary. **Your apps keep running** as ordinary systemd services behind Caddy; `--remove-apps` (or the prompt) takes them down first. Keeps the `steward` user and the record, and points at the restic repo and its password file so the backups aren't orphaned. |
 
 Steward is not a runtime — apps run under systemd with plain Caddy routes — so `uninstall`
@@ -223,7 +245,7 @@ Steward Console reads the record the same way.
 
 ## Build From Source
 
-Work on Steward from source — it lives in the [monorepo](https://codeberg.org/agoraforge/steward)
+Work on Steward from source — it lives in the [monorepo](https://github.com/ndhays/steward)
 under `steward/`:
 
 ```bash

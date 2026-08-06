@@ -26,16 +26,34 @@ project that looks for daylight in it.
 
 **Three parts.**
 
-1. **The Steward core is rewritten by hand, and stays on Codeberg.** Not transcribed —
-   *reimplemented from the blueprint*, which is the distinction that does all the work
-   (below). `codeberg.org/agoraforge/steward` keeps its name and its URL.
-2. **Everything else moves to a self-hosted Forgejo.** The console, the blueprint, the
-   decisions, the site, the release tooling. Forgejo is the software Codeberg itself
-   develops, so nothing familiar is lost.
+1. **The Steward core is rewritten by hand, and that rewrite goes to Codeberg.** Not
+   transcribed — *reimplemented from the blueprint*, which is the distinction that does all
+   the work (below).
+2. **Everything else — including this repository as it stands — lives where the clause
+   does not apply.** A self-hosted Forgejo was the intended home; the interim is
+   `github.com/ndhays/steward`.
 3. **An LLM may review, never author.** The clause bans code *written by* generative AI. It
    says nothing about using one to critique code a human wrote, and that is the arrangement
    from here: the human writes the test and the implementation, the model reads them and
    argues. Nothing it produces enters the repo.
+
+> **Amended 2026-08-06.** The original plan kept the current repository on Codeberg and
+> moved only the console. That was wrong on its own terms: the repository *as it exists
+> today* is the thing the clause describes, so it cannot stay there while the handwritten
+> core is still hypothetical. What is on Codeberg must be the rewrite, not a promise of
+> one. So the whole monorepo moves to GitHub now, and Codeberg receives the core when it
+> is written by hand. Self-hosted Forgejo remains the intended destination for everything
+> that is not the core; GitHub is the interim, chosen for being immediate rather than
+> for being right.
+>
+> The two-provider property in `install.sh` survives the move — the key comes from
+> `raw.githubusercontent.com` and the binary from `steward.agoraforge.org`, still
+> different providers — and the repository **must stay publicly readable**, which is the
+> constraint the earlier private-repo detour taught.
+>
+> Both the README and the documentation site now say this outright: what is published is a
+> proof of concept, most of it machine-written, with the handwritten core as the stated
+> intention. A reader should not have to infer provenance from commit trailers.
 
 ## Why a rewrite, when we had already rejected one
 
@@ -114,22 +132,24 @@ a distance. The cost is real and accepted: a behaviour change in the Go and its 
 update land in two commits in two repos rather than one, and nothing but discipline keeps
 them together.
 
-## The release key stays on Codeberg, which is the point
+## The release key travels with the repo, and the two-provider rule is what matters
 
 `install.sh` fetches the release public key from the source repo **on purpose, from a
 different host than the release server**, so no single compromised server hands you a
 matching key and binary ([`the-names-are-steward.md`](the-names-are-steward.md)).
 
 Self-hosting everything would have collapsed that: key and binary both from
-`agoraforge.org`. Keeping the core on Codeberg preserves it — the two providers are Codeberg
-and `agoraforge.org`, as before, and no URL has to move.
+`agoraforge.org`. The rule to hold is **not** "the key lives on Codeberg" — it is that the
+key and the binary come from **different providers**. That survives the move to GitHub
+(`raw.githubusercontent.com` and `agoraforge.org`) and it would survive a later move to a
+self-hosted Forgejo only if the key were served from somewhere that is not `agoraforge.org`.
 
-Until the handwritten core exists, that repo holds **the release key and a README pointing
-at the new home**. A repo containing one public key is not a project mostly consisting of
-generated code under any reading, so compliance is immediate and needs no argument about
-proportions. The one hard requirement carries over: the repo must stay **publicly
+The one hard requirement carries over wherever the repo lands: it must stay **publicly
 readable**, because the installer's fetch is unauthenticated
 ([`the-names-are-steward.md`](the-names-are-steward.md)).
+
+When the handwritten core reaches Codeberg, the key can move there and the property holds
+unchanged — but nothing forces that, and it should not be mistaken for the reason.
 
 ## What it costs
 

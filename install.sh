@@ -19,7 +19,7 @@ INSTALL_PATH="${INSTALL_PATH:-/usr/local/bin/steward}"
 # matching key and binary). Override with a local file via PUBKEY_FILE.
 # The repo must be PUBLICLY readable: this is an unauthenticated fetch running on
 # a stranger's box, so a private repo 404s here and no install can verify.
-PUBKEY_URL="${PUBKEY_URL:-https://codeberg.org/agoraforge/steward/raw/branch/main/steward/release-key.pub}"
+PUBKEY_URL="${PUBKEY_URL:-https://raw.githubusercontent.com/ndhays/steward/main/steward/release-key.pub}"
 PUBKEY_FILE="${PUBKEY_FILE:-}"
 
 if [ -z "$VERSION" ]; then

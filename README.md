@@ -22,6 +22,27 @@ a person at a shell, a CI job, or an AI agent — nothing orchestrates from besi
 Built on the [Agora Constitution](blueprint/agora.md): every actor named, every action
 accountable, the privileged ceiling small and legible — as mechanism, not commentary.
 
+## This repository is a proof of concept
+
+**Most of the code here was written by an LLM** (Claude), from a specification that is
+itself the canonical artifact — `blueprint/` is 6,900 lines of prose that came first, and
+the code is a projection of it. That is worth saying plainly rather than leaving a reader
+to infer it from the commit trailers.
+
+It has a consequence. [Codeberg's Terms of Use](https://codeberg.org/Codeberg/org/src/branch/main/TermsOfUse.md)
+§ 2 (1) 7 prohibits projects that *mostly consist of code written by "generative AI"
+tools*, and this one does. So this repository lives on GitHub, where that clause does not
+apply, and it is a **proof of concept** — the thing that proved the design works.
+
+**The intention is to rewrite the Steward core by hand and host it on Codeberg**, from
+this same blueprint, with an LLM as **editor and critic only** — reviewing code a human
+wrote, never writing it. Not to launder provenance, which retyping would not change, but
+because human authorship is what makes the work *ownable*, and an MIT or AGPL licence over
+code nobody can own is a weak instrument. The full reasoning, including what that rewrite
+risks, is in [`decisions/the-core-is-handwritten.md`](decisions/the-core-is-handwritten.md).
+
+The Console is not part of that plan for now, and its provenance is unchanged.
+
 **Start at [`blueprint/overview.md`](blueprint/overview.md).** The repo:
 
 ```
