@@ -69,6 +69,12 @@ backend. The self-hosted balancer is the jump box. A backend Machine gains an op
 `via:`; the jump box carries a narrow forwarding-only key (`permitopen` to the backend
 subnet), distinct from its Steward gate.
 
+This covers the **operator**. It does not cover **app-to-app** traffic, which has no path at
+all today and does not need one while an app is a single container plus volumes. When an
+accessory lands on its own box, that gap becomes real — and the answer is a private network
+carrying data only, never the operator:
+[`the-vpn-is-not-a-control-path.md`](the-vpn-is-not-a-control-path.md).
+
 ## Roads not taken
 
 - **Build provisioning/LB/volumes/firewalls ourselves.** Rejected — that is the Hetzner
