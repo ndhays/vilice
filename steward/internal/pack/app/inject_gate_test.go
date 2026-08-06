@@ -42,10 +42,10 @@ func TestOperateCannotReachTheFilesThatGrantPrivilege(t *testing.T) {
 func TestWriteUnitRefusesAnUnrenderableSpec(t *testing.T) {
 	t.Setenv("STEWARD_QUADLET_DIR", t.TempDir())
 	hostile := []appState{
-		{Name: "web", Image: "img@sha256:abc", Hostnames: []string{"a.example.com"}, Port: 8080,
+		{Name: "web", Image: "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000", Hostnames: []string{"a.example.com"}, Port: 8080,
 			Volumes: []string{"data:/d\nPodmanArgs=--privileged"}},
-		{Name: "web", Image: "img@sha256:abc\nAddCapability=CAP_SYS_ADMIN", Hostnames: []string{"a.example.com"}, Port: 8080},
-		{Name: "web", Image: "img@sha256:abc", Hostnames: []string{"a.example.com"}, Port: 8080,
+		{Name: "web", Image: "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000\nAddCapability=CAP_SYS_ADMIN", Hostnames: []string{"a.example.com"}, Port: 8080},
+		{Name: "web", Image: "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000", Hostnames: []string{"a.example.com"}, Port: 8080,
 			Env: map[string]string{"K": "v\nUser=root"}},
 	}
 	for _, st := range hostile {
@@ -61,7 +61,7 @@ func TestWriteUnitRefusesAnUnrenderableSpec(t *testing.T) {
 // problem rather than a route silently disappearing.
 func TestPolicyIsCheckedOnTheWayInOnly(t *testing.T) {
 	legacy := appState{
-		Name: "web", Image: "img@sha256:abc", Hostnames: []string{"app.example.com"},
+		Name: "web", Image: "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000", Hostnames: []string{"app.example.com"},
 		Port: 8080, Health: "/",
 		Volumes: []string{"/data/web:/data"}, // outside the bind root — predates the rule
 	}
@@ -101,7 +101,7 @@ func TestRefreshCaddyRefusesAnInvalidSpecOnDisk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	hostile := `{"name":"web","image":"img@sha256:abc","port":8080,
+	hostile := `{"name":"web","image":"img@sha256:abc0000000000000000000000000000000000000000000000000000000000000","port":8080,
 	  "hostnames":["evil.com\n}\n:9999 {\n\troot * /\n\tfile_server browse\n}\n#"],
 	  "active_color":"a","ports":{"a":8800}}`
 	if err := os.WriteFile(appPath("web"), []byte(hostile), 0o600); err != nil {

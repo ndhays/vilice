@@ -18,7 +18,7 @@ import (
 func TestCaddyfileShapeHoldsForValidatedHostnames(t *testing.T) {
 	withHostname := func(h string) appState {
 		return appState{
-			Name: "web", Image: "img@sha256:abc", Port: 8080, Health: "/",
+			Name: "web", Image: "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000", Port: 8080, Health: "/",
 			Hostnames: []string{h}, ActiveColor: "a", Ports: map[string]int{"a": 8800},
 		}
 	}
@@ -53,7 +53,7 @@ func FuzzCaddyfileShape(f *testing.F) {
 	f.Add("app.example.com")
 	f.Fuzz(func(t *testing.T, hostname string) {
 		st := appState{
-			Name: "web", Image: "img@sha256:abc", Port: 8080, Health: "/",
+			Name: "web", Image: "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000", Port: 8080, Health: "/",
 			Hostnames: []string{hostname}, ActiveColor: "a", Ports: map[string]int{"a": 8800},
 		}
 		if validateState(st) != nil {
@@ -66,7 +66,7 @@ func FuzzCaddyfileShape(f *testing.F) {
 func TestQuadletRejectsHostileVolumesAndImages(t *testing.T) {
 	base := func() appState {
 		return appState{
-			Name: "web", Image: "img@sha256:abc", Port: 8080, Health: "/",
+			Name: "web", Image: "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000", Port: 8080, Health: "/",
 			Hostnames: []string{"app.example.com"},
 		}
 	}
@@ -119,7 +119,7 @@ func FuzzQuadletUnitShape(f *testing.F) {
 	f.Add("/srv/data:/data", "value")
 	f.Fuzz(func(t *testing.T, volume, envValue string) {
 		st := appState{
-			Name: "web", Image: "img@sha256:abc", Port: 8080, Health: "/",
+			Name: "web", Image: "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000", Port: 8080, Health: "/",
 			Hostnames: []string{"app.example.com"},
 			Volumes:   []string{volume},
 			Env:       map[string]string{"KEY": envValue},

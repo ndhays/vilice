@@ -27,7 +27,7 @@ func TestRecordCmdDumpsEntriesAndIntegrity(t *testing.T) {
 		}
 	}
 	must(Record("operator", "root", "prepare", nil))
-	must(Record("console", "operate", "deploy", []string{"app1", "--image", "x@sha256:abc"}))
+	must(Record("console", "operate", "deploy", []string{"app1", "--image", "x@sha256:abc0000000000000000000000000000000000000000000000000000000000000"}))
 	must(Record("ci", "operate", "restart", []string{"app1"}))
 
 	res = recordCmd(nil)

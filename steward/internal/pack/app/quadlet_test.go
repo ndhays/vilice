@@ -65,7 +65,7 @@ func TestLivePort(t *testing.T) {
 func TestRenderQuadletUnit(t *testing.T) {
 	st := appState{
 		Name:        "web",
-		Image:       "registry.example/web@sha256:abc",
+		Image:       "registry.example/web@sha256:abc0000000000000000000000000000000000000000000000000000000000000",
 		Port:        8080,
 		Health:      "/up",
 		Env:         map[string]string{"RAILS_ENV": "production", "A_FLAG": "with space"},
@@ -77,7 +77,7 @@ func TestRenderQuadletUnit(t *testing.T) {
 
 	wantLines := []string{
 		"[Container]",
-		"Image=registry.example/web@sha256:abc",
+		"Image=registry.example/web@sha256:abc0000000000000000000000000000000000000000000000000000000000000",
 		"ContainerName=web-a",
 		"PublishPort=127.0.0.1:8800:8080",
 		`Environment="PORT=8080"`,

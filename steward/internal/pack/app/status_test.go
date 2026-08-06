@@ -50,13 +50,13 @@ func TestParseMeminfo(t *testing.T) {
 }
 
 func TestParsePodmanPS(t *testing.T) {
-	sample := "web-a\tghcr.io/org/web@sha256:abc\tUp 3 hours\nmy-api-b\tghcr.io/org/api@sha256:def\tExited (0)\n"
+	sample := "web-a\tghcr.io/org/web@sha256:abc0000000000000000000000000000000000000000000000000000000000000\tUp 3 hours\nmy-api-b\tghcr.io/org/api@sha256:def0000000000000000000000000000000000000000000000000000000000000\tExited (0)\n"
 	apps := parsePodmanPS(sample)
 	if len(apps) != 2 {
 		t.Fatalf("got %d apps, want 2", len(apps))
 	}
 	// The color suffix is split off: Name is the command target, Color is the blue/green.
-	if apps[0].Name != "web" || apps[0].Color != "a" || apps[0].Image != "ghcr.io/org/web@sha256:abc" || apps[0].State != "Up 3 hours" {
+	if apps[0].Name != "web" || apps[0].Color != "a" || apps[0].Image != "ghcr.io/org/web@sha256:abc0000000000000000000000000000000000000000000000000000000000000" || apps[0].State != "Up 3 hours" {
 		t.Errorf("apps[0] = %+v", apps[0])
 	}
 	// App names may contain hyphens; only the trailing -a/-b is the color.

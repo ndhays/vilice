@@ -8,14 +8,14 @@ import (
 
 func TestRegistryOf(t *testing.T) {
 	cases := map[string]string{
-		"nginx@sha256:abc":                              "docker.io",
-		"library/nginx@sha256:abc":                      "docker.io",
-		"docker.io/library/nginx@sha256:abc":            "docker.io",
-		"ghcr.io/project-zot/zot@sha256:abc":            "ghcr.io",
-		"registry.example.com/team/app@sha256:abc":      "registry.example.com",
-		"registry.example.com:5000/team/app@sha256:abc": "registry.example.com:5000",
-		"localhost:5000/app@sha256:abc":                 "localhost:5000",
-		"quay.io/prometheus/node-exporter":              "quay.io",
+		"nginx@sha256:abc0000000000000000000000000000000000000000000000000000000000000":                              "docker.io",
+		"library/nginx@sha256:abc0000000000000000000000000000000000000000000000000000000000000":                      "docker.io",
+		"docker.io/library/nginx@sha256:abc0000000000000000000000000000000000000000000000000000000000000":            "docker.io",
+		"ghcr.io/project-zot/zot@sha256:abc0000000000000000000000000000000000000000000000000000000000000":            "ghcr.io",
+		"registry.example.com/team/app@sha256:abc0000000000000000000000000000000000000000000000000000000000000":      "registry.example.com",
+		"registry.example.com:5000/team/app@sha256:abc0000000000000000000000000000000000000000000000000000000000000": "registry.example.com:5000",
+		"localhost:5000/app@sha256:abc0000000000000000000000000000000000000000000000000000000000000":                 "localhost:5000",
+		"quay.io/prometheus/node-exporter": "quay.io",
 	}
 	for image, want := range cases {
 		if got := registryOf(image); got != want {
@@ -104,9 +104,9 @@ func TestParseAuthFileGarbage(t *testing.T) {
 
 func TestRegistryCoverageCheck(t *testing.T) {
 	apps := []appState{
-		{Name: "a", Image: "ghcr.io/me/a@sha256:1"},
-		{Name: "b", Image: "ghcr.io/me/b@sha256:2"}, // same registry, deduped
-		{Name: "c", Image: "nginx@sha256:3"},        // docker.io, no login
+		{Name: "a", Image: "ghcr.io/me/a@sha256:1000000000000000000000000000000000000000000000000000000000000000"},
+		{Name: "b", Image: "ghcr.io/me/b@sha256:2000000000000000000000000000000000000000000000000000000000000000"}, // same registry, deduped
+		{Name: "c", Image: "nginx@sha256:3000000000000000000000000000000000000000000000000000000000000000"},        // docker.io, no login
 	}
 	logins := []registryLogin{{Host: "ghcr.io", Username: "me"}}
 

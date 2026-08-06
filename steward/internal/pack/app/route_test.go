@@ -240,7 +240,7 @@ func TestDeployRefusedOnABalancer(t *testing.T) {
 	if err := core.SetRole(core.RoleBalancer); err != nil {
 		t.Fatal(err)
 	}
-	res := deployCmd([]string{"web", "--image", "ghcr.io/x/y@sha256:abc"})
+	res := deployCmd([]string{"web", "--image", "ghcr.io/x/y@sha256:abc0000000000000000000000000000000000000000000000000000000000000"})
 	if res.Code != "wrong_role" {
 		t.Fatalf("got %q (%s), want wrong_role", res.Code, res.Message)
 	}
@@ -259,7 +259,7 @@ func TestDeployNotRefusedOnAHostOrUnprepared(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		if res := deployCmd([]string{"web", "--image", "ghcr.io/x/y@sha256:abc"}); res.Code == "wrong_role" {
+		if res := deployCmd([]string{"web", "--image", "ghcr.io/x/y@sha256:abc0000000000000000000000000000000000000000000000000000000000000"}); res.Code == "wrong_role" {
 			t.Errorf("role %q should not be refused by the role guard", setup)
 		}
 	}

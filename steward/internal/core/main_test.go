@@ -34,7 +34,7 @@ func TestAccountGateIsOnEveryDoor(t *testing.T) {
 
 	t.Run("sshd forced command", func(t *testing.T) {
 		path := useTempRecord(t)
-		t.Setenv("SSH_ORIGINAL_COMMAND", "deploy web --image x@sha256:abc")
+		t.Setenv("SSH_ORIGINAL_COMMAND", "deploy web --image x@sha256:abc0000000000000000000000000000000000000000000000000000000000000")
 		if code := authExec([]string{"--client", "ci", "--scope", "ssh"}, 0); code != 1 {
 			t.Errorf("root ran a deploy through the forced command: exit %d, want 1", code)
 		}
@@ -128,7 +128,7 @@ func TestUnknownFlag(t *testing.T) {
 		args []string
 		want string
 	}{
-		{deploy, []string{"web", "--image", "img@sha256:x", "--port", "9000"}, ""},
+		{deploy, []string{"web", "--image", "img@sha256:e000000000000000000000000000000000000000000000000000000000000000", "--port", "9000"}, ""},
 		{deploy, []string{"web", "--por", "9000"}, "--por"},
 		{deploy, []string{"web", "--image=img", "--hleath", "/up"}, "--hleath"},
 		{status, nil, ""},

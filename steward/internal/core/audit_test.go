@@ -108,7 +108,7 @@ func TestRecordChains(t *testing.T) {
 	if err := Record("operator", "root", "harden", nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := Record("console", "operate", "deploy", []string{"app1", "--image", "x@sha256:abc"}); err != nil {
+	if err := Record("console", "operate", "deploy", []string{"app1", "--image", "x@sha256:abc0000000000000000000000000000000000000000000000000000000000000"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := Record("operator", "root", "authorize", []string{"--client", "ci"}); err != nil {

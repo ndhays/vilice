@@ -153,11 +153,11 @@ func TestDecideExec(t *testing.T) {
 		wantName  string
 		wantJSON  bool
 	}{
-		{"operate can deploy", ScopeOperate, "deploy web --image x@sha256:abc", true, "deploy", false},
+		{"operate can deploy", ScopeOperate, "deploy web --image x@sha256:abc0000000000000000000000000000000000000000000000000000000000000", true, "deploy", false},
 		{"observe cannot deploy", ScopeObserve, "deploy web", false, "deploy", false},
 		{"observe can read", ScopeObserve, "status", true, "status", false},
 		{"operate can read (ladder)", ScopeOperate, "logs web", true, "logs", false},
-		{"grant outranks operate", ScopeGrant, "deploy web --image x@sha256:abc", true, "deploy", false},
+		{"grant outranks operate", ScopeGrant, "deploy web --image x@sha256:abc0000000000000000000000000000000000000000000000000000000000000", true, "deploy", false},
 		{"operate cannot grant", ScopeOperate, "authorize key --client x", false, "authorize", false},
 		{"grant can grant", ScopeGrant, "authorize key --client x --scope observe", true, "authorize", false},
 		{"machine ceiling refused even at the top rung", ScopeGrant, "prepare", false, "prepare", false},
@@ -216,7 +216,7 @@ func TestAuthExecRecordsAndEnforces(t *testing.T) {
 	t.Setenv("STEWARD_RECORD", recPath)
 
 	// An observe grant asking to deploy is denied — and the attempt is recorded.
-	t.Setenv("SSH_ORIGINAL_COMMAND", "deploy web --image x@sha256:abc")
+	t.Setenv("SSH_ORIGINAL_COMMAND", "deploy web --image x@sha256:abc0000000000000000000000000000000000000000000000000000000000000")
 	if code := authExec([]string{"--client", "ci", "--scope", "observe"}, nonRootUID); code != 1 {
 		t.Fatalf("denied exec should exit 1, got %d", code)
 	}

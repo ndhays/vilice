@@ -268,6 +268,9 @@ func validateRenderable(st appState) error {
 	case core.HasControlChar(st.Backup):
 		return fmt.Errorf("backup hook contains a control character")
 	}
+	if err := validDigestPin(st.Image); err != nil {
+		return err
+	}
 	for _, h := range st.Hostnames {
 		if err := validHostname(h); err != nil {
 			return err
@@ -854,6 +857,33 @@ func ensureLeadingSlash(p string) string {
 		return "/" + p
 	}
 	return p
+}
+
+// validDigestPin checks what follows @sha256: is actually a digest, not merely that the
+// marker is present. The common mistake is pasting a value that already carries its own
+// "sha256:" prefix, which yields `…@sha256:sha256:abc…` — that satisfies a contains-check
+// and then fails at the container runtime with "invalid reference format", which tells the
+// operator nothing about what they did. Failing here, with the reason, is the whole point
+// of validating before the act.
+func validDigestPin(image string) error {
+	i := strings.Index(image, "@sha256:")
+	if i < 0 {
+		return nil // the contains-check above already reported this
+	}
+	hex := image[i+len("@sha256:"):]
+	if strings.HasPrefix(hex, "sha256:") {
+		return fmt.Errorf("image digest is doubled (@sha256:sha256:…) — the value already "+
+			"carried its own prefix; use %s", strings.Replace(image, "@sha256:sha256:", "@sha256:", 1))
+	}
+	if len(hex) != 64 {
+		return fmt.Errorf("image digest must be 64 hex characters, got %d", len(hex))
+	}
+	for _, r := range hex {
+		if !(r >= '0' && r <= '9') && !(r >= 'a' && r <= 'f') {
+			return fmt.Errorf("image digest has a non-hex character %q", r)
+		}
+	}
+	return nil
 }
 
 func shortDigest(image string) string {
