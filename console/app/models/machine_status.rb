@@ -41,6 +41,10 @@ class MachineStatus
     @updates = (result.dig(:data, "data", "updates") if @ok) || {}
     # The automatic-maintenance window the box reports: { reboot_time, auto_reboot }.
     @maintenance = (result.dig(:data, "data", "maintenance") if @ok) || {}
+    # What this box was prepared as: "host" (runs apps) or "balancer" (fronts others).
+    # Blank when the box has never been prepared, or when we can't reach it — which
+    # reads as unknown, never as a claim that it can do nothing.
+    @role = ((result.dig(:data, "data", "role") if @ok) || "").to_s
     # What the box says it fronts for *other* boxes — read off the routing fragment
     # `steward route` wrote. This is the reality half of the balancer's plan-vs-reality
     # loop; the plan is Machine#routing_table.
@@ -57,6 +61,14 @@ class MachineStatus
   # The apps the box itself reports running — not the installs we think it has.
   # The machine view renders these: it shows what is there, not what was intended.
   def apps = @apps
+
+  # What the box was prepared as. The machine view shapes itself around this — a
+  # balancer has no container runtime, so it shows no Apps section at all. An
+  # unreachable or unprepared box reports "", which reads as unknown rather than as
+  # a claim that it can do nothing.
+  def role = @role
+  def host? = @role == "host"
+  def balancer? = @role == "balancer"
 
   # The site addresses this box reports fronting. Same rule as `apps`: what the box
   # says, never what we asked for. An unreachable box reports nothing, which the UI

@@ -17,7 +17,12 @@ import (
 )
 
 // Substrate is what the operator is consenting to when `prepare` asks.
-func (Pack) Substrate() core.Substrate {
+// A host runs containers and keeps backups; a balancer only ever terminates and
+// forwards, so it needs Caddy and nothing else.
+func (Pack) Substrate(role string) core.Substrate {
+	if role == core.RoleBalancer {
+		return core.Substrate{Note: "Caddy from its official apt repo"}
+	}
 	return core.Substrate{
 		Packages: []string{"podman", "uidmap", "restic"},
 		Note:     "plus Caddy from its official apt repo",
@@ -26,7 +31,7 @@ func (Pack) Substrate() core.Substrate {
 
 // Prepare installs the substrate and configures Caddy's routing. Idempotent: each
 // step checks before acting, so a second `prepare` converges rather than doubling up.
-func (Pack) Prepare() error {
+func (Pack) Prepare(role string) error {
 	steps := []struct {
 		name string
 		fn   func() error
@@ -35,6 +40,17 @@ func (Pack) Prepare() error {
 		{"install caddy", installCaddy},
 		{"install restic", installRestic},
 		{"configure caddy routing", configureCaddy},
+	}
+	// A balancer terminates and forwards; it runs no containers and keeps no backups,
+	// so it gets Caddy and its routing and nothing else.
+	if role == core.RoleBalancer {
+		steps = []struct {
+			name string
+			fn   func() error
+		}{
+			{"install caddy", installCaddy},
+			{"configure caddy routing", configureCaddy},
+		}
 	}
 	for _, s := range steps {
 		fmt.Printf("\n=== %s ===\n", s.name)

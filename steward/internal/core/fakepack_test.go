@@ -46,8 +46,8 @@ func (fakePack) Verbs() []Command {
 	}
 }
 
-func (fakePack) Substrate() Substrate         { return Substrate{} }
-func (fakePack) Prepare() error               { return nil }
+func (fakePack) Substrate(string) Substrate   { return Substrate{} }
+func (fakePack) Prepare(string) error         { return nil }
 func (fakePack) Inventory() ([]string, error) { return nil, nil }
 func (fakePack) TeardownNote(io.Writer)       {}
 

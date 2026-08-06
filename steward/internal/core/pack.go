@@ -22,14 +22,16 @@ type Pack interface {
 	// Verbs are the commands this pack contributes to the dispatch table.
 	Verbs() []Command
 
-	// Substrate is what the pack needs installed on the box, declared so the
-	// ceiling can show it and ask once before anything is installed.
-	Substrate() Substrate
+	// Substrate is what the pack needs installed on the box *for this role*,
+	// declared so the ceiling can show it and ask once before anything is
+	// installed. A balancer that carried a container runtime it would never use
+	// would be surface to patch for no benefit.
+	Substrate(role string) Substrate
 
-	// Prepare installs that substrate and configures it. `prepare` calls it as
-	// root, after the accountability floor is laid, so a pack can rely on the
-	// steward account and the record already existing.
-	Prepare() error
+	// Prepare installs that substrate and configures it, for this role. `prepare`
+	// calls it as root, after the accountability floor is laid, so a pack can rely
+	// on the steward account and the record already existing.
+	Prepare(role string) error
 
 	// Inventory is what the pack has placed on this box, by name. The ceiling
 	// needs it to tell an operator what `uninstall` is about to affect, without

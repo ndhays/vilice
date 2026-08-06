@@ -13,8 +13,8 @@ func (shadowPack) Name() string { return "steward-shadow" }
 func (p shadowPack) Verbs() []Command {
 	return []Command{{Name: p.verb, Scope: ScopeObserve, Summary: "shadow", Run: func([]string) Result { return OK("") }}}
 }
-func (shadowPack) Substrate() Substrate         { return Substrate{} }
-func (shadowPack) Prepare() error               { return nil }
+func (shadowPack) Substrate(string) Substrate   { return Substrate{} }
+func (shadowPack) Prepare(string) error         { return nil }
 func (shadowPack) Inventory() ([]string, error) { return nil, nil }
 func (shadowPack) TeardownNote(io.Writer)       {}
 

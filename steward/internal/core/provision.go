@@ -30,6 +30,16 @@ func prepareCmd(args []string) Result {
 	}
 	yes := hasFlag(args, "-y", "--yes")
 
+	role, err := roleFromArgs(args)
+	if err != nil {
+		return Result{Code: "bad_args", Message: err.Error()}
+	}
+	// Refuse a *change* of role before installing anything, so a mistyped conversion
+	// costs nothing. Re-stating the same role is idempotent, like the rest of prepare.
+	if err := SetRole(role); err != nil {
+		return Result{Code: "bad_args", Message: err.Error()}
+	}
+
 	fmt.Println("\n=== apt update ===")
 	if err := aptUpdate(); err != nil {
 		return Result{Code: "prepare_failed", Retryable: true, Message: "apt update: " + err.Error()}
@@ -38,7 +48,7 @@ func prepareCmd(args []string) Result {
 	// apt-style courtesy: show what's coming and ask, unless --yes. What is coming
 	// is whatever the registered packs need — the ceiling does not know or care what
 	// any of it is for, only that the operator consents to it once, up front.
-	if !confirmInstall(packSubstrate(), yes) {
+	if !confirmInstall(packSubstrate(role), yes) {
 		return Result{Code: "aborted", Message: "prepare cancelled — nothing installed"}
 	}
 
@@ -51,8 +61,10 @@ func prepareCmd(args []string) Result {
 		{"create steward user", ensureStewardUser},
 		{"grant OS-update privilege", ensureUpdatePrivilege},
 		{"lay accountability floor", ensureFloor},
+		{"record the role", func() error { return recordRole(role) }},
 		{"authorize the packs", ensurePackManifest},
-		{"prepare the packs", preparePacks},
+		{"prepare the packs", func() error { return preparePacks(role) }},
+		{"open the role's ports", func() error { return openRolePorts(role) }},
 		{"install snapshot timer", ensureSnapshotTimer},
 	}
 	for _, s := range steps {
@@ -67,11 +79,11 @@ func prepareCmd(args []string) Result {
 
 // packSubstrate is everything the registered packs need installed, aggregated so the
 // operator is asked once rather than per pack.
-func packSubstrate() Substrate {
+func packSubstrate(role string) Substrate {
 	var all Substrate
 	var notes []string
 	for _, p := range packs {
-		sub := p.Substrate()
+		sub := p.Substrate(role)
 		all.Packages = append(all.Packages, sub.Packages...)
 		if sub.Note != "" {
 			notes = append(notes, sub.Note)
@@ -84,9 +96,9 @@ func packSubstrate() Substrate {
 // preparePacks lets each pack install and configure its own substrate. The ceiling
 // runs it and reports failure; it never learns what was installed. If this function
 // ever needs to know, the line has moved.
-func preparePacks() error {
+func preparePacks(role string) error {
 	for _, p := range packs {
-		if err := p.Prepare(); err != nil {
+		if err := p.Prepare(role); err != nil {
 			return fmt.Errorf("%s: %w", p.Name(), err)
 		}
 	}
@@ -364,4 +376,80 @@ func Sh(script string) error {
 	c.Stdout, c.Stderr = os.Stdout, os.Stderr
 	c.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
 	return c.Run()
+}
+
+// roleFromArgs reads the role off the command line. A box exists to do something, and
+// saying which costs one word — bare `prepare` is refused rather than defaulted, because
+// a defaulted role is an inference nobody stated and this box's purpose is a fact its
+// record should carry.
+// The role is the *first* argument, deliberately, and not merely the first positional:
+// ParseArgs consumes the token after a flag as that flag's value, so `prepare --yes host`
+// would quietly swallow the role and prepare nothing. Requiring it first makes the parse
+// unambiguous and matches the synopsis.
+func roleFromArgs(args []string) (string, error) {
+	if len(args) == 0 || args[0] == "" {
+		return "", fmt.Errorf("say what this box is for: %s", strings.Join(Roles, " or "))
+	}
+	if strings.HasPrefix(args[0], "-") {
+		return "", fmt.Errorf("the role comes first: steward prepare <%s> [--yes]", strings.Join(Roles, "|"))
+	}
+	if !ValidRole(args[0]) {
+		return "", fmt.Errorf("unknown role %q — expected %s", args[0], strings.Join(Roles, " or "))
+	}
+	return args[0], nil
+}
+
+// recordRole writes what this box was prepared as into the chain, so "what is this
+// machine for, who said so, and when" is answerable from the record rather than inferred
+// from what happens to be installed.
+//
+// It runs *after* ensureFloor, and it has to: on a first prepare the record does not
+// exist until the floor lays it, so this is the earliest point at which anything can be
+// recorded at all. The role file is written earlier — before any install — so a mistyped
+// conversion is refused before it costs anything; this entry is the history of that fact,
+// not the fact itself.
+func recordRole(role string) error {
+	return Record(ActorName(), string(ScopeRoot), "prepare-role", []string{role})
+}
+
+// openRolePorts opens the ports this role serves on, if there is a firewall to open
+// them in.
+//
+// It deliberately does **not** install or enable UFW. `harden` is optional and
+// `prepare` is required, so making prepare depend on a firewall would quietly make
+// hardening mandatory and break the property that a box is fully accountable without
+// it. An unhardened box has no firewall to open a hole in, and that is fine.
+//
+// Both current roles serve web, but the ports are chosen *by role* so a future role
+// that serves nothing can decline them without this becoming a special case.
+func openRolePorts(role string) error {
+	ports := rolePorts(role)
+	if len(ports) == 0 {
+		fmt.Println("this role serves no ports")
+		return nil
+	}
+	if !Have("ufw") {
+		fmt.Println("no ufw on this box (not hardened) — nothing to open")
+		return nil
+	}
+	if out, err := exec.Command("ufw", "status").Output(); err != nil || !strings.Contains(string(out), "Status: active") {
+		fmt.Println("ufw is not active (not hardened) — nothing to open")
+		return nil
+	}
+	for _, p := range ports {
+		if err := Sh(fmt.Sprintf("ufw allow %d/tcp", p)); err != nil {
+			return fmt.Errorf("ufw allow %d: %w", p, err)
+		}
+		fmt.Printf("ufw allows %d\n", p)
+	}
+	return nil
+}
+
+// rolePorts is what a role listens on publicly. Both roles terminate HTTP(S) today.
+func rolePorts(role string) []int {
+	switch role {
+	case RoleHost, RoleBalancer:
+		return []int{80, 443}
+	}
+	return nil
 }

@@ -135,6 +135,13 @@ func deployCmd(args []string) core.Result {
 		}
 	}
 
+	// A balancer has no container runtime, on purpose. Say that, rather than letting the
+	// operator meet "podman: not found" and guess why.
+	if core.Role() == core.RoleBalancer {
+		return core.Result{Code: "wrong_role",
+			Message: "this box was prepared as a balancer — it fronts other boxes and runs no apps"}
+	}
+
 	st, err := stateFromSpec(name, env.App)
 	if err != nil {
 		return core.Result{Code: "bad_args", Message: err.Error()}

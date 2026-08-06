@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"steward/internal/core"
 )
 
 func TestRenderRoutesOneUpstream(t *testing.T) {
@@ -228,5 +230,37 @@ func TestRouteCmdRefusalLeavesThePreviousTable(t *testing.T) {
 	}
 	if string(after) != good {
 		t.Errorf("a refused table must not disturb the fragment:\n%s", after)
+	}
+}
+
+// A balancer has no container runtime, on purpose. `deploy` says so rather than letting
+// the operator meet "podman: not found" and guess why.
+func TestDeployRefusedOnABalancer(t *testing.T) {
+	t.Setenv("STEWARD_ROLE_FILE", filepath.Join(t.TempDir(), "role"))
+	if err := core.SetRole(core.RoleBalancer); err != nil {
+		t.Fatal(err)
+	}
+	res := deployCmd([]string{"web", "--image", "ghcr.io/x/y@sha256:abc"})
+	if res.Code != "wrong_role" {
+		t.Fatalf("got %q (%s), want wrong_role", res.Code, res.Message)
+	}
+	if !strings.Contains(res.Message, "balancer") {
+		t.Errorf("the refusal should name the role: %q", res.Message)
+	}
+}
+
+// A host deploys normally — the guard must not fire on the role that runs apps, nor on
+// a box that was never prepared.
+func TestDeployNotRefusedOnAHostOrUnprepared(t *testing.T) {
+	for _, setup := range []string{core.RoleHost, ""} {
+		t.Setenv("STEWARD_ROLE_FILE", filepath.Join(t.TempDir(), "role"))
+		if setup != "" {
+			if err := core.SetRole(setup); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if res := deployCmd([]string{"web", "--image", "ghcr.io/x/y@sha256:abc"}); res.Code == "wrong_role" {
+			t.Errorf("role %q should not be refused by the role guard", setup)
+		}
 	}
 }

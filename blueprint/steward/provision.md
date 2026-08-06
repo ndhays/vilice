@@ -6,7 +6,7 @@ the legible ceiling (invariant 3) — the operator runs them at the box, and no 
 key can reach them. These two are the **only** root commands; every other Steward
 command runs as the unprivileged `steward` user.
 
-**Status:** Canonical. Last touched 2026-08-02.
+**Status:** Canonical. Last touched 2026-08-06.
 
 ---
 
@@ -23,8 +23,13 @@ binary still carries everything. The steps:
   non-root admin account (uid ≥ 1000, login shell, keyed) can already log in by key — so
   the box is never left with no key-based login. The `steward` user is a system account
   (uid < 1000) and never trips this; it's irrelevant to the root-login decision.
-- **firewall** — UFW (deny inbound, allow outbound, allow ssh + 80/443) and fail2ban
-  (ban repeated sshd auth failures).
+- **firewall** — UFW (deny inbound, allow outbound, **allow sshd's port and nothing
+  else**) and fail2ban (ban repeated sshd auth failures). The port allowed is the one
+  `sshd` is actually configured for, never the constant 22 — a rule that assumes 22 locks
+  you out of a box reached on 2222, and a remote lockout is unrecoverable. Rules are added
+  *before* UFW is enabled, for the same reason. **Web ports are not harden's business**:
+  80/443 are opened by `prepare <role>`, because whether a box serves web is a fact about
+  its role, not about its lockdown.
 - **unattended-upgrades** — automatic *security* patches, with a reboot window. Full
   upgrades stay deliberate (`apply-updates`).
 - **swap** and **persistent journald**.
@@ -57,20 +62,52 @@ see a root-only posture: the privileged side writes the fact, `status` reads it 
 [record.md](record.md)). Steward Console surfaces it as a hardening line; an absent file
 reads as "never checked".
 
-## `steward prepare` — required
+## `steward prepare <role>` — required, and says what the box is for
 
-Installs what Steward drives, and lays the accountability floor.
+Installs what Steward drives, and lays the accountability floor. **The role is required**:
 
-- **Dependencies:** Podman (containers), Caddy (routing), and restic (backups). These are
-  deliberate, fixed choices, not incidental packages. Quadlet needs **Podman ≥ 4.4**
+```
+steward prepare host        # runs apps: Podman, restic, Caddy; opens 80/443
+steward prepare balancer    # fronts other boxes: Caddy only; opens 80/443
+```
+
+The role is the **first** argument — `prepare host --yes`, never `prepare --yes host`.
+Flag parsing takes the token after a flag as that flag's value, so a leading `--yes` would
+swallow the role and prepare nothing; requiring it first makes the parse unambiguous
+rather than surprising. Bare `steward prepare` is an error. A box exists to do something, and saying which costs
+one word and makes the answer to "what is this machine for" a recorded fact rather than an
+inference from what happens to be installed. There are exactly two roles because there are
+exactly two things a box does here; a third arrives when a third is real, not for symmetry.
+
+- **The role is written to `/var/lib/steward/role`** (root-owned, one word) and **recorded
+  in the chain** — so "what was this box prepared as, by whom, when" is answerable from the
+  record. The file is what `status` reports and what `deploy` checks; the record is the
+  history of it.
+- **Re-preparing with a *different* role is an error.** Converting a host that is running
+  apps into a balancer by re-running one command is exactly the silent surprise this
+  project avoids. Re-running the *same* role is idempotent, as before.
+- **`deploy` refuses on a balancer**, naming the reason — a balancer has no Podman, and
+  "podman: not found" is a worse answer than "this box was prepared as a balancer."
+- **Substrate follows the role.** The operator is shown one apt-style summary of what that
+  role installs, and nothing else is installed. A balancer that carried Podman and restic
+  it would never use is surface to patch for no benefit.
+
+- **Dependencies, by role:** a **host** gets Podman (containers), restic (backups), and
+  Caddy (routing); a **balancer** gets Caddy alone. These are deliberate, fixed choices,
+  not incidental packages. Quadlet needs **Podman ≥ 4.4**
   (`doctor` asserts it); `doctor` also checks restic is present.
 - **The `steward` user:** created here, with subuid/subgid ranges and `enable-linger` so
   its rootless containers and `systemctl --user` units run at boot without a login. Apps
   deploy as this user, not root — see [auth.md](auth.md) and
   [`ceiling-is-the-machine.md`](../../decisions/ceiling-is-the-machine.md).
 - **Caddy routing:** the system Caddy (root, on :80/:443) is pointed at a steward-owned
-  fragment (`/etc/caddy/steward/*.caddy`); deploys write that fragment and reload via
-  Caddy's local admin API, so no root is needed in the deploy loop.
+  fragment directory (`/etc/caddy/steward/*.caddy`); deploys write `apps.caddy` and
+  `route` writes `routes.caddy`, both reloading via Caddy's local admin API, so no root is
+  needed in either loop. Both roles get this — it is what a balancer *is*.
+- **The role's ports:** `prepare` opens 80/443 for both current roles. It does this only
+  when UFW is present and active — **`prepare` never installs or enables a firewall**,
+  because that is `harden`'s job and `harden` is optional. A box prepared without hardening
+  is still fully accountable; it simply has no firewall to open a hole in.
 - **The OS-update grant:** `apply-updates` is operate-scoped (so a scoped key can issue
   it) but apt needs root — the one operate command that does. `prepare` lays a *narrow*
   `/etc/sudoers.d/steward` (`visudo`-validated, `0440`) letting the `steward` user run

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # UFW firewall + fail2ban.
-#   UFW: default deny inbound, allow outbound, allow SSH + 80/443.
+#   UFW: default deny inbound, allow outbound, allow sshd's port and nothing else.
+#   Web ports (80/443) are opened by `prepare <role>` — see blueprint/steward/provision.md.
 #   fail2ban: ban hosts that fail sshd auth repeatedly.
 # Ports are allowed BEFORE UFW is enabled, to avoid locking out the live session.
 set -euo pipefail
@@ -23,7 +24,9 @@ if [ ${#NEEDED[@]} -gt 0 ]; then
 fi
 
 # --- UFW rules (add before enabling) ---
-ALLOW=("$SSH_PORT" "${EXTRA_ALLOW_PORTS[@]}")
+# sshd's actual port, never the constant 22 — a rule that assumes 22 locks you out of
+# a box reached on 2222, and a remote lockout has no repair.
+ALLOW=("$SSH_PORT")
 for port in "${ALLOW[@]}"; do
   if ufw status | grep -qE "^${port}(/tcp)?\s+ALLOW"; then
     ok "ufw already allows $port"

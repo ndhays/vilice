@@ -45,11 +45,23 @@ func statusCmd(args []string) core.Result {
 		data["apps_note"] = note
 	}
 	msg := renderStatus(m, apps, note)
-	// Surface the hardening fact the privileged side published, if present. Observe
-	// can't compute posture (that needs root) — it only reads what harden wrote.
+	// What this box was prepared as. A reader (and the console) shapes what it offers
+	// around this rather than around what happens to be installed.
+	if role := core.Role(); role != "" {
+		data["role"] = role
+		msg += "\n\nRole: " + role
+	}
+	// Surface the hardening fact the privileged side published. Observe can't compute
+	// posture (that needs root) — it only reads what harden wrote. **Always rendered**:
+	// an absent file means the box was never hardened, and omitting the section
+	// entirely would read as "nothing to report" rather than "not hardened". Absence
+	// is a fact here, the same way an unreachable box reports unknown and not none.
 	if p, ok := collectHardening(); ok {
 		data["hardening"] = p
 		msg += "\n\n" + renderHardeningLine(p)
+	} else {
+		data["hardening_known"] = false
+		msg += "\n\nSecurity: not hardened — no posture has been published. Run `steward harden`."
 	}
 	// The automatic-maintenance window (when security patches + any reboot land) and the
 	// updates pending now — so a reader can show the schedule and an "apply now". Both
