@@ -94,6 +94,46 @@ the deploy loop. *Behind a TLS-terminating CDN/proxy* (e.g. Cloudflare orange cl
 edge serves its own cert and intercepts the ACME challenge; that topology needs DNS-01
 and stays open (see [Open](#open)).
 
+### Pruning — the image store is a cache, not a record
+
+A deploy pulls a new image and the old one stays. Nothing removed it, and a box that
+deploys often fills its disk with layers nobody can name — the most common way an
+otherwise healthy unattended machine dies.
+
+**The record is the spec, not the blob.** An app's spec names its image by *digest*;
+`backup` captures that spec and `restore` replays it through the same deploy path, so a
+restored box **re-pulls** what it needs. Because the reference is a digest rather than a
+tag, what comes back is byte-identical. An evicted image is therefore not lost — it is
+evicted — and pruning is not destruction.
+
+So a successful deploy, after the flip and after the old colour is retired, drops every
+local image no app still references. **Two are kept per app:**
+
+| Kept | Why |
+|---|---|
+| `Image` | what the active colour is running |
+| `PrevImage` | what `rollback` re-deploys |
+
+`PrevImage` stays local even though `restore` could re-pull it, because the two recoveries
+have different risk profiles. A restore is *planned* — you can arrange for a reachable
+registry. A rollback happens at 3am with something already broken, and the last thing it
+should need is the network. One bounded extra image buys that.
+
+Three properties hold this safe:
+
+- **It never fails a deploy.** Cleanup that can break the act it follows is worse than the
+  garbage it collects; the prune runs last and its failures are silent.
+- **`podman rmi` is called without `--force`.** Podman refuses to remove an image any
+  container still uses, even a stopped one — so the worst case for an image we misjudged
+  is a refusal we ignore, never a running app losing its layers.
+- **Images are matched by ID, not by reference string.** The same image can be named by
+  tag, by digest, or through a repository since renamed; only the ID is stable.
+
+`doctor` reports the read-only half — how many images the box holds and how many are
+unreferenced — and prescribes. It never prunes: it is an observe verb running
+unprivileged, and a read that quietly changed the box is the one thing this design
+refuses.
+
 ### `steward route` — fronting other boxes
 
 Every route above is `reverse_proxy 127.0.0.1:<port>`: an app on *this* box, derived from

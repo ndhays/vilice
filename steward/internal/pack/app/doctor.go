@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 // quadletMin is the lowest Podman that ships Quadlet (the .container generator), which
@@ -50,6 +51,13 @@ func doctorCmd(args []string) core.Result {
 			checks = append(checks, binaryPathCheck(self, string(unit), string(keys)))
 		}
 	}
+	// Disk, said in a way that can be acted on. "82% full" is a fact; "3 unreferenced
+	// images" is a next step. doctor prescribes and never performs — it runs
+	// unprivileged, it is an observe verb, and a read that quietly changed the box
+	// would be the one thing this design refuses.
+	unref, totalImages := unreferencedImageCount()
+	checks = append(checks, diskCheck(diskUsedPercent(), unref, totalImages))
+
 	failed := 0
 	for _, c := range checks {
 		if !c.OK {
@@ -64,6 +72,61 @@ func doctorCmd(args []string) core.Result {
 	// runs unprivileged) doesn't run it — it just points the way. See harden --check.
 	msg := renderChecks(checks) + "\n\nhardening  run 'sudo steward harden --check' to verify (optional, separate)"
 	return core.Result{Code: code, Message: msg, Data: checks}
+}
+
+// Disk thresholds. `warn` is where an operator should act before it is urgent; the
+// console uses the same numbers for its pressure badges, so the box and the lens agree
+// about what "running low" means.
+const (
+	diskWarnPercent = 75
+	diskCritPercent = 90
+)
+
+// diskCheck turns a percentage into an instruction. Ordered by what the operator should
+// do first: unreferenced images are the cheapest space on the box and the most common
+// cause, so they lead when there are any.
+//
+// It fails the check only on real pressure — holding a few spare images is not a fault,
+// and a doctor that cries about a healthy box teaches people to ignore it.
+func diskCheck(usedPct, unreferenced, totalImages int) check {
+	c := check{Name: "disk", OK: usedPct < diskCritPercent}
+
+	var parts []string
+	if usedPct > 0 {
+		parts = append(parts, fmt.Sprintf("%d%% used", usedPct))
+	}
+	if totalImages > 0 {
+		parts = append(parts, fmt.Sprintf("%d image%s, %d unreferenced", totalImages, plural(totalImages), unreferenced))
+	}
+
+	// The prescription, most actionable first.
+	switch {
+	case unreferenced > 0 && usedPct >= diskWarnPercent:
+		parts = append(parts, fmt.Sprintf("free space now: `podman rmi $(podman images -q)` drops the %d unreferenced, or the next deploy prunes them", unreferenced))
+	case unreferenced > 0:
+		parts = append(parts, "the next deploy prunes them; nothing to do")
+	case usedPct >= diskCritPercent:
+		parts = append(parts, "no images to reclaim — check app volumes and `journalctl --disk-usage`")
+	case usedPct >= diskWarnPercent:
+		parts = append(parts, "no images to reclaim — worth watching")
+	}
+	c.Note = strings.Join(parts, "; ")
+	return c
+}
+
+// diskUsedPercent is the root filesystem, rounded. 0 when it cannot be read, which makes
+// the check say nothing rather than assert something false.
+func diskUsedPercent() int {
+	var st syscall.Statfs_t
+	if err := syscall.Statfs("/", &st); err != nil || st.Blocks == 0 {
+		return 0
+	}
+	total := st.Blocks * uint64(st.Bsize) // #nosec G115 -- statfs block size is small and positive
+	free := st.Bavail * uint64(st.Bsize)  // #nosec G115 -- same
+	if total == 0 {
+		return 0
+	}
+	return int(100 * (total - free) / total) // #nosec G115 -- a percentage, bounded 0..100
 }
 
 // runChecks reports on the tools Steward drives and the record floor. look and

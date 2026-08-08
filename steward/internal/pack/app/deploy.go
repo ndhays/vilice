@@ -565,6 +565,15 @@ func runDeploy(st *appState) error {
 		delete(st.Ports, old.ActiveColor)
 		_ = saveApp(*st)
 	}
+
+	// The old colour's container is gone, so whatever it was running is now
+	// unreferenced. Evict it — the image store is a cache, and the spec plus the
+	// registry are the record (see prune.go). Deliberately last, deliberately silent
+	// on failure: the app is already serving, and cleanup must never be able to fail
+	// the act it follows.
+	if _, note := pruneImages(); note != "" {
+		fmt.Println(note)
+	}
 	return nil
 }
 
