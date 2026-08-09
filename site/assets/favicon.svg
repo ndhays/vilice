@@ -1,17 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Steward">
-  <rect width="64" height="64" rx="12" fill="#1c2230"/>
-  <g fill="none" stroke="#e7b15b" stroke-width="5" stroke-linecap="round">
-    <!-- main rail -->
-    <path d="M10 40 H54"/>
-    <!-- diverging rail (the switch) -->
-    <path d="M10 40 Q34 40 54 20"/>
-  </g>
-  <!-- ties -->
-  <g stroke="#566079" stroke-width="3" stroke-linecap="round">
-    <path d="M16 46 V34"/>
-    <path d="M28 46 V34"/>
-    <path d="M40 46 V34"/>
-  </g>
-  <!-- switch point -->
-  <circle cx="10" cy="40" r="4.5" fill="#e7b15b"/>
+<svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.5"
+     stroke-linecap="round" stroke-linejoin="round">
+  <title>Steward</title>
+  <rect x="2" y="4.5" width="20" height="15" rx="2.5"/>
+  <circle cx="6" cy="16.8" r="0.9" fill="#f2c200" stroke="none"/>
+  <circle cx="8.7" cy="16.8" r="0.9" fill="#000" stroke="none"/>
+  <line x1="11.8" y1="16.8" x2="18" y2="16.8"/>
+  <path d="M6.4 7.5 L6.4 13.1 L10.5 10.3 Z" fill="#000"/>
+  <path d="M17.6 7.5 L17.6 13.1 L13.5 10.3 Z" fill="#000"/>
+  <circle cx="12" cy="10.3" r="1.5" fill="#F2C200" stroke="none"/>
 </svg>
