@@ -1,23 +1,47 @@
-// Steward Console documentation site. One site serves the docs AND the signed
-// releases (under /releases/) — no separate release domain.
+// Steward's documentation site. One site serves the docs, the generated command
+// reference, AND the signed releases (under /releases/) — no separate release host.
 //
-// Content lives in content/*.md (easily editable, separate from presentation).
-// page.ori is the HTML layout. Versions are pulled from the subprojects by
-// versions.js at build time. `npm run build` copies this virtual tree to dist/.
+// Hand-written pages live in content/*.md. The command pages are not hand-written:
+// they are generated from the binary's own `--help` output, read by commands.js at
+// build time. See decisions/help-is-the-documentation.md.
 //
-// NOTE: /releases/ mirrors ../release/published, which is produced by
-// `make -C ../steward release`. Run that before `npm run build` to include them.
+// NOTE: two things must exist before `npm run build`:
+//   steward/bin/steward         — `make -C ../steward build` (npm's prebuild does this)
+//   release/published/steward/  — `make -C ../steward release`
 {
-  // Component versions, read from the subproject sources.
+  // The platform version, read from the repo root.
   (versions) = versions.js
 
-  // Each markdown file becomes an HTML page wrapped in the shared layout.
-  index.html = page.ori(Origami.mdHtml(content/index.md), versions)
-  console.html = page.ori(Origami.mdHtml(content/console.md), versions)
-  packs.html = page.ori(Origami.mdHtml(content/packs.md), versions)
+  // The command table, read from the binary: name, scope, group, summary, and the
+  // verbatim `--help` page for each. Keyed by command name, in `steward help` order.
+  (help) = help.js
 
-  // Static assets (stylesheet, favicon) copied as-is to /assets/.
+  // Hand-written pages.
+  index.html = page.ori(Origami.mdHtml(content/index.md), versions, help)
+  console.html = page.ori(Origami.mdHtml(content/console.md), versions, help)
+  apps.html = page.ori(Origami.mdHtml(content/apps.md), versions, help)
+
+  // Generated: one page per command, plus the index. `/commands/` serves the index,
+  // so the nav links to a folder rather than a file.
+  commands = Tree.merge(
+    Tree.map(help, {
+      key: (cmd, name) => `${ name }.html`,
+      value: (cmd) => page.ori(command.ori(cmd), versions, help),
+    }),
+    { "index.html": page.ori(commandIndex.ori(help), versions, help) }
+  )
+
+  // Static assets (stylesheets, scripts, the mark) copied as-is to /assets/.
   assets
+
+  // The two typefaces, self-hosted so the site depends on no font CDN. Latin
+  // subsets, regular and semibold only — see blueprint/design/tokens.md.
+  fonts = {
+    "ibm-plex-sans-400.woff2": node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2
+    "ibm-plex-sans-600.woff2": node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2
+    "ibm-plex-mono-400.woff2": node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2
+    "ibm-plex-mono-600.woff2": node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2
+  }
 
   // The signed release artifacts, served at /releases/…
   releases = ../release/published
@@ -25,7 +49,8 @@
   // The verifying installer, served at /install.sh
   "install.sh" = ../install.sh
 
-  // Standard crawl files, served at the root.
+  // Standard crawl files. The sitemap lists the command pages by walking the same
+  // table the pages come from, so a new verb is in it without anyone remembering.
   "robots.txt" = robots.txt
-  "sitemap.xml" = sitemap.xml
+  "sitemap.xml" = sitemap.ori(help)
 }

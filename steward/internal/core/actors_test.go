@@ -131,7 +131,7 @@ func TestActorsIsAnUnrecordedRead(t *testing.T) {
 	if recordable(cmd, nil) {
 		t.Error("a read must not be recorded")
 	}
-	if cmd.Pack != "" {
-		t.Error("the rights ledger is the core's; actors must not be a pack verb")
+	if !cmd.SkipBinaryCheck {
+		t.Error("who may act on this box must be readable even when the binary is not the recorded one")
 	}
 }

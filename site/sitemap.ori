@@ -1,0 +1,12 @@
+// The sitemap. The hand-written pages are listed by hand — there are four, and
+// they change about once a year. The command pages are walked from the same table
+// that generates them, so adding a verb to the CLI puts it in the sitemap.
+(commands) => `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://steward.agoraforge.org/index.html</loc></url>
+  <url><loc>https://steward.agoraforge.org/commands/</loc></url>
+  <url><loc>https://steward.agoraforge.org/apps.html</loc></url>
+  <url><loc>https://steward.agoraforge.org/console.html</loc></url>
+${ Tree.map(commands, (cmd) => `  <url><loc>https://steward.agoraforge.org/commands/${ cmd.name }.html</loc></url>
+`) }</urlset>
+`

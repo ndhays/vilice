@@ -67,18 +67,29 @@ Agora rule that an article without a mechanism isn't applied:
 - **Open.** AGPL, auditable, one person can hold it in their head
   ([`decisions/licensing.md`](../../decisions/licensing.md)).
 
-## Core and packs
+## The core and the app layer
 
-Steward is two layers in one binary. The **core** owns the gate, the record, and the
-ceiling; **verb packs** own what a verb actually does. The core resolves a name,
-applies the account gate, writes the record, and calls the function — it never learns
-what the function does. `steward-app` is the founding pack and holds deploy, lifecycle,
-backup, and the observe verbs.
+Steward is two layers in one binary. The **core** (`internal/core/`) owns the gate,
+the record, and the ceiling; the **app layer** (`internal/app/`) owns what a verb
+actually does. The core resolves a name, applies the account gate, writes the record,
+and calls the function — it never learns what the function does. Where the ceiling has
+to *tell* an operator about the substrate — what `uninstall` leaves on the box — it asks
+the layer rather than reciting a list of its own: the layer installed it and knows what
+this box's role got.
 
-The layer that must be trusted is therefore the core plus the packs' names and
-digests, not the whole binary — which is the point, since the core can be finished
-while verbs keep changing. See **[packs.md](packs.md)** for the contract and
-[`decisions/core-and-packs.md`](../../decisions/core-and-packs.md) for the why.
+The line is a Go interface, `core.Apps`, with exactly one implementation, wired in at
+compile time by `cmd/steward`. Nothing is discovered and nothing is loaded: this is
+organisation, written down where the compiler can hold us to it, not a plugin system.
+Steward once had one of those; the far side of the seam stayed permanently empty and
+it was dropped
+([`decisions/roles-not-packs.md`](../../decisions/roles-not-packs.md)).
+
+What must be trusted is therefore **the binary**, and the claim that this is
+auditable rests on it being handwritten rather than on a smaller boundary inside it
+([`decisions/the-core-is-handwritten.md`](../../decisions/the-core-is-handwritten.md)).
+What the binary *is* is checkable: `prepare` records its sha256 at
+`/etc/steward/binary.digest`, and every verb that acts compares the running
+executable against that line before it runs.
 
 ## The four concerns
 
@@ -89,7 +100,7 @@ Each is one spec, and each is one surface to audit on its own:
 - **[auth.md](auth.md)** — who may act, at what scope (scoped SSH). Invariant 1. Core.
 - **[record.md](record.md)** — what happened, kept honest. Invariant 2. Core.
 - **[deploy.md](deploy.md)** — put apps on the box and run their lifecycle. Wide,
-  not deep. This one is a **pack**, not core.
+  not deep. This one is the **app layer**, not core.
 
 ## The legible ceiling
 
@@ -104,19 +115,37 @@ in [provision.md](provision.md) and [auth.md](auth.md); the why is in
 
 ## Command reference
 
-The user-facing command list lives in [`site/content/index.md`](../../site/content/index.md);
-the pack surface is in [`site/content/packs.md`](../../site/content/packs.md).
-The specs here say how each command behaves and which article it encodes.
+**There is one description of the CLI, and it is the CLI.** `core.Commands` — the
+table in `dispatch.go` plus what the app layer contributes — carries every verb's
+summary, paragraph, synopsis, flags (each with its own description), and examples.
+Everything else is a view of it:
 
-The CLI's own help is part of the contract: `steward help <command>` (or `--help` on
-any command) prints the command's page — summary, synopsis, and **which scope may run
-it**, making help a second view of the rights ladder. A flag a command doesn't declare
-is a hard error carrying the synopsis, never silently dropped; `--help` never falls
-through to the action it asks about.
+| View | How |
+|---|---|
+| `steward help <command>`, `--help` | `commandHelp` renders the page |
+| A `bad_args` error | The same synopsis string, appended |
+| `steward(1)` | `steward _man` → `make man`, shipped in the release tarball |
+| The documentation site | `steward _commands` → JSON, printed **verbatim** at the top of each page under `/commands/` |
 
-The man page is the same table's third view: `steward _man` generates `steward.1`
-from the commands table (`make man`; shipped in the release tarball, installed by
-`install.sh`), so help, usage errors, and `man steward` cannot drift apart.
+The specs in this folder say how each command *behaves* and which article it
+encodes. What it is called, what it takes, and how it is typed is the table's job,
+and is not restated here or on the site. See
+[`decisions/help-is-the-documentation.md`](../../decisions/help-is-the-documentation.md).
+
+Three properties are mechanism rather than habit, enforced by `core.CheckDocs` and
+tested against the assembled binary in `cmd/steward`:
+
+- **A flag cannot exist undocumented.** The `Flags` list is both what the gate
+  admits (`unknownFlag`) and what help prints — one list, so a flag the reader is
+  told to type is a flag the gate accepts, and neither can be added without the other.
+- **Help is scoped.** Every page states which scope may run the command and whether
+  the invocation is recorded before it runs, making help a second view of the rights
+  ladder and of invariant 2.
+- **Help fits.** Pages are capped at `core.HelpWidth` (78 columns) — the terminal
+  nobody widens, and the width the site's fixed-width block was sized from.
+
+A flag a command doesn't declare is a hard error carrying the synopsis, never
+silently dropped; `--help` never falls through to the action it asks about.
 
 ## Open questions
 

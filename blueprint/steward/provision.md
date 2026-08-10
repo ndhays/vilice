@@ -118,18 +118,17 @@ exactly two things a box does here; a third arrives when a third is real, not fo
   protect it so nothing later can quietly rewrite it (see [record.md](record.md)).
   This is the one thing `prepare` must get right; it is why the floor lives here. The
   `snapshot` timer runs as the `steward` user so it sees the rootless app containers.
-- **The packs prepare themselves.** After the floor is laid, `prepare` calls each
-  registered pack's `Prepare()`, which installs and configures that pack's own
-  substrate — for `steward-app`, Podman, restic, and Caddy plus its routing. The
-  ceiling never learns what was installed. What the operator is consenting to is
-  aggregated from every pack and shown in **one** prompt before anything runs. See
-  [packs.md](packs.md).
-- **The pack authorization:** create the root-owned shelf `/usr/libexec/steward/` and
-  write `/etc/steward/packs.manifest`, naming each pack this binary carries at the
-  binary's own digest — and record each authorization in the chain. Until the manifest
-  exists no packed verb runs, so this is part of the floor, not a nicety. Both paths
-  are root-owned, which is the enforcement: the `steward` user reads them and cannot
-  write them, so no scoped key can widen what may run. See [packs.md](packs.md).
+- **The app layer prepares itself.** After the floor is laid, `prepare` calls the app
+  layer's `Prepare(role)`, which installs and configures its own substrate — for a
+  `host`, Podman, restic, and Caddy plus its routing; for a `balancer`, Caddy alone.
+  The ceiling never learns what was installed. What the operator is consenting to is
+  shown in **one** prompt before anything runs.
+- **The binary authorization:** write `/etc/steward/binary.digest`, naming this
+  binary's own sha256 — and record the authorization in the chain. Until it exists no
+  verb that acts runs, so this is part of the floor, not a nicety. The path is
+  root-owned, which is the enforcement: the `steward` user reads it and cannot write
+  it, so no scoped key can authorize a different binary. Swap the binary and every
+  verb that acts refuses, with the refusal recorded.
 - **Steward's own secrets** live in `/var/lib/steward/secrets/` (steward-owned, `0700`) —
   *not* `/etc` or `/root`, since everything but `prepare`/`harden` runs as the `steward`
   user. The backup repo password is its first occupant; encrypted-at-rest custody
@@ -172,21 +171,28 @@ not a daemon, so replacing the binary changes only what happens on the *next* in
 Root-only, like `prepare`, and never reachable over a scoped key — the gate cannot
 remove its own gate. It takes off exactly what `prepare` put on for the *gate and the
 scribe*: the snapshot timer, the scoped-key ledger (`authorized_keys`), the OS-update
-sudoers grant, the pack manifest, and the binary. Withdrawing the manifest is what
-stops the packs — the same move as removing the ledger rather than the keys. The shelf
-itself is left alone: an empty directory is harmless, and anything an operator put
-there is theirs. **Apps keep running** — they are ordinary Quadlet units
+sudoers grant, the binary authorization (`/etc/steward/binary.digest`), and the
+binary. Withdrawing the authorization is what stops a binary left behind by hand —
+the same move as removing the ledger rather than the keys. **Apps keep running** —
+they are ordinary Quadlet units
 under systemd with plain Caddy routes and need no Steward; removing them too is an
 explicit choice (`--remove-apps`, or the y/N prompt when apps exist), executed through
 `steward remove` *as the steward user* so teardown never touches root's Podman world.
 
 What stays, on purpose: the `steward` user and `/var/lib/steward` — the record is the
-box's history and outlives the tool. Before anything is removed it surfaces the restic
-repo and **where its password is** — the backups outlive the box, and without the
-password they are unreadable. It prints the path, never the secret: the file survives
-uninstall, so nothing is lost by making the operator run one more command, while printing
-it would spend it into scrollback, the journal, and any `--yes` automation log. One
-confirm gates the whole thing (`--yes` for automation); declined means nothing happened.
+box's history and outlives the tool — and the substrate, since **uninstall removes no
+packages**: they may serve the apps that keep running, and removing another tool's
+substrate is not the gate's call.
+
+The ceiling does not name that substrate. It prints what *it* keeps and then asks the
+app layer for the rest (`TeardownNote`), because the app layer is what installed it and
+what knows this box's role — a fixed list in the ceiling told a `balancer` it was
+keeping Podman and restic, which it never had. The same note surfaces the restic repo
+and **where its password is** — the backups outlive the box, and without the password
+they are unreadable. It prints the path, never the secret: the file survives uninstall,
+so nothing is lost by making the operator run one more command, while printing it would
+spend it into scrollback, the journal, and any `--yes` automation log. One confirm gates
+the whole thing (`--yes` for automation); declined means nothing happened.
 Why this shape and not a full `decommission`:
 [decisions/uninstall-removes-the-gate.md](../../decisions/uninstall-removes-the-gate.md).
 

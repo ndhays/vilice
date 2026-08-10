@@ -36,14 +36,14 @@ language for human infrastructure, developed in tandem).
 ## Three rings
 
 The console is layered the way Steward is: a **machine view** (one box, shaped by the
-packs it reports), **placement** across several boxes, and **tenancy** over that. Each
+role it reports), **placement** across several boxes, and **tenancy** over that. Each
 ring is optional above the one below, and each is authoritative about a different thing —
 the machine view about nothing (it reads the box), placement about what was *asked for*,
 tenancy about whose work it is.
 
 Placement never closes the gap against reality on its own: drift is surfaced and a person
 decides ([`drift-is-surfaced-never-closed.md`](../../decisions/drift-is-surfaced-never-closed.md)).
-The layering, the engine split, and why the engines are not "packs" are in
+The layering, the engine split, and why an engine is not an on-box component are in
 [`console-layers.md`](../../decisions/console-layers.md). Only the machine view is built.
 
 ## The spine: observe vs mutate

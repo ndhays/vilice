@@ -25,7 +25,7 @@ func uninstallCmd(args []string) Result {
 
 	fmt.Println("Uninstall removes the gate and the scribe — the record stops; nothing running does.")
 
-	items, err := packInventory()
+	items, err := appInventory()
 	if err != nil {
 		return Result{Code: "io_error", Message: err.Error()}
 	}
@@ -38,9 +38,6 @@ func uninstallCmd(args []string) Result {
 		removeApps = confirm("Remove them too? [y/N] ", false)
 	}
 
-	for _, p := range Packs() {
-		p.TeardownNote(os.Stdout)
-	}
 	printUninstallPlan(items, removeApps)
 
 	if !yes && !confirm("\nProceed? [y/N] ", false) {
@@ -59,7 +56,7 @@ func uninstallCmd(args []string) Result {
 		{"remove snapshot timer", removeSnapshotTimer},
 		{"remove scoped keys", removeLedger},
 		{"remove OS-update grant", removeUpdatePrivilege},
-		{"remove pack authorization", removePackManifest},
+		{"remove binary authorization", removeBinaryDigest},
 		{"remove binary", removeBinary},
 	}
 	for _, s := range steps {
@@ -73,26 +70,23 @@ func uninstallCmd(args []string) Result {
 	if len(items) > 0 && !removeApps {
 		kept = fmt.Sprintf("\n  - %d app(s) still running — ordinary systemd services behind Caddy", len(items))
 	}
+	// The plan above already listed what stays, the app layer's substrate included;
+	// this is the recap of what steward itself left, which is all the ceiling knows.
 	return OK(fmt.Sprintf(`steward removed. Still here:%s
   - the steward user and /var/lib/steward — the record is the box's history
-  - podman, caddy, restic
+  - whatever prepare installed to run apps — uninstall removes no packages
 Retiring the hardware entirely? Wipe /var/lib/steward/secrets and remove the
 steward user — see the Uninstall notes in the docs.`, kept))
 }
 
-// packInventory is what the registered packs have placed on this box. The ceiling
-// needs the names to tell an operator what uninstall is about to affect; it never
-// needs to know what any of them are.
-func packInventory() ([]string, error) {
-	var all []string
-	for _, p := range Packs() {
-		items, err := p.Inventory()
-		if err != nil {
-			return nil, err
-		}
-		all = append(all, items...)
+// appInventory is what the app layer has placed on this box. The ceiling needs the
+// names to tell an operator what uninstall is about to affect; it never needs to
+// know what any of them are.
+func appInventory() ([]string, error) {
+	if apps == nil {
+		return nil, nil
 	}
-	return all, nil
+	return apps.Inventory()
 }
 
 func printUninstallPlan(items []string, removeApps bool) {
@@ -104,14 +98,19 @@ func printUninstallPlan(items []string, removeApps bool) {
 	fmt.Println("  - the snapshot timer (steward-snapshot.timer)")
 	fmt.Println("  - every scoped key (the authorized_keys ledger — Steward Console loses access)")
 	fmt.Println("  - the OS-update grant (/etc/sudoers.d/steward)")
-	fmt.Println("  - the pack authorization (" + PackManifestPath() + ")")
+	fmt.Println("  - the binary authorization (" + BinaryDigestPath() + ")")
 	fmt.Println("  - this binary")
 	fmt.Println("\nThis keeps:")
 	if !removeApps && len(items) > 0 {
 		fmt.Printf("  - %d app(s), running on as ordinary systemd services behind Caddy\n", len(items))
 	}
 	fmt.Println("  - the steward user and /var/lib/steward — the record is the box's history")
-	fmt.Println("  - podman, caddy, restic")
+	// What else stays is the app layer's to say: it installed it, it knows what this
+	// box's role got, and the ceiling naming a fixed set told a balancer it was
+	// keeping tools it never had.
+	if apps != nil {
+		apps.TeardownNote(os.Stdout)
+	}
 }
 
 // removeAppsAsSteward tears each app down through steward's own remove, run as the
@@ -157,12 +156,11 @@ func removeLedger() error {
 	return nil
 }
 
-// removePackManifest withdraws the authorization prepare granted. The shelf itself is
-// left alone: an empty directory is harmless, and anything an operator put there is
-// theirs. Without the manifest nothing on it may run, which is the property that
-// matters — the same reason the ledger, not the key files, is what revoke removes.
-func removePackManifest() error {
-	if err := os.Remove(PackManifestPath()); err != nil && !os.IsNotExist(err) {
+// removeBinaryDigest withdraws the authorization prepare granted. A binary left
+// behind by hand is then a binary nothing has authorized, and every verb that acts
+// refuses — the same reason the ledger, not the key files, is what revoke removes.
+func removeBinaryDigest() error {
+	if err := os.Remove(BinaryDigestPath()); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	return nil

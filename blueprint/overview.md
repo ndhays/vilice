@@ -32,6 +32,10 @@ The console holds no privilege of its own. It carries a scoped key and comes thr
 same door as anyone else — a person at a shell, a CI job, an AI agent. Nothing
 orchestrates from beside the door.
 
+Both surfaces — the console and the documentation site — answer to one design system:
+`blueprint/design/`. It holds the mark, the tokens, and the shared patterns, so a change
+to how either looks has somewhere to be true.
+
 ---
 
 ## The console runs anywhere

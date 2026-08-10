@@ -1,25 +1,31 @@
 package main
 
 import (
+	"os"
 	"strings"
 	"testing"
 
+	"steward/internal/app"
 	"steward/internal/core"
-	"steward/internal/pack/app"
 )
 
-// The core's own tests run against a fake pack on purpose — the gate must hold for
-// whatever registers. That leaves one thing only the assembled binary can prove:
-// that this is the surface we actually ship, and that drawing the core/pack line
-// did not quietly drop a verb on the floor.
-func TestAssembledSurface(t *testing.T) {
+// Assemble the real binary's surface once: Register panics on a verb claimed twice,
+// so every test here shares the one registration main() would do.
+func TestMain(m *testing.M) {
 	core.Register(app.New())
+	os.Exit(m.Run())
+}
 
+// The core's own tests run against a fake app layer on purpose — the gate must hold
+// for whatever registers. That leaves one thing only the assembled binary can prove:
+// that this is the surface we actually ship, and that drawing the core/app line did
+// not quietly drop a verb on the floor.
+func TestAssembledSurface(t *testing.T) {
 	want := []string{
 		// core — the trust model's own verbs
 		"harden", "prepare", "uninstall", "authorize", "revoke",
-		"apply-updates", "verify", "record", "actors", "packs",
-		// steward-app
+		"apply-updates", "verify", "record", "actors",
+		// the app layer
 		"deploy", "rollback", "start", "stop", "restart", "remove",
 		"route",
 		"backup", "restore", "registry-login", "registry-logout",
@@ -46,5 +52,17 @@ func TestAssembledSurface(t *testing.T) {
 	}
 	if appTaking < 8 {
 		t.Errorf("only %d shipped commands look app-taking — has the <app> synopsis convention changed?", appTaking)
+	}
+}
+
+// The documentation site is built from this table: `steward _commands` hands it the
+// rendered help page for every verb, and the site prints that text verbatim. So a
+// verb shipped without a paragraph, a flag without a description, or a line too
+// wide for the block it lands in is not a style problem — it is a hole in the
+// published docs. This is the only place the *shipped* surface can be checked; the
+// core's own copy of this test runs against a fake app layer.
+func TestShippedSurfaceIsPublishable(t *testing.T) {
+	for _, problem := range core.CheckDocs() {
+		t.Error(problem)
 	}
 }

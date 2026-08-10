@@ -37,8 +37,8 @@ Each entry is one JSON object on its own line (JSONL), appended to
 | `scope` | The scope the action ran under (`root` / `operate` / `grant`), or `deny` for a refused attempt. |
 | `action` | The command name (e.g. `deploy`, `prepare`). |
 | `args` | The recorded arguments — never secret *values* (those ride stdin). Omitted when empty. |
-| `pack` | The pack whose verb ran, e.g. `steward-app`. Omitted for the core's own verbs, and absent from entries written before packs existed. |
-| `digest` | The digest the pack was authorized at when it ran. Omitted with `pack`. |
+| `digest` | The sha256 of the binary that ran the action. Omitted for the verbs exempt from the binary check (the ceiling, the rights ledger, the record's own reads), and absent from entries written before it was recorded. |
+| `pack` | **Retired.** Steward once dispatched to verb packs and wrote the pack's name here; nothing sets it now. Entries on real boxes still carry it, so it is still parsed and still hashed. See [`decisions/roles-not-packs.md`](../../decisions/roles-not-packs.md). |
 | `prev_hash` | The previous entry's `hash` (empty for `seq` 1, the genesis). |
 | `hash` | This entry's hash (below). |
 
@@ -49,18 +49,21 @@ no-arg command must not hash differently from how it reloads). Editing any field
 reordering entries, or dropping one changes a hash and breaks the chain there — which
 `steward verify` reports.
 
-**`pack` and `digest` are covered by the hash, and added additively.** An entry with no
-pack hashes over exactly the original seven fields, byte for byte; only an entry that
-*has* a pack commits to the wider shape (`…, args, pack, digest, prev_hash`). That is
-not a nicety — `verify` recomputes every hash, so widening the payload for all entries
-would have made every chain already on a box report a break at entry 1: the record
-accusing itself of tampering because the software changed. **Any future field must be
-added the same way**, and the pinned hashes in `manifest_test.go` are what makes
+**`digest` and `pack` are covered by the hash, and were added additively.** An entry
+with neither hashes over exactly the original seven fields, byte for byte; only an
+entry that carries one commits to the wider shape (`…, args, pack, digest,
+prev_hash`). That is not a nicety — `verify` recomputes every hash, so widening the
+payload for all entries would have made every chain already on a box report a break at
+entry 1: the record accusing itself of tampering because the software changed.
+
+The retired `pack` field stays in the wider payload for exactly the same reason:
+dropping it would accuse every entry that carries one. **Any future field must be
+added the same way**, and the pinned hashes in `digest_test.go` are what makes
 breaking that rule loud. Being inside the hash is what lets the record attest *which
-code ran*, not merely claim it.
+binary ran*, not merely claim it.
 
 Only state-changing scopes are recorded (`root`, `operate`, `grant`); `observe` reads
-(`status`, `logs`, `doctor`, `verify`, `record`, `actors`, `packs`) do not append — a read
+(`status`, `logs`, `doctor`, `verify`, `record`, `actors`) do not append — a read
 never alters the record it reads.
 The format is locked for 1.0 — see [`decisions/record-format.md`](../../decisions/record-format.md).
 

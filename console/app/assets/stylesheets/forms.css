@@ -7,7 +7,7 @@
   font: inherit; font-size: 0.9rem; padding: 0.45rem 0.6rem;
   border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink);
 }
-.stack-form .field input.mono { font-family: var(--mono); font-size: 0.85rem; }
+.stack-form .field input.mono { font-family: var(--font-mono); font-size: 0.85rem; }
 .stack-form .field input:focus-visible { outline: none; border-color: var(--accent); }
 
 /* Custom select — on-brand chrome (matches the inputs), native options + dropdown.

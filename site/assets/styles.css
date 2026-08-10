@@ -1,223 +1,530 @@
-:root {
-  --bg: #f7f6f3;
-  --surface: #ffffff;
-  --ink: #1c2230;
-  --ink-soft: #4b5468;
-  --line: #e3e1da;
-  --rail: #b9742a;
-  --rail-soft: #e7b15b;
-  --link: #985614; /* darker rail for link text — meets AA contrast on --bg */
-  --code-bg: #1c2230;
-  --code-ink: #e8eaf0;
-  --max: 50rem;
+/*
+ * Presentation. Tokens come from tokens.css; the patterns and the reasoning are in
+ * blueprint/design/patterns.md. Nothing here invents a colour.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-* { box-sizing: border-box; }
-
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--paper);
   color: var(--ink);
-  font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Banner — urgent notices, full width above the header. */
-.site-banner {
-  background: var(--rail);
-  color: #fff;
-  text-align: center;
-  padding: 0.55rem 1.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  line-height: 1.4;
+/* Motion: 150ms on colour and opacity, and nothing that moves layout. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
-/* Header / nav */
+/* ---------------------------------------------------------------- chrome --- */
+
+/* The banner: the one place the accent shouts, and it is contrast-safe there. */
+.site-banner {
+  background: var(--term-bg);
+  color: var(--term-ink);
+  text-align: center;
+  padding: var(--space-2) var(--space-6);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+.site-banner strong {
+  color: var(--term-yellow);
+  font-weight: 600;
+}
+
 .site-header {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.5rem 1.5rem;
-  max-width: var(--max);
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+  max-width: var(--page);
   margin: 0 auto;
-  padding: 1.4rem 1.5rem;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--line);
 }
+
 .brand {
-  font-weight: 700;
-  font-size: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--ink);
   text-decoration: none;
+}
+.brand .mark {
+  flex: none;
+}
+.wordmark {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1.1rem;
   letter-spacing: -0.01em;
 }
+/* The block cursor. Never blinks — an animated cursor in a header is a
+   distraction with no information in it. */
+.cursor {
+  width: 0.42em;
+  height: 1em;
+  background: var(--brand-yellow);
+  font-size: 1.1rem;
+}
+
 .site-header nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.25rem;
+  gap: var(--space-6);
   margin-left: auto;
 }
 .site-header nav a {
   color: var(--ink-soft);
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
 }
-.site-header nav a:hover { color: var(--rail); }
+.site-header nav a:hover {
+  color: var(--ink);
+  border-bottom-color: var(--brand-yellow);
+}
+/* Current page: weight is the accessible signal, the yellow rule is the accent. */
+.site-header nav a.current {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--brand-yellow);
+}
 
-/* Main content */
-main {
-  max-width: var(--max);
+.site-footer {
+  max-width: var(--page);
   margin: 0 auto;
-  padding: 1rem 1.5rem 3rem;
-}
-
-h1, h2, h3 { line-height: 1.25; letter-spacing: -0.015em; }
-h1 {
-  font-size: 2.1rem;
-  margin: 1rem 0 1.2rem;
-}
-h2 {
-  font-size: 1.4rem;
-  margin: 2.4rem 0 0.8rem;
-  padding-top: 1.2rem;
+  padding: var(--space-6);
   border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
 }
-h3 { font-size: 1.1rem; margin: 1.6rem 0 0.5rem; }
-
-p, li { color: var(--ink); }
-a { color: var(--link); }
-/* Content links: distinguishable by more than colour (WCAG 1.4.1). */
-main a { text-decoration: underline; text-underline-offset: 0.15em; }
-
-/* Visible keyboard focus everywhere. */
-a:focus-visible,
-button:focus-visible,
-summary:focus-visible {
-  outline: 2px solid var(--rail);
-  outline-offset: 2px;
-  border-radius: 3px;
+.site-footer .versions {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.site-footer a {
+  color: var(--ink-soft);
+}
+.site-footer a:hover {
+  color: var(--ink);
 }
 
-/* Skip link — hidden until focused. */
+/* Skip link — first focusable thing on the page, hidden until focused. */
 .skip-link {
   position: absolute;
-  left: 0.5rem;
-  top: 0.5rem;
+  left: var(--space-2);
+  top: var(--space-2);
   z-index: 20;
-  padding: 0.5rem 0.9rem;
+  padding: var(--space-2) var(--space-4);
   background: var(--ink);
-  color: #fff;
-  border-radius: 6px;
+  color: var(--paper);
+  border-radius: var(--radius-sm);
   text-decoration: none;
   transform: translateY(-150%);
   transition: transform 0.15s;
 }
-.skip-link:focus { transform: translateY(0); }
+.skip-link:focus {
+  transform: translateY(0);
+}
 
-strong { color: var(--ink); }
+/* One focus ring everywhere. The dark ring does the contrast work (17:1 on any
+   surface here); the yellow band outside it is the accent and carries no meaning. */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+details:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgba(242, 194, 0, 0.55);
+  border-radius: 2px;
+}
+.terminal a:focus-visible,
+.terminal button:focus-visible {
+  outline-color: var(--term-ink);
+}
+
+/* ---------------------------------------------------------------- layout --- */
+
+.page {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+.page.has-sidebar {
+  display: grid;
+  grid-template-columns: var(--sidebar) minmax(0, 1fr);
+  gap: var(--space-12);
+  align-items: start;
+}
+
+main {
+  min-width: 0;
+  max-width: var(--content);
+  padding: var(--space-4) 0 var(--space-16);
+}
+/* Prose is capped shorter than the column: a 50rem line of 16px text is too long
+   to track. Tables and terminal blocks get the full width. */
+main > p,
+main > ul,
+main > ol,
+main > blockquote,
+main > details {
+  max-width: var(--measure);
+}
+
+/* --------------------------------------------------------------- sidebar --- */
+
+.sidebar {
+  position: sticky;
+  top: var(--space-6);
+  padding: var(--space-6) 0;
+  font-size: var(--text-sm);
+}
+.sidebar > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: var(--space-2) 0;
+}
+.sidebar .group {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+.sidebar .group:first-of-type {
+  margin-top: var(--space-2);
+}
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sidebar li a {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 3px var(--space-2);
+  border-left: 2px solid var(--line);
+  transition: color 0.15s, border-color 0.15s;
+}
+.sidebar li a:hover {
+  color: var(--ink);
+  border-left-color: var(--line-strong);
+}
+/* Current command: weight carries it, the yellow bar accents it. */
+.sidebar li a.current {
+  color: var(--ink);
+  font-weight: 600;
+  border-left-color: var(--brand-yellow);
+  background: var(--inset);
+}
+
+/* Above 900px the sidebar is a permanent column: force it open and drop the
+   summary. Below, it is an ordinary <details> disclosure — no JavaScript, and
+   nothing that can get stuck in the wrong state. */
+@media (min-width: 900px) {
+  .sidebar > summary {
+    display: none;
+  }
+}
+@media (max-width: 899px) {
+  .page.has-sidebar {
+    display: block;
+  }
+  .sidebar {
+    position: static;
+    padding: var(--space-4) 0 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .sidebar nav {
+    padding-bottom: var(--space-4);
+  }
+}
+
+/* ------------------------------------------------------------------ text --- */
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+h1 {
+  font-size: var(--text-2xl);
+  margin: var(--space-6) 0 var(--space-4);
+}
+h2 {
+  font-size: var(--text-xl);
+  margin: var(--space-12) 0 var(--space-3);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+h3 {
+  font-size: var(--text-lg);
+  margin: var(--space-8) 0 var(--space-2);
+}
+
+.command-title {
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  font-size: var(--text-lg);
+  color: var(--ink-soft);
+  margin-top: 0;
+}
+
+/* Links: near-black text with a yellow underline. The text does the contrast
+   work; the yellow is decoration, and a reader who cannot see it still sees an
+   underline (WCAG 1.4.1). */
+a {
+  color: var(--ink);
+}
+main a {
+  text-decoration: underline;
+  text-decoration-color: var(--brand-yellow);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.16em;
+  transition: text-decoration-color 0.15s;
+}
+main a:hover {
+  text-decoration-color: var(--brand-yellow-dim);
+}
 
 blockquote {
-  margin: 1.2rem 0;
-  padding: 0.6rem 1rem;
-  border-left: 3px solid var(--rail-soft);
-  background: #fff8ec;
+  margin: var(--space-6) 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--brand-yellow);
+  background: var(--inset);
   color: var(--ink-soft);
-  border-radius: 0 6px 6px 0;
 }
-blockquote p { margin: 0.2rem 0; }
+blockquote p {
+  margin: var(--space-1) 0;
+}
 
-/* Code */
+/* --------------------------------------------------------------- badges --- */
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-6);
+  padding: 0;
+}
+.badge {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--space-2);
+}
+/* The scope badge carries the accent bar. The word is the signal. */
+.badge[class*="scope-"] {
+  border-left: 3px solid var(--brand-yellow);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ code --- */
+
 code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.875em;
-  background: #ece9e2;
-  padding: 0.12em 0.35em;
-  border-radius: 4px;
+  background: var(--inset);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
 }
+
 pre {
-  background: var(--code-bg);
-  color: var(--code-ink);
-  padding: 1rem 1.1rem;
-  border-radius: 10px;
+  background: var(--term-bg);
+  color: var(--term-ink);
+  padding: var(--space-4);
+  border-radius: var(--radius);
   overflow-x: auto;
-  line-height: 1.5;
-  font-size: 0.85rem;
+  line-height: 1.55;
+  font-size: var(--text-code);
+  font-family: var(--font-mono);
+  margin: var(--space-6) 0;
 }
-pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* The terminal block: command output shown as command output. It scrolls inside
+   its own frame, so a long line never makes the page scroll sideways. */
+.terminal {
+  margin: var(--space-6) 0 var(--space-8);
+  background: var(--term-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.terminal-bar {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--term-yellow);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--term-line);
+}
+.terminal-bar::before {
+  content: "$ ";
+  color: var(--term-muted);
+}
+.terminal pre {
+  margin: 0;
+  border-radius: 0;
+  padding: var(--space-4);
+}
 
 /* Icon copy button on code blocks (added by assets/copy.js) */
-.code-wrap { position: relative; }
+.code-wrap {
+  position: relative;
+}
 .copy-btn {
   position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
+  top: var(--space-2);
+  right: var(--space-2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 1.9rem;
   height: 1.9rem;
   padding: 0;
-  color: var(--code-ink);
+  color: var(--term-ink);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s, background 0.15s, color 0.15s;
 }
 .code-wrap:hover .copy-btn,
-.copy-btn:focus-visible { opacity: 1; }
-.copy-btn:hover { background: rgba(255, 255, 255, 0.18); }
-.copy-btn.copied { color: #7bd88f; border-color: rgba(123, 216, 143, 0.5); }
+.copy-btn:focus-visible {
+  opacity: 1;
+}
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.copy-btn.copied {
+  color: var(--term-yellow);
+  border-color: var(--term-yellow);
+}
 /* Touch devices have no hover — keep it visible but subtle. */
-@media (hover: none) { .copy-btn { opacity: 0.6; } }
+@media (hover: none) {
+  .copy-btn {
+    opacity: 0.6;
+  }
+}
 
 /* Screen-reader-only (the copy live region). */
 .visually-hidden {
   position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
 }
 
-/* Tables */
+/* ---------------------------------------------------------------- tables --- */
+
 table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.2rem 0;
-  font-size: 0.93rem;
+  margin: var(--space-6) 0;
+  font-size: var(--text-sm);
+  display: block;
+  overflow-x: auto;
 }
-th, td {
+th,
+td {
   text-align: left;
-  padding: 0.5rem 0.7rem;
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--line);
   vertical-align: top;
 }
 th {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--ink-soft);
+  font-weight: 600;
 }
-tbody tr:hover { background: var(--surface); }
 
-/* Footer */
-.site-footer {
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: 1.5rem;
-  border-top: 1px solid var(--line);
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: var(--ink-soft);
+/* The command index: name column tight, summary takes the rest. */
+table.commands td:first-child {
+  width: 1%;
+  white-space: nowrap;
 }
-.site-footer .versions { font-variant-numeric: tabular-nums; }
-.site-footer a { color: var(--ink-soft); }
-.site-footer a:hover { color: var(--rail); }
+table.commands code {
+  background: none;
+  padding: 0;
+  font-size: var(--text-code);
+}
+
+/* --------------------------------------------------------------- details --- */
+
+main > details {
+  margin: var(--space-6) 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+}
+main > details > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ small --- */
+
+@media (max-width: 640px) {
+  .page,
+  .site-header,
+  .site-footer {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+  h1 {
+    font-size: 1.6rem;
+  }
+  .site-header nav {
+    gap: var(--space-4);
+    margin-left: 0;
+  }
+}

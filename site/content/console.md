@@ -1,4 +1,5 @@
 ---
+nav: console
 title: Steward Console
 ---
 # Steward Console
@@ -20,12 +21,12 @@ honest: a fleet action is N recorded acts, not one atomic act.
 
 ## The Machine View
 
-A box's page is shaped by what the box reports. Sections exist because it says it runs
-a pack, not because the console assumed — a machine running only the core shows no Apps
-section at all, because that machine genuinely cannot deploy.
+A box's page is shaped by what the box reports. Sections exist because it says what it
+was prepared for, not because the console assumed — a balancer shows no Apps section at
+all, because that machine has no container runtime and genuinely cannot deploy.
 
 Deploying from here needs **no project and no plan**: paste the app's
-[AppConfig](/packs.html#appconfig), and it is sent to the box and discarded. What is
+[AppConfig](/apps.html#appconfig), and it is sent to the box and discarded. What is
 running afterwards is read back from the machine. Nothing about the deploy is stored in
 the console, because the box's record already is the record.
 
@@ -47,7 +48,7 @@ Three things make up the domain.
 
 - **Machine** — a Steward box, reached over scoped SSH. It is dedicated to one project by
   default. Sharing across projects is possible, but only with an explicit sharing model.
-- **Install** — a deployed app. It is an [AppConfig](/packs.html#appconfig) placed on one or
+- **Install** — a deployed app. It is an [AppConfig](/apps.html#appconfig) placed on one or
   more machines.
 - **Project** — a client, and the way to own and group installs. Optional: an install
   belongs to a box, not to a client, so you can place an app without creating one.
@@ -62,12 +63,12 @@ another.
 
 ## Install
 
-Steward Console runs like any other app. You deploy it from an [AppConfig](/packs.html#appconfig), the
+Steward Console runs like any other app. You deploy it from an [AppConfig](/apps.html#appconfig), the
 same as anything else.
 
 1. Authorize Steward Console on the box — [admit a key](/index.html#authentication--scoped-ssh)
    with a named client at `operate` scope.
-2. Build its [AppConfig](/packs.html#appconfig) and deploy it. The worked example on that page *is*
+2. Build its [AppConfig](/apps.html#appconfig) and deploy it. The worked example on that page *is*
    Steward Console's own config.
 
 Steward Console's one secret is `RAILS_MASTER_KEY`. Steward injects it as container env, out of the

@@ -89,18 +89,6 @@ module Steward
       end
     end
 
-    # What code may run on this box, at what digest. The companion to `actors`: that
-    # is who may act, this is what may run. Read live, never stored — a copy here
-    # would eventually disagree with the box and be believed.
-    #
-    # This is what lets the machine view be pack-shaped: a box's Apps dashboard
-    # exists because the box says it runs steward-app, not because we assumed it.
-    def packs(machine, refresh: false)
-      cached(machine, "packs", refresh: refresh) do
-        Steward.read(machine, "packs --json")
-      end
-    end
-
     # Recent doctor check, cached. Same read contract as status.
     def doctor(machine, refresh: false)
       cached(machine, "doctor", refresh: refresh) do

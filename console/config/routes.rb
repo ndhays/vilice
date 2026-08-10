@@ -64,8 +64,8 @@ Rails.application.routes.draw do
 
   # All Machines — the fleet, the per-machine deep dive, and onboarding (new/create).
   resources :machines, only: %i[ index show new create destroy ] do
-    # Apps on this box, as steward-app sees them. Machine-scoped on purpose: this
-    # is the pack's own surface, and it works with no Project and no Install —
+    # Apps on this box, as the box sees them. Machine-scoped on purpose: this is
+    # the machine view's own surface, and it works with no Project and no Install —
     # the AppConfig is sent to the box and discarded, and the box's record is the
     # only record. See blueprint/console/interface.md.
     resources :apps, only: %i[ new create destroy ], module: :machines, as: :box_apps

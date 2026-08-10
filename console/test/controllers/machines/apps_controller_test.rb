@@ -1,6 +1,6 @@
 require "test_helper"
 
-# The machine view's pack surface: deploy to one box with no Project, no Install, and
+# The machine view's deploy surface: deploy to one box with no Project, no Install, and
 # nothing stored. The config is transit — it goes to the box and is discarded.
 class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
   setup do
@@ -8,13 +8,12 @@ class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
     @machine = Machine.create!(name: "edge-1", ssh_host: "10.0.0.1", scope: "operate")
   end
 
-  ACTIVE = { ok: true, data: { "data" => { "manifest" => "/etc/steward/packs.manifest",
-    "packs" => [ { "name" => "steward-app", "state" => "active" } ] } } }.freeze
+  HOST = { ok: true, data: { "data" => { "role" => "host" } } }.freeze
 
   CONFIG = '{"image":"ghcr.io/x/y@sha256:abc","hostnames":["a.example.com"],"port":8080}'.freeze
 
   def deploying(&block)
-    stub_observe(packs: ACTIVE, &block)
+    stub_observe(status: HOST, &block)
   end
 
   test "the deploy form is behind the login" do
@@ -71,13 +70,21 @@ class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
     assert_match(/observe-only/, flash[:alert])
   end
 
-  # And no surface on a box that does not run the pack — absent, not disabled.
-  test "a box without steward-app has no deploy surface" do
+  # And no surface on a box whose role is not to run apps — absent, not disabled.
+  test "a balancer has no deploy surface" do
     sign_in_as @user
-    bare = { ok: true, data: { "data" => { "packs" => [] } } }
-    stub_observe(packs: bare) { get new_machine_box_app_path(@machine) }
+    edge = { ok: true, data: { "data" => { "role" => "balancer" } } }
+    stub_observe(status: edge) { get new_machine_box_app_path(@machine) }
     assert_redirected_to @machine
-    assert_match(/does not run steward-app/, flash[:alert])
+    assert_match(/balancer/, flash[:alert])
+  end
+
+  # But an unreachable box keeps its deploy surface: no role read is unknown, not
+  # balancer, and we do not take a surface away on a guess.
+  test "an unreachable box keeps its deploy surface" do
+    sign_in_as @user
+    stub_observe { get new_machine_box_app_path(@machine) }
+    assert_response :success
   end
 
   test "removing an app is a recorded act on the box" do

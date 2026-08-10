@@ -54,9 +54,6 @@ class MachinesController < ApplicationController
   # machine's Steward Console events (authored) with the box record (witnessed).
   def show
     @status   = MachineStatus.from(Steward::Observe.status(@machine))
-    # What the box says may run on it. The machine view is pack-shaped: sections
-    # exist because the box reports the pack, not because we assumed it has one.
-    @packs    = PackState.new(Steward::Observe.packs(@machine))
     @record   = Steward::Observe.record(@machine)
     @chain    = chain_for(@machine, @record)
     @installs = @machine.installs.includes(:project).order(:name) # placements on this box (project optional)

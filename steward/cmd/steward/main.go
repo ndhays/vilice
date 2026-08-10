@@ -6,15 +6,16 @@
 // Callers are clients, never peers: the console, a CI job, and a person at a shell
 // all come through the same door. Each concern is specified in blueprint/steward/.
 //
-// This file is the whole of the wiring: register the packs, then hand argv to the
-// core. Everything a pack contributes still enters through the core's gate.
+// This file is the whole of the wiring: register the app layer, then hand argv to
+// the core. Everything the app layer contributes still enters through the core's
+// gate.
 package main
 
 import (
 	"os"
 
+	"steward/internal/app"
 	"steward/internal/core"
-	"steward/internal/pack/app"
 )
 
 func main() {

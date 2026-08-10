@@ -1,45 +1,59 @@
-// Shared HTML layout. Receives a markdown document (with front-matter `title`
-// and rendered `_body`) and the versions object, and wraps them in the page
-// chrome. Substitutions use ${ }; `??` supplies a default title.
+// Shared HTML layout. Receives a document (front-matter fields plus a rendered
+// `_body`), the versions object, and the command table — the last so every page can
+// draw the same nav, and a command page can draw the sidebar.
 //
-// A plain template literal (not Tree.indent) is deliberate: indent would
-// re-indent the multi-line ${ doc._body }, corrupting whitespace inside <pre>
-// blocks like the ecosystem diagram. The body is inserted verbatim.
-(doc, versions) => `<!DOCTYPE html>
+// Document fields the chrome reads, all optional:
+//   title    — the <title> and og:title
+//   nav      — which nav item is current: "docs" | "commands" | "apps" | "console"
+//   command  — on a command page, which command, so the sidebar can mark it
+//   sidebar  — true to render the command sidebar
+//
+// A plain template literal (not Tree.indent) is deliberate: indent would re-indent
+// the multi-line ${ doc._body }, corrupting whitespace inside <pre> blocks — which
+// is fatal here, where a <pre> holds verbatim terminal output.
+(doc, versions, commands) => `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${ doc.title ?? "Steward" } · Steward</title>
     <meta name="description" content="A coordination platform for operators running managed services on infrastructure they control.">
-    <meta name="theme-color" content="#1c2230">
+    <meta name="theme-color" content="#121212">
     <meta property="og:title" content="${ doc.title ?? "Steward" } · Steward">
     <meta property="og:type" content="website">
     <meta property="og:description" content="A coordination platform for operators running managed services on infrastructure they control.">
+    <!-- A raster, because social platforms don't render SVG. Same mark. -->
+    <meta property="og:image" content="https://steward.agoraforge.org/assets/logo.png">
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/logo.png">
+    <link rel="stylesheet" href="/assets/tokens.css">
     <link rel="stylesheet" href="/assets/styles.css">
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="site-banner" role="status">
-      Steward is currently in BETA development. Use at your own risk! Code and project is subject to change.
+      Steward is a <strong>proof of concept</strong>, in beta. Run it on a box you can afford to lose.
     </div>
     <header class="site-header">
-      <a class="brand" href="/index.html">Steward</a>
+      <a class="brand" href="/index.html">
+        <svg class="mark" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4.5" width="20" height="15" rx="2.5"/><path d="M6.4 7.5 L6.4 13.1 L10.5 10.3 Z" fill="currentColor" stroke="none"/><path d="M17.6 7.5 L17.6 13.1 L13.5 10.3 Z" fill="currentColor" stroke="none"/><circle cx="12" cy="10.3" r="1.5" fill="#F2C200" stroke="none"/><circle cx="6" cy="16.8" r="0.9" fill="#F2C200" stroke="none"/><circle cx="8.7" cy="16.8" r="0.9" fill="currentColor" stroke="none"/><line x1="11.8" y1="16.8" x2="18" y2="16.8"/></svg><span class="wordmark">steward</span><span class="cursor" aria-hidden="true"></span>
+      </a>
       <nav aria-label="Primary">
-        <a href="/index.html">Documentation</a>
-        <a href="/packs.html">Packs</a>
-        <a href="/console.html">Console</a>
+        <a href="/index.html"${ doc.nav === "docs" ? ` class="current" aria-current="page"` : `` }>Docs</a>
+        <a href="/commands/"${ doc.nav === "commands" ? ` class="current" aria-current="page"` : `` }>Commands</a>
+        <a href="/apps.html"${ doc.nav === "apps" ? ` class="current" aria-current="page"` : `` }>Apps</a>
+        <a href="/console.html"${ doc.nav === "console" ? ` class="current" aria-current="page"` : `` }>Console</a>
         <a href="https://github.com/ndhays/steward">GitHub <span aria-hidden="true">↗</span></a>
       </nav>
     </header>
-    <main id="main">
-      ${ doc._body }
-    </main>
+    <div class="page${ doc.sidebar ? ` has-sidebar` : `` }">
+${ doc.sidebar ? sidebar.ori(commands, doc.command) : `` }
+      <main id="main">
+${ doc._body }
+      </main>
+    </div>
     <footer class="site-footer">
-      <span class="versions">
-        Steward v${ versions.platform }
-      </span>
+      <span class="versions">Steward v${ versions.platform }</span>
       <span class="meta">
         <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a> (Console)
         &nbsp;·&nbsp;

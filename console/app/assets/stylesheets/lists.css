@@ -84,7 +84,7 @@
   font: inherit; font-size: 0.85rem; padding: 0.35rem 0.55rem;
   border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink);
 }
-.version-add input.mono { font-family: var(--mono); flex: 1 1 16rem; }
+.version-add input.mono { font-family: var(--font-mono); flex: 1 1 16rem; }
 .version-latest { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); }
 .form-note { margin: -0.4rem 0 0.8rem; font-size: 0.85rem; }
 
@@ -106,7 +106,7 @@
   display: inline-flex; align-items: center; gap: 0.3rem;
   padding: 0.22rem 0.35rem 0.22rem 0.6rem; border-radius: 999px;
   border: 1px solid var(--line); background: var(--card); cursor: pointer;
-  font-family: var(--mono); font-size: 0.82rem; user-select: none;
+  font-family: var(--font-mono); font-size: 0.82rem; user-select: none;
 }
 .chip .chip-lock { display: none; }
 .chip.is-secret { border-color: var(--mutate-line); background: var(--mutate-bg); color: var(--mutate); }
@@ -128,8 +128,8 @@
   font: inherit; font-size: 0.85rem; padding: 0.35rem 0.55rem;
   border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink);
 }
-.kv-row .kv-key { flex: 0 1 16rem; font-family: var(--mono); }
-.kv-row .kv-path { flex: 1 1 18rem; font-family: var(--mono); }
+.kv-row .kv-key { flex: 0 1 16rem; font-family: var(--font-mono); }
+.kv-row .kv-path { flex: 1 1 18rem; font-family: var(--font-mono); }
 .kv-secret { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
 .kv-del {
   display: inline-flex; align-items: center; padding: 0.3rem; margin-left: auto;

@@ -1,7 +1,7 @@
 /* ── Breadcrumb — the file-system path feel ─────────────────────────────── */
 .breadcrumb {
   display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   font-size: 0.82rem; color: var(--muted); margin-bottom: 1.1rem;
 }
 .breadcrumb .crumb { color: var(--muted); }

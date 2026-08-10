@@ -49,42 +49,17 @@
 
 <%= render "machines/sharing", machine: @machine, projects: @projects %>
 
-<%# ── Packs — what code the box says may run on it ────────────────────── %>
-<div class="panel observe">
-  <div class="kicker">Observe · packs (what may run here)</div>
-  <% if !@packs.reachable? %>
-    <p class="muted">Unreachable — <%= @packs.error %>. What runs here is unknown, not none.</p>
-  <% elsif @packs.all.empty? %>
-    <p class="muted">
-      No packs authorized — this box runs the core and nothing else. It can record,
-      verify, and admit actors; it cannot deploy.
-    </p>
-  <% else %>
-    <ul class="metrics">
-      <% @packs.active.each do |pack| %>
-        <li>
-          <span class="k"><%= icon "package", size: 13 %> <%= pack["name"] %></span>
-          <span class="v"><%= pack["state"] %></span>
-        </li>
-      <% end %>
-    </ul>
-    <% if @packs.problems.any? %>
-      <% @packs.problems.each do |pack| %>
-        <p class="muted">
-          <strong><%= pack["name"] %> — <%= pack["state"] %>.</strong> <%= pack["note"] %>
-        </p>
-      <% end %>
-    <% end %>
-    <p class="muted"><%= @packs.manifest_path %></p>
-  <% end %>
-</div>
-
 <%# ── Observe ─────────────────────────────────────────────────────────── %>
 <div class="panel observe">
   <div class="kicker">Observe · live status (cached)</div>
   <% if @status.online? %>
     <strong><%= @status.hostname %></strong>
     <ul class="metrics">
+      <%# What the box was prepared as — its own answer to "what am I for". The view
+          shapes itself around this: a balancer shows no Apps section, because it has
+          no container runtime and would refuse a deploy by name. A box that has never
+          been prepared reports nothing, which reads as unknown. %>
+      <li><span class="k"><%= icon "hard-drive", size: 13 %> role</span><span class="v"><%= @status.role.presence || "not prepared" %></span></li>
       <li><span class="k"><%= icon "cpu", size: 13 %> load</span><span class="v"><%= @status.load1 %></span></li>
       <li><span class="k"><%= icon "memory-stick", size: 13 %> memory used</span><span class="v"><%= @status.mem_percent %>%</span></li>
       <li><span class="k"><%= icon "container", size: 13 %> disk used</span><span class="v"><%= @status.disk_percent %>%</span></li>
@@ -122,13 +97,15 @@
   </ul>
 <% end %>
 
-<%# ── Apps on this box — steward-app's surface ─────────────────────────── %>
-<%# Exists only where the box reports the pack, and lists what the *box* says is
-    running, not what we think it should be. No Project required: a machine-view
-    deploy sends an AppConfig and keeps nothing. %>
-<% if @packs.apps? %>
+<%# ── Apps on this box ─────────────────────────────────────────────────── %>
+<%# Absent only where the box says it is a balancer — that box runs no containers.
+    An unreachable or unprepared box still shows the section, because no role read
+    is *unknown*, not *runs nothing*. Lists what the box says is running, not what
+    we think it should be. No Project required: a machine-view deploy sends an
+    AppConfig and keeps nothing. %>
+<% unless @status.balancer? %>
   <div class="panel observe">
-    <div class="kicker">Observe · apps (steward-app)</div>
+    <div class="kicker">Observe · apps</div>
     <% if !@status.online? %>
       <p class="muted">Unreachable — what is running here is unknown, not none.</p>
     <% elsif @status.apps.empty? %>

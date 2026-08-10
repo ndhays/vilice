@@ -103,13 +103,13 @@ and placement next to it.
   what decides whether a count above 1 is allowed at all, and **Change what's asked for**
   edits both. That page is styled as intention, not mutate, since saying a different number
   reaches no box.
-- **Machines → Machine** — the box lens, and it is **pack-shaped**: sections exist
-  because the box reports the pack (`steward packs`), not because the console assumed
-  it. A box running only the core shows no Apps section — not greyed out, absent,
-  because that box genuinely cannot deploy. A pack that is authorized but cannot run
-  (stale digest, missing, unauthorized) surfaces *why*, since "stale" alone is
-  indistinguishable from tampering until you can see that an upgrade skipped
-  `prepare`. An unreachable box reports what runs there as **unknown, not none**.
+- **Machines → Machine** — the box lens, and it is **shaped by the box's role**:
+  sections exist because the box says what it was prepared for (`steward status`
+  reports `role`), not because the console assumed it. A `balancer` shows no Apps
+  section — not greyed out, absent, because that box has no container runtime and
+  would refuse a deploy by name. A box that reports no role has never been prepared,
+  and an unreachable one reports what runs there as **unknown, not none** — neither
+  loses the section, because we do not take a surface away on a guess.
 
   **A machine-view deploy is stateless in the console.** Paste an AppConfig, it goes to
   the box on stdin, and it is *discarded* — no `Install`, no `Project`, no stored spec.

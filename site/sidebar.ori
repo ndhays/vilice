@@ -1,0 +1,17 @@
+// The command sidebar: every command, grouped exactly as `steward help` groups
+// them, because the groups come from the binary (core.Groups) rather than from a
+// list kept here. Shown only on /commands/ pages.
+//
+// It is a <details> so it collapses on a narrow screen without JavaScript — open
+// by default, and the stylesheet hides the summary and forces it open above 900px.
+// A disclosure has nothing to get stuck in the wrong state; a drawer does.
+(commands, current) => `      <details class="sidebar" open>
+        <summary>All commands</summary>
+        <nav aria-label="Commands">
+${ Tree.map(Tree.groupBy(commands, (command) => command.group), (group, title) => `          <p class="group">${ title }</p>
+          <ul>
+${ Tree.map(group, (command) => `            <li><a href="/commands/${ command.name }.html"${ command.name === current ? ` class="current" aria-current="page"` : `` }>${ command.name }</a></li>
+`) }          </ul>
+`) }        </nav>
+      </details>
+`

@@ -1,7 +1,7 @@
 package app
 
-// Split out of the core when the core/pack line was drawn: these assert
-// properties of what this pack renders and writes to the box, so they belong
+// Split out of the core when the core/app line was drawn: these assert
+// properties of what this layer renders and writes to the box, so they belong
 // with the code that renders it. The assertions are unchanged.
 
 import (

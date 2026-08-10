@@ -39,15 +39,18 @@
       <div class="layout">
         <nav class="sidebar">
           <%= link_to root_path, class: "brand" do %>
+            <%# The shared mark — blueprint/design/logo.md. Black is currentColor, so
+                it takes the rail's ink; only the switch is literal yellow. %>
             <span class="mark">
-              <svg width="22" height="22" viewBox="0 0 70 70" fill="none" aria-hidden="true">
-                <rect x="10" y="8" width="50" height="10" rx="5" fill="currentColor" opacity="0.25"/>
-                <circle cx="55" cy="13" r="5" fill="currentColor"/>
-                <rect x="10" y="24" width="50" height="10" rx="5" fill="currentColor" opacity="0.25"/>
-                <circle cx="15" cy="29" r="5" fill="currentColor"/>
-                <rect x="10" y="40" width="50" height="10" rx="5" fill="currentColor" opacity="0.25"/>
-                <circle cx="55" cy="45" r="5" fill="currentColor"/>
-                <rect x="10" y="56" width="50" height="10" rx="5" fill="currentColor" opacity="0.6"/>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="4.5" width="20" height="15" rx="2.5"/>
+                <path d="M6.4 7.5 L6.4 13.1 L10.5 10.3 Z" fill="currentColor" stroke="none"/>
+                <path d="M17.6 7.5 L17.6 13.1 L13.5 10.3 Z" fill="currentColor" stroke="none"/>
+                <circle cx="12" cy="10.3" r="1.5" fill="#F2C200" stroke="none"/>
+                <circle cx="6" cy="16.8" r="0.9" fill="#F2C200" stroke="none"/>
+                <circle cx="8.7" cy="16.8" r="0.9" fill="currentColor" stroke="none"/>
+                <line x1="11.8" y1="16.8" x2="18" y2="16.8"/>
               </svg>
             </span>Steward Console
           <% end %>

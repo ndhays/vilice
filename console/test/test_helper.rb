@@ -20,11 +20,11 @@ module ActiveSupport
     #
     # Stubbing verbs one at a time means the day someone adds a fifth read to the
     # machine page, every test that renders it quietly starts making real SSH
-    # attempts — which is exactly what happened when `packs` was added: the suite
+    # attempts — which is exactly what happened when a fourth was added: the suite
     # went from 1.7s to 11s and still passed. Stub the surface, not the verb.
     def stub_observe(**reads)
       offline = { ok: false, error: "stubbed offline" }
-      verbs = %i[status record packs actors doctor]
+      verbs = %i[status record actors doctor]
       originals = verbs.to_h { |v| [ v, Steward::Observe.method(v) ] }
       verbs.each do |verb|
         value = reads.fetch(verb, offline)

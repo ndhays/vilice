@@ -49,9 +49,15 @@ type Entry struct {
 	Scope  string   `json:"scope"`
 	Action string   `json:"action"`
 	Args   []string `json:"args,omitempty"`
-	// Pack and Digest name the code that ran. Empty for the core's own verbs;
-	// for a packed verb, the pack's name and the digest the manifest authorized
-	// it at. Absent on entries written before packs existed.
+	// Digest is the sha256 of the binary that ran the action, for the verbs that
+	// check it. Empty for the ones that do not (the ceiling, the rights ledger,
+	// the record's own reads) and for entries written before it was recorded.
+	//
+	// Pack is history. Steward once dispatched to verb packs and wrote the pack's
+	// name here; that layer is gone (decisions/roles-not-packs.md), and nothing
+	// sets this field any more. It stays so entries already on boxes still parse
+	// and still hash to what they hashed to — the record is append-only, and a
+	// reader that cannot read its own past is not a record.
 	Pack     string `json:"pack,omitempty"`
 	Digest   string `json:"digest,omitempty"`
 	PrevHash string `json:"prev_hash"`
@@ -73,9 +79,12 @@ func (e Entry) computeHash() string {
 	// Two shapes, and the reason is chains already on disk. The hash covers every
 	// field, so simply adding pack/digest to the payload would change the hash of
 	// every entry ever written and `verify` would report a break on the first one.
-	// An entry with no pack therefore hashes exactly as it always did, byte for
-	// byte, and only a packed entry commits to the wider shape. New fields must be
-	// added the same way: additively, or the chain is not additive.
+	// An entry with neither therefore hashes exactly as it always did, byte for
+	// byte, and only an entry that carries one commits to the wider shape. The
+	// retired `pack` field stays in the wider payload for the same reason: entries
+	// on real boxes carry it, and dropping it from the hash would accuse every one
+	// of them of tampering. New fields must be added the same way: additively, or
+	// the chain is not additive.
 	var b []byte
 	if e.Pack == "" && e.Digest == "" {
 		payload := struct {
@@ -144,14 +153,15 @@ func lastEntry(path string) (Entry, bool, error) {
 // both write N+1, and the chain is broken *permanently* — the Record is append-only
 // (chattr +a), so nothing short of root can repair it. Steward Console driving a box while
 // an operator types is the ordinary case, not the exotic one.
-// Record writes a core entry — one with no pack behind it.
+// Record writes an entry that names no binary — the verbs exempt from the digest
+// check, and the deny entries written when that check refuses.
 func Record(actor, scope, action string, args []string) error {
-	return RecordAct(actor, scope, action, args, "", "")
+	return RecordAct(actor, scope, action, args, "")
 }
 
-// RecordAct writes one entry, chained to the current tail, naming the pack and digest
-// the action ran under. pack and digest are empty for the core's own verbs.
-func RecordAct(actor, scope, action string, args []string, pack, digest string) error {
+// RecordAct writes one entry, chained to the current tail, naming the digest of the
+// binary the action ran under. digest is empty where it was not checked.
+func RecordAct(actor, scope, action string, args []string, digest string) error {
 	path := RecordPath()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
@@ -180,7 +190,6 @@ func RecordAct(actor, scope, action string, args []string, pack, digest string) 
 		Scope:  scope,
 		Action: action,
 		Args:   args,
-		Pack:   pack,
 		Digest: digest,
 	}
 	if found {

@@ -12,13 +12,13 @@ specified in [`site/content/index.md`](../site/content/index.md) and, in depth, 
 ## Layout
 
 ```
-cmd/steward/        the wiring: register the packs, hand argv to the core
+cmd/steward/        the wiring: register the app layer, hand argv to the core
 internal/core/      the trust layer — dispatch, gate, record, ceiling, auth
-internal/pack/app/  steward-app: deploy, lifecycle, backup, observe
+internal/app/       the app layer: deploy, lifecycle, backup, observe
 ```
 
-The core never learns what a verb does; a pack never gets a way in that skips the
-gate. See [`blueprint/steward/packs.md`](../blueprint/steward/packs.md).
+The core never learns what a verb does; the app layer never gets a way in that skips
+the gate. See [`blueprint/steward/overview.md`](../blueprint/steward/overview.md).
 
 ## Build
 
@@ -32,5 +32,5 @@ steward help
 
 The core is implemented and box-verified: provision (`prepare`/`harden`), auth
 (`authorize`/`revoke` + the `_exec` gate), deploy + lifecycle, observe
-(`status`/`logs`/`doctor`), the append-only record, and `snapshot`. The core/pack
-line is drawn: one binary, internally layered, with `steward-app` as the only pack.
+(`status`/`logs`/`doctor`), the append-only record, and `snapshot`. One binary,
+internally layered: a trust core and the app layer it dispatches to.

@@ -1,6 +1,6 @@
 // Package core is the trust layer: the one door, the account gate, the
-// hash-chained record, and the root ceiling. It dispatches to verb packs but
-// never knows what a verb does — see decisions/core-and-packs.md.
+// hash-chained record, and the root ceiling. It dispatches to the app layer but
+// never knows what a verb does — see decisions/roles-not-packs.md.
 package core
 
 import (
@@ -57,10 +57,28 @@ func notImplemented(name string) Result {
 	}
 }
 
+// Flag is one --flag a command accepts, and what it is for. The list is the only
+// source: the gate refuses anything not named here (see unknownFlag), and help
+// prints the same list — so a flag cannot reach the box without being documented.
+type Flag struct {
+	Name string // without the leading --
+	Arg  string // "" for a boolean flag; otherwise the value's placeholder
+	What string // one line: what it does, and its default if it has one
+}
+
+// Example is an invocation you can paste, and the one line that says why.
+type Example struct {
+	Cmd  string
+	What string
+}
+
 type Command struct {
 	Name    string
 	Scope   Scope
 	Summary string
+	// Long is the paragraph under the summary: what the command does, and what it
+	// does not. Hard-wrapped by the author at HelpWidth; printed verbatim.
+	Long string
 	// Usage is the synopsis after "steward <name>"; "" means the command takes
 	// nothing. It is the single source for `help <name>`, `--help`, and the line
 	// appended to every bad_args error — one string, so help and errors can't drift.
@@ -68,61 +86,212 @@ type Command struct {
 	// Flags is every --flag the command accepts. Anything else is refused before
 	// the command runs: ParseArgs drops unknown flags, and a typo silently
 	// ignored (`--por 9000`) is how the wrong thing gets deployed.
-	Flags []string
-	Run   func(args []string) Result
-	// Pack is the pack that contributed this verb, set by Register. Empty means
-	// the core's own — the verbs that constitute the trust model and can never be
-	// a pack. A non-empty Pack is checked against the manifest before the verb
-	// runs, and written to the record beside the action.
-	Pack string
+	Flags []Flag
+	// Examples are shown after the flags. Two or three at most — a page nobody
+	// finishes reading documents nothing.
+	Examples []Example
+	Run      func(args []string) Result
+	// SkipBinaryCheck exempts a verb from the running-binary integrity check, so
+	// it still works on a box whose binary was replaced or never recorded. Only
+	// the verbs an operator inspects and repairs with are exempt: the root
+	// ceiling, the rights ledger, and the record's own reads. Everything else is
+	// checked, and a new verb is checked by default — the field says when *not*
+	// to, so forgetting it fails closed. See digest.go.
+	SkipBinaryCheck bool
 }
 
-// Commands is every verb this binary can dispatch: the core's own, then those
-// contributed by each registered pack, in registration order. Order within a scope
-// is the order shown by `steward help`. Keep in sync with site/content/steward.md
-// and blueprint/steward/.
+// Commands is every verb this binary can dispatch: the core's own, then those the
+// app layer contributes. Order within a scope is the order shown by `steward help`.
+//
+// This table is the only description of the CLI there is. `--help`, usage errors,
+// steward(1), and every page under /commands/ on the documentation site are views
+// of it — the site prints commandHelp's output verbatim rather than describing a
+// command a second time. So a verb is documented here or it is not documented:
+// CheckDocs fails the build on a missing paragraph, an undescribed flag, or a line
+// too wide for the block the site renders it in. See
+// decisions/help-is-the-documentation.md and blueprint/steward/overview.md.
 //
 // The core's verbs are the ones that constitute the trust model — the ceiling, the
-// rights ledger, the record. They can never be a pack, or the trust model would
-// have a plugin interface. See decisions/core-and-packs.md.
+// rights ledger, the record. See decisions/roles-not-packs.md.
 var Commands = []Command{
-	// Ceiling — root only (machine mutation; not reachable via scoped SSH).
-	{Name: "harden", Scope: ScopeRoot,
+	// Ceiling — root only (machine mutation; not reachable via scoped SSH). These
+	// three skip the binary check: `harden` runs before the box has recorded a
+	// digest, `prepare` is what records it, and `uninstall` has to be able to take
+	// a tampered install off the box.
+	{Name: "harden", Scope: ScopeRoot, SkipBinaryCheck: true,
 		Summary: "Optional OS / sshd hardening (first, before prepare)",
-		Usage:   "[--check]", Flags: []string{"check"}, Run: hardenCmd},
-	{Name: "prepare", Scope: ScopeRoot,
-		Summary: "Say what this box is for, install what that needs, lay the accountability floor",
-		Usage:   "<host|balancer> [--yes]", Flags: []string{"yes"}, Run: prepareCmd},
-	{Name: "uninstall", Scope: ScopeRoot,
+		Long: `Locks down the operating system: key-only SSH, a firewall holding open
+sshd's port alone, and fail2ban. These scripts know nothing about
+Steward — no steward user, no record, no containers — so a box is
+hardened whether or not it ever runs an app.
+
+Hardening is deliberately separate from prepare, and optional. The
+accountability floor never lives here, so an un-hardened box is still
+an accountable one. Run it first on a fresh machine, or skip it and
+bring your own hardening.`,
+		Usage: "[--check]",
+		Flags: []Flag{
+			{Name: "check", What: "Report drift instead of changing anything. A read: exits non-zero if the posture regressed, and is not recorded."},
+		},
+		Examples: []Example{
+			{Cmd: "sudo steward harden", What: "Lock the box down. Idempotent — re-running converges."},
+			{Cmd: "sudo steward harden --check", What: "Ask whether it is still locked down. Publishes the answer, so status and the console can show it."},
+		},
+		Run: hardenCmd},
+	{Name: "prepare", Scope: ScopeRoot, SkipBinaryCheck: true,
+		Summary: "Say what this box is for and lay the accountability floor",
+		Long: `Declares the box's role, installs what that role needs, and lays the
+accountability floor — the append-only record every later command
+writes to. Required before any deploy.
+
+  host      runs apps: Podman, restic and Caddy
+  balancer  fronts other boxes: Caddy alone, and runs no apps
+
+The role is written down, and re-preparing as a different role is
+refused — converting a box is a decision, not a typo. Everything else
+is idempotent: re-running after an upgrade converges whatever the new
+version added, and is the normal thing to do, not a repair.
+
+Opens the role's ports when a firewall is present, and shows an
+apt-style summary for confirmation before it touches anything.`,
+		Usage: "<host|balancer> [--yes]",
+		Flags: []Flag{
+			{Name: "yes", What: "Skip the confirmation. For automation, not for haste."},
+		},
+		Examples: []Example{
+			{Cmd: "sudo steward prepare host", What: "Set this box up to run apps."},
+			{Cmd: "sudo steward prepare balancer --yes", What: "Set it up to front other boxes, unattended."},
+		},
+		Run: prepareCmd},
+	{Name: "uninstall", Scope: ScopeRoot, SkipBinaryCheck: true,
 		Summary: "Remove the gate and the scribe (apps keep running)",
-		Usage:   "[--yes] [--remove-apps]", Flags: []string{"yes", "remove-apps"}, Run: uninstallCmd},
+		Long: `Removes Steward: the snapshot timer, every scoped key, the sudoers
+grant, and the binary. What it does not remove is anything that is
+running. Your apps are ordinary systemd units behind ordinary Caddy
+config, and Steward is not a runtime — so uninstalling stops the gate
+and the record, and nothing else.
 
-	// Access — grant scope (the top rung): manage the rights ledger, as the steward user.
-	{Name: "authorize", Scope: ScopeGrant,
-		Summary: "Admit a named actor at a scope (writes the authorized_keys line)",
-		Usage:   "<pubkey> --client <name> --scope <observe|operate|grant>",
-		Flags:   []string{"client", "scope"}, Run: authorizeCmd},
-	{Name: "revoke", Scope: ScopeGrant,
+The steward user and /var/lib/steward stay. The record is the box's
+history and outlives the tool that wrote it.
+
+If backups are configured it points at the restic repo and its
+password file on the way out — the repo outlives the box, and without
+the password every snapshot is unreadable ciphertext. It prints where
+that password is, never the password itself.`,
+		Usage: "[--yes] [--remove-apps]",
+		Flags: []Flag{
+			{Name: "yes", What: "Skip the confirmation."},
+			{Name: "remove-apps", What: "Take the apps down too. Without this they keep running."},
+		},
+		Examples: []Example{
+			{Cmd: "sudo steward uninstall", What: "Remove Steward. The apps carry on serving."},
+			{Cmd: "sudo steward uninstall --remove-apps --yes", What: "Remove Steward and everything it deployed."},
+		},
+		Run: uninstallCmd},
+
+	// Access — grant scope (the top rung): manage the rights ledger, as the steward
+	// user. Both skip the binary check: withdrawing a key from a box you have
+	// stopped trusting must not depend on the box being trustworthy.
+	{Name: "authorize", Scope: ScopeGrant, SkipBinaryCheck: true,
+		Summary: "Admit a named actor at a scope",
+		Long: `Admits a named actor by writing one forced-command line into steward's
+authorized_keys. The key is the identity and the forced command is the
+scope; there is no token to store and no shell to reach.
+
+Scopes form a ladder — a higher one grants those below it:
+
+  observe   read the record: status, logs, verify, record
+  operate   deploy and lifecycle
+  grant     mint and revoke keys, and nothing else
+
+No scope is a shell. A key that sends no command is refused, which is
+what makes the record complete: nothing acts on this box without an
+entry being written first. If you want a real shell, use your own
+account — that is a different named actor with its own trail.
+
+authorized_keys is the rights ledger. Read it and you see every actor
+and its ceiling. steward actors reads it back.`,
+		Usage: "<pubkey> --client <name> --scope <observe|operate|grant>",
+		Flags: []Flag{
+			{Name: "client", Arg: "<name>", What: "The actor's name. This is what lands in the record."},
+			{Name: "scope", Arg: "<scope>", What: "observe, operate, or grant. (ssh is the retired name for the top rung and still reads as grant.)"},
+		},
+		Examples: []Example{
+			{Cmd: `steward authorize "$(cat console.pub)" --client console --scope operate`, What: "Admit the console so it can deploy."},
+			{Cmd: `steward authorize "$(cat ci.pub)" --client ci --scope observe`, What: "Let a CI job read the record and nothing more."},
+		},
+		Run: authorizeCmd},
+	{Name: "revoke", Scope: ScopeGrant, SkipBinaryCheck: true,
 		Summary: "Remove a named actor's authorized_keys line",
-		Usage:   "<client>", Run: revokeCmd},
+		Long: `Removes that actor's line from the rights ledger. The next connection
+under that key is refused at sshd. Whatever the actor already did stays
+in the record — revoking a key withdraws a capability, it does not
+rewrite history.`,
+		Usage: "<client>",
+		Examples: []Example{
+			{Cmd: "steward revoke ci", What: "Withdraw the CI job's key."},
+		},
+		Run: revokeCmd},
 
-	// The machine itself — operate. (Whether this belongs in a steward-machine pack
-	// is open: decisions/open/steward-open-questions.md.)
+	// The machine itself — operate.
 	{Name: "apply-updates", Scope: ScopeOperate,
-		Summary: "Apply machine OS package updates", Run: applyUpdatesCmd},
+		Summary: "Apply machine OS package updates",
+		Long: `Applies the operating system's pending package updates. This is the
+steward user's one narrow root escalation, granted by a single line in
+/etc/sudoers.d/steward and nothing wider.
 
-	// The record — observe. Invariant 2's read side.
-	{Name: "verify", Scope: ScopeObserve,
-		Summary: "Check the record's hash chain is intact", Run: verifyCmd},
-	{Name: "record", Scope: ScopeObserve,
-		Summary: "Dump the accountable record (entries + chain check)", Run: recordCmd},
+It patches the machine, not the apps. An app is whatever image its
+spec pins, and is updated by deploying a new digest.`,
+		Examples: []Example{
+			{Cmd: "steward apply-updates", What: "Patch the OS. Recorded, like every other act."},
+		},
+		Run: applyUpdatesCmd},
+
+	// The record — observe. Invariant 2's read side. Both skip the binary check:
+	// if a digest mismatch took these down with it, the operator would be locked
+	// out of the very evidence that explains the refusal.
+	{Name: "verify", Scope: ScopeObserve, SkipBinaryCheck: true,
+		Summary: "Check the record's hash chain is intact",
+		Long: `Walks the record from the beginning and confirms every entry still
+hashes to the one after it. Exits non-zero and names the first break.
+
+The record is a plain append-only file, one JSON object per line, and
+each line carries the hash of the one before. Edit a line or delete
+one and the chain stops matching from there on. That is the whole
+mechanism — no database, no daemon, nothing to trust but arithmetic
+you can redo yourself.`,
+		Examples: []Example{
+			{Cmd: "steward verify", What: "Confirm nothing has been altered or removed."},
+		},
+		Run: verifyCmd},
+	{Name: "record", Scope: ScopeObserve, SkipBinaryCheck: true,
+		Summary: "Dump the accountable record (entries + chain check)",
+		Long: `Prints the record: every entry, plus the chain-integrity check, so a
+reader can show the witnessed history and prove it is unbroken.
+
+The file itself is /var/lib/steward/record.log — append-only, one JSON
+object per line, readable with cat. This command is the convenient
+door, not the only one.`,
+		Examples: []Example{
+			{Cmd: "steward record", What: "Read the box's history."},
+			{Cmd: "steward record --json", What: "The same, structured, for a program to read."},
+		},
+		Run: recordCmd},
 
 	// The rights ledger — observe. Invariant 1's read side: authorize writes it,
 	// this reads it back, and no scoped key can do anything else with it.
-	{Name: "actors", Scope: ScopeObserve,
-		Summary: "List who may act on this box, at what scope", Run: actorsCmd},
-	{Name: "packs", Scope: ScopeObserve,
-		Summary: "List what code may run on this box, at what digest", Run: packsCmd},
+	{Name: "actors", Scope: ScopeObserve, SkipBinaryCheck: true,
+		Summary: "List who may act on this box, at what scope",
+		Long: `Reads the rights ledger back: every named actor, its scope, and its
+key fingerprint.
+
+It also reports any line in authorized_keys that Steward did not
+write. A hand-added key reaches the box without passing the gate, so
+it is exactly the thing worth surfacing rather than skipping over.`,
+		Examples: []Example{
+			{Cmd: "steward actors", What: "See every key that can reach this box, and how far."},
+		},
+		Run: actorsCmd},
 }
 
 func stub(name string) func([]string) Result {
@@ -147,7 +316,7 @@ func needsStewardUser(s Scope) bool {
 	return s != ScopeRoot && s != ScopeSystem
 }
 
-// Main is the process entry, called by cmd/steward once packs are registered. It
+// Main is the process entry, called by cmd/steward once the app layer is registered. It
 // returns the exit code rather than calling os.Exit, so every path through the
 // gate is reachable from a test.
 func Main(args []string) int {
@@ -179,6 +348,14 @@ func Main(args []string) int {
 		// Internal: emit the man page (roff), generated from the commands table.
 		// `make man` captures it as steward.1.
 		writeMan(os.Stdout)
+		return 0
+	case "_commands":
+		// Internal: emit the commands table as JSON, each entry carrying the very
+		// page `--help` prints. The documentation site builds itself from this.
+		if err := writeCommandsJSON(os.Stdout); err != nil {
+			fmt.Fprintf(os.Stderr, "steward: %v\n", err)
+			return 1
+		}
 		return 0
 	}
 
@@ -296,30 +473,32 @@ func Dispatch(cmd Command, args []string, actorName string, jsonOut bool) int {
 			"app name %q must be [A-Za-z0-9_-]", bad)}), jsonOut)
 		return 1
 	}
-	// A packed verb runs only if the manifest says this pack may, at this binary's
-	// digest. The core's own verbs carry no pack and skip this — which is what keeps
-	// `verify`, `record`, and `authorize` working on a box whose manifest is missing
-	// or stale, so the operator can see why and fix it.
+	// A verb acts only if the running binary is the one this box recorded. The few
+	// verbs an operator inspects and repairs with are exempt — which is what keeps
+	// `verify`, `record`, and `authorize` working on a box whose digest record is
+	// missing or stale, so the operator can see why and fix it. See digest.go.
 	//
-	// The refusal is recorded, best-effort: "the installed binary and the manifest
-	// disagree" is exactly the event the record exists for, and unlike a typo'd flag
-	// it is not the caller's mistake. A failure to write it must not turn a refusal
-	// into a run, so the error is dropped, as with a denied key in auth.go.
-	pack, digest := cmd.Pack, ""
-	if pack != "" {
-		if err := authorizePack(pack); err != nil {
-			_ = Record(actorName, "deny", "pack-unauthorized", []string{pack, cmd.Name})
-			emit(Result{Code: "pack_unauthorized", Message: err.Error()}, jsonOut)
+	// The refusal is recorded, best-effort: "the installed binary is not the one
+	// this box authorized" is exactly the event the record exists for, and unlike a
+	// typo'd flag it is not the caller's mistake. A failure to write it must not
+	// turn a refusal into a run, so the error is dropped, as with a denied key in
+	// auth.go.
+	digest := ""
+	if !cmd.SkipBinaryCheck {
+		d, err := checkBinaryDigest()
+		if err != nil {
+			_ = Record(actorName, "deny", "binary-unrecognized", []string{cmd.Name})
+			emit(Result{Code: "binary_unrecognized", Message: err.Error()}, jsonOut)
 			return 1
 		}
-		digest, _ = SelfDigest() // authorizePack just read it without error
+		digest = d
 	}
 	// Make the resolved actor available to the command itself (deploy records its
 	// own spec entry). actor() reads STEWARD_ACTOR.
 	_ = os.Setenv("STEWARD_ACTOR", actorName) // only errors on a NUL byte in name/value
 	if recordable(cmd, args) {
 		// If the record can't be written, we don't act — fail loud, retryable.
-		if err := RecordAct(actorName, string(cmd.Scope), cmd.Name, args, pack, digest); err != nil {
+		if err := RecordAct(actorName, string(cmd.Scope), cmd.Name, args, digest); err != nil {
 			emit(Result{Code: "record_failed", Retryable: true, Message: err.Error()}, jsonOut)
 			return 1
 		}
@@ -344,11 +523,22 @@ func unknownFlag(cmd Command, args []string) string {
 		if i := strings.IndexByte(name, '='); i >= 0 {
 			name = name[:i]
 		}
-		if !containsString(cmd.Flags, name) {
+		if !declares(cmd, name) {
 			return "--" + name
 		}
 	}
 	return ""
+}
+
+// declares reports whether the command names this flag. The same list is what
+// help prints, so the set the gate admits and the set the docs show are one set.
+func declares(cmd Command, name string) bool {
+	for _, f := range cmd.Flags {
+		if f.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 // takesAppArg reports whether a command's first positional is an app name, read off
@@ -369,15 +559,6 @@ func badAppArg(cmd Command, args []string) string {
 		return ""
 	}
 	return pos[0]
-}
-
-func containsString(list []string, s string) bool {
-	for _, v := range list {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }
 
 // withUsage appends the synopsis to a bad_args failure, so the error and the help
@@ -437,13 +618,119 @@ func emit(res Result, jsonOut bool) {
 	}
 }
 
-// commandHelp is the per-command page: what it does, how to call it, who may.
-// Reached by `steward help <name>` and by `--help`/`-h` on any command.
+// HelpWidth is the column every help page is written to fit. Eighty is the
+// terminal nobody has to widen, and it is also what makes the page publishable:
+// the docs site prints this text verbatim, and a line that wraps on a phone is a
+// line that reads as broken. Authors hard-wrap Long to it; nothing here reflows.
+const HelpWidth = 78
+
+// commandHelp is the per-command page: what it does, how to call it, who may, and
+// whether it is written down. Reached by `steward help <name>`, by `--help`/`-h`
+// on any command, and — verbatim — by the documentation site, which renders this
+// output rather than describing it a second time. See
+// decisions/help-is-the-documentation.md.
 func commandHelp(w io.Writer, cmd Command) {
-	fmt.Fprintf(w, "steward %s — %s\n\n", cmd.Name, cmd.Summary)
-	fmt.Fprintln(w, "Usage:")
-	fmt.Fprintf(w, "  steward %s\n\n", synopsis(cmd))
-	fmt.Fprintf(w, "Scope: %s\n", scopeLine(cmd.Scope))
+	fmt.Fprintf(w, "steward %s — %s\n", cmd.Name, cmd.Summary)
+	if cmd.Long != "" {
+		fmt.Fprintf(w, "\n%s\n", strings.TrimRight(cmd.Long, "\n"))
+	}
+
+	fmt.Fprintln(w, "\nUsage:")
+	fmt.Fprintf(w, "  steward %s\n", synopsis(cmd))
+
+	if len(cmd.Flags) > 0 {
+		fmt.Fprintln(w, "\nFlags:")
+		width := flagColumn(cmd.Flags)
+		indent := strings.Repeat(" ", 2+width+2)
+		for _, f := range cmd.Flags {
+			lines := wrap(f.What, HelpWidth-len(indent))
+			fmt.Fprintf(w, "  %-*s  %s\n", width, flagSpec(f), lines[0])
+			for _, line := range lines[1:] {
+				fmt.Fprintf(w, "%s%s\n", indent, line)
+			}
+		}
+	}
+
+	// What the example is for goes above the line you would type, not beside it: a
+	// command long enough to need a continuation would otherwise sit level with its
+	// own description, and you could not tell which was which.
+	if len(cmd.Examples) > 0 {
+		fmt.Fprintln(w, "\nExamples:")
+		for i, ex := range cmd.Examples {
+			if i > 0 {
+				fmt.Fprintln(w)
+			}
+			for _, line := range wrap(ex.What, HelpWidth-2) {
+				fmt.Fprintf(w, "  %s\n", line)
+			}
+			for _, line := range strings.Split(ex.Cmd, "\n") {
+				fmt.Fprintf(w, "    %s\n", line)
+			}
+		}
+	}
+
+	fmt.Fprintf(w, "\nScope:  %s\n", scopeLine(cmd.Scope))
+	fmt.Fprintf(w, "Record: %s\n", recordLine(cmd))
+}
+
+// wrap breaks a one-line description into lines of at most width columns, so
+// authors write plain sentences and the renderer owns the shape. Always returns at
+// least one line. Counts runes, not bytes — the help text is full of — and ….
+func wrap(s string, width int) []string {
+	var lines []string
+	line := ""
+	for _, word := range strings.Fields(s) {
+		switch {
+		case line == "":
+			line = word
+		case len([]rune(line))+1+len([]rune(word)) <= width:
+			line += " " + word
+		default:
+			lines = append(lines, line)
+			line = word
+		}
+	}
+	return append(lines, line)
+}
+
+// flagSpec is how a flag is typed: --name, or --name <arg>.
+func flagSpec(f Flag) string {
+	if f.Arg == "" {
+		return "--" + f.Name
+	}
+	return "--" + f.Name + " " + f.Arg
+}
+
+// flagColumn is the width the descriptions line up at — the longest spec, unless
+// that would push the text past HelpWidth, in which case the ragged line is the
+// lesser evil.
+func flagColumn(flags []Flag) int {
+	width := 0
+	for _, f := range flags {
+		if n := len(flagSpec(f)); n > width {
+			width = n
+		}
+	}
+	if max := HelpWidth / 2; width > max {
+		return max
+	}
+	return width
+}
+
+// recordLine says whether an invocation lands in the accountable record before it
+// runs. Help is the natural place to answer it: invariant 2 is the whole claim, and
+// a reader should not have to infer which side of it a command is on.
+func recordLine(cmd Command) string {
+	switch {
+	case recordable(cmd, nil):
+		return "written before the command runs"
+	case cmd.Scope == ScopeSystem:
+		// snapshot is not recorded *by* the dispatcher because it is the thing
+		// doing the recording. Saying "not recorded" here would be true of the
+		// mechanism and false to the reader.
+		return "this command is the record's heartbeat — it writes the entry"
+	}
+	return "not recorded — this command reads, it does not act"
 }
 
 // scopeLine says, in one line, who may run a command — help doubling as a second
@@ -464,24 +751,38 @@ func scopeLine(s Scope) string {
 	return string(s)
 }
 
-func usage(w *os.File) {
+func usage(w io.Writer) {
 	fmt.Fprintf(w, "steward v%s — one door to this box: named, scoped, recorded\n\n", Version)
 	fmt.Fprintln(w, "Usage:")
 	fmt.Fprintln(w, "  steward [--json] <command> [args]")
 	fmt.Fprintln(w, "  steward help [command] | version")
 	fmt.Fprintln(w)
-	printGroup(w, "Ceiling (root only — prepare and harden)", ScopeRoot)
-	printGroup(w, "Access (grant scope — mint and revoke keys)", ScopeGrant)
-	printGroup(w, "Deploy & lifecycle (operate)", ScopeOperate)
-	printGroup(w, "Observe & record (observe)", ScopeObserve)
-	printGroup(w, "Record (systemd-invoked)", ScopeSystem)
+	for _, g := range Groups {
+		printGroup(w, g.Title, g.Scope)
+	}
+	fmt.Fprintln(w, "Run `steward help <command>` for the full page: what it does, every")
+	fmt.Fprintln(w, "flag, examples, who may run it, and whether it is recorded.")
 }
 
-func printGroup(w *os.File, title string, s Scope) {
+// Groups are the scopes as a reader meets them: the ceiling first, then the ladder
+// from the top rung down, then the verb systemd calls. One order, used by `help`,
+// by the man page, and by the documentation site's command index.
+var Groups = []struct {
+	Title string
+	Scope Scope
+}{
+	{"Ceiling (root only — prepare and harden)", ScopeRoot},
+	{"Access (grant scope — mint and revoke keys)", ScopeGrant},
+	{"Deploy & lifecycle (operate)", ScopeOperate},
+	{"Observe & record (observe)", ScopeObserve},
+	{"Record (systemd-invoked)", ScopeSystem},
+}
+
+func printGroup(w io.Writer, title string, s Scope) {
 	fmt.Fprintf(w, "%s:\n", title)
 	for _, c := range Commands {
 		if c.Scope == s {
-			fmt.Fprintf(w, "  %-14s %s\n", c.Name, c.Summary)
+			fmt.Fprintf(w, "  %-16s %s\n", c.Name, c.Summary)
 		}
 	}
 	fmt.Fprintln(w)

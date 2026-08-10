@@ -1,8 +1,8 @@
 package app
 
-// Routing this box to *other* boxes — the edge half of the pack.
+// Routing this box to *other* boxes — the edge half of this layer.
 //
-// Every route the pack writes elsewhere is `reverse_proxy 127.0.0.1:<port>`, derived
+// Every route written elsewhere here is `reverse_proxy 127.0.0.1:<port>`, derived
 // from the apps on this machine. That is the right answer for an app served off its own
 // box, and it cannot express the other shape: one box fronting several others, with a
 // hostname whose upstreams live somewhere else entirely.

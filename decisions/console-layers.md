@@ -1,5 +1,14 @@
 # The console is layered too — three rings, one app
 
+> **Vocabulary note, 2026-08-10.** This doc argues in terms of *packs*, the plugin layer
+> Steward had at the time. That layer is gone
+> ([`roles-not-packs.md`](roles-not-packs.md)) — one binary, a trust core and an app
+> layer, and the machine view is shaped by the box's **role** rather than by which packs
+> it reports. Read "pack" below as "the app layer": every argument here survives the
+> rename, including the one that matters most — *the console's engines are not that
+> thing and must not be called it*, because they run in the control plane and are not
+> digest-pinned on a box.
+>
 > Decided 2026-08-03. The console has the same seam the binary had before
 > [`core-and-packs.md`](core-and-packs.md): a small generic layer fused to one domain's
 > UI. Same call, one level up — draw the line, keep one deployable, split physically
@@ -26,10 +35,10 @@ different thing** — which is why they don't collapse into "which one is right?
 | **Placement** (intentions) | what was *asked for*, across N boxes | no |
 | **Tenancy** (projects) | whose work it is | no |
 
-- **Machine view** — one box, shaped by the packs that box reports
-  ([`blueprint/steward/packs.md`](../blueprint/steward/packs.md)). Stateless in the
-  console: a deploy sends an AppConfig and discards it, and the box's record is the only
-  record. This is the floor, not a lens you rarely visit —
+- **Machine view** — one box, shaped by what that box reports about itself (its role,
+  since [`roles-not-packs.md`](roles-not-packs.md); the packs it ran, before that).
+  Stateless in the console: a deploy sends an AppConfig and discards it, and the box's
+  record is the only record. This is the floor, not a lens you rarely visit —
   [`install-the-app-actions-home.md`](install-the-app-actions-home.md) "What changed".
 - **Placement** — one app across several boxes: count, exposure, targets. The model is
   settled in [`one-primitive-composed.md`](one-primitive-composed.md); what this decision
@@ -137,8 +146,8 @@ stands on its own terms and this decision does not disturb it.
 
 | Piece | State |
 |---|---|
-| Machine view, pack-shaped, stateless deploy | **built** |
-| `steward packs` / `actors` — the box's own facts, read live | **built** |
+| Machine view, shaped by what the box reports, stateless deploy | **built** |
+| `steward status` (role) / `actors` — the box's own facts, read live | **built** (`steward packs` existed here until the pack layer was dropped) |
 | Drift as a surfaced, never-closed gap | **built** — `Install#count`, `placement_gap`, and the act that closes it |
 | `Install.project` inversion, installs at `/installs` | **built** — the prerequisite |
 | Exposure — the gate that makes a count above 1 honest | **built** |

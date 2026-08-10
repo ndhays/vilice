@@ -4,7 +4,7 @@
 > decided. When one settles, move the answer into the relevant spec and record the
 > reasoning in `decisions/`.
 
-**Last touched:** 2026-06-18.
+**Last touched:** 2026-08-10.
 
 ---
 
@@ -185,12 +185,17 @@ stays a prepare step**). `prepare` shrinks to the recorded root ceremony: lay th
 floor, configure Caddy routing, enable the timer. Its current `apt-get install`
 steps stay for the curl-install path (already idempotent).
 
-**Interaction with the core/pack split** ([`core-and-packs.md`](../core-and-packs.md)):
-a package now also has to place the pack shelf (`/usr/libexec/steward/`, root-owned) and
-the manifest (`/etc/steward/packs.manifest`), and `prepare` shrinks further still — the
-core half lays the floor, each pack contributes its own substrate step. The neat
-consequence is that a pack can eventually be its own `.deb` whose postinst asks the core
-to authorize it, so the digest lands in the chain rather than in a packaging script.
+**Interaction with the recorded binary digest** ([`roles-not-packs.md`](../roles-not-packs.md)):
+`prepare` writes this binary's sha256 to `/etc/steward/binary.digest`, and every verb that
+acts checks the running binary against it — so an `apt upgrade` that replaces the binary
+leaves the box refusing every deploy until `prepare` is re-run. Curl-install has the same
+property and the same fix (the upgrade path already says "then `steward prepare`"), but a
+package manager upgrades unattended, which makes it sharper: the box would go quiet without
+anyone having typed anything. Options when this is picked up: a postinst that re-records
+the digest through the core (so the authorization lands in the chain rather than in a
+packaging script), or accepting the refusal as the correct fail-closed outcome and making
+`doctor` say exactly this. **The refusal must not be softened into a warning** — a binary
+nobody authorized running deploys is the thing the check exists to stop.
 
 Mapping that must hold: `apt remove` ≈ `steward uninstall`, `apt purge` ≈ the
 hardware-retirement tier (see Decommissioning above) — with the caveat that a
@@ -202,37 +207,6 @@ deps for offline build, version `0.1.5beta` → `0.1.5~beta` (`~` sorts before
 release). Distribution in two tiers, in order: **self-hosted signed apt repo**
 (aptly/reprepro on the release host — the boring long-term answer to curl|bash),
 then Debian proper (ITP, sponsor) only once the surface is stable.
-
-## Where does `apply-updates` live? — raised by the core/pack split
-
-[`core-and-packs.md`](../core-and-packs.md) assigns every verb to the core or to a pack,
-and `apply-updates` is the one that fits neither cleanly. It applies OS packages through
-the narrow `sudoers` grant `prepare` lays — the **machine** domain, not an app domain —
-so it does not belong to `steward-app`, and it is not part of the trust model, so it is
-not obviously core either.
-
-**Built as core**, next to `harden`, on the grounds that both act on the box itself —
-that is what shipped when the line was drawn, and it is where the verb sits today
-([`blueprint/steward/packs.md`](../../blueprint/steward/packs.md)). The question stays
-open because the placement was chosen for want of a better home, not on its merits:
-the alternative is a `steward-machine` pack owning `apply-updates` and whatever else is
-box-shaped (time sync, decommissioning). Decide when a second box-shaped verb exists —
-one verb is not a pack.
-
-## The core still names the substrate in prose
-
-The core no longer installs or executes Podman, Caddy or restic — that moved to
-`steward-app` with the prepare half of the pack boundary
-([`blueprint/steward/packs.md`](../../blueprint/steward/packs.md)). What did not move
-is **copy**: `uninstall` tells the operator it is leaving "podman, caddy, restic"
-behind, and the man page describes apps as Quadlet units behind Caddy.
-
-It executes nothing and it is true of the box we ship, so this is cosmetic today. It
-stops being cosmetic the first time a box runs a *different* pack, because the ceiling
-would then describe substrate that is not there. The fix is to route that copy through
-the packs — plausibly the same reporting seam `TeardownNote` already occupies, rather
-than a new method per message. Worth doing when a second pack exists, not before: the
-shape of the seam should be chosen against two real packs, not one and an imagined one.
 
 ## Time-boxed grants — `authorize --expires`
 

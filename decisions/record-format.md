@@ -50,6 +50,12 @@ case for shipping `verify` in 1.0.
 Added 2026-08-03, when `pack` and `digest` joined the entry
 ([`core-and-packs.md`](core-and-packs.md)).
 
+> **Still the rule, 2026-08-10.** `pack` is retired — the layer that wrote it is gone
+> ([`roles-not-packs.md`](roles-not-packs.md)) — but the field stays in the wider
+> payload and nothing sets it. Removing it from the hash would have been the same
+> mistake in reverse: every entry on every box that carries one would report a break.
+> **A field can stop being written; it cannot stop being hashed.**
+
 The hash covers every field, and `verify` recomputes it. So a field added to the
 payload for *all* entries changes the hash of every entry ever written, and the first
 thing an upgraded binary does is report that the chain broke at entry 1 — the record
@@ -67,7 +73,7 @@ chain's guarantee was always tamper-*evidence* against everything short of root,
 cannot write the file at all. It is not a new hole, but it is the price of being able
 to read your own history, and it is worth knowing rather than discovering.
 
-`manifest_test.go` pins a hash for each shape. Changing either breaks a test loudly,
+`digest_test.go` pins a hash for each shape. Changing either breaks a test loudly,
 which is the only warning anyone gets before shipping a version that cannot verify its
 own past.
 

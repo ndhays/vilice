@@ -19,6 +19,59 @@ func manEscape(s string) string {
 	return s
 }
 
+// manCommand writes one command's entry: the synopsis (with any alternate forms),
+// the summary, the paragraph, its flags, and its examples. It renders the same
+// fields commandHelp does, so the man page carries the whole page rather than a
+// thinner version of it — one source, three views, all three the same depth.
+func manCommand(w io.Writer, c Command) {
+	lines := strings.Split(c.Usage, "\n")
+	head := strings.TrimSpace(c.Name + " " + strings.TrimSpace(lines[0]))
+	fmt.Fprintln(w, ".TP")
+	fmt.Fprintf(w, ".B steward %s\n", manEscape(head))
+	fmt.Fprintf(w, "%s.\n", manEscape(c.Summary))
+	for _, alt := range lines[1:] {
+		fmt.Fprintln(w, ".br")
+		fmt.Fprintf(w, "Or: %s\n", manEscape(strings.TrimSpace(alt)))
+	}
+
+	// The body nests under the command it belongs to: one .RS around the lot, so a
+	// paragraph doesn't fall back to the section indent and read as if it applied
+	// to the whole group.
+	fmt.Fprintln(w, ".RS")
+
+	// Blank lines separate paragraphs in Long; roff needs .PP between them. An
+	// indented line is a literal block (a role list, a JSON shape) and is set
+	// no-fill so it keeps its shape.
+	for _, para := range strings.Split(strings.TrimSpace(c.Long), "\n\n") {
+		literal := strings.HasPrefix(para, " ")
+		fmt.Fprintln(w, ".PP")
+		if literal {
+			fmt.Fprintln(w, ".nf")
+		}
+		fmt.Fprintf(w, "%s\n", manEscape(strings.TrimRight(para, "\n")))
+		if literal {
+			fmt.Fprintln(w, ".fi")
+		}
+	}
+
+	for _, f := range c.Flags {
+		fmt.Fprintln(w, ".TP")
+		fmt.Fprintf(w, ".B %s\n", manEscape(flagSpec(f)))
+		fmt.Fprintf(w, "%s\n", manEscape(f.What))
+	}
+
+	for _, ex := range c.Examples {
+		fmt.Fprintf(w, ".PP\n%s\n", manEscape(ex.What))
+		fmt.Fprintln(w, ".RS")
+		fmt.Fprintln(w, ".nf")
+		fmt.Fprintf(w, "%s\n", manEscape(ex.Cmd))
+		fmt.Fprintln(w, ".fi")
+		fmt.Fprintln(w, ".RE")
+	}
+
+	fmt.Fprintln(w, ".RE")
+}
+
 func writeMan(w io.Writer) {
 	fmt.Fprintf(w, ".TH STEWARD 1 \"\" \"steward v%s\" \"Steward Manual\"\n", Version)
 
@@ -42,37 +95,20 @@ Steward is a gate and a scribe, not a runtime \(em apps are ordinary Quadlet uni
 under systemd behind Caddy, so deleting steward stops nothing that is running.
 .SH COMMANDS`)
 
-	groups := []struct {
-		title string
-		s     Scope
-	}{
-		{"Ceiling (root only)", ScopeRoot},
-		{"Access (grant scope)", ScopeGrant},
-		{"Deploy & lifecycle (operate)", ScopeOperate},
-		{"Observe & record (observe)", ScopeObserve},
-		{"Record (systemd\\-invoked)", ScopeSystem},
-	}
-	for _, g := range groups {
-		fmt.Fprintf(w, ".SS %s\n", g.title)
+	// The same groups, in the same order, as `steward help` and the docs site.
+	for _, g := range Groups {
+		fmt.Fprintf(w, ".SS %s\n", manEscape(g.Title))
 		for _, c := range Commands {
-			if c.Scope != g.s {
-				continue
-			}
-			lines := strings.Split(c.Usage, "\n")
-			head := strings.TrimSpace(c.Name + " " + strings.TrimSpace(lines[0]))
-			fmt.Fprintln(w, ".TP")
-			fmt.Fprintf(w, ".B steward %s\n", manEscape(head))
-			fmt.Fprintf(w, "%s.\n", manEscape(c.Summary))
-			for _, alt := range lines[1:] {
-				fmt.Fprintln(w, ".br")
-				fmt.Fprintf(w, "Or: %s\n", manEscape(strings.TrimSpace(alt)))
+			if c.Scope == g.Scope {
+				manCommand(w, c)
 			}
 		}
 	}
 
 	fmt.Fprintln(w, `.SH SCOPES
-A higher scope grants the ones below it: observe < operate < ssh. The root
-ceiling sits outside the ladder \(em reachable by no scoped key.`)
+A higher scope grants the ones below it: observe < operate < grant. The root
+ceiling sits outside the ladder \(em reachable by no scoped key. No scope
+grants a shell.`)
 	for _, s := range []Scope{ScopeRoot, ScopeGrant, ScopeOperate, ScopeObserve, ScopeSystem} {
 		fmt.Fprintln(w, ".TP")
 		fmt.Fprintf(w, ".B %s\n", s)

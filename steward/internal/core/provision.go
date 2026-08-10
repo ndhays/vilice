@@ -46,14 +46,14 @@ func prepareCmd(args []string) Result {
 	}
 
 	// apt-style courtesy: show what's coming and ask, unless --yes. What is coming
-	// is whatever the registered packs need — the ceiling does not know or care what
-	// any of it is for, only that the operator consents to it once, up front.
-	if !confirmInstall(packSubstrate(role), yes) {
+	// is whatever this role needs — the ceiling does not know or care what any of it
+	// is for, only that the operator consents to it once, up front.
+	if !confirmInstall(appSubstrate(role), yes) {
 		return Result{Code: "aborted", Message: "prepare cancelled — nothing installed"}
 	}
 
-	// The floor first, then the packs. A pack's Prepare may rely on the steward
-	// account and the record existing; nothing in the floor may rely on a pack.
+	// The floor first, then the substrate. The app layer's Prepare may rely on the
+	// steward account and the record existing; nothing in the floor may rely on it.
 	steps := []struct {
 		name string
 		fn   func() error
@@ -62,8 +62,8 @@ func prepareCmd(args []string) Result {
 		{"grant OS-update privilege", ensureUpdatePrivilege},
 		{"lay accountability floor", ensureFloor},
 		{"record the role", func() error { return recordRole(role) }},
-		{"authorize the packs", ensurePackManifest},
-		{"prepare the packs", func() error { return preparePacks(role) }},
+		{"record this binary's digest", recordBinaryDigest},
+		{"install what the role needs", func() error { return prepareApps(role) }},
 		{"open the role's ports", func() error { return openRolePorts(role) }},
 		{"install snapshot timer", ensureSnapshotTimer},
 	}
@@ -77,60 +77,42 @@ func prepareCmd(args []string) Result {
 	return OK("box prepared")
 }
 
-// packSubstrate is everything the registered packs need installed, aggregated so the
-// operator is asked once rather than per pack.
-func packSubstrate(role string) Substrate {
-	var all Substrate
-	var notes []string
-	for _, p := range packs {
-		sub := p.Substrate(role)
-		all.Packages = append(all.Packages, sub.Packages...)
-		if sub.Note != "" {
-			notes = append(notes, sub.Note)
-		}
+// appSubstrate is what this role needs installed, asked of the app layer so the
+// ceiling can show the operator one list before anything is installed.
+func appSubstrate(role string) Substrate {
+	if apps == nil {
+		return Substrate{}
 	}
-	all.Note = strings.Join(notes, "; ")
-	return all
+	return apps.Substrate(role)
 }
 
-// preparePacks lets each pack install and configure its own substrate. The ceiling
-// runs it and reports failure; it never learns what was installed. If this function
-// ever needs to know, the line has moved.
-func preparePacks(role string) error {
-	for _, p := range packs {
-		if err := p.Prepare(role); err != nil {
-			return fmt.Errorf("%s: %w", p.Name(), err)
-		}
+// prepareApps lets the app layer install and configure its own substrate. The
+// ceiling runs it and reports failure; it never learns what was installed. If this
+// function ever needs to know, the line has moved.
+func prepareApps(role string) error {
+	if apps == nil {
+		return nil
 	}
-	return nil
+	return apps.Prepare(role)
 }
 
-// ensurePackManifest creates the pack shelf and writes the manifest naming every
-// pack this binary carries, at this binary's digest. Until it exists, no packed verb
-// runs — a box that has not said which code may run says no.
+// recordBinaryDigest writes down which binary this box authorizes: the one running
+// prepare. Until it exists, no verb that acts runs — a box that has not said which
+// binary may run says no.
 //
-// Both live under root-owned paths, which is the enforcement: the steward user can
-// read them and cannot write them, so no scoped key can widen what may run. Adding a
-// pack is a root act at the ceiling, exactly like the rest of prepare.
+// The file is root-owned under /etc, which is the enforcement: the steward user can
+// read it and cannot write it, so no scoped key can authorize a different binary.
+// Doing so is a root act at the ceiling, exactly like the rest of prepare.
 //
-// The authorization is also an entry in the chain, so "what code was ever allowed to
-// run on this box, and when" is answerable from the record alone.
-func ensurePackManifest() error {
-	if err := os.MkdirAll(PackShelfDir(), 0o755); err != nil {
-		return fmt.Errorf("creating the pack shelf: %w", err)
-	}
-	entries, err := writeManifest()
+// It is also an entry in the chain, so "which binary was ever allowed to run on this
+// box, and when" is answerable from the record alone.
+func recordBinaryDigest() error {
+	digest, err := writeBinaryDigest()
 	if err != nil {
-		return fmt.Errorf("writing %s: %w", PackManifestPath(), err)
+		return fmt.Errorf("writing %s: %w", BinaryDigestPath(), err)
 	}
-	for _, e := range entries {
-		fmt.Printf("  %s authorized at %s\n", e.Pack, e.Digest)
-		if err := RecordAct(ActorName(), string(ScopeRoot), "authorize-pack",
-			[]string{e.Pack, e.Digest}, e.Pack, e.Digest); err != nil {
-			return fmt.Errorf("recording the authorization of %s: %w", e.Pack, err)
-		}
-	}
-	return nil
+	fmt.Printf("  this box authorizes %s\n", digest)
+	return RecordAct(ActorName(), string(ScopeRoot), "authorize-binary", []string{digest}, digest)
 }
 
 // sudoersForUpdates is the steward user's one narrow root escalation: applying OS
@@ -279,9 +261,9 @@ func confirmInstall(sub Substrate, yes bool) bool {
 		return true
 	}
 	if len(sub.Packages) == 0 && sub.Note == "" {
-		return true // no pack wants anything
+		return true // this role wants nothing
 	}
-	out, err := exec.Command("apt-get", append([]string{"install", "-s"}, sub.Packages...)...).Output() // #nosec G204 -- the packages a registered pack declares, not caller input
+	out, err := exec.Command("apt-get", append([]string{"install", "-s"}, sub.Packages...)...).Output() // #nosec G204 -- the packages the app layer declares, not caller input
 	s := string(out)
 	if err == nil && strings.Contains(s, "0 upgraded, 0 newly installed") && sub.Note == "" {
 		return true // nothing to install
@@ -325,9 +307,9 @@ func isTTY() bool {
 func printPrepareSummary() {
 	rule := "────────────────────────────────────────────"
 	fmt.Printf("\n%s\n  Box prepared — %s\n%s\n", rule, osPretty(), rule)
-	// No substrate versions here. The packs print their own as they install them:
-	// running `podman --version` from the ceiling would put a pack's dependency
-	// back in the core, in the one place nobody would think to look for it.
+	// No substrate versions here. The app layer prints its own as it installs them:
+	// running `podman --version` from the ceiling would put the app layer's
+	// dependency back in the core, in the one place nobody would think to look.
 	fmt.Printf("  Record:    /var/lib/steward/record.log (append-only)\n")
 	fmt.Printf("  Snapshot:  timer active (records on a cadence)\n")
 	fmt.Printf("\n  Everything past here runs as the 'steward' user. Drop in once:\n")

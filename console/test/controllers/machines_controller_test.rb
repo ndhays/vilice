@@ -261,52 +261,49 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
   ensure
     ENV.delete("STEWARD_FAKE_OBSERVE")
   end
-  # ── The machine view is pack-shaped ──────────────────────────────────────
-  # Sections exist because the box reports the pack, not because we assumed it.
+  # ── The machine view is shaped by the box's role ─────────────────────────
+  # Sections exist because the box says what it is for, not because we assumed.
 
-  def packs_reply(packs)
+  def status_reply(role)
     { ok: true, at: Time.current,
-      data: { "data" => { "manifest" => "/etc/steward/packs.manifest", "packs" => packs } } }
+      data: { "data" => { "machine" => { "hostname" => "box" }, "role" => role } } }
   end
 
-  test "a box reports which packs may run on it" do
+  test "a box reports what it was prepared as" do
     sign_in_as @user
-    machine = Machine.create!(name: "packed", ssh_host: "10.0.0.9", scope: "observe")
-    reply = packs_reply([ { "name" => "steward-app", "state" => "active", "digest" => "sha256:abc" } ])
-    stub_observe(packs: reply) { get machine_path(machine) }
+    machine = Machine.create!(name: "app-box", ssh_host: "10.0.0.9", scope: "observe")
+    stub_observe(status: status_reply("host")) { get machine_path(machine) }
     assert_response :success
-    assert_select ".panel.observe", /steward-app/
+    assert_select ".panel.observe", /host/
   end
 
-  test "a box with no packs says it runs the core and nothing else" do
+  # A balancer has no container runtime and would refuse a deploy by name, so the
+  # Apps section is absent rather than empty.
+  test "a balancer shows no apps section" do
     sign_in_as @user
-    machine = Machine.create!(name: "bare", ssh_host: "10.0.0.10", scope: "observe")
-    stub_observe(packs: packs_reply([])) { get machine_path(machine) }
+    machine = Machine.create!(name: "edge-box", ssh_host: "10.0.0.11", scope: "observe")
+    stub_observe(status: status_reply("balancer")) { get machine_path(machine) }
     assert_response :success
-    assert_match(/core and nothing else/, response.body)
-    assert_match(/cannot deploy/, response.body)
+    assert_no_match(/Observe · apps/, response.body)
   end
 
-  # The note matters more than the flag: "stale" alone looks like tampering until you
-  # can see that an upgrade skipped prepare.
-  test "a pack that cannot run surfaces why" do
+  # A box that has never been prepared has no role to report. That reads as unknown,
+  # never as a claim that it can do nothing.
+  test "an unprepared box reads as not prepared, not as running nothing" do
     sign_in_as @user
-    machine = Machine.create!(name: "stale-box", ssh_host: "10.0.0.11", scope: "observe")
-    reply = packs_reply([ { "name" => "steward-app", "state" => "stale",
-                            "note" => "authorized at a different digest — re-run `steward prepare`" } ])
-    stub_observe(packs: reply) { get machine_path(machine) }
+    machine = Machine.create!(name: "fresh-box", ssh_host: "10.0.0.10", scope: "observe")
+    stub_observe(status: status_reply("")) { get machine_path(machine) }
     assert_response :success
-    assert_match(/stale/, response.body)
-    assert_match(/re-run/, response.body)
+    assert_match(/not prepared/, response.body)
+    assert_match(/Observe · apps/, response.body)
   end
 
-  # The dangerous misreading is an empty list meaning "this box runs nothing".
+  # The dangerous misreading is an unreachable box looking like an empty one.
   test "an unreachable box reports what runs there as unknown, not none" do
     sign_in_as @user
     machine = Machine.create!(name: "gone-box2", ssh_host: "10.0.0.12", scope: "observe")
-    stub_observe(packs: { ok: false, error: "connection refused" }) { get machine_path(machine) }
+    stub_observe(status: { ok: false, error: "connection refused" }) { get machine_path(machine) }
     assert_response :success
     assert_match(/unknown, not none/, response.body)
-    assert_no_match(/core and nothing else/, response.body)
   end
 end

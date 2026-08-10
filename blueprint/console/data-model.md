@@ -178,7 +178,7 @@ open heartbeat question.
   `steward` `validateState`): `name` is box-safe `[A-Za-z0-9_-]` — it's the box's own
   identifier (`apps/<name>.json`, volumes, unit), prefilled from the app name and not
   dash-cased; `port` 1024–65535 or blank; `health` starts with `/` or blank. Each `volumes`
-  entry mirrors the box's `Volume=` line (`steward/internal/pack/app/quadlet.go`): `source:/container-path[:opts]`
+  entry mirrors the box's `Volume=` line (`steward/internal/app/quadlet.go`): `source:/container-path[:opts]`
   where `source` is a named volume or host path and the mount path is absolute — a malformed
   mount fails here, before the act.
 - has_many `install_targets`

@@ -31,7 +31,7 @@ func TestUninstallNotePointsAtThePasswordWithoutPrintingIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// printBackupNote became the pack's TeardownNote, which writes to a Writer the
+	// printBackupNote became the layer's TeardownNote, which writes to a Writer the
 	// ceiling supplies rather than straight to stdout. Same note, same assertions.
 	var note bytes.Buffer
 	New().TeardownNote(&note)
