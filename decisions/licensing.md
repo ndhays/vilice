@@ -1,8 +1,9 @@
 # Licensing
 
 **Decided 2026-06-03. Confirmed and binding 2026-08-11** — the LICENSE files are in the
-tree; copyright holder is **Nick Demarest**. Outside contributions are still ungated:
-there is no `CONTRIBUTING.md` and no stated inbound=outbound rule yet.
+tree; copyright holder is **Nick Demarest**. Outside contributions are governed by
+[`CONTRIBUTING.md`](../CONTRIBUTING.md): **inbound = outbound**, no CLA and no copyright
+assignment — a contribution ships under the licence of the file it changed.
 
 A permissive substrate under a copyleft application:
 
@@ -50,6 +51,20 @@ their own clients. The platform is open; the maintainer's client-specific config
 secrets, and private integrations are **never in core** — they live as private
 config/plugins/env. Keeping that line clean is what makes "open and proprietary" not a
 contradiction.
+
+## Road not taken: a CLA
+
+Contributions are **inbound = outbound** — a change ships under the licence of the file it
+touched, contributors keep their copyright, nothing to sign. Considered a CLA or copyright
+assignment, which would let the project relicense later without hunting down every
+contributor. Rejected: the power a CLA collects is exactly the power that makes capture
+possible, and asking for it contradicts the pitch. The cost is accepted — relicensing later
+would need every contributor's agreement, which is the point.
+
+Provenance is the one thing contributors are asked to declare, because
+[`the-core-is-handwritten.md`](the-core-is-handwritten.md) makes human authorship a
+licensing question rather than a matter of taste: machine-drafted code is welcome in this
+proof of concept and cannot land in the handwritten core.
 
 ## Road not taken: an all-AGPL monorepo
 

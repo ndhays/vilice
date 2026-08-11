@@ -119,6 +119,13 @@ The box must be **Ubuntu 26.04 (or 24.04+)**, amd64 or arm64, with a **sudo-capa
 to see the options. On a cloud box, mind the **provider firewall** — a Hetzner Cloud
 Firewall can block inbound `22` even when the box itself is fine.
 
+## Contributing
+
+[`CONTRIBUTING.md`](CONTRIBUTING.md). Contributions are **inbound = outbound** — your change
+ships under the licence of the file it touched, you keep your copyright, and there is no CLA
+to sign. Two things it asks for that most projects don't: start at the blueprint, and say if
+a machine wrote the code.
+
 ## License
 
 Copyright (c) 2026 Nick Demarest. A permissive substrate under a copyleft application
