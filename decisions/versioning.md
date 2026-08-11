@@ -17,8 +17,14 @@ version. Everything below follows from this.
 A release is a ceremony, not a commit. Cut one at a deliberate milestone — when the
 blueprint's promises are true and `make test` is green:
 
-1. bump `VERSION`, 2. `make release` (builds linux/amd64, signs, **self-verifies**, copies
-to `release/published/`), 3. commit, 4. tag.
+1. bump `VERSION`, 2. `make release` (builds every arch in `ARCHES` — linux/amd64 and
+linux/arm64 — signs **each tarball separately**, self-verifies, copies to
+`release/published/`), 3. commit, 4. tag.
+
+One signature per artifact, never one covering several: a signature has to name exactly
+the bytes it vouches for. `install.sh` picks the arch from `uname -m` and refuses an
+arch it has no build for, rather than defaulting to one and installing a binary that
+cannot execute.
 
 - **Pre-1.0:** `0.MINOR.PATCHbeta` milestones. Betas are disposable checkpoints, not
   contracts.

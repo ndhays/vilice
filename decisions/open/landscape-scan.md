@@ -89,9 +89,9 @@ at least one:
 - A companion web UI (**Steward Console**, a Rails app) exists in-repo but does
   not ship yet. Treat it as a plan, not a product.
 
-Honest weaknesses: Ubuntu-targeted, linux/amd64 only, single-box, and it is not
-"hands off" — it greases the path from fresh box to deployed app but does not
-manage a fleet on its own.
+Honest weaknesses: Ubuntu-targeted, single-box, and it is not "hands off" — it
+greases the path from fresh box to deployed app but does not manage a fleet on its
+own. (linux/amd64-only was on this list until 0.3.0, which ships arm64 too.)
 
 ## What I already know about — do not spend output explaining these to me
 

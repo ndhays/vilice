@@ -36,11 +36,26 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
+# Which build to fetch. Refused up front rather than defaulted: an installer that
+# guesses amd64 downloads a real, correctly-signed binary that cannot execute, and
+# the box only says so later, from the kernel, as "Exec format error" — which does
+# not look like an install problem, so nobody looks here. Fail loud, before the
+# download, naming what this machine is.
+case "$(uname -m)" in
+  x86_64 | amd64) ARCH=amd64 ;;
+  aarch64 | arm64) ARCH=arm64 ;;
+  *)
+    echo "unsupported architecture: $(uname -m)" >&2
+    echo "steward publishes linux/amd64 and linux/arm64." >&2
+    exit 1
+    ;;
+esac
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-base="$RELEASE_HOST/steward/$VERSION/steward-linux-amd64.tar.gz"
-echo "• downloading steward $VERSION"
+base="$RELEASE_HOST/steward/$VERSION/steward-linux-$ARCH.tar.gz"
+echo "• downloading steward $VERSION (linux/$ARCH)"
 curl -fsSL "$base"      -o "$TMP/steward.tar.gz"
 curl -fsSL "$base.sig"  -o "$TMP/steward.tar.gz.sig"
 

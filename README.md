@@ -113,7 +113,7 @@ script/devbox.sh deauth --ssh devbox        # revoke the dev key (box stays inta
 (`bin/rails runner`). Then Steward Console, running locally, drives a real box — exactly as in
 production.
 
-The box must be **Ubuntu 26.04 (or 24.04+) / amd64** with a **sudo-capable** admin login
+The box must be **Ubuntu 26.04 (or 24.04+)**, amd64 or arm64, with a **sudo-capable** admin login
 (`DEVBOX_ADMIN`, default `root`) — older releases ship a Podman too old for Quadlet, which
 `doctor` will flag. Everything else is env-configured; run `script/devbox.sh` with no args
 to see the options. On a cloud box, mind the **provider firewall** — a Hetzner Cloud

@@ -7,6 +7,11 @@ PUBKEY       ?= release-key.pub
 SIGNING_KEY  ?= $(HOME)/.keys/steward-release-key.pem
 # Where `make release` publishes artifacts (rsync-compatible: local path or host:path).
 RELEASE_DEST ?= $(CURDIR)/../release/published
+# The architectures every release ships. Cheap to add to: the binary is CGO-free and
+# go.mod requires nothing, so a second architecture is a second `go build` rather than
+# a second toolchain. arm64 is not exotic — it is most of the cheap VPS stock now, and
+# an installer that assumed amd64 put a binary on those boxes that could not run.
+ARCHES       ?= amd64 arm64
 # Pinned audit tools. Run via `go run` so they never enter go.mod or the binary.
 # Keep these current with the Go toolchain — an old pin can fail to build under a
 # newer Go (its own deps lag). Bump when `make audit` errors before scanning.
@@ -82,25 +87,34 @@ sign: man
 	  test -f "$(HOME)/.keys/hostler-release-key.pem" || echo "  first time? run: make keygen"; \
 	  exit 1; }
 	mkdir -p dist/$(VERSION)
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o dist/$(VERSION)/steward ./cmd/steward
-	cp bin/steward.1 dist/$(VERSION)/steward.1
-	tar -czf dist/$(VERSION)/steward-linux-amd64.tar.gz -C dist/$(VERSION) steward steward.1
-	rm -f dist/$(VERSION)/steward dist/$(VERSION)/steward.1
-	openssl pkeyutl -sign -rawin -inkey "$(SIGNING_KEY)" \
-		-in  dist/$(VERSION)/steward-linux-amd64.tar.gz \
-		-out dist/$(VERSION)/steward-linux-amd64.tar.gz.sig
-	@openssl pkeyutl -verify -rawin -pubin -inkey "$(PUBKEY)" \
-		-in  dist/$(VERSION)/steward-linux-amd64.tar.gz \
-		-sigfile dist/$(VERSION)/steward-linux-amd64.tar.gz.sig \
-		&& echo "signature verified" || { echo "signature verification FAILED"; exit 1; }
+	@# One tarball per architecture, and one signature per tarball. Never one
+	@# signature covering several artifacts: a signature has to name exactly the
+	@# bytes it vouches for, or verifying it proves nothing about what you ran.
+	@for arch in $(ARCHES); do \
+	  echo "=== linux/$$arch ==="; \
+	  CGO_ENABLED=0 GOOS=linux GOARCH=$$arch \
+	    go build -ldflags "$(LDFLAGS)" -o dist/$(VERSION)/steward ./cmd/steward || exit 1; \
+	  cp bin/steward.1 dist/$(VERSION)/steward.1; \
+	  tar -czf dist/$(VERSION)/steward-linux-$$arch.tar.gz -C dist/$(VERSION) steward steward.1 || exit 1; \
+	  rm -f dist/$(VERSION)/steward dist/$(VERSION)/steward.1; \
+	  openssl pkeyutl -sign -rawin -inkey "$(SIGNING_KEY)" \
+	    -in  dist/$(VERSION)/steward-linux-$$arch.tar.gz \
+	    -out dist/$(VERSION)/steward-linux-$$arch.tar.gz.sig || exit 1; \
+	  openssl pkeyutl -verify -rawin -pubin -inkey "$(PUBKEY)" \
+	    -in  dist/$(VERSION)/steward-linux-$$arch.tar.gz \
+	    -sigfile dist/$(VERSION)/steward-linux-$$arch.tar.gz.sig \
+	    && echo "  signature verified" || { echo "  signature verification FAILED"; exit 1; }; \
+	done
 	@ls -lh dist/$(VERSION)/
 
 # Publish the signed artifacts. Audited first — an unaudited version never ships.
 release: audit sign
 	mkdir -p "$(RELEASE_DEST)/steward/$(VERSION)"
-	cp dist/$(VERSION)/steward-linux-amd64.tar.gz     "$(RELEASE_DEST)/steward/$(VERSION)/"
-	cp dist/$(VERSION)/steward-linux-amd64.tar.gz.sig "$(RELEASE_DEST)/steward/$(VERSION)/"
-	@echo "published $(VERSION) to $(RELEASE_DEST)/steward/$(VERSION)/"
+	@for arch in $(ARCHES); do \
+	  cp dist/$(VERSION)/steward-linux-$$arch.tar.gz     "$(RELEASE_DEST)/steward/$(VERSION)/" || exit 1; \
+	  cp dist/$(VERSION)/steward-linux-$$arch.tar.gz.sig "$(RELEASE_DEST)/steward/$(VERSION)/" || exit 1; \
+	done
+	@echo "published $(VERSION) ($(ARCHES)) to $(RELEASE_DEST)/steward/$(VERSION)/"
 
 # Generate a fresh signing keypair (do once; keep the private key safe).
 # Guarded: rotating the key invalidates every signature already published, and
