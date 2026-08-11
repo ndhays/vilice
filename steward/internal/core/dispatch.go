@@ -757,7 +757,15 @@ func usage(w io.Writer) {
 	fmt.Fprintln(w, "  steward [--json] <command> [args]")
 	fmt.Fprintln(w, "  steward help [command] | version")
 	fmt.Fprintln(w)
+	section := ""
 	for _, g := range Groups {
+		// The section heads its run of groups, once. Upper-cased here rather than
+		// stored that way, so the string stays a sentence for the renderers that
+		// want it as one — the docs site sets its own case in CSS.
+		if g.Section != section {
+			section = g.Section
+			fmt.Fprintf(w, "%s\n\n", strings.ToUpper(section))
+		}
 		printGroup(w, g.Title, g.Scope)
 	}
 	fmt.Fprintln(w, "Run `steward help <command>` for the full page: what it does, every")
@@ -767,22 +775,28 @@ func usage(w io.Writer) {
 // Groups are the scopes as a reader meets them: the ceiling first, then the ladder
 // from the top rung down, then the verb systemd calls. One order, used by `help`,
 // by the man page, and by the documentation site's command index.
+//
+// Section is the coarser question a reader actually arrives with — *who runs this* —
+// and it is the account, not the scope: the ceiling is the operator as root, the
+// ladder is all the steward user, and snapshot is systemd. Consecutive groups share
+// a section, and every renderer prints the section once, when it changes.
 var Groups = []struct {
-	Title string
-	Scope Scope
+	Section string
+	Title   string
+	Scope   Scope
 }{
-	{"Ceiling (root only — prepare and harden)", ScopeRoot},
-	{"Access (grant scope — mint and revoke keys)", ScopeGrant},
-	{"Deploy & lifecycle (operate)", ScopeOperate},
-	{"Observe & record (observe)", ScopeObserve},
-	{"Record (systemd-invoked)", ScopeSystem},
+	{"Run as root", "Box commands (root)", ScopeRoot},
+	{"Run as steward", "Authorize", ScopeGrant},
+	{"Run as steward", "Operate", ScopeOperate},
+	{"Run as steward", "Observe", ScopeObserve},
+	{"System-only", "Record", ScopeSystem},
 }
 
 func printGroup(w io.Writer, title string, s Scope) {
-	fmt.Fprintf(w, "%s:\n", title)
+	fmt.Fprintf(w, "  %s:\n", title)
 	for _, c := range Commands {
 		if c.Scope == s {
-			fmt.Fprintf(w, "  %-16s %s\n", c.Name, c.Summary)
+			fmt.Fprintf(w, "    %-16s %s\n", c.Name, c.Summary)
 		}
 	}
 	fmt.Fprintln(w)

@@ -21,6 +21,9 @@ type CommandDoc struct {
 	Group   string `json:"group"`
 	Summary string `json:"summary"`
 	Usage   string `json:"usage"`
+	// Section is the coarser grouping above Group: who runs this — root, the
+	// steward user, or systemd. The site heads each run of groups with it.
+	Section string `json:"section"`
 	// Recorded is invariant 2's answer for this verb: does an entry get written
 	// before it runs? The site badges it, the help page prints it in words.
 	Recorded bool `json:"recorded"`
@@ -43,6 +46,7 @@ func CommandDocs() []CommandDoc {
 				Name:     c.Name,
 				Scope:    string(c.Scope),
 				Group:    g.Title,
+				Section:  g.Section,
 				Summary:  c.Summary,
 				Usage:    synopsis(c),
 				Recorded: recordable(c, nil),

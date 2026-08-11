@@ -14,12 +14,21 @@ VERSION="${1:-${VERSION:-}}"
 # One site, releases under /releases/.
 RELEASE_HOST="${RELEASE_HOST:-https://steward.agoraforge.org/releases}"
 INSTALL_PATH="${INSTALL_PATH:-/usr/local/bin/steward}"
-# Where to get the public key. By default fetch it from the source repo (a
-# different host than the release server, so no single server hands you both a
-# matching key and binary). Override with a local file via PUBKEY_FILE.
+# Where to get the public key. Codeberg — deliberately a different provider from
+# the release host, so no single compromised account or server hands you both a
+# matching key and binary. An attacker needs Codeberg *and* agoraforge.org, or the
+# signature does not check out and this script refuses.
+#
+# Codeberg rather than the self-hosted forge: git.agoraforge.org and
+# steward.agoraforge.org are different origins, but one DNS zone and one Cloudflare
+# account sit above both, and that is a single credential that could re-point them
+# together. See decisions/the-core-is-handwritten.md.
+#
 # The repo must be PUBLICLY readable: this is an unauthenticated fetch running on
 # a stranger's box, so a private repo 404s here and no install can verify.
-PUBKEY_URL="${PUBKEY_URL:-https://raw.githubusercontent.com/ndhays/steward/main/steward/release-key.pub}"
+# Override with a local file via PUBKEY_FILE (also the way out if Codeberg is down —
+# a failed key fetch fails closed, which is safe but stops the install).
+PUBKEY_URL="${PUBKEY_URL:-https://codeberg.org/agoraforge/steward/raw/branch/main/steward/release-key.pub}"
 PUBKEY_FILE="${PUBKEY_FILE:-}"
 
 if [ -z "$VERSION" ]; then

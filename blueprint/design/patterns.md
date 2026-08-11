@@ -3,7 +3,7 @@
 > The parts both surfaces build from, and the docs site's own. Values come from
 > `tokens.md`; nothing here restates a hex code.
 
-**Status:** Canonical. Last touched 2026-08-09.
+**Status:** Canonical. Last touched 2026-08-11.
 
 ---
 
@@ -56,23 +56,81 @@ the CLI first.
 
 ## The command index
 
-`/commands/` lists every command, grouped and ordered exactly as `steward help`
-groups and orders them — the same `core.Groups`, so the site cannot invent a
-taxonomy the binary does not have. Each row is the name in mono and the summary in
-sans. Nothing else; the detail is one click away.
+`/commands/` lists every command, sectioned, grouped and ordered exactly as
+`steward help` does — both levels come from the same `core.Groups`, so the site
+cannot invent a taxonomy the binary does not have. Each row is the name in mono and
+the summary in sans. Nothing else; the detail is one click away.
+
+**Two levels, two questions.** The **section** answers *who runs this* — root, the
+steward user, systemd — and is the coarser thing a reader arrives with. The
+**group** answers *how far it reaches*. A section is `h2`, upper-cased and quiet in
+`--ink-faint`, labelling a run of groups rather than competing with them; a group is
+`h3` in ordinary weight. Sections upper-case in CSS, never in the stored string, so
+the same list can head a man page and a terminal without being shouted twice.
 
 ---
 
 ## The sidebar
 
 Present only under `/commands/`. A sticky column, `--sidebar` wide, listing every
-command by group. The current page is marked by weight plus a `--brand-yellow` bar
-in the left gutter — never colour alone, because the bar is graphic and the weight
-is the accessible signal.
+command by section and then by group. The group is indented under its section and
+set lighter, because two levels a reader cannot tell apart at a glance are worth
+less than one. The current page is marked by weight plus a `--brand-yellow` bar in
+the left gutter — never colour alone, because the bar is graphic and the weight is
+the accessible signal.
 
 Below `900px` it collapses into a `<details>` disclosure above the content,
 labelled "All commands". A disclosure, not a drawer: it works without JavaScript,
 it is one element, and it has nothing to get stuck open.
+
+---
+
+## The home page
+
+The one page whose job is the hook rather than the reference. It is five parts and
+nothing else, and each of them appears only here.
+
+**The hero.** `h1` at `clamp(2.5rem, 9vw, 4rem)` — the one element on the site
+sized against the viewport rather than a token, because it is the one element that
+should fill the screen it lands on. Under it a short `--brand-yellow` rule (graphic
+use, carrying no meaning), then the tagline at `--text-lg`+ in `--ink-soft`, capped
+at `--measure`.
+
+**The split.** A two-column card, figure on the left and the command you would
+actually type on the right, `1fr / 3fr` so the command has the room. It stacks below
+`640px`, figure first. The figure is the mark as line art on `currentColor`, so it
+takes the page's ink and there is no second copy of the asset in another colour.
+
+**The tool list.** Other people's projects, one per row on a hairline. Each line is
+the name and a plain sentence saying what the tool is *for* — never how it compares
+to Steward. A comparison table would be a claim about software we do not maintain.
+
+The page uses it twice, and the same rule holds both times: once for what Steward
+**stands on** (OpenSSH, systemd, Podman, Caddy, restic, and the hardening tools),
+and once for what a reader might **choose instead**. Naming the substrate is not a
+disclaimer — a tool that hides what it drives is asking to be trusted rather than
+checked, and every one of these writes its own plain config that outlives us.
+
+**The provisional card.** `--inset` fill inside a 2px dashed `--line-strong`
+border. Dashed because that is how scaffolding has read since long before the web,
+and the card's own heading says the same thing in words — the shape and the words
+both carry it, never the border alone. It is for what is true now and meant to stop
+being true; today, that Steward is a proof of concept. **When the thing it describes
+is no longer provisional, the card goes** — this pattern has no settled variant, on
+purpose.
+
+---
+
+## Roles
+
+On the overview page, the two roles a box can be prepared as are a card each, side
+by side and collapsing to one column: a line-art icon on `currentColor`, the role
+name as an `h3` in `--font-mono` (it is a word you type), one sentence of what it is
+for, and the command that prepares it.
+
+Two cards, not a table: the set is closed at two, and a reader should be able to see
+both and choose. A third role would be a code change in the binary before it was a
+change here — the page cannot show one the binary does not have.
 
 ---
 

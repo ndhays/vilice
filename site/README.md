@@ -14,7 +14,8 @@ the current `VERSION` is published — run `make -C ../steward release` first.
 
 ## How it's wired
 
-- `content/*.md` — the hand-written pages (Markdown + front-matter `title`, `nav`).
+- `content/*.md` — the hand-written pages (Markdown + front-matter `title`, `nav`):
+  the home page, Overview, and Console.
 - `content/commands/*.md` — optional prose appended to a command's page. Usually absent.
 - `help.js` — **runs `steward _commands` at build time** and returns the command table:
   name, scope, group, summary, and the verbatim `--help` page for each.

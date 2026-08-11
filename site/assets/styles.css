@@ -209,15 +209,26 @@ main > details {
   font-weight: 600;
   padding: var(--space-2) 0;
 }
-.sidebar .group {
+.sidebar .section {
   margin: var(--space-6) 0 var(--space-2);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--ink);
+}
+.sidebar .section:first-of-type {
+  margin-top: var(--space-2);
+}
+/* The group sits under its section, so it is indented and lighter — the two levels
+   have to be told apart at a glance or the extra level buys nothing. */
+.sidebar .group {
+  margin: var(--space-4) 0 var(--space-2);
+  padding-left: var(--space-2);
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--ink-faint);
-}
-.sidebar .group:first-of-type {
-  margin-top: var(--space-2);
 }
 .sidebar ul {
   list-style: none;
@@ -511,6 +522,152 @@ main > details > summary {
   font-weight: 600;
 }
 
+/* ------------------------------------------------------------- home page --- */
+/* Four parts, and only the home page uses them: the hero, the two-column split,
+   the tool list, and the provisional card. See blueprint/design/patterns.md. */
+
+/* The hero. The only place type gets this big, and the yellow rule is the accent
+   doing graphic work — it carries no meaning a reader could miss. The size is a
+   clamp rather than a token because it is the one element that should track the
+   viewport; every other size on the site is fixed. */
+.hero {
+  margin: var(--space-8) 0 var(--space-12);
+}
+.hero h1 {
+  font-size: clamp(2.5rem, 9vw, 4rem);
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+.hero h1::after {
+  content: "";
+  display: block;
+  width: 3.5rem;
+  height: 5px;
+  margin-top: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--brand-yellow);
+}
+.hero .tagline {
+  font-size: var(--text-xl);
+  color: var(--ink-soft);
+  margin: var(--space-4) 0 0;
+  max-width: var(--measure);
+}
+
+/* The split: a figure beside the thing you would actually type. Below 640px it
+   stacks, and the figure goes first because it is the smaller half. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  gap: var(--space-8);
+  align-items: center;
+  margin: var(--space-8) 0;
+  padding: var(--space-6);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.split-figure {
+  display: flex;
+  justify-content: center;
+}
+/* The mark is line art on `currentColor`, so it takes the page's ink and needs no
+   second copy in another colour. */
+.split-figure img {
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+  color: var(--ink);
+}
+.split-do > :first-child {
+  margin-top: 0;
+}
+.split-do > :last-child {
+  margin-bottom: 0;
+}
+.split-do p {
+  max-width: var(--measure);
+}
+
+/* The tool list: other people's work, so each line says what the tool is for
+   rather than how it compares. Bold name, plain sentence. */
+.tools ul {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-6) 0;
+  max-width: var(--measure);
+}
+.tools li {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.tools li:last-child {
+  border-bottom: 0;
+}
+
+/* The provisional card. Dashed, because a dashed edge is how scaffolding has read
+   since long before the web — and its heading says the same thing in words, so the
+   border is never the only carrier. */
+.card.provisional {
+  margin: var(--space-12) 0 var(--space-8);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  background: var(--inset);
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+}
+.card.provisional > :first-child {
+  margin-top: 0;
+}
+.card.provisional > :last-child {
+  margin-bottom: 0;
+}
+.card.provisional p {
+  max-width: var(--measure);
+}
+
+/* ------------------------------------------------------- command sections --- */
+
+/* The command index has two levels from the binary: the section (who runs this)
+   and the group (how far it reaches). The section is upper-cased and quiet — it
+   labels a run of groups rather than competing with them. */
+main h2.section {
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------------ roles --- */
+
+/* One card per role, because a role is a closed set of two and a reader should be
+   able to see both at once and pick. The icon is line art on `currentColor`, like
+   every other mark on the site, and it is aria-hidden — the heading is the label. */
+.roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-6) 0;
+}
+.role {
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.role h3 {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  margin: var(--space-3) 0 var(--space-2);
+}
+.role p {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  margin: 0 0 var(--space-3);
+}
+.role .role-cmd {
+  margin-bottom: 0;
+}
+
 /* ------------------------------------------------------------------ small --- */
 
 @media (max-width: 640px) {
@@ -522,6 +679,13 @@ main > details > summary {
   }
   h1 {
     font-size: 1.6rem;
+  }
+  .hero h1 {
+    font-size: clamp(2.25rem, 12vw, 3rem);
+  }
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
   }
   .site-header nav {
     gap: var(--space-4);

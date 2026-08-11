@@ -148,6 +148,34 @@ The one hard requirement carries over wherever the repo lands: it must stay **pu
 readable**, because the installer's fetch is unauthenticated
 ([`the-names-are-steward.md`](the-names-are-steward.md)).
 
+> **Settled 2026-08-11 — the move above happened, and the key went to Codeberg.** The
+> monorepo now lives on the self-hosted Forgejo at `git.agoraforge.org`, exactly the case
+> this section anticipated, and `install.sh` fetches the key from
+> `codeberg.org/agoraforge/steward` instead.
+>
+> **Why not the self-hosted forge.** Measured rather than assumed: `steward.agoraforge.org`
+> is a Cloudflare Worker (no origin of ours), `git.agoraforge.org` is Cloudflare in front of
+> our own Caddy. The *origins* are genuinely independent, so "no single compromised server"
+> still held. What did not hold is a level up — one DNS zone and one Cloudflare account
+> govern both hostnames, and that is a single credential that can re-point them together.
+> The rule this section states is about **providers**, not servers, and a shared control
+> plane is a shared provider.
+>
+> **A public key is not AI-written code**, so a repo holding one is outside the clause that
+> keeps the rest of the monorepo off Codeberg. No tension there.
+>
+> **GitHub is now a mirror, for visibility only.** Forgejo push-mirrors to
+> `github.com/ndhays/steward`, force-pushing, with sync-on-commit. Nothing fetches anything
+> security-relevant from it, which is the point: the mirror's token can expire and the
+> mirror can go stale without a single install being affected. Had the key stayed there,
+> mirror lag would have sat on the verification path.
+>
+> **Failure mode, stated plainly.** Compromise Codeberg alone and installs get a wrong key,
+> so verification fails and nothing installs — denial of service, not a bad binary.
+> Compromise the release host alone and the signature does not match. An attacker needs
+> both, across two organisations. `PUBKEY_FILE` is the documented way past a Codeberg
+> outage, and it is the only way past, on purpose.
+
 When the handwritten core reaches Codeberg, the key can move there and the property holds
 unchanged — but nothing forces that, and it should not be mistaken for the reason.
 

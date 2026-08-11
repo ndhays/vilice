@@ -1,5 +1,10 @@
-// The command index: every command, in the binary's own groups and order.
-// One line each — the name and what it does. Everything else is one click away.
+// The command index: every command, in the binary's own sections, groups, and
+// order. One line each — the name and what it does. Everything else is one click
+// away.
+//
+// Two levels, both from core.Groups: the section answers "who runs this" and the
+// group answers "how far does it reach". Grouping twice rather than keeping a list
+// here is what stops the site inventing a taxonomy the binary does not have.
 (commands) => {
   title: "Commands"
   nav: "commands"
@@ -7,12 +12,11 @@
   _body: `        <h1>Commands</h1>
         <p class="lead">Every verb this binary dispatches, in the order <code>steward help</code>
         shows them. Each page opens with that command's real <code>--help</code> output.</p>
-        <p>A command's group is its scope: who may run it, and how far that reaches.
-        The root ceiling sits outside the scoped-SSH ladder — those three commands
-        change the <em>machine</em>, and no key can reach them. Everything else runs
-        as the unprivileged <code>steward</code> user. See
-        <a href="/index.html#authentication--scoped-ssh">Authentication</a>.</p>
-${ Tree.map(Tree.groupBy(commands, (command) => command.group), (group, title) => `        <h2>${ title }</h2>
+        <p>The three root commands change the <em>machine</em>, and no scoped key can
+        reach them. Everything else runs as the unprivileged <code>steward</code> user,
+        over SSH, and is recorded before it runs.</p>
+${ Tree.map(Tree.groupBy(commands, (command) => command.section), (inSection, section) => `        <h2 class="section">${ section }</h2>
+${ Tree.map(Tree.groupBy(inSection, (command) => command.group), (group, title) => `        <h3>${ title }</h3>
         <table class="commands">
           <tbody>
 ${ Tree.map(group, (command) => `            <tr>
@@ -21,5 +25,5 @@ ${ Tree.map(group, (command) => `            <tr>
             </tr>
 `) }          </tbody>
         </table>
-`) }`
+`) }`) }`
 }

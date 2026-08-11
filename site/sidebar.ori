@@ -1,6 +1,6 @@
-// The command sidebar: every command, grouped exactly as `steward help` groups
-// them, because the groups come from the binary (core.Groups) rather than from a
-// list kept here. Shown only on /commands/ pages.
+// The command sidebar: every command, sectioned and grouped exactly as `steward
+// help` sections and groups them, because both levels come from the binary
+// (core.Groups) rather than from a list kept here. Shown only on /commands/ pages.
 //
 // It is a <details> so it collapses on a narrow screen without JavaScript — open
 // by default, and the stylesheet hides the summary and forces it open above 900px.
@@ -8,10 +8,11 @@
 (commands, current) => `      <details class="sidebar" open>
         <summary>All commands</summary>
         <nav aria-label="Commands">
-${ Tree.map(Tree.groupBy(commands, (command) => command.group), (group, title) => `          <p class="group">${ title }</p>
+${ Tree.map(Tree.groupBy(commands, (command) => command.section), (inSection, section) => `          <p class="section">${ section }</p>
+${ Tree.map(Tree.groupBy(inSection, (command) => command.group), (group, title) => `          <p class="group">${ title }</p>
           <ul>
 ${ Tree.map(group, (command) => `            <li><a href="/commands/${ command.name }.html"${ command.name === current ? ` class="current" aria-current="page"` : `` }>${ command.name }</a></li>
 `) }          </ul>
-`) }        </nav>
+`) }`) }        </nav>
       </details>
 `

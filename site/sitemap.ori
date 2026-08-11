@@ -5,7 +5,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://steward.agoraforge.org/index.html</loc></url>
   <url><loc>https://steward.agoraforge.org/commands/</loc></url>
-  <url><loc>https://steward.agoraforge.org/apps.html</loc></url>
+  <url><loc>https://steward.agoraforge.org/overview.html</loc></url>
   <url><loc>https://steward.agoraforge.org/console.html</loc></url>
 ${ Tree.map(commands, (cmd) => `  <url><loc>https://steward.agoraforge.org/commands/${ cmd.name }.html</loc></url>
 `) }</urlset>

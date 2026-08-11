@@ -1,219 +1,92 @@
 ---
-title: Docs
-nav: docs
+title: Steward
+nav: home
 ---
-# Steward
+<div class="hero">
+<h1>Steward</h1>
+<p class="tagline">A Tool to Help You Host Your Application(s)</p>
+</div>
 
-**Contents:** [Proof Of Concept](#a-proof-of-concept) &middot; [Install](#install) &middot; [Upgrade](#upgrade) &middot; [Authentication](#authentication--scoped-ssh) &middot; [The Ceiling](#the-ceiling) &middot; [Build From Source](#build-from-source)
+## Yet Another Hosting Tool?
 
-Steward is a single Go binary on every machine, and the layer with the privilege. Every
-action is a named actor, a declared scope, and a record written before it runs — **there
-is no path to the box's power that skips that.** That one property is the whole security
-claim, and it is small enough to check.
+Steward was built with the goal of making web application hosting boring and durable.
+Despite its name, it is not meant to be fancy, but rather safe and predictable. Steward is
+also free and open source. While built with purpose, it was built primarily with Anthropic
+Claude LLM vibes — so use it at your own risk. Report concerns and submit contributions to
+help improve it.
 
-It is a gate and a scribe, not a runtime. No daemon, no listener, no token; it exists only
-while a command runs. Delete the binary and nothing running stops — apps are ordinary
-systemd units behind ordinary Caddy config. What stops is the gate and the record.
+<div class="split">
+<div class="split-figure">
+<img src="/assets/logo.svg" alt="" width="120" height="120">
+</div>
+<div class="split-do">
 
-The record is the one thing Steward does not borrow: a plain append-only file, one JSON
-object per line, hash-chained so an edit or a deletion shows. No database, no format you
-need a tool to read — `cat` it. `steward verify` walks the chain and reports the first
-break.
-
-Steward is layered. A small **core** owns the gate, the record, and the root ceiling; the
-verbs that [run apps](/apps.html) sit on the other side of one line inside the same
-binary. `prepare` writes down the binary's own digest, and every verb that acts checks
-the running executable against it — swap the binary and Steward refuses, in the record.
-
-You rarely type any of this. [Steward Console](/console.html) drives it over scoped SSH,
-running these same commands. It is also the breakglass surface: the operator always has it
-over their own SSH, so recovery never depends on the web UI.
-
-> **Every command has a page.** [The command reference](/commands/) is generated from the
-> binary — each page opens with that command's real `--help` output, so it cannot say
-> anything the CLI does not. Or just run `steward help`.
-
-## A Proof Of Concept
-
-Most of the code in this project was **written by an LLM**, from a specification that came
-first and is still the canonical artifact — the blueprint is prose, and the code is a
-projection of it. Saying so plainly is more useful than letting a reader work it out from
-the commit history.
-
-It has a consequence worth stating. [Codeberg's Terms of Use](https://codeberg.org/Codeberg/org/src/branch/main/TermsOfUse.md)
-prohibit projects that mostly consist of generative-AI-written code, and this one does — so
-the repository lives on GitHub, and what is published today is a **proof of concept**: the
-thing that proved the design works, not the thing meant to be trusted forever.
-
-The intention is to **rewrite the Steward core by hand** from that same specification and
-host it on Codeberg, with an LLM as **editor and critic only** — reviewing code a human
-wrote, never writing it. The reason is ownership rather than optics: retyping does not
-change where code came from, but human authorship is what makes a licence mean anything,
-and a copyleft over code nobody can own is a weak instrument for a project whose whole
-argument is sovereignty.
-
-Until then: read the design, run it on a box you can afford to lose, and judge the idea
-rather than the artifact.
-
-## Install
-
-> **You don't have to install Steward yourself.** Steward Console installs and drives it for
-> you — point the app at a box and it handles the machine layer. The walkthrough here is
-> for digging under the hood by hand.
-
-**Install the CLI.** One command downloads the binary, **verifies its signature**, and
-installs it:
+**Install Steward:**
 
 ```bash
-curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- 0.2.0beta
+curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- 0.3.0
 ```
 
-<details>
-<summary>Or verify the signature by hand first</summary>
+[View all Steward commands here](/commands/).
 
-Confirm the binary is genuinely the published one before running it as root. The check
-matches the release tarball against its ed25519 signature with our public key — and you
-fetch that key from the **source repository on GitHub**, a *different* host than the
-release server, so no single compromised server can hand you a matching key and binary
-at once:
+</div>
+</div>
 
-```bash
-V=0.2.0beta
-base=https://steward.agoraforge.org/releases/steward/$V/steward-linux-amd64.tar.gz
+Part of Steward's reliability is its controlled access plane: every command is gated by a
+scoped SSH key, and every action that changes the box is written to a hash-chained log on
+the machine — *before* it is executed, so nothing happens off the books. Security starts by
+locking down a fresh Ubuntu box with standard commands and tooling, and then preparing that
+machine for its purpose as an app host or a load balancer.
 
-# the binary + its signature, from the release host
-curl -fsSLO "$base"
-curl -fsSLO "$base.sig"
+Steward writes almost none of this itself. It is a gate and a scribe, and the work is done
+by open source tools that already do it well:
 
-# the public key, from the source repo (a different provider)
-curl -fsSL https://raw.githubusercontent.com/ndhays/steward/main/steward/release-key.pub -o release-key.pub
+<div class="tools">
 
-# verify before trusting
-openssl pkeyutl -verify -rawin -pubin -inkey release-key.pub \
-  -in steward-linux-amd64.tar.gz -sigfile steward-linux-amd64.tar.gz.sig
-#  → Signature Verified Successfully
+- [**OpenSSH**](https://www.openssh.com) — the access plane. The key is the identity and the forced command is its scope. No key gets a shell.
+- [**systemd**](https://systemd.io) — residency. Apps are ordinary units and a timer keeps the record ticking, so Steward needs no daemon of its own.
+- [**Podman**](https://podman.io) — rootless containers, run as Quadlet units under systemd.
+- [**Caddy**](https://caddyserver.com) — hostname routing and automatic HTTPS.
+- [**restic**](https://restic.net) — encrypted, deduplicated backups to a repo you own.
+- [**UFW**](https://help.ubuntu.com/community/UFW) — the firewall: deny inbound, and open only what the box's role serves.
+- [**fail2ban**](https://www.fail2ban.org) — bans repeated SSH authentication failures.
+- [**unattended-upgrades**](https://wiki.debian.org/UnattendedUpgrades) — automatic security patching, on a schedule you can see.
 
-tar -xzf steward-linux-amd64.tar.gz
-sudo install -m 0755 steward /usr/local/bin/steward
-```
-</details>
+</div>
 
-**Set up the box.** Two commands as root change the machine, then you drop to the `steward`
-user and stay there:
+Everything they write is their own plain config file, readable by an admin who has never
+heard of Steward — and left in place if Steward is removed.
 
-```bash
-sudo steward harden          # optional OS lockdown — key-only SSH, UFW, fail2ban
-sudo steward prepare host    # say what the box is for; installs what that needs
-sudo -iu steward             # cross the seam once; everything past here runs as this user
-```
+### Inspiration and Other Self-Hosting Tools
 
-**Admit a key.** Authorize the actor that will operate the box — Steward Console, or your own
-automation — at a scope:
+Kamal (and [Once](https://once.com)) were the inspiration that led to the creation of
+Steward. The reliability of Linux, the ever-worsening-doom-loop of big name tech, cloud
+price-gauging, and new tools that made deployment within reach to the average developer,
+all combined to make the actual computer seem a lot less scary. However, there are a lot of
+other great self-hosting tools out there that may be better for your specific needs.
 
-```bash
-steward authorize "ssh-ed25519 AAAA… console@host" --client console --scope operate
-```
+<div class="tools">
 
-From there, every deploy happens over scoped SSH. The next thing you need is an
-[AppConfig](/apps.html#appconfig), and then [`steward deploy`](/commands/deploy.html).
+- [**Kamal**](https://kamal-deploy.org) — zero-downtime deploys of web apps anywhere, over Docker: rolling restarts, remote builds, and accessory services.
+- [**Dokku**](https://dokku.com) — an open-source PaaS alternative to Heroku, and the smallest such implementation around.
+- [**Coolify**](https://coolify.io) — self-hosting with superpowers: an open-source alternative to Vercel, Heroku, Netlify and Railway, with hundreds of one-click services.
+- [**CapRover**](https://caprover.com) — a scalable, free, self-hosted PaaS that keeps your infrastructure fully under your control.
+- [**Cloudron**](https://www.cloudron.io) — a complete solution for running apps on your own server; self-hosting made simpler.
+- [**YunoHost**](https://yunohost.org) — a system that installs itself on a server so you can run and maintain your own digital services with very little technical knowledge.
 
-## Upgrade
+</div>
 
-There is no `steward upgrade` command. Upgrading is the same signed install, pointed at
-a newer version, followed by `prepare`:
+<aside class="card provisional">
 
-```bash
-curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- 0.2.0beta
-sudo steward prepare host --yes
-steward doctor
-```
+### Proof of Concept
 
-The first command verifies the signature before replacing anything, and overwrites the
-binary in place — safe to run even while a command is in flight. The second converges
-anything the new version added; `prepare` is idempotent, so re-running it is normal, not
-a repair. Then `doctor` confirms the box is consistent.
+The current version of Steward is a proof of concept. The goal is one day to rebuild it by
+hand and host it on [Codeberg](https://codeberg.org), in a way that complies with the
+generative-AI clause of their
+[Terms of Use](https://codeberg.org/Codeberg/org/commit/96fac426a32d1ba91ff879366d59bf1af54080c2).
+Until then the repository is
+[self-hosted](https://git.agoraforge.org/agoraforge/steward) on
+[Forgejo](https://forgejo.org) — the same software Codeberg runs, and built by the same
+people — and deployed with Steward itself.
 
-**Nothing goes down.** Your apps are ordinary systemd units behind Caddy, and Steward is
-not a daemon — it exists only while a command runs. Replacing the binary changes what
-happens on the *next* invocation and nothing else.
-
-**Keep the install path the same.** `/usr/local/bin/steward` is written into the snapshot
-timer and into every authorized key's forced command. `prepare` fixes the timer; nothing
-fixes the keys but re-running `authorize` for each client. Install somewhere new and
-every scoped key points at a binary that isn't there — `doctor` reports the mismatch, but
-it's far easier not to move it.
-
-## Authentication — Scoped SSH
-
-There is no token to store. The **key is the identity** and the **forced command is
-the scope**. An operator admits a named actor by writing a pinned `authorized_keys` line.
-
-Scopes form a ladder — a higher scope grants the ones below it: `observe ⊂ operate ⊂ grant`.
-
-- **observe** — read the record (status, logs, verify, record).
-- **operate** — deploy and lifecycle.
-- **grant** — mint and revoke keys.
-
-**No scope is a shell.** Every key names the command it wants to run, and a key that
-sends no command is refused. That is what makes the audit record complete: there is no
-grant that lets someone act on the box without an entry being written first.
-
-The top rung was once called `ssh` and did hand out an interactive shell. That shell was
-recorded as a *grant* — one `action="shell"` entry — and then everything done inside it
-was invisible, which put an asterisk on the whole claim. The rung kept its job and lost
-the shell. Keys issued under the old name keep working; `ssh` now reads as `grant`.
-
-Need a real shell on the box? Use your own account. That is a different named actor with
-its own trail, not an anonymous session inside the `steward` identity.
-
-`authorized_keys` *is* the rights ledger: `cat` it and you see every actor and its
-ceiling — rights declared and inspectable, not ambient. The authenticated key's client
-name is what lands in the audit log (`actor="console"`), so the ledger tells Steward Console
-apart from a human at the shell.
-
-See [`authorize`](/commands/authorize.html), [`revoke`](/commands/revoke.html), and
-[`actors`](/commands/actors.html).
-
-## The Ceiling
-
-Three commands are **root-only**, run by the operator on the box itself: they change the
-*machine*. They are *not* reachable through any scoped key — the gate cannot re-provision,
-replace, or remove itself. This small, enumerable set, together with the append-only record,
-is the **legible ceiling** the operator audits by eye. Everything else runs as the
-unprivileged `steward` user.
-
-- [`harden`](/commands/harden.html) — optional OS and `sshd` lockdown. Kept separate from
-  `prepare` on purpose: the accountability floor never lives here, so a box is accountable
-  even un-hardened.
-- [`prepare`](/commands/prepare.html) — say what the box is for, install what that role
-  needs, lay the record.
-- [`uninstall`](/commands/uninstall.html) — remove the gate and the scribe. **Your apps
-  keep running.**
-
-Steward is not a runtime — apps run under systemd with plain Caddy routes — so `uninstall`
-stops nothing unless you ask it to. Retiring the hardware entirely (wipe secrets, remove
-the user, decide the backups' fate) is a separate, deliberate act; uninstall points the way.
-
-Everything else — deploy, lifecycle, backups, reads — runs as the unprivileged `steward`
-user over scoped SSH, audited before it executes. [See every command](/commands/).
-
-## Build From Source
-
-Work on Steward from source — it lives in the [monorepo](https://github.com/ndhays/steward)
-under `steward/`:
-
-```bash
-cd steward && make build     # → bin/steward  (Go 1.22+)
-```
-
-The binary has **no dependencies** — `go.mod` requires nothing — so a build needs only
-Go. The checks:
-
-```bash
-make test     # unit tests, plus the gate tests: who may reach what, and what a value
-              # may become once rendered into a config file
-make fuzz     # runs the fuzz targets past their seed corpus (FUZZTIME=5m for longer)
-make audit    # govulncheck + gosec; gates `make release`, so an unaudited version
-              # never ships
-make man      # steward(1), generated from the same command table as --help
-```
+</aside>

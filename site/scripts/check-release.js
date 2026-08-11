@@ -30,16 +30,20 @@ if (!existsSync(tgz) || !existsSync(tgz + ".sig")) {
   );
 }
 
-// 2. The install page's copy-paste commands must reference this exact version,
-//    so the page can't drift from VERSION.
+// 2. The install page's copy-paste command must reference this exact version, so
+//    the page can't drift from VERSION.
+//
+//    One command, not two: the home page used to also carry a `V=<version>`
+//    verify-by-hand block, and that block was cut when the page became the hook.
+//    The guard tracks what is on the page — a check for a string that can no longer
+//    appear fails every build and teaches people to delete the guard.
 const installMd = readFileSync(join(root, "site", "content", "index.md"), "utf8");
-for (const want of [`bash -s -- ${version}`, `V=${version}`]) {
-  if (!installMd.includes(want)) {
-    die(
-      `index.md does not reference v${version} (looking for "${want}").\n` +
-        `  Update site/content/index.md to the current version.`
-    );
-  }
+const want = `bash -s -- ${version}`;
+if (!installMd.includes(want)) {
+  die(
+    `index.md does not reference v${version} (looking for "${want}").\n` +
+      `  Update site/content/index.md to the current version.`
+  );
 }
 
 console.log(`✓ release + install page consistent at v${version}`);

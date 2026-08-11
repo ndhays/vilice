@@ -95,9 +95,16 @@ Steward is a gate and a scribe, not a runtime \(em apps are ordinary Quadlet uni
 under systemd behind Caddy, so deleting steward stops nothing that is running.
 .SH COMMANDS`)
 
-	// The same groups, in the same order, as `steward help` and the docs site.
+	// The same sections and groups, in the same order, as `steward help` and the
+	// docs site. A section heads its run of groups once, as an .SS; the groups sit
+	// under it as .TP-led runs, since roff has only the two subsection levels.
+	section := ""
 	for _, g := range Groups {
-		fmt.Fprintf(w, ".SS %s\n", manEscape(g.Title))
+		if g.Section != section {
+			section = g.Section
+			fmt.Fprintf(w, ".SS %s\n", manEscape(strings.ToUpper(section)))
+		}
+		fmt.Fprintf(w, ".PP\n\\fB%s\\fR\n", manEscape(g.Title))
 		for _, c := range Commands {
 			if c.Scope == g.Scope {
 				manCommand(w, c)
