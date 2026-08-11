@@ -121,12 +121,17 @@ Firewall can block inbound `22` even when the box itself is fine.
 
 ## License
 
-A permissive substrate under a copyleft application (see
-[`decisions/licensing.md`](decisions/licensing.md)):
+Copyright (c) 2026 Nick Demarest. A permissive substrate under a copyleft application
+(the reasoning is in [`decisions/licensing.md`](decisions/licensing.md)):
 
-- **Steward Console** (the control plane) → **AGPL-3.0**.
-- **Steward** (the substrate) → **MIT**.
-- The **Agora constitution** text → CC BY-SA 4.0.
+- **Steward** (the substrate) → **MIT** — [`steward/LICENSE`](steward/LICENSE). `install.sh`
+  installs the substrate and is MIT with it.
+- **Everything else, including Steward Console** (the control plane) → **AGPL-3.0-or-later**
+  — [`LICENSE`](LICENSE) at the root.
+- The **Agora constitution** text ([`blueprint/agora.md`](blueprint/agora.md)) → **CC BY-SA
+  4.0**, stated in the document itself.
+- The **examples** ([`examples/`](examples/)) → **MIT**, because they are meant to be copied
+  into your own projects.
 
 Open core, private edges: the platform is open; client-specific config and secrets
-never live in core. *(Binding LICENSE files added once confirmed.)*
+never live in core.

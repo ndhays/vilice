@@ -149,4 +149,7 @@ It is licensed under Creative Commons Attribution-ShareAlike 4.0 International (
 
 You are free to share and adapt it for any purpose, provided you give attribution and distribute any derivatives under the same license.
 
-(See LICENSE.md or [https://creativecommons.org/licenses/by-sa/4.0/](https://creativecommons.org/licenses/by-sa/4.0/))
+(See [https://creativecommons.org/licenses/by-sa/4.0/](https://creativecommons.org/licenses/by-sa/4.0/))
+
+*In this repository:* this document is CC BY-SA 4.0 as stated above — not the
+AGPL-3.0-or-later that covers the rest of the root. See the `README.md` License section.

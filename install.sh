@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# Part of the MIT-licensed substrate (see steward/LICENSE), not the AGPL repo root.
+#
 # Download, verify (ed25519), and install the steward binary.
 #
 #   curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- <version>
