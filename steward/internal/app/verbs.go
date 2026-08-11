@@ -109,9 +109,13 @@ restic repo, not on this box.`,
 		// replaced, like deploy — you send the table the box should serve. See route.go.
 		{Name: "route", Scope: core.ScopeOperate,
 			Summary: "Front other boxes: replace the routing table",
-			Long: `Replaces this box's routing table with the one you send on stdin. For
-a balancer: the box that fronts other boxes rather than running apps
-itself.
+			Long: `Replaces this box's routing table with the one you send on stdin: the
+hostnames this box fronts for *other* boxes, and where each one goes.
+
+This is what a balancer is for. It works on a host too — the routing
+table is a separate Caddy fragment from the one deploy writes, so the
+two never touch — but a box that fronts others and runs nothing itself
+is the case this exists to serve.
 
 Declarative and whole, like deploy. You send the table the box should
 serve, not an edit to the table it has — so what is in the file is
@@ -223,7 +227,7 @@ the source of truth, so Steward stores nothing and shows you what is
 actually there.`,
 			Usage: "<app> [--tail <n>]",
 			Flags: []core.Flag{
-				{Name: "tail", Arg: "<n>", What: "Show only the last n lines. -n works too. Default: everything."},
+				{Name: "tail", Alias: "n", Arg: "<n>", What: "Show only the last n lines. Default: everything."},
 			},
 			Examples: []core.Example{
 				{Cmd: "steward logs blog --tail 100", What: "The last hundred lines."},

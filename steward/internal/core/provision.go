@@ -242,6 +242,12 @@ WantedBy=timers.target
 
 // --- prepare UX ---
 
+// hasFlag reports whether args carries any of these boolean flags.
+//
+// Exact match, and it can afford to be: the gate refuses a boolean given a value
+// (booleanWithValue) before a command ever runs, so `--yes=1` never arrives here.
+// Reading it here instead would mean deciding what `--yes=false` means, and the only
+// honest answers are "no" — which is not what the flag's presence says — or a lie.
 func hasFlag(args []string, names ...string) bool {
 	for _, a := range args {
 		for _, n := range names {

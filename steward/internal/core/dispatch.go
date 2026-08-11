@@ -62,8 +62,13 @@ func notImplemented(name string) Result {
 // prints the same list — so a flag cannot reach the box without being documented.
 type Flag struct {
 	Name string // without the leading --
-	Arg  string // "" for a boolean flag; otherwise the value's placeholder
-	What string // one line: what it does, and its default if it has one
+	// Alias is the short spelling, without the dash ("n" for --tail). The gate
+	// rewrites it to Name before any command sees it, so a command only ever parses
+	// one spelling — and help prints it, so a short form cannot exist undocumented
+	// the way `-y` did while the page named only `--yes`.
+	Alias string
+	Arg   string // "" for a boolean flag; otherwise the value's placeholder
+	What  string // one line: what it does, and its default if it has one
 }
 
 // Example is an invocation you can paste, and the one line that says why.
@@ -156,7 +161,7 @@ Opens the role's ports when a firewall is present, and shows an
 apt-style summary for confirmation before it touches anything.`,
 		Usage: "<host|balancer> [--yes]",
 		Flags: []Flag{
-			{Name: "yes", What: "Skip the confirmation. For automation, not for haste."},
+			{Name: "yes", Alias: "y", What: "Skip the confirmation. For automation, not for haste."},
 		},
 		Examples: []Example{
 			{Cmd: "sudo steward prepare host", What: "Set this box up to run apps."},
@@ -166,10 +171,10 @@ apt-style summary for confirmation before it touches anything.`,
 	{Name: "uninstall", Scope: ScopeRoot, SkipBinaryCheck: true,
 		Summary: "Remove the gate and the scribe (apps keep running)",
 		Long: `Removes Steward: the snapshot timer, every scoped key, the sudoers
-grant, and the binary. What it does not remove is anything that is
-running. Your apps are ordinary systemd units behind ordinary Caddy
-config, and Steward is not a runtime — so uninstalling stops the gate
-and the record, and nothing else.
+grant, the binary authorization, and the binary itself. What it does
+not remove is anything that is running. Your apps are ordinary systemd
+units behind ordinary Caddy config, and Steward is not a runtime — so
+uninstalling stops the gate and the record, and nothing else.
 
 The steward user and /var/lib/steward stay. The record is the box's
 history and outlives the tool that wrote it.
@@ -180,7 +185,7 @@ the password every snapshot is unreadable ciphertext. It prints where
 that password is, never the password itself.`,
 		Usage: "[--yes] [--remove-apps]",
 		Flags: []Flag{
-			{Name: "yes", What: "Skip the confirmation."},
+			{Name: "yes", Alias: "y", What: "Skip the confirmation."},
 			{Name: "remove-apps", What: "Take the apps down too. Without this they keep running."},
 		},
 		Examples: []Example{
@@ -455,6 +460,20 @@ func Dispatch(cmd Command, args []string, actorName string, jsonOut bool) int {
 		commandHelp(os.Stdout, cmd)
 		return 0
 	}
+	// One spelling past this point. Short forms are rewritten to their long names
+	// here, at the gate, so no command has to know a short form exists — a command
+	// that parsed its own aliases is how `logs` ended up with a second flag parser
+	// and a silently-dropped `--tail=100`.
+	args = normalizeAliases(cmd, args)
+	// A boolean flag is present or absent; giving it a value is refused rather than
+	// interpreted. `--yes=false` plainly reads as "no", and every way of honouring it
+	// is wrong: treat presence as true and it means yes, parse the value and `--yes`
+	// alone becomes the odd one out. Refusing says so in one line.
+	if bad := booleanWithValue(cmd, args); bad != "" {
+		emit(withUsage(cmd, Result{Code: "bad_args",
+			Message: fmt.Sprintf("%s takes no value", bad)}), jsonOut)
+		return 1
+	}
 	// A flag the command doesn't declare is a hard error (fail loud): parseArgs
 	// would silently drop it, and a typo like `--por 9000` deploying on the default
 	// port is exactly the quiet failure the record exists to prevent. Refused
@@ -509,6 +528,56 @@ func Dispatch(cmd Command, args []string, actorName string, jsonOut bool) int {
 		return 1
 	}
 	return 0
+}
+
+// normalizeAliases rewrites a command's declared short flags to their long names,
+// carrying any `=value` across. Only exact matches are touched, so an app named `-n`
+// — which the name rules permit — is not quietly turned into a flag.
+func normalizeAliases(cmd Command, args []string) []string {
+	out := make([]string, len(args))
+	copy(out, args)
+	for _, f := range cmd.Flags {
+		if f.Alias == "" {
+			continue
+		}
+		short, long := "-"+f.Alias, "--"+f.Name
+		for i, a := range out {
+			switch {
+			case a == short:
+				out[i] = long
+			case strings.HasPrefix(a, short+"="):
+				out[i] = long + strings.TrimPrefix(a, short)
+			}
+		}
+	}
+	return out
+}
+
+// booleanWithValue returns the first boolean flag given a value ("" if none).
+//
+// `--json` is included though no command declares it: it is the global read flag,
+// stripped by parseInvocation in its bare form only, so `--json=true` would otherwise
+// reach unknownFlag and be reported as "unknown flag --json" — which is both wrong
+// and confusing, since --json is the one flag every command takes.
+func booleanWithValue(cmd Command, args []string) string {
+	for _, a := range args {
+		if !strings.HasPrefix(a, "--") {
+			continue
+		}
+		name, _, valued := strings.Cut(strings.TrimPrefix(a, "--"), "=")
+		if !valued {
+			continue
+		}
+		if name == "json" {
+			return "--json"
+		}
+		for _, f := range cmd.Flags {
+			if f.Name == name && f.Arg == "" {
+				return "--" + f.Name
+			}
+		}
+	}
+	return ""
 }
 
 // unknownFlag returns the first --flag the command does not declare ("" if none).
@@ -693,12 +762,18 @@ func wrap(s string, width int) []string {
 	return append(lines, line)
 }
 
-// flagSpec is how a flag is typed: --name, or --name <arg>.
+// flagSpec is how a flag is typed: --name, or --name <arg>, with the short form
+// ahead of it when there is one. The short form is printed rather than mentioned in
+// prose, so it is documented by the same list the gate admits.
 func flagSpec(f Flag) string {
-	if f.Arg == "" {
-		return "--" + f.Name
+	s := "--" + f.Name
+	if f.Alias != "" {
+		s = "-" + f.Alias + ", " + s
 	}
-	return "--" + f.Name + " " + f.Arg
+	if f.Arg == "" {
+		return s
+	}
+	return s + " " + f.Arg
 }
 
 // flagColumn is the width the descriptions line up at — the longest spec, unless
