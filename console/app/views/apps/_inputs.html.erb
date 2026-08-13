@@ -2,10 +2,10 @@
     operator supplies values at install. "Secrets are env vars": one list, a secret flag.
     Saving is a recorded own-record act (apps#update). %>
 <div class="inputs" data-controller="env-editor">
-  <div class="kicker">Environment &amp; Secrets</div>
+  <div class="kicker">Environment</div>
   <p class="muted form-note">
-    Add required environment variable names for more reliable installs. Tick
-    "secret" for variables that should be delivered to the machine off-record (not logged).
+    The variables this app needs. Names only — values are supplied at install. Mark
+    the secret ones; those reach the box off-record.
   </p>
 
   <%= form_with model: app, class: "inputs-form" do %>
@@ -25,12 +25,12 @@
         <%= icon "plus", size: 13 %> Add Variable
       </button>
     </div>
-    <p class="muted chip-hint">Click a variable to mark it secret.</p>
+    <p class="muted chip-hint">Click one to mark it secret.</p>
 
     <div class="kicker sub">Secret Files</div>
     <p class="muted form-note">
-      Files mounted into the container (a config, an htpasswd) — name and absolute path.
-      The contents are off-record, supplied at install.
+      Files the app needs mounted — a config, an htpasswd. Name and absolute path;
+      the contents are supplied at install, off-record.
     </p>
     <div class="kv-list" data-env-editor-target="fileList">
       <% app.secret_files.each_with_index do |f, i| %>

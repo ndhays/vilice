@@ -11,7 +11,7 @@
     <% if (v = app.latest_version) %>
       <span class="mono"><%= v.tag %></span><span class="tag latest">latest</span>
       <% if (extra = app.versions.size - 1) > 0 %>
-        <span class="more-versions">+<%= extra %> additional <%= "version".pluralize(extra) %></span>
+        <span class="more-versions">+<%= extra %> more</span>
       <% end %>
     <% else %>
       <span class="muted">no version</span>

@@ -129,10 +129,14 @@ enough to make a group read as a group.
   client's* placements, and the project column is dropped there because it would only
   repeat the page.
 
-  **It leads with a headline**, in the same grammar as every list page: how much is
-  placed for this client, and what of it needs a person — *1 install · 2 machines ·
-  1 need a look · 1 unreachable*. It is the line that answers "does my client have a
-  problem" without scanning three lists. Only this lens's facts.
+  **It leads with a verdict — Status's answer, scoped to one client.** Either there is
+  something to deal with or there is not, and the page says which before it says
+  anything else: *Nothing to report* under a green check, or *1 install needs a look ·
+  1 box unreachable* under an alert. The counts sit underneath as the proof it was
+  looked at, the same role they play on Status. Only this lens's facts.
+
+  Unlike Status it keeps its lists below either way — a client page is also where you
+  go to find a specific install, not only to learn whether anything is wrong.
 
   **Star stays in the title; Edit and Delete do not.** A destructive control does not
   belong in a page title — deletion moved into a **Project Settings** section at the

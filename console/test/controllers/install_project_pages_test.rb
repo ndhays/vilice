@@ -66,22 +66,32 @@ class InstallProjectPagesTest < ActionDispatch::IntegrationTest
 
   # ── Project page ──────────────────────────────────────────────────────────
 
-  # The headline answers "does my client have a problem" without scanning three lists.
-  test "the project leads with a headline of its own ring's facts" do
+  # A verdict, always — the Status page's answer scoped to one client. It says whether
+  # this client needs you before it says anything else.
+  test "a project with trouble names it, and counts underneath as the proof" do
     @install.install_targets.create!(machine: @down, status: "running")
     get project_path(@project)
     assert_response :success
-    assert_select ".headline", /1 install/
-    assert_select ".headline", /2 machines/
-    assert_select ".headline .bad", /1 need a look/
-    assert_select ".headline .bad", /1 unreachable/
+    assert_select ".verdict.bad .verdict-head", /1 install needs a look/
+    assert_select ".verdict.bad .verdict-head", /1 box unreachable/
+    assert_select ".verdict-sub", /1 install/
+    assert_select ".verdict-sub", /2 machines/
   end
 
-  test "a healthy project says so in the same line" do
+  test "the verdict agrees with its own count" do
+    other = @project.installs.create!(name: "second", image: "img@sha256:x")
+    [ @install, other ].each { |i| i.install_targets.create!(machine: @down, status: "running") }
+    get project_path(@project)
+    assert_select ".verdict-head", /2 installs need a look/
+  end
+
+  test "a healthy project reads as Nothing to report, like Status" do
     @install.install_targets.create!(machine: @up, status: "running")
     @down.update!(status: "reachable")
     get project_path(@project)
-    assert_select ".headline .ok", /all running as asked/
+    assert_select ".verdict.ok .verdict-head", "Nothing to report"
+    assert_select ".verdict-sub", /all running as asked/
+    assert_select ".verdict.bad", count: 0
   end
 
   # A destructive control does not belong in a page title.

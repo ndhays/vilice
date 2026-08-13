@@ -14,18 +14,24 @@
   <% end %>
 </h1>
 
-<%# The headline leads: what is placed for this client, and what of it needs a person.
-    Only this lens's facts — it is the one line that answers "does my client have a
-    problem" without scanning three lists. %>
-<p class="headline">
-  <%= pluralize(@installs.size, "install") %><%
-    %> · <%= pluralize(@owned_machines.size + @shared_machines.size, "machine") %><%
-    %><% if @needs_look.positive? %> · <span class="bad"><%= @needs_look %> need a look</span><% end %><%
-    %><% if @down_boxes.positive? %> · <span class="bad"><%= @down_boxes %> unreachable</span><% end %><%
-    %><% if @short.positive? %> · <span class="muted"><%= @short %> short of their intention</span><% end %><%
-    %><% if @needs_look.zero? && @down_boxes.zero? && @short.zero? && @installs.any? %><%
-      %> · <span class="ok">all running as asked</span><% end %>
-</p>
+<%# A verdict, always — the Status page's answer, scoped to one client. Either there
+    is something to deal with or there is not, and the page says which before it says
+    anything else. The counts sit underneath as the proof it was looked at. %>
+<% trouble = [] %>
+<% trouble << "#{pluralize(@needs_look, 'install')} #{@needs_look == 1 ? 'needs' : 'need'} a look" if @needs_look.positive? %>
+<% trouble << "#{pluralize(@down_boxes, 'box', plural: 'boxes')} unreachable" if @down_boxes.positive? %>
+<% trouble << "#{pluralize(@short, 'install')} short of the ask" if @short.positive? %>
+<div class="verdict <%= trouble.any? ? 'bad' : 'ok' %>">
+  <%= icon(trouble.any? ? "triangle-alert" : "circle-check", size: 26) %>
+  <div>
+    <p class="verdict-head"><%= trouble.any? ? trouble.join(" · ") : "Nothing to report" %></p>
+    <p class="verdict-sub">
+      <%= pluralize(@installs.size, "install") %> ·
+      <%= pluralize(@owned_machines.size + @shared_machines.size, "machine") %><%
+        %><%= " · all running as asked" if trouble.empty? && @installs.any? %>
+    </p>
+  </div>
+</div>
 
 <% if @project.contact_name.present? || @project.contact_email.present? %>
   <p class="addr machine-facts">

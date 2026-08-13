@@ -51,6 +51,18 @@ pre.raw { background: var(--raw-bg); color: var(--raw-ink); padding: 1rem; borde
   gap: 0.15rem; padding: 4rem 1.35rem 4.5rem; color: var(--ink);
 }
 .all-clear-mark { color: var(--ok); margin-bottom: 0.75rem; }
+
+/* The same answer at page scale rather than at destination scale — a project says
+   whether this client needs you before it says anything else, then the counts as the
+   proof it was looked at. Compact, because unlike Status this page has content below
+   it that is worth reaching. */
+.verdict { display: flex; align-items: center; gap: 0.8rem; margin: 0.2rem 0 1.6rem; }
+.verdict > .icon { flex: none; }
+.verdict.ok > .icon { color: var(--ok); }
+.verdict.bad > .icon { color: var(--bad); }
+.verdict-head { font-size: 1.15rem; font-weight: 600; margin: 0; color: var(--ink); }
+.verdict.bad .verdict-head { color: var(--bad); }
+.verdict-sub { color: var(--muted); font-size: 0.9rem; margin: 0.1rem 0 0; }
 .all-clear-head { font-size: 1.35rem; font-weight: 600; margin: 0; }
 .all-clear-sub { color: var(--muted); font-size: 0.9rem; margin: 0; }
 
@@ -260,7 +272,9 @@ details.menu > summary::-webkit-details-marker { display: none; }
 .section-kicker {
   display: flex; align-items: center; gap: 0.4rem;
   font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--muted); margin: 0 0 0.75rem; padding-bottom: 0.4rem;
+  /* It overrode h2's own top margin with 0, so a section ran straight into whatever
+     was above it. A section header needs air before it, not after. */
+  color: var(--muted); margin: 2.75rem 0 0.75rem; padding-bottom: 0.4rem;
   border-bottom: 1px solid var(--line);
 }
 .section-kicker .icon { color: var(--muted); }

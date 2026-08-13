@@ -4,15 +4,15 @@
   <% end %>
 
   <label class="field">
-    <span>Name <%= hint "Letters, digits, dashes, and underscores only (it becomes the app's name on the box)." %></span>
+    <span>Name <%= hint "Letters, digits, dashes, underscores. It becomes the app's name on the box." %></span>
     <%= f.text_field :name, required: true, autocomplete: "off",
           pattern: "[A-Za-z0-9_-]+", title: "Letters, digits, dashes, and underscores only" %>
   </label>
-  <p class="muted form-note">App <strong>images</strong> live on app <em>versions</em> (add them after creating the app).</p>
+  <p class="muted form-note">Images live on <em>versions</em> — add one after you create the app.</p>
   <div class="field-row">
-    <label class="field"><span>Port <%= hint "The port the app listens on inside its container. Use 1024–65535 — ports below 1024 are privileged (root-only), and the app runs unprivileged." %></span>
+    <label class="field"><span>Port <%= hint "The port the app listens on inside its container. 1024–65535: lower ports need root, and the app runs unprivileged." %></span>
       <%= f.number_field :port, placeholder: "8080", min: 1024, max: 65535 %></label>
-    <label class="field"><span>Health Path <%= hint "A URL path that returns 200 when the app is healthy (e.g. /up). The deploy probes it and waits for a healthy response before routing traffic." %></span>
+    <label class="field"><span>Health Path <%= hint "A path that returns 200 when the app is healthy. Deploy waits for it before routing traffic." %></span>
       <%= f.text_field :health, class: "mono", placeholder: "/up", pattern: "/.*",
             title: "A path starting with /" %></label>
   </div>
