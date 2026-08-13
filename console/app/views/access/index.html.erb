@@ -39,12 +39,18 @@
 <% if @unreadable.any? %>
   <div class="panel readonly">
     <h2><%= icon "circle-cut", size: 15 %> <%= pluralize(@unreadable.size, "ledger") %> could not be read</h2>
-    <ul class="unreadable">
-      <% @unreadable.each do |machine, error| %>
-        <li><%= link_to machine.name, machine %> <span class="muted">— <%= error %></span></li>
-      <% end %>
-    </ul>
     <p class="note muted">Their grants are <strong>unknown</strong>, not absent.</p>
+    <%# The reason is usually one reason for all of them, so it is said once per reason
+        rather than once per box — 51 boxes each repeating the same sentence is a wall
+        you scroll past instead of read. Every name is still here. %>
+    <% @unreadable.group_by(&:last).sort_by { |_, boxes| -boxes.size }.each do |error, boxes| %>
+      <p class="unreadable-group">
+        <span class="unreadable-why"><%= error %></span>
+        <span class="unreadable-boxes">
+          <%= safe_join(boxes.map { |machine, _| link_to(machine.name, machine) }, ", ") %>
+        </span>
+      </p>
+    <% end %>
   </div>
 <% end %>
 

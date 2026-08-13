@@ -63,7 +63,8 @@
   </div>
 
   <%# ── The editor, revealed ──────────────────────────────────────────────────── %>
-  <%= form_with model: app, class: "inputs-form" do %>
+  <%= form_with model: app, class: "inputs-form",
+        data: { env_editor_target: "form", action: "input->env-editor#touch" } do %>
     <%# Says "the editor posted this", so no rows means none — see apps#app_params. %>
     <%= hidden_field_tag "app[inputs_form]", "1" %>
     <% if app.errors.any? %>

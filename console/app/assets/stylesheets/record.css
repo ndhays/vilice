@@ -13,6 +13,15 @@
 .panel-head form { margin: 0; }
 .panel.observe { background: var(--card); border: 1px solid var(--line); }
 .panel.mutate  { background: var(--mutate-bg); border: 1px solid var(--mutate-line); }
+/* A heading inside a panel is the panel's own title, not a page section, so it does
+   not take the page-section margin — `h2 { margin: 2.5rem 0 1rem }` was landing on
+   top of the panel's 1.1rem padding and pushing the title a clear 3.6rem down. */
+.panel > h2 {
+  display: flex; align-items: center; gap: 0.45rem;
+  font-size: 1rem; margin: 0 0 0.5rem;
+}
+.panel > h2 .icon { flex: none; }
+.panel > h2 + p { margin-top: 0; }
 .panel .kicker {
   font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.06em; margin-bottom: 0.5rem;

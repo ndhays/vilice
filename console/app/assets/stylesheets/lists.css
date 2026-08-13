@@ -139,6 +139,11 @@
 
 /* Versions read as a small table: a bordered frame, a muted header row, ruled rows
    with roomy columns, the latest row tinted, and actions aligned right. */
+.versions { margin: 2rem 0; }
+.versions .kicker {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.5rem;
+}
 .version-list { list-style: none; margin: 0 0 0.75rem; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .version { display: flex; align-items: center; gap: 1.25rem; padding: 0.55rem 0.85rem; border-top: 1px solid var(--line); }
 .version:first-child { border-top: none; }
@@ -373,9 +378,13 @@
 .rows.access-rows .row.ungated:hover { background: var(--bad-soft); }
 .rows.access-rows .row.ungated .row-name { color: var(--bad); }
 
-/* Boxes whose ledger could not be read — listed, because unknown is not absent. */
-.unreadable { list-style: none; margin: 0.4rem 0 0; padding: 0; font-size: 0.9rem; }
-.unreadable li { padding: 0.15rem 0; }
+/* Boxes whose ledger could not be read — every one named, because unknown is not
+   absent, but grouped by reason and run inline: the failing case is usually the whole
+   fleet failing the same way, and one line per box turns that into a screenful. */
+.unreadable-group { margin: 0.7rem 0 0; font-size: 0.88rem; line-height: 1.6; }
+.unreadable-why { display: block; color: var(--muted); font-size: 0.8rem; margin-bottom: 0.15rem; }
+.unreadable-boxes a { color: var(--ink); }
+.unreadable-boxes a:hover { color: var(--accent); }
 
 /* Projects — a compact list (reuses .rows machinery): name · counts · labels · contact. */
 .rows.project-rows { grid-template-columns: minmax(8rem, max-content) max-content minmax(1rem, 1fr) max-content; }

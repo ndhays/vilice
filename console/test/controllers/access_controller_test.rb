@@ -132,13 +132,39 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
       get access_path
       assert_response :success
       assert_select ".panel.readonly", /could not be read/
-      assert_select ".unreadable a[href=?]", machine_path(@machine)
+      assert_select ".unreadable-boxes a[href=?]", machine_path(@machine)
       assert_match(/connection refused/, response.body)
       assert_match(/unknown/, response.body)
       # The dangerous misreading is "no keys shown" == "nobody has access".
       assert_no_match(/nobody can reach/, response.body)
       # And it must not be counted as a box we successfully read.
       assert_select ".headline", /0 keys on 0 boxes/
+    end
+  end
+
+  # Every box is still named — unknown is not absent — but the reason is said once per
+  # reason rather than once per box: the failing case is usually the whole fleet failing
+  # the same way, and one line each turns that into a screenful.
+  test "unreadable boxes are grouped by reason, and all of them are named" do
+    sign_in_as @user
+    other = Machine.create!(name: "edge-2", ssh_host: "10.0.0.2")
+    odd   = Machine.create!(name: "edge-3", ssh_host: "10.0.0.3")
+    replies = { @machine => { ok: false, error: "no ssh key on file" },
+                other    => { ok: false, error: "no ssh key on file" },
+                odd      => { ok: false, error: "connection refused" } }
+    original = Steward::Observe.method(:actors)
+    Steward::Observe.define_singleton_method(:actors) { |m, **| replies[m] }
+    begin
+      get access_path
+      assert_response :success
+      assert_select ".unreadable-group", 2                  # two reasons, not three boxes
+      assert_select ".unreadable-why", /no ssh key on file/
+      assert_select ".unreadable-why", /connection refused/
+      [ @machine, other, odd ].each do |m|
+        assert_select ".unreadable-boxes a[href=?]", machine_path(m), text: m.name
+      end
+    ensure
+      Steward::Observe.define_singleton_method(:actors, original)
     end
   end
 

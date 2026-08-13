@@ -356,7 +356,9 @@ enough to make a group read as a group.
   an empty list meaning "no one has access." Those boxes get their **own panel, never
   rows**: they have no lines to show, and inventing a row for them would be inventing
   an answer. They are also excluded from the "keys on N boxes" count, which counts
-  boxes actually read.
+  boxes actually read. Every one is named, but **grouped by reason and run inline** —
+  the failing case is usually the whole fleet failing the same way, and one line per
+  box turns fifty of them into a screenful nobody reads.
 
   The fingerprint is the field to check a key by — the same string `ssh-keygen -lf`
   prints. Key material is never reproduced. For a hand-added key the holder's handle
@@ -384,8 +386,12 @@ enough to make a group read as a group.
   resting state is the auditable form — two alphabetical columns, **Written to the
   record** and **Never recorded**, split by what actually happens to the value, with
   secret files counted in the second because they are off-record by definition.
-  Editing reveals the chips in place; both halves stay in the DOM, so toggling never
-  discards an in-progress edit.
+  Editing reveals the chips in place. Nothing is saved until **Save Inputs**, so
+  closing an editor that has been changed *discards* those edits — and the button says
+  which: **Done** when untouched, **Cancel** once anything has changed, and cancelling
+  puts the form back the way the server sent it. Calling it "Done" either way claimed
+  the opposite, and the read-back underneath would have shown the saved state, making
+  it look as though the edits had landed.
 
   The columns name the *consequence* rather than the word "secret", because the
   failure is not knowing what the flag does. They are drawn as one card split by a

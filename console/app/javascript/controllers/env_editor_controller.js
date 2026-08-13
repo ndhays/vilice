@@ -5,18 +5,47 @@ import { Controller } from "@hotwired/stimulus"
 // Each chip/row carries hidden inputs that apps#app_params rebuilds into the stored lists —
 // so the server contract is just the indexed env_rows / secret_file_rows. Names only.
 export default class extends Controller {
-  static targets = ["envInput", "envChips", "envTemplate", "fileList", "fileTemplate", "toggleText"]
+  static targets = ["envInput", "envChips", "envTemplate", "fileList", "fileTemplate",
+                    "toggleText", "form"]
 
   connect() {
     this.n = Date.now() // unique indices for new chips/rows, distinct from server-rendered
+    // The form as the server rendered it — what Cancel restores. Saving reloads the
+    // page, so this never goes stale.
+    if (this.hasFormTarget) this.pristine = this.formTarget.innerHTML
+    this.dirty = false
   }
 
-  // The declaration read back is the resting state; editing is the deliberate act. A CSS
-  // class swaps which half is visible — the form stays in the DOM either way, so an
-  // in-progress edit is not thrown away by toggling, and it submits exactly as before.
+  // The declaration read back is the resting state; editing is the deliberate act.
+  //
+  // Closing matters more than it looks. Nothing here is saved until "Save Inputs" is
+  // pressed, so closing an editor with unsaved edits *discards* them — and the label
+  // has to say so. It read "Done", which claims the opposite, and the read-back
+  // underneath would then show the saved state, making it look as though the edits
+  // had landed. Untouched, the button is "Done" and closing is harmless; changed, it
+  // is "Cancel" and closing puts the form back the way the server sent it.
   toggle() {
+    if (this.element.classList.contains("editing") && this.dirty) this.discard()
     const editing = this.element.classList.toggle("editing")
-    if (this.hasToggleTextTarget) this.toggleTextTarget.textContent = editing ? "Done" : "Edit"
+    this.relabel(editing)
+  }
+
+  // Any edit at all — typing, adding, removing, flipping a secret flag.
+  touch() {
+    if (this.dirty) return
+    this.dirty = true
+    this.relabel(true)
+  }
+
+  discard() {
+    if (this.hasFormTarget && this.pristine !== undefined) this.formTarget.innerHTML = this.pristine
+    this.dirty = false
+  }
+
+  relabel(editing) {
+    if (!this.hasToggleTextTarget) return
+    this.toggleTextTarget.textContent = editing ? (this.dirty ? "Cancel" : "Done") : "Edit"
+    this.element.classList.toggle("is-dirty", editing && this.dirty)
   }
 
   // Enter (or comma) commits the typed name as a chip; preventDefault stops a form submit.
@@ -37,17 +66,20 @@ export default class extends Controller {
     this.envChipsTarget.appendChild(this.node(html))
     input.value = ""
     input.focus()
+    this.touch()
   }
 
   toggleSecret(event) {
     const chip = event.currentTarget
     const secret = chip.classList.toggle("is-secret")
     chip.querySelector(".secret-flag").value = secret ? "1" : "0"
+    this.touch()
   }
 
   removeChip(event) {
     event.stopPropagation() // don't also toggle the chip we're removing
     event.target.closest(".chip")?.remove()
+    this.touch()
   }
 
   addFile() {
@@ -55,10 +87,12 @@ export default class extends Controller {
     const row = this.node(html)
     this.fileListTarget.appendChild(row)
     row.querySelector("input")?.focus()
+    this.touch()
   }
 
   removeFile(event) {
     event.target.closest(".kv-row")?.remove()
+    this.touch()
   }
 
   node(html) {
