@@ -23,3 +23,6 @@
 # decisions/open/app-library.md.
 /console/db/library.yml
 /console/db/library/
+
+# Agent tooling state: local settings and Claude Code worktrees.
+.claude/
