@@ -184,7 +184,34 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     app = App.create!(name: "bare")
     get app_path(app)
-    assert_select ".declared .empty", 2
+    assert_select ".declared-none", 2
+  end
+
+  # The read-back is the resting state; editing is the deliberate act. Both halves stay
+  # in the DOM, so toggling never discards an in-progress edit and the form posts as before.
+  test "the declaration is what you see; the editor is behind a toggle" do
+    sign_in_as @user
+    app = App.create!(name: "toggler", env: [ { "key" => "A", "secret" => false } ])
+    get app_path(app)
+    assert_response :success
+    assert_select ".inputs:not(.editing)"                      # closed by default
+    assert_select ".inputs .declared .declared-col", 2
+    assert_select ".inputs-toggle[data-action=?]", "env-editor#toggle"
+    # The editor is present but not the resting view — it still carries the form.
+    assert_select ".inputs form.inputs-form input[name=?]", "app[env_rows][0][key]"
+  end
+
+  # Secret files are off-record by definition, so they belong in that column — marked as
+  # files, because a path is a different kind of thing from a variable name.
+  test "secret files are counted and listed with the never-recorded half" do
+    sign_in_as @user
+    app = App.create!(name: "filed",
+                      env: [ { "key" => "TOKEN", "secret" => true } ],
+                      secret_files: [ { "name" => "htpasswd", "path" => "/etc/app/htpasswd" } ])
+    get app_path(app)
+    assert_select ".declared-col.is-secret .declared-count", "2"
+    assert_select ".declared-col.is-secret .declared-list li.is-file", /htpasswd/
+    assert_select ".declared-col.is-secret .declared-path", "/etc/app/htpasswd"
   end
 
   # The browser refuses it before the round trip; the model refuses it regardless.

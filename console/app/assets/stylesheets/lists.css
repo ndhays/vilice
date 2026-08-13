@@ -174,7 +174,7 @@
 /* App inputs editor — env vars (with a secret flag) + secret files. A flush config
    section (not a card like Versions): no border, no inset padding. Each row is a key
    (and a path, for files) with a remove button; "Add" clones a template row. */
-.inputs { margin: 0 0 1.75rem; }
+.inputs { margin: 2rem 0; }
 .inputs .kicker {
   font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.5rem;
@@ -289,27 +289,55 @@
 .badge.role-host, .badge.role-balancer { display: inline-flex; align-items: center; gap: 0.25rem; }
 
 /* ── The declaration, read back ───────────────────────────────────────────────
-   Two sorted columns under the chip editor: what is written to the record, and what
-   never is. Redundant on purpose — the editor is quick to toggle and hard to audit,
-   and the mistake that matters (a secret not marked secret) is irreversible once the
-   record has it. Reading a sorted list is how you catch it. */
-.declared { margin-top: 1.5rem; border-top: 1px solid var(--line); padding-top: 1rem; }
-.declared-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem; }
+   The resting state of the Environment panel: two sorted columns, split by what
+   actually happens to the value. It is the *auditable* form of a declaration the
+   chip editor makes quick to change and hard to check, and the mistake it exists to
+   catch is irreversible — a secret not marked secret is written to an append-only
+   record. So it reads at content weight, not as a footnote under a form. */
+.inputs .panel-head { align-items: center; margin-bottom: 0.35rem; }
+.inputs-toggle { display: inline-flex; align-items: center; gap: 0.3rem; }
+.inputs-toggle .icon-done { display: none; }
+.inputs.editing .inputs-toggle .icon-edit { display: none; }
+.inputs.editing .inputs-toggle .icon-done { display: inline-flex; }
+
+/* Editing is the deliberate act, so the two halves swap rather than stack. */
+.inputs .inputs-form { display: none; }
+.inputs.editing .inputs-form { display: block; }
+.inputs.editing .declared { display: none; }
+
+.declared-cols {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+}
+/* One hairline between the columns, from the grid gap — the split *is* the point,
+   so it is drawn rather than left to whitespace. */
+.declared-col { background: var(--card); padding: 0.9rem 1.1rem; }
+.declared-col.is-secret { background: var(--mutate-bg); }
+
 .declared-col h4 {
-  display: flex; align-items: center; gap: 0.35rem;
-  font-size: 0.8rem; font-weight: 700; margin: 0 0 0.4rem; color: var(--muted);
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  margin: 0 0 0.7rem; padding-bottom: 0.5rem; color: var(--muted);
+  border-bottom: 1px solid var(--line);
 }
-.declared-col.is-secret h4 { color: var(--mutate); }
-.declared-col.is-secret h4 .icon { flex: none; }
+.declared-col h4 .icon { flex: none; }
+.declared-col.is-secret h4 { color: var(--mutate); border-bottom-color: var(--mutate-line); }
 .declared-count {
-  margin-left: auto; font-weight: 700; font-size: 0.72rem;
-  background: var(--inset); color: var(--muted); border-radius: 999px; padding: 0 0.4rem;
+  margin-left: auto; font-weight: 700; font-size: 0.72rem; letter-spacing: 0;
+  background: var(--inset); color: var(--muted); border-radius: 999px; padding: 0.05rem 0.45rem;
 }
-.declared-list { list-style: none; margin: 0; padding: 0; font-size: 0.82rem; }
-.declared-list li { padding: 0.12rem 0; border-bottom: 1px solid var(--line); }
-.declared-list li:last-child { border-bottom: none; }
+.declared-col.is-secret .declared-count { background: var(--mutate-soft); color: var(--mutate); }
+
+/* The names are the content here, so they read at body size rather than as fine
+   print — you are checking each one, not glancing at a block. */
+.declared-list { list-style: none; margin: 0; padding: 0; font-size: 0.9rem; line-height: 1.9; }
+.declared-list li { display: flex; align-items: baseline; gap: 0.35rem; }
 .declared-col.is-secret .declared-list li { color: var(--mutate); }
-.declared .empty { font-size: 0.82rem; }
+.declared-list li.is-file .icon { flex: none; opacity: 0.7; }
+.declared-path { color: var(--muted); font-size: 0.8rem; margin-left: auto; }
+.declared-none { color: var(--muted); font-size: 0.85rem; font-style: italic; margin: 0; }
+.declared-note { font-size: 0.82rem; margin: 0.7rem 0 0; }
 
 /* ── Access — the rights ledger, one key per row ──────────────────────────────
    Reuses the .rows machinery like every other list: actor · box · reach · key ·

@@ -1,18 +1,77 @@
 <%# The app's declared inputs — env vars (some secret) and secret files. Names only; the
     operator supplies values at install. "Secrets are env vars": one list, a secret flag.
-    Saving is a recorded own-record act (apps#update). %>
-<div class="inputs" data-controller="env-editor">
-  <div class="kicker">Environment</div>
-  <p class="muted form-note">
-    The variables this app needs. Names only — values are supplied at install. Mark
-    the secret ones; those reach the box off-record.
-  </p>
+    Saving is a recorded own-record act (apps#update).
 
+    **The declaration read back is the resting state; editing is a deliberate act.** The
+    chip editor is quick to toggle and hard to audit, and the mistake that matters is a
+    variable that should have been marked secret and was not — its value is then written
+    to an append-only record and cannot be taken back. So what you see by default is the
+    auditable form: two alphabetical columns, split by what actually happens to the value.
+    Edit reveals the chips in place; the form stays in the DOM either way, so toggling
+    never discards an in-progress edit. %>
+<div class="inputs" data-controller="env-editor">
+  <div class="panel-head">
+    <div class="kicker">Environment</div>
+    <button type="button" class="btn-quiet panel-action inputs-toggle" data-action="env-editor#toggle">
+      <%= icon "pencil", size: 13, css_class: "icon icon-edit" %><%
+        %><%= icon "check", size: 13, css_class: "icon icon-done" %><%
+        %><span data-env-editor-target="toggleText">Edit</span>
+    </button>
+  </div>
+
+  <%# ── The declaration, read back ─────────────────────────────────────────────
+      Alphabetical so it can be scanned for a name, and split by consequence rather
+      than by the word "secret" — the failure is not knowing what the flag does. %>
+  <div class="declared">
+    <div class="declared-cols">
+      <div class="declared-col">
+        <h4><%= icon "file-text", size: 13 %> Written to the record
+          <span class="declared-count"><%= app.env_recorded.size %></span></h4>
+        <% if app.env_recorded.any? %>
+          <ul class="declared-list mono">
+            <% app.env_recorded.each do |key| %><li><%= key %></li><% end %>
+          </ul>
+        <% else %>
+          <p class="declared-none">No plain variables.</p>
+        <% end %>
+      </div>
+
+      <div class="declared-col is-secret">
+        <h4><%= icon "lock", size: 13 %> Never recorded
+          <span class="declared-count"><%= app.env_off_record.size + app.secret_files.size %></span></h4>
+        <% if app.env_off_record.any? || app.secret_files.any? %>
+          <ul class="declared-list mono">
+            <% app.env_off_record.each do |key| %><li><%= key %></li><% end %>
+            <%# Files are off-record by definition, so they belong in this column — marked
+                as files, because a path is a different kind of thing from a variable. %>
+            <% app.secret_files.sort_by { |f| f["name"].to_s }.each do |f| %>
+              <li class="is-file">
+                <%= icon "file-text", size: 11 %><%= f["name"] %>
+                <span class="declared-path"><%= f["path"] %></span>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="declared-none">No secrets.</p>
+        <% end %>
+      </div>
+    </div>
+    <p class="declared-note muted">
+      Values are supplied at install. Everything on the left is written to the record;
+      everything on the right reaches the box off-record and is never written down.
+    </p>
+  </div>
+
+  <%# ── The editor, revealed ──────────────────────────────────────────────────── %>
   <%= form_with model: app, class: "inputs-form" do %>
     <% if app.errors.any? %>
       <div class="flash alert"><%= app.errors.full_messages.to_sentence %></div>
     <% end %>
 
+    <div class="kicker sub">Variables</div>
+    <p class="muted form-note">
+      Names only. Click one to mark it secret — a secret reaches the box off-record.
+    </p>
     <div class="chips" data-env-editor-target="envChips">
       <% app.env.each_with_index do |e, i| %>
         <%= render "apps/env_chip", i: i, key: e["key"], secret: e["secret"] %>
@@ -25,7 +84,6 @@
         <%= icon "plus", size: 13 %> Add Variable
       </button>
     </div>
-    <p class="muted chip-hint">Click one to mark it secret.</p>
 
     <div class="kicker sub">Secret Files</div>
     <p class="muted form-note">
@@ -43,39 +101,6 @@
 
     <div class="form-actions"><%= submit_tag "Save Inputs", class: "btn mutate" %></div>
   <% end %>
-
-  <%# The same declaration a second time, read-only and sorted — the check on the
-      editor above. The chips are quick to toggle and hard to audit: the mistake that
-      matters is a variable that should have been secret and was not, whose value then
-      lands in an append-only record and cannot be taken back. Reading two sorted
-      columns is how you catch that; scanning a single unordered run is how you miss it.
-      The columns name the consequence rather than the word "secret", because the
-      failure is not knowing what the flag *does*. %>
-  <div class="declared">
-    <div class="kicker sub">As saved — check the split</div>
-    <div class="declared-cols">
-      <div class="declared-col">
-        <h4>Written to the record <span class="declared-count"><%= app.env_recorded.size %></span></h4>
-        <% if app.env_recorded.any? %>
-          <ul class="declared-list mono">
-            <% app.env_recorded.each do |key| %><li><%= key %></li><% end %>
-          </ul>
-        <% else %>
-          <p class="empty">None.</p>
-        <% end %>
-      </div>
-      <div class="declared-col is-secret">
-        <h4><%= icon "lock", size: 12 %> Never recorded <span class="declared-count"><%= app.env_off_record.size %></span></h4>
-        <% if app.env_off_record.any? %>
-          <ul class="declared-list mono">
-            <% app.env_off_record.each do |key| %><li><%= key %></li><% end %>
-          </ul>
-        <% else %>
-          <p class="empty">None.</p>
-        <% end %>
-      </div>
-    </div>
-  </div>
 
   <template data-env-editor-target="envTemplate"><%= render "apps/env_chip", i: "NEW", key: "KEYNAME", secret: false %></template>
   <template data-env-editor-target="fileTemplate"><%= render "apps/file_row", i: "NEW", name: nil, path: nil %></template>

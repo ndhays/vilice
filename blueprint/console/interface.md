@@ -377,15 +377,28 @@ enough to make a group read as a group.
   never agreed to. `Version` mirrors `validDigestPin` exactly, doubled-prefix case
   included, and the form carries the pattern so the browser catches it first.
 
-  **The env declaration is read back, sorted, in two columns.** The chip editor is
-  quick to toggle and hard to audit, and the mistake that matters is a variable that
-  should have been marked secret and was not: its value is then written to an
-  append-only record and cannot be taken back. So the same declaration appears a
-  second time beneath the editor — alphabetical, split into **Written to the record**
-  and **Never recorded**. Deliberately redundant: reading a sorted list is how that
-  mistake gets caught, and scanning an unordered run of chips is how it gets missed.
+  **The declaration read back *is* the Environment panel; editing is behind a
+  toggle.** The chip editor is quick to change and hard to audit, and the mistake
+  that matters is a variable that should have been marked secret and was not: its
+  value is then written to an append-only record and cannot be taken back. So the
+  resting state is the auditable form — two alphabetical columns, **Written to the
+  record** and **Never recorded**, split by what actually happens to the value, with
+  secret files counted in the second because they are off-record by definition.
+  Editing reveals the chips in place; both halves stay in the DOM, so toggling never
+  discards an in-progress edit.
+
   The columns name the *consequence* rather than the word "secret", because the
-  failure is not knowing what the flag does.
+  failure is not knowing what the flag does. They are drawn as one card split by a
+  hairline — the split is the whole point, so it is drawn rather than left to
+  whitespace — and the names read at body size, because you are checking each one
+  rather than glancing at a block.
+
+  **Tabs were considered and rejected** for this panel. The secret flag is a property
+  *of* a variable, not a category of variable, so splitting the two across tabs would
+  put the comparison you need to make on two screens you can never see at once —
+  which is the same list twice with the check removed. Hiding half a security-relevant
+  declaration behind a click makes not-noticing easier, and not-noticing is the
+  failure.
 - **Settings.**
 
 ## The one page pattern

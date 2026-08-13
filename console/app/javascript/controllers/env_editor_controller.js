@@ -5,10 +5,18 @@ import { Controller } from "@hotwired/stimulus"
 // Each chip/row carries hidden inputs that apps#app_params rebuilds into the stored lists —
 // so the server contract is just the indexed env_rows / secret_file_rows. Names only.
 export default class extends Controller {
-  static targets = ["envInput", "envChips", "envTemplate", "fileList", "fileTemplate"]
+  static targets = ["envInput", "envChips", "envTemplate", "fileList", "fileTemplate", "toggleText"]
 
   connect() {
     this.n = Date.now() // unique indices for new chips/rows, distinct from server-rendered
+  }
+
+  // The declaration read back is the resting state; editing is the deliberate act. A CSS
+  // class swaps which half is visible — the form stays in the DOM either way, so an
+  // in-progress edit is not thrown away by toggling, and it submits exactly as before.
+  toggle() {
+    const editing = this.element.classList.toggle("editing")
+    if (this.hasToggleTextTarget) this.toggleTextTarget.textContent = editing ? "Done" : "Edit"
   }
 
   // Enter (or comma) commits the typed name as a chip; preventDefault stops a form submit.
