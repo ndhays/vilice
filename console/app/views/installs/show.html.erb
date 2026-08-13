@@ -1,7 +1,7 @@
 <%# The trail follows tenancy when there is any: through the client that owns this
     work, else straight down from Installs. Placement stands on its own — an install
     with no project is not an install missing one (decisions/console-layers.md). %>
-<% content_for :title, [ @install.name, @project&.name, "Steward Console" ].compact.join(" — ") %>
+<% content_for :title, [ @install.name, @project&.name, "Steward" ].compact.join(" — ") %>
 
 <% if @project %>
   <%= breadcrumb [["Projects", projects_path], [@project.name, project_path(@project)], [@install.name, nil]] %>

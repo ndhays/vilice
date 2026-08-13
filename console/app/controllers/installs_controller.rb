@@ -12,9 +12,27 @@ class InstallsController < ApplicationController
 
   # Every placement in the fleet, tenant or no tenant. The project column is the lens
   # onto tenancy — blank where there isn't one, which is a legitimate state, not a gap.
+  #
+  # Searched and grouped like the fleet list: one `?q=` over what identifies a
+  # placement, and `?group=` over the axes it actually has. Both live in the query
+  # string, so a narrowed list is a link you can send.
   def index
-    @installs = Install.includes(:app, :version, :project, install_targets: :machine)
-                       .order(:name)
+    @q     = params[:q]
+    @group = params[:group].presence || InstallGroups::DEFAULT.key
+
+    installs  = @q.present? ? Install.search(@q) : Install.all
+    # Everything the row and the groupings read, preloaded: a list must not ask the
+    # database once per row. `install_targets: :machine` carries `Install#state`,
+    # which walks the targets and their boxes.
+    @installs = installs.order(:name)
+                        .includes(:app, :version, :project, :balancer,
+                                  install_targets: :machine)
+    rows      = @installs.to_a
+    @groups   = InstallGroups.apply(rows, @group)
+    @total    = Install.count
+    # The headline's two figures, counted off the rows already loaded.
+    @needs_look = rows.count(&:needs_a_look?)
+    @short      = rows.count { |i| i.placement_gap.negative? }
   end
 
   def new
@@ -28,7 +46,7 @@ class InstallsController < ApplicationController
     @install = Install.find(params[:id])
     @project = @install.project
     @targets = @install.install_targets.includes(:machine).where.not(status: "retired").order(:id)
-    @chain   = @install.events.latest.includes(:machine, :install).limit(20)
+    @chain   = @install.events.acts.latest.includes(:machine, :install).limit(20)
                        .map { |e| ChainItem.from_event(e) }
   end
 
@@ -138,7 +156,7 @@ class InstallsController < ApplicationController
       @install.save!
       @install.install_targets.create!(machine: @machine, status: "pending")
       Event.record!(
-        actor: Current.user.email_address, action: "added install",
+        actor: Current.user.email_address, action: "added",
         project: @project, install: @install, machine: @machine,
         summary: placement_summary
       )
@@ -151,7 +169,7 @@ class InstallsController < ApplicationController
 
   def placement_summary
     where = @project ? " to #{@project.name}" : ""
-    "Added #{@install.name}#{where} on #{@machine.name}"
+    "#{@install.name}#{where} on #{@machine.name}"
   end
 
   # Only the intention. `count` and `exposure` and nothing else — a spec change would ride
@@ -172,7 +190,7 @@ class InstallsController < ApplicationController
     return if before == after
 
     Event.record!(
-      actor: Current.user.email_address, action: "restated intention",
+      actor: Current.user.email_address, action: "restated",
       project: @install.project, install: @install,
       summary: "#{@install.name}: asked for #{before} → #{after}"
     )

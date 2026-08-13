@@ -60,8 +60,18 @@ Same `?q=` box over name + contact + labels; grid stays a grid. Sorting optional
   same scope; saved/named searches could follow.
 - **Record search** — **BUILT (Wave 2.3):** the `/record` forensics timeline reuses the
   label-selector grammar over actor/action/target (`Event.search`) + a `since` window.
-  The fleet list (machines/projects) is still the unbuilt half of this doc — when it
-  lands it should lift the same parser seam.
+  Since refined: the categorical axes became **dropdowns and pills**, and the grammar
+  stayed only so a hand-written or shared link keeps working. Nothing in the UI
+  requires knowing it.
+- **List search** — **BUILT** for Machines (`Searchable`, the shared label-selector
+  parser lifted out of `App.search`) and for **Installs** (`Install.search` — free text
+  over name / hostname / app / box, no selectors, because installs carry no labels and
+  every categorical axis is a grouping chip). Projects is the remaining lighter half.
+- **Grouping, not filtering** — **BUILT** and now the primitive both list pages are
+  built on (`Groupings`, shared by `MachineGroups`/`InstallGroups`). It answers most of
+  what the "sort" section below was reaching for: grouped by the axis that matters,
+  with counts, a list rarely needs a sortable column header. **Sort is not built and
+  may not be needed** — revisit only if a real fleet asks for it.
 - Keep URLs shareable (`q`/`sort`/`page` in the query string) — a filtered fleet
   view is a link you can send.
 

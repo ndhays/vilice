@@ -28,9 +28,9 @@ class ProjectMachinesController < ApplicationController
   def record_link(link, machine)
     ProjectMachine.transaction do
       link.save!
-      Event.record!(actor: Current.user.email_address, action: "added machine",
+      Event.record!(actor: Current.user.email_address, action: "added",
                     project: @project, machine: machine,
-                    summary: "Added #{machine.name} to #{@project.name}")
+                    summary: "#{machine.name} to #{@project.name}")
     end
     true
   rescue ActiveRecord::RecordInvalid

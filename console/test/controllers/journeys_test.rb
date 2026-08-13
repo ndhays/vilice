@@ -24,8 +24,10 @@ class JourneysTest < ActionDispatch::IntegrationTest
     get root_path
     assert_response :success
     assert_select "h1", /status/i
-    assert_select ".latest .chain-entry", 1            # live head of the record, in eyeline
-    assert_select ".section-link[href=?]", record_path
+    # Status is an inbox, not a feed: with nothing wrong it says so, and the record
+    # — including the act just written — stays at its own destination.
+    assert_select ".all-clear", /Nothing to report/
+    assert_select ".chain-entry", 0
 
     get record_path
     assert_response :success
@@ -39,6 +41,41 @@ class JourneysTest < ActionDispatch::IntegrationTest
 
     get settings_path
     assert_response :success
+  end
+
+  # The two streams stay apart on the surfaces that render a chain. A sample would
+  # otherwise take the head of the record and report only that a timer looked.
+  test "a status sample never reaches the Record page" do
+    sign_in_as @user
+    Event.record!(actor: "alice", action: "deployed", machine: @observer, summary: "deployed nginx")
+    Event.record!(actor: "snapshot.timer", action: "observed", machine: @observer,
+                  summary: "Status sample ingested")
+
+    get record_path
+    assert_response :success
+    assert_select ".chain-entry", 1
+    assert_select "body", text: /Status sample ingested/, count: 0
+  end
+
+  # blueprint/console/interface.md: "Every chain the UI renders goes through it."
+  # The Install and Project pages did not, so a routine sample could take a slot on
+  # the one page that is meant to show what *happened* to that install.
+  test "a status sample never reaches the Install or Project record either" do
+    sign_in_as @user
+    install = @project.installs.create!(name: "chain-app")
+    Event.record!(actor: "alice", action: "deployed", machine: @observer,
+                  project: @project, install: install, summary: "chain-app on obs")
+    Event.record!(actor: "snapshot.timer", action: "observed", machine: @observer,
+                  project: @project, install: install, summary: "Status sample ingested")
+
+    get install_path(install)
+    assert_response :success
+    assert_select ".chain-entry", 1
+    assert_select "body", text: /Status sample ingested/, count: 0
+
+    get project_path(@project)
+    assert_response :success
+    assert_select "body", text: /Status sample ingested/, count: 0
   end
 
   test "Status leads with installs that need a look and the machines behind them" do
@@ -88,12 +125,20 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_select ".integrity.ok"                      # the chain-integrity line
   end
 
+  # A POST, not a GET: it opens an SSH connection to the box, and Turbo prefetches
+  # links on hover — a read must not be something the pointer can trigger.
   test "refresh re-reads and redirects (observe, changes nothing)" do
     sign_in_as @user
     stub_returning(Steward::Observe, :status, { ok: true, data: {}, at: Time.current }) do
-      get refresh_machine_path(@observer)
+      post refresh_machine_path(@observer)
     end
     assert_redirected_to machine_path(@observer)
+  end
+
+  test "refresh is not reachable by GET, so a hover or a prefetch cannot fire it" do
+    sign_in_as @user
+    get refresh_machine_path(@observer)
+    assert_response :not_found
   end
 
   test "the ceremony previews the exact record line without writing anything" do
@@ -103,7 +148,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     end
     assert_response :success
     assert_select ".ceremony"
-    assert_select ".chain-entry.is-pending .chain-what", /applied updates/  # the would-be line
+    assert_select ".chain-entry.is-pending .chain-what", /updated op/  # the would-be line
     assert_select "form[action=?]", machine_mutation_path(@operator)           # Confirm POSTs
   end
 
@@ -134,7 +179,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     event = Event.latest.first
     assert_equal @operator.id, event.machine_id
     assert_equal @user.email_address, event.actor
-    assert_equal "applied updates", event.action
+    assert_equal "updated", event.action
     assert_equal "ok", event.outcome          # settled on the same entry
     assert event.finished_at.present?
   end
@@ -156,14 +201,53 @@ class JourneysTest < ActionDispatch::IntegrationTest
     install = project.installs.create!(name: "globex-api")
     install.install_targets.create!(machine: @operator, status: "running")
 
-    canned = { ok: true, data: { "data" => { "machine" => { "hostname" => "op.local" } } }, at: Time.current }
+    # The card lists what the *box* reports, and attaches our record to it — so the
+    # box has to report it.
+    apps   = [ { "name" => "globex-api", "image" => "ghcr.io/globex/api@sha256:abcdef0123456789" } ]
+    canned = { ok: true, at: Time.current,
+               data: { "data" => { "machine" => { "hostname" => "op.local" }, "apps" => apps } } }
     record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
     stub_observe(status: canned, record: record) { get machine_path(@operator) }
     assert_response :success
-    assert_select ".box-apps a[href=?]", install_path(install), text: "globex-api"
-    assert_select ".box-apps a", text: "Globex"        # the project it serves
+    assert_select ".app-box-rows a[href=?]", install_path(install), text: "globex-api"
+    assert_select ".app-box-rows a", text: "Globex"    # the project it serves
+    # The digest is truncated and copyable; the button carries the *whole* reference.
+    assert_select ".digest-chip[data-clipboard-text-value=?]", apps.first["image"]
+    assert_select ".digest-chip .digest-text", "@abcdef012345"
     assert_select ".acts-app-verbs", count: 0          # acting on an app happens from its project
     assert_select "a", text: "Re-deploy", count: 0
+  end
+
+  # Plan and reality are kept apart: an install we placed here that the box does not
+  # report back is a gap, stated and never closed on its own.
+  test "a placement the box does not report is named as a gap, not shown as running" do
+    sign_in_as @user
+    project = Project.create!(name: "Globex")
+    install = project.installs.create!(name: "ghost-api")
+    install.install_targets.create!(machine: @operator, status: "running")
+
+    canned = { ok: true, at: Time.current,
+               data: { "data" => { "machine" => { "hostname" => "op.local" }, "apps" => [] } } }
+    record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
+    stub_observe(status: canned, record: record) { get machine_path(@operator) }
+    assert_response :success
+    assert_select ".app-box-rows .row", count: 0
+    assert_select ".panel", /Placed here but not reported running/
+    assert_select ".panel a[href=?]", install_path(install), text: "ghost-api"
+  end
+
+  # …and the mirror of it: something the box runs that we hold no placement for. A
+  # machine-view deploy keeps no Install, so this is a normal state, not an alarm.
+  test "an app the box runs with no placement of ours says so" do
+    sign_in_as @user
+    apps   = [ { "name" => "stray", "image" => "docker.io/stray@sha256:0011223344556677" } ]
+    canned = { ok: true, at: Time.current,
+               data: { "data" => { "machine" => { "hostname" => "op.local" }, "apps" => apps } } }
+    record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
+    stub_observe(status: canned, record: record) { get machine_path(@operator) }
+    assert_response :success
+    assert_select ".app-box-rows .row-name", "stray"
+    assert_select ".app-box-rows .badge.unowned", "not in our record"
   end
 
   test "a lifecycle act targets an app on the machine and records the install" do

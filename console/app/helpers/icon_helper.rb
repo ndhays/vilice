@@ -6,6 +6,12 @@ module IconHelper
     "house"           => '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />',
     "map-pin"         => '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" />',
     "circle-dot"      => '<circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="1" />',
+    # Reachability reads as one solid dot at a glance, but the shape still carries the
+    # meaning on its own: filled / hollow / slashed. Colour is never the only channel
+    # (blueprint/design/tokens.md, WCAG 1.4.1).
+    "circle-filled"   => '<circle cx="12" cy="12" r="7.5" fill="currentColor" stroke="none" />',
+    "circle-hollow"   => '<circle cx="12" cy="12" r="7" stroke-width="2" />',
+    "circle-cut"      => '<circle cx="12" cy="12" r="7.5" fill="currentColor" stroke="none" /><path d="m7.4 16.6 9.2-9.2" stroke="var(--card)" stroke-width="2.2" />',
     "circle-help"     => '<circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" />',
     "hard-drive"      =>'<path d="M10 16h.01" /><path d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /><path d="M21.946 12.013H2.054" /><path d="M6 16h.01" />',
     "box"             => '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />',
@@ -27,6 +33,14 @@ module IconHelper
     "pencil"          => '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" />',
     "trash-2"         => '<path d="M10 11v6" /><path d="M14 11v6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />',
     "check"           => '<path d="M20 6 9 17l-5-5" />',
+    "chevron-down"    => '<path d="m6 9 6 6 6-6" />',
+    # Two ticks — "brought up to date". Deliberately not `circle-check`, which is
+    # already the settled-ok outcome; an act and its result must not share a glyph.
+    "check-check"     => '<path d="M18 6 7 17l-5-5" /><path d="m22 10-7.5 7.5L13 16" />',
+    # Two links of a chain, for an edge drawn between two things we hold.
+    "link"            => '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />',
+    # A launch, for the one act that puts new code in front of the world.
+    "rocket"          => '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91 0z" /><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" /><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />',
     "external-link"   => '<path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />',
     "arrow-left"      => '<path d="m12 19-7-7 7-7" /><path d="M19 12H5" />',
     "triangle-alert"  => '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" />',
@@ -59,6 +73,19 @@ module IconHelper
     "monitor-dot"     => '<path d="M12 17v4" /><path d="M22 12.307V15a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8.693" /><path d="M8 21h8" /><circle cx="19" cy="6" r="3" />',
     "monitor-cog"     => '<path d="M12 17v4" /><path d="m14.305 7.53.923-.382" /><path d="m15.228 4.852-.923-.383" /><path d="m16.852 3.228-.383-.924" /><path d="m16.852 8.772-.383.923" /><path d="m19.148 3.228.383-.924" /><path d="m19.53 9.696-.382-.924" /><path d="m20.772 4.852.924-.383" /><path d="m20.772 7.148.924.383" /><path d="M22 13v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7" /><path d="M8 21h8" /><circle cx="18" cy="6" r="3" />',
   }.freeze
+
+  # An icon that explains itself. Native `title` is slow, unstyled, and never
+  # appears on keyboard focus, so an icon carrying meaning uses the `.hint` tooltip
+  # (widgets.css) instead — the same one the form help glyphs already use.
+  #
+  # It is focusable and labelled, so the meaning reaches the keyboard and the
+  # screen reader too. An icon that only repeats adjacent text does not need this
+  # and should stay decorative (`aria-hidden`, which `icon` already emits).
+  def icon_tip(name, tip, size: 16, css_class: nil)
+    tag.span(icon(name, size: size),
+             class: [ "hint", css_class ].compact.join(" "),
+             data: { tip: tip }, tabindex: 0, role: "img", "aria-label": tip)
+  end
 
   def icon(name, size: 16, css_class: "icon", **html_attrs)
     inner = ICONS[name.to_s]

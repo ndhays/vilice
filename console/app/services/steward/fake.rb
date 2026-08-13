@@ -7,6 +7,9 @@
 # status|record|doctor --json` shapes, so the whole observe UI lights up exactly as
 # it would against a box.
 #
+# It fakes **reads only** (`ANSWERS` below). A mutate goes through the same
+# transport, and is refused rather than answered — see the note on `ANSWERS`.
+#
 # Off by default. Never active in production: `on?` requires both a dev/test env
 # *and* the STEWARD_FAKE_OBSERVE switch.
 #
@@ -23,18 +26,41 @@ module Steward
       Rails.env.local? && ENV["STEWARD_FAKE_OBSERVE"].present?
     end
 
+    # The read verbs this seam answers, and the whole of what it will answer.
+    #
+    # `STEWARD_FAKE_OBSERVE` fakes *observe* — the name is the contract. But the
+    # transport it hooks (`Steward.read`) is shared with `Steward::Mutate`, so
+    # without this list a canned `ok` would come back for a deploy as well. That is
+    # the one answer worse than none: `Mutate.run` would settle a witnessed Event as
+    # **succeeded** for an act that never reached a box — a record entry asserting
+    # something that did not happen, which is the quiet second answer this design
+    # rejects everywhere else.
+    #
+    # So anything else is refused rather than invented. A refusal is a normal failed
+    # read, so the pending Event settles honestly as failed with the reason on the
+    # entry, and `actors` (which this seam does not model) reads as a ledger that
+    # could not be read — never as a box where nobody has access.
+    ANSWERS = %w[ status record doctor ].freeze
+
     # The {ok:, data:, at:} result Steward.read would return, per verb.
     def envelope(machine, command)
+      at   = Time.current
+      verb = command.to_s.split.first
+
+      unless ANSWERS.include?(verb)
+        return { ok: false, at: at,
+                 error: "fake-observe answers #{ANSWERS.join(', ')} only — it will not fake " \
+                        "`#{verb}`. Unset STEWARD_FAKE_OBSERVE to reach a real box." }
+      end
+
       health = health_for(machine)
-      at = Time.current
       return { ok: false, error: "fake: #{machine.name} is unreachable", at: at } if health == "offline"
 
       data =
-        case command.to_s.split.first
+        case verb
         when "status" then { "ok" => true, "data" => status_data(machine, health) }
         when "record" then { "ok" => true, "data" => record_data(machine) }
         when "doctor" then { "ok" => true, "data" => { "checks" => [] } }
-        else { "ok" => true, "data" => {} }
         end
       { ok: true, data: data, at: at }
     end
@@ -55,6 +81,11 @@ module Steward
     def status_data(machine, health)
       b = BANDS.fetch(health, BANDS["ok"])
       {
+        # What the box was prepared as. A real box writes this once, at `prepare`, and
+        # cannot be re-prepared into the other role — so the fake reports the flag the
+        # seed set rather than letting it be toggled. Without this the whole dev fleet
+        # read as "not prepared", which is a state almost no real box is in.
+        "role"    => machine.balancer? ? "balancer" : "host",
         "machine" => {
           "machine_id"       => self_id_for(machine),
           "hostname"         => "#{machine.name}.fake",

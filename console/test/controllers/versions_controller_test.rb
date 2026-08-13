@@ -14,7 +14,7 @@ class VersionsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to @app
     assert_equal "v1", @app.reload.latest_version&.tag
-    assert_equal "added version", Event.latest.first.action
+    assert_equal "added", Event.latest.first.action
   end
 
   test "make latest flips the flag to exactly one, recorded" do
@@ -43,6 +43,6 @@ class VersionsControllerTest < ActionDispatch::IntegrationTest
         delete app_version_path(@app, v)
       end
     end
-    assert_equal "removed version", Event.latest.first.action
+    assert_equal "removed", Event.latest.first.action
   end
 end

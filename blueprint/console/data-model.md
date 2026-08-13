@@ -164,7 +164,7 @@ open heartbeat question.
     and neither does one on an unreachable box.
   - `Install#placement_gap` is `serving − count`, signed: negative is short, positive is
     more than asked for. `in_step?` is the zero case. **Deliberately not folded into
-    `install_status`** — an intention is not a state, and the UI keeps them apart.
+    `Install#state`** — an intention is not a state, and the UI keeps them apart.
   - **Two gates on `count`, both validations rather than form hints.** `exposure` must be
     `balanced`, *and* the install must be replicable. Either one alone pins it to 1, and
     the stateful gate wins even behind a balancer — a balancer in front of N diverging

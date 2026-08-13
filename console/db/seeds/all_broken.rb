@@ -32,21 +32,18 @@ install!(globex, "globex-site", machine: crit, image: "ghcr.io/globex/site@sha25
 label!(acme, "tier", "gold")
 label!(acme, "env", "prod")
 
-event!(actor: "operator@console.test", action: "linked machine", machine: gone, project: acme,
-       summary: "Linked web-1 to Acme", at: 10.days.ago)
+event!(actor: "operator@console.test", action: "linked", machine: gone, project: acme,
+       summary: "web-1 to Acme", at: 10.days.ago)
 event!(actor: "ci-deployer", action: "deployed", machine: gone, install: failed, project: acme,
-       summary: "Deploy acme-api failed: health check never passed", at: 2.days.ago,
+       summary: "acme-api on web-1", at: 2.days.ago,
        outcome: "failed", detail: "container exited 1 before /up returned 200")
-event!(actor: "operator@console.test", action: "applied updates", machine: warn, project: acme,
-       summary: "apt upgrade on db-1 failed", at: 1.day.ago,
+event!(actor: "operator@console.test", action: "updated", machine: warn, project: acme,
+       summary: "db-1", at: 1.day.ago,
        outcome: "failed", detail: "sudo: a password is required")
 event!(actor: "ci-deployer", action: "deployed", machine: crit, install: drifted, project: acme,
-       summary: "Deploying acme-web @sha256:want999", at: 20.minutes.ago,
+       summary: "acme-web @sha256:want999", at: 20.minutes.ago,
        outcome: "pending") # issued, never settled — honest "outcome unknown"
-event!(actor: "snapshot.timer", action: "observed", machine: warn,
-       summary: "Status sample ingested", at: 3.minutes.ago)
 
-library_app!("nginx", image: "docker.io/nginxinc/nginx-unprivileged", tag: "v1",
-             port: 8080, health: "/", description: "Unprivileged nginx — the unprivileged-port app contract demo.")
+library!
 
 report!

@@ -1,16 +1,31 @@
-<% content_for :title, "Access — Steward Console" %>
+<% content_for :title, "Access — Steward" %>
 
-<h1><%= icon "key-round", size: 20 %> Access</h1>
+<%= page_header "Access" do %>
+  <%# Re-reads every box. A POST: it opens an SSH connection per machine, and a GET
+      must be safe to repeat unasked. %>
+  <%= button_to refresh_access_path(q: @q.presence, group: @group), class: "btn" do %>
+    <%= safe_join([ icon("rotate-cw", size: 14), "Re-read" ], " ") %>
+  <% end %>
+<% end %>
 
-<p class="muted">
-  Who may act on each box, at what scope. Read straight from the box's
-  <code>authorized_keys</code> — that file <em>is</em> the ledger, so this page asks
-  rather than remembers.
+<p class="headline">
+  <%= pluralize(@total, "key") %> on <%= pluralize(@boxes_read, "box", plural: "boxes") %><%
+    %><% if @ungated.positive? %> · <span class="bad"><%= @ungated %> not written by Steward</span><% end %><%
+    %><% if @unreadable.any? %> · <span class="muted"><%= pluralize(@unreadable.size, "ledger") %> unreadable</span><% end %><%
+    %><% if @ungated.zero? && @unreadable.empty? && @total.positive? %> · <span class="ok">every key is scoped</span><% end %>
 </p>
 
-<% if @unpinned_total.positive? %>
+<p class="muted addr">
+  Read straight from <%= @paths.any? ? safe_join(@paths.map { |p| tag.code(p) }, ", ") : tag.code("authorized_keys") %>
+  on each box — that file <em>is</em> the ledger, so this page asks rather than remembers.
+</p>
+
+<%# The one hole un-bypassability cannot close from inside, because it is made
+    outside. The grouping puts these first, but the *reason* has to be said somewhere,
+    and under the Box or Actor axis they are scattered through the list. %>
+<% if @ungated.positive? %>
   <div class="panel mutate">
-    <h2><%= icon "triangle-alert", size: 16 %> <%= pluralize(@unpinned_total, "key") %> not written by Steward</h2>
+    <h2><%= icon "triangle-alert", size: 16 %> <%= pluralize(@ungated, "key") %> not written by Steward</h2>
     <p>
       These carry no forced command, so whoever holds them reaches the box without
       passing the gate — nothing they do is scoped, and nothing they do is recorded.
@@ -19,45 +34,58 @@
   </div>
 <% end %>
 
-<% if @machines.empty? %>
-  <p class="empty">No machines yet. <%= link_to "Add one", new_machine_path %>.</p>
+<%# Boxes whose ledger could not be read. Their own panel, never rows: they have no
+    lines to show, and an empty list must never be mistaken for "nobody has access". %>
+<% if @unreadable.any? %>
+  <div class="panel readonly">
+    <h2><%= icon "circle-cut", size: 15 %> <%= pluralize(@unreadable.size, "ledger") %> could not be read</h2>
+    <ul class="unreadable">
+      <% @unreadable.each do |machine, error| %>
+        <li><%= link_to machine.name, machine %> <span class="muted">— <%= error %></span></li>
+      <% end %>
+    </ul>
+    <p class="note muted">Their grants are <strong>unknown</strong>, not absent.</p>
+  </div>
 <% end %>
 
-<% @ledgers.each do |machine, ledger| %>
-  <div class="panel observe">
-    <h2><%= link_to machine.name, machine %></h2>
+<% if Machine.none? %>
+  <p class="empty">No machines yet. <%= link_to "Add one", new_machine_path %>.</p>
+<% else %>
+  <%= render layout: "shared/list_toolbar",
+        locals: { search_url: access_path, q: @q, placeholder: "actor, box, or fingerprint",
+                  selectable: false, hidden: { group: @group } } do %><% end %>
 
-    <% if !ledger.reachable? %>
-      <p class="muted">
-        <%= icon "unplug", size: 15 %>
-        Unreachable — <%= ledger.error %>. The grants below are unknown, not absent.
-      </p>
-    <% elsif ledger.actors.empty? %>
-      <p class="muted">No scoped keys — nobody can reach this box through Steward.</p>
-    <% else %>
-      <table class="ledger">
-        <thead>
-          <tr><th>Actor</th><th>Scope</th><th>Key</th><th>Fingerprint</th></tr>
-        </thead>
-        <tbody>
-          <% ledger.unpinned.each do |a| %>
-            <tr class="unpinned">
-              <td colspan="2"><strong>not a Steward grant</strong></td>
-              <td><%= a["key_type"].presence || "unreadable" %></td>
-              <td><code><%= a["fingerprint"].presence || a["raw"] %></code></td>
-            </tr>
-          <% end %>
-          <% ledger.granted.each do |a| %>
-            <tr>
-              <td><%= a["client"] %></td>
-              <td><span class="scope-<%= a["scope"] %>"><%= a["scope"] %></span></td>
-              <td><%= a["key_type"] %><%= " · #{a["comment"]}" if a["comment"].present? %></td>
-              <td><code><%= a["fingerprint"] %></code></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-      <p class="muted"><%= ledger.path %></p>
+  <%# Group by — the same primitive the fleet and installs lists are built on. Each
+      choice is a link, so a grouped view has its own URL and can be shared. %>
+  <div class="action-chips filter-row" role="group" aria-label="Group the keys by">
+    <span class="chip-label muted">Group by</span>
+    <% AccessGroups::ALL.each do |grouping| %>
+      <%= link_to access_path(group: grouping.key, q: @q.presence),
+            class: "chip #{'on' if @group == grouping.key}",
+            "aria-pressed": (@group == grouping.key).to_s do %>
+        <%= grouping.label %>
+      <% end %>
     <% end %>
   </div>
+
+  <% if @lines.any? %>
+    <div class="grouped-list" key="access-<%= @group %>">
+      <% @groups.each do |heading, lines| %>
+        <h2 class="group-head">
+          <span class="group-name"><%= heading %></span>
+          <span class="group-count"><%= lines.size %></span>
+        </h2>
+        <ul class="rows access-rows">
+          <%= render partial: "access/line", collection: lines, as: :line,
+                locals: { group: @group } %>
+        </ul>
+      <% end %>
+    </div>
+  <% elsif @q.present? %>
+    <p class="empty">No keys match this search. <%= link_to "Clear it", access_path %>.</p>
+  <% elsif @unreadable.any? %>
+    <p class="empty">No ledger could be read, so nothing can be shown here yet.</p>
+  <% else %>
+    <p class="empty">No scoped keys anywhere — nobody can reach these boxes through Steward.</p>
+  <% end %>
 <% end %>

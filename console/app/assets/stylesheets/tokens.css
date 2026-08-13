@@ -37,138 +37,151 @@
 }
 
 /*
- * Theme tokens. One semantic layer; skins/dark themes override these variables
- * and nothing else has to change. The default skin is light; [data-theme="dark"]
- * (set on <html> by the toggle, or by the OS when no choice is stored) swaps the
- * surfaces while keeping the observe/mutate accent language intact.
- */
-/*
+ * ── Themes ────────────────────────────────────────────────────────────────────
+ *
+ * Two axes, both stored on the user and rendered onto <html> by the layout
+ * (app/models/theme.rb):
+ *
+ *   data-theme="<name>"   the token set    — `steward` is the default
+ *   data-mode="light|dark" which half of it — resolved from the OS when the
+ *                          operator's preference is `system`
+ *
+ * Adding a theme is two steps and touches nothing else: one entry in `Theme::ALL`,
+ * one pair of blocks here. Every theme must declare *every* name below — a theme
+ * that omits one inherits the steward light value and will look broken in dark.
+ * Nothing outside this file learns a theme's name.
+ *
  * The palette has three jobs, kept apart on purpose:
- *   accent  — interactive identity: links, buttons, active nav, focus. Auburn
- *             in light, neon in dark. This is what you click.
+ *   accent  — interactive identity: links, buttons, active nav, focus. This is
+ *             what you click.
  *   observe — the read side of the spine (calm blue). Panels, kickers, badges.
  *   mutate  — the write side of the spine (witnessed amber). Panels, badges.
- * Plus warm neutrals (light) / cool neutrals (dark) so the accent reads
- * intentional, and a fixed health scale (green/yellow/red).
+ * Plus neutrals so the accent reads intentional, and a fixed health scale.
  */
-:root {
-  /* neutral grayscale — boring on purpose; the red is a hint, not the mood */
-  --ink: #18181b;          /* primary text  (16:1 on bg) */
-  --muted: #52525b;        /* secondary text (7.4:1 on bg — AA) */
-  --line: #e4e4e7;         /* hairlines, borders */
-  --bg: #fafafa;           /* page */
-  --card: #ffffff;         /* raised surface */
-  --inset: #f4f4f5;        /* recessed surface (metrics, code) */
 
-  /* Shared with the docs site — see blueprint/design/tokens.md. Every stack ends
-   * in a system fallback, so no webfont is load-bearing. */
+:root {
+  /* Not themed — shared by every theme, and by the docs site. */
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo,
     "Cascadia Code", "Liberation Mono", monospace;
 
-  /* The shared accent: the switch in the mark, and nothing else here yet. It is
-   * 1.7:1 on white, so it is graphic-only on a light surface — never text, never
-   * a link. The console's interactive colour stays --accent. */
+  /* The mark's switch. One value everywhere, in every theme and both modes —
+   * blueprint/design/tokens.md. It is 1.7:1 on white, so on a light surface it is
+   * graphic only: a bar, a rule, the switch, a focus halo. Never text. */
   --brand-yellow: #f2c200;
+}
 
-  /* accent — a serious admin red, used sparingly (5.9:1 on white — AA) */
-  --accent: #b91c1c;
-  --accent-bright: #991b1b; /* hover — darker, stays AA */
-  --accent-soft: #fef2f2;   /* wash / hover fill */
+/*
+ * ── steward (default) ─────────────────────────────────────────────────────────
+ * Light: near-black on near-white with the one yellow accent — the docs site's
+ * palette, and the canonical values in blueprint/design/tokens.md. Yellow stays
+ * graphic; the interactive colour is ink, so links and buttons carry contrast on
+ * their own and the yellow is left to mark position (the active rail item, the
+ * focus halo). That is what makes it read clean rather than branded-at.
+ */
+:root,
+[data-theme="steward"] {
+  /* neutrals — the site's paper stack */
+  --ink: #121212;          /* 17.9:1 on --bg */
+  --muted: #565451;        /*  7.2:1 — AA */
+  --line: #e4e2dd;
+  --bg: #fafaf8;
+  --card: #ffffff;
+  --inset: #f2f1ee;
+
+  /* accent — ink, with yellow doing the graphic work beside it. Deep gold is the
+   * one yellow-family colour that may carry text on light (5.8:1). */
+  --accent: #121212;
+  --accent-bright: #000000;
+  --accent-soft: #fdf7e3;   /* yellow wash for a hover fill */
+  --accent-text: #7a5f00;   /* 5.8:1 — yellow that is allowed to be read */
 
   /* observe — calm steel-blue, kept off the chrome (5.6:1 — AA) */
   --observe: #2f6396;
   --observe-soft: #eef3f8;
-  /* mutate — witnessed amber (5.2:1 — AA) */
+  /* mutate — witnessed amber (5.2:1 — AA). Warmer and redder than the brand gold
+   * on purpose: "this will be recorded" must never be mistaken for decoration. */
   --mutate: #b45309;
   --mutate-bg: #fdf6ec;
   --mutate-line: #ecca8e;
   --mutate-soft: #f7ead0;
 
-  --ok: #157f3c;           /* 4.8:1 — AA */
-  --bad: #b91c1c;
-  --bad-soft: #fef2f2;
-  --warn: #b45309;
+  --ok: #146b34;           /* 6.3:1 — the site's value */
+  --bad: #a81e14;          /* 7.0:1 */
+  --bad-soft: #fdf2f1;
+  --warn: #8a5a00;         /* 5.7:1 */
 
-  /* health dots — graphical (need 3:1, not text contrast) */
-  --dot-green: #16a34a;
+  /* Health dots — graphical, so they answer to the 3:1 non-text rule rather than
+   * to text contrast, and can carry more saturation than a word ever could. Green
+   * and red are the two anyone actually scans for, so they are the most saturated
+   * things on a light page. Measured on --bg: green 3.4:1, red 4.4:1. */
+  --dot-green: #00a63f;
   --dot-yellow: #b88407;
-  --dot-red: #d23f31;
+  --dot-red: #e02718;
   --dot-gray: #9ca3af;
 
-  --raw-bg: #1e1e22;       /* neutral dark code surface */
-  --raw-ink: #e4e4e7;
+  --raw-bg: #121212;       /* the terminal surface — where yellow is text-safe */
+  --raw-ink: #e8e6e1;
 
-  /* the sidebar rail — a neutral near-black admin rail, red spark on the
-   * active item (the admin-console signature beside a bright canvas) */
-  --rail-bg: #18181b;
-  --rail-ink: #e4e4e7;
-  --rail-muted: #a1a1aa;   /* 7:1 on rail — AA */
-  --rail-line: #27272a;
-  --rail-active-bg: rgba(255, 255, 255, 0.08);
+  /* the rail — the black half of black-and-yellow, with the yellow spark marking
+   * where you are. Graphic use, beside a label that already says it. */
+  --rail-bg: #121212;
+  --rail-ink: #e8e6e1;
+  --rail-muted: #9a968e;   /* 6.4:1 on rail — AA */
+  --rail-line: #2c2a28;
+  --rail-active-bg: rgba(242, 194, 0, 0.12);
   --rail-active-ink: #ffffff;
-  --rail-accent: #ef4444;  /* red spark on the active item */
+  --rail-accent: #f2c200;
 }
 
-[data-theme="dark"] {
-  /* cool near-black neutrals */
-  --ink: #e5e8ec;
-  --muted: #8b94a1;
-  --line: #262c35;
-  --bg: #0e1116;
-  --card: #161a21;
-  --inset: #1c212a;
+/*
+ * Dark: the same black and yellow with the voltage turned up. The accent goes
+ * neon yellow, mutate goes orange, health goes neon green, and the rail spark
+ * goes purple — four accents that stay in their own lanes, so the observe/mutate
+ * language survives the change of mood. Blue stays blue: observe means the same
+ * thing in both modes, and a mode that re-assigns meaning is a different theme.
+ */
+[data-theme="steward"][data-mode="dark"] {
+  --ink: #e8e6e1;
+  --muted: #9aa0a8;        /* 6.2:1 on --bg — AA */
+  --line: #262a31;
+  --bg: #0f1114;
+  --card: #16191e;
+  --inset: #1b1f25;
 
-  /* accent — neon lime-green: the terminal-coder signal you click */
-  --accent: #74e88c;
-  --accent-bright: #9bf2ab;
-  --accent-soft: #112619;
+  /* accent — the brand yellow, brightened until it can carry text (13.9:1) */
+  --accent: #ffd633;
+  --accent-bright: #ffe066;
+  --accent-soft: #2a2410;
+  --accent-text: #ffd633;
 
-  /* observe — a brighter blue, distinct from both the lime accent and amber */
-  --observe: #8ec0ff;
+  --observe: #7fb3ff;
   --observe-soft: #16233d;
-  --mutate: #fbbf24;
-  --mutate-bg: #241d0e;
-  --mutate-line: #7c5b12;
-  --mutate-soft: #2e2410;
+  --mutate: #ff9f45;       /* orange — apart from the yellow accent by hue, not just value */
+  --mutate-bg: #241a0e;
+  --mutate-line: #7c5312;
+  --mutate-soft: #2e2110;
 
-  --ok: #4ade80;
-  --bad: #f87171;
+  --ok: #3ddc84;
+  --bad: #ff7a70;
   --bad-soft: #2a1416;
-  --warn: #fbbf24;
+  --warn: #ff9f45;
 
-  --dot-green: #34d399;
-  --dot-yellow: #facc15;
-  --dot-red: #f87171;
+  /* Same job in the dark: the two you scan for get the voltage. */
+  --dot-green: #2ee87f;
+  --dot-yellow: #ffd633;
+  --dot-red: #ff5a4a;
   --dot-gray: #6b7280;
 
-  --raw-bg: #05080d;
+  --raw-bg: #08090c;
   --raw-ink: #cdd6e3;
 
-  /* rail — near-black with a magenta spark; lime + magenta = the coder duotone */
-  --rail-bg: #0a0d11;
+  --rail-bg: #08090c;
   --rail-ink: #cdd6e3;
-  --rail-muted: #828e9e;   /* 5.9:1 on rail — AA */
-  --rail-line: #1a1f27;
-  --rail-active-bg: rgba(232, 121, 249, 0.12);
-  --rail-active-ink: #f4e9fb;
-  --rail-accent: #e879f9;  /* magenta glow on the active item */
-}
-
-/* Follow the OS when the operator hasn't picked a theme explicitly. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    --ink: #e5e8ec; --muted: #8b94a1; --line: #262c35;
-    --bg: #0e1116; --card: #161a21; --inset: #1c212a;
-    --accent: #74e88c; --accent-bright: #9bf2ab; --accent-soft: #112619;
-    --observe: #8ec0ff; --observe-soft: #16233d;
-    --mutate: #fbbf24; --mutate-bg: #241d0e; --mutate-line: #7c5b12; --mutate-soft: #2e2410;
-    --ok: #4ade80; --bad: #f87171; --bad-soft: #2a1416; --warn: #fbbf24;
-    --dot-green: #34d399; --dot-yellow: #facc15; --dot-red: #f87171; --dot-gray: #6b7280;
-    --raw-bg: #05080d; --raw-ink: #cdd6e3;
-    --rail-bg: #0a0d11; --rail-ink: #cdd6e3; --rail-muted: #828e9e;
-    --rail-line: #1a1f27; --rail-active-bg: rgba(232, 121, 249, 0.12);
-    --rail-active-ink: #f4e9fb; --rail-accent: #e879f9;
-  }
+  --rail-muted: #8b939e;   /* 6.1:1 on rail — AA */
+  --rail-line: #1a1d23;
+  --rail-active-bg: rgba(192, 132, 252, 0.14);
+  --rail-active-ink: #f3e9fd;
+  --rail-accent: #c084fc;  /* purple spark on the active item */
 }

@@ -10,44 +10,45 @@
 # Granting and revoking happen on the box (or on a machine page), never here.
 class AccessController < ApplicationController
   def index
-    @machines = Machine.order(:name)
-    @refresh  = params[:refresh].present?
+    @q     = params[:q].to_s.strip
+    @group = params[:group].presence || AccessGroups::DEFAULT.key
 
-    # One read per box, through the 30s observe cache. A box we cannot reach reports
-    # itself as unreachable rather than vanishing from the page — a ledger you cannot
-    # currently read is not the same as an empty one, and the difference matters here
-    # more than anywhere.
-    @ledgers = @machines.to_h do |machine|
-      [ machine, Ledger.new(machine, Steward::Observe.actors(machine, refresh: @refresh)) ]
+    # One read per box, through the 30s observe cache.
+    reads = Machine.order(:name).to_h { |m| [ m, Steward::Observe.actors(m) ] }
+
+    # A box we cannot reach keeps a place on the page rather than vanishing from it.
+    # A ledger you cannot currently read is not the same as an empty one, and the
+    # difference matters here more than anywhere: the dangerous misreading is "no
+    # lines shown" meaning "nobody has access". So the unreadable boxes are their own
+    # panel, never rows — they have no lines to show, and inventing a row for them
+    # would be inventing an answer.
+    @unreadable = reads.reject { |_, r| r.is_a?(Hash) && r[:ok] }
+                       .map { |m, r| [ m, r.try(:[], :error).presence || "could not read the ledger" ] }
+
+    readable = reads.select { |_, r| r.is_a?(Hash) && r[:ok] }
+    lines = readable.flat_map do |machine, result|
+      Array(result.dig(:data, "data", "actors")).map { |a| AccessLine.from(machine, a) }
     end
 
-    @unpinned_total = @ledgers.values.sum(&:unpinned_count)
+    # Counted before the search, because the headline is the state of the fleet, not
+    # the state of the query.
+    @total       = lines.size
+    @boxes_read  = readable.size
+    @ungated     = lines.count(&:ungated?)
+    # Where the ledger lives, so an operator can go look for themselves. Collected
+    # rather than assumed: it is derived from the steward user's home on each box.
+    @paths       = readable.values.filter_map { |r| r.dig(:data, "data", "path") }.uniq
+
+    lines   = lines.select { |l| l.matches?(@q) }
+    @lines  = lines
+    @groups = AccessGroups.apply(lines, @group)
   end
 
-  # Ledger is a small read-model over one `actors --json` reply. It exists so the view
-  # has no logic in it and so an unreachable box has a shape rather than a nil.
-  class Ledger
-    attr_reader :machine, :result
-
-    def initialize(machine, result)
-      @machine = machine
-      @result  = result || {}
-    end
-
-    def reachable? = result[:ok].present?
-
-    def error = result[:error].presence || "could not read the ledger"
-
-    def actors
-      return [] unless reachable?
-      Array(result.dig(:data, "data", "actors"))
-    end
-
-    def granted  = actors.select { |a| a["pinned"] }
-    def unpinned = actors.reject { |a| a["pinned"] }
-    def unpinned_count = unpinned.size
-
-    # Where the ledger lives on the box, so an operator can go look for themselves.
-    def path = result.dig(:data, "data", "path")
+  # Re-read every box's ledger, bypassing the 30s cache. A POST, not a GET, for the
+  # same reason machines#refresh is: it opens an SSH connection to every box in the
+  # fleet, and a GET must be safe to repeat unasked.
+  def refresh
+    Machine.find_each { |m| Steward::Observe.actors(m, refresh: true) }
+    redirect_to access_path(q: params[:q].presence, group: params[:group].presence)
   end
 end

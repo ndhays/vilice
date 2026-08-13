@@ -50,16 +50,14 @@ end
 
 if Event.none?
   install = acme.installs.first
-  event!(actor: "operator@console.test", action: "linked machine",
-         machine: devbox, project: acme, summary: "Linked devbox to Acme", at: 3.days.ago)
-  event!(actor: "operator@console.test", action: "authorized client",
-         machine: devbox, project: acme, summary: "Granted operate to ci-deployer", at: 2.days.ago)
+  event!(actor: "operator@console.test", action: "linked",
+         machine: devbox, project: acme, summary: "devbox to Acme", at: 3.days.ago)
+  event!(actor: "operator@console.test", action: "authorized",
+         machine: devbox, project: acme, summary: "ci-deployer at operate on devbox", at: 2.days.ago)
   event!(actor: "ci-deployer", action: "deployed", machine: devbox,
-         install: install, project: acme, summary: "Deployed acme-web @sha256:demo", at: 26.hours.ago)
+         install: install, project: acme, summary: "acme-web @sha256:demo", at: 26.hours.ago)
   event!(actor: "ci-deployer", action: "restarted", machine: devbox,
-         install: install, project: acme, summary: "Restarted acme-web", at: 90.minutes.ago)
-  event!(actor: "snapshot.timer", action: "observed", machine: devbox,
-         summary: "Status sample ingested", at: 5.minutes.ago)
+         install: install, project: acme, summary: "acme-web on devbox", at: 90.minutes.ago)
 end
 
 # A Steward Console-own act on this-box, so its chain shows the *merge*: this authored
@@ -67,8 +65,8 @@ end
 # Also an app on the box, so the mutate ceremony's lifecycle acts have a target.
 if (tb = Machine.find_by(name: "this-box"))
   if tb.events.none?
-    event!(actor: "operator@console.test", action: "linked machine",
-           machine: tb, summary: "Registered this-box", at: 2.days.ago)
+    event!(actor: "operator@console.test", action: "linked",
+           machine: tb, summary: "this-box", at: 2.days.ago)
   end
   if tb.installs.none?
     app = acme.installs.find_or_create_by!(name: "console") do |i|
@@ -96,10 +94,8 @@ if (this_box = Machine.find_by(name: "this-box"))
   label!(this_box, "shared")
 end
 
-# App Library — a couple of curated definitions, each with a version (latest).
-library_app!("nginx", image: "docker.io/nginxinc/nginx-unprivileged", tag: "v1",
-             port: 8080, health: "/",
-             description: "Unprivileged nginx — the unprivileged-port app contract demo.")
+# App Library — the shared catalog, plus the self-deploy proof this scenario is for.
+library!
 library_app!("console", image: "ghcr.io/console/console", tag: "v0.1",
              port: 3000, health: "/up",
              description: "Steward Console itself — the self-deploy proof.")

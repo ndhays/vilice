@@ -14,6 +14,16 @@ class Event < ApplicationRecord
   scope :latest, -> { order(at: :desc) }
   scope :since,  ->(time) { where(at: time..) }
 
+  # The record is two streams and the UI keeps them apart
+  # (blueprint/console/interface.md): discrete *acts* are the chain's spine;
+  # continuous health is a *status series*, and `Snapshot` is where it belongs.
+  # A routine sample is not an act — it reports that we looked, not that anything
+  # happened — so it never enters the chain. Matched on the exact verb, both
+  # spellings: Steward Console writes "observed", a box record entry says "observe".
+  STATUS_ACTIONS = %w[ observe observed ].freeze
+
+  scope :acts, -> { where.not(action: STATUS_ACTIONS) }
+
   # Forensics filters over the record. Mirror the label-selector grammar used on
   # the fleet list (decisions/open/list-search.md): `key=value` tokens narrow by
   # actor / action / target, bare words do a substring match across actor,

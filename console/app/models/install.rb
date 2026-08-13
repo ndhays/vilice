@@ -78,11 +78,61 @@ class Install < ApplicationRecord
   end
 
   # The gap, signed: negative is short of the intention, positive is more than was asked
-  # for. Zero is in step. Deliberately not folded into `install_status` — an intention is
-  # not a state, and the UI has to keep them visibly apart.
+  # for. Zero is in step. Deliberately not folded into `state` — an intention is not a
+  # state, and the UI has to keep them visibly apart.
   def placement_gap = serving_count - count
 
   def in_step? = placement_gap.zero?
+
+  # The rolled-up state of this placement — worst-but-actionable wins across live
+  # targets, in the order below. One word, shared by the row's leading glyph, the
+  # Status page's exception list, and the Installs list's grouping, so all three
+  # agree by construction rather than by three copies of the same ladder.
+  #
+  # HONESTY NOTE: built from *stored* state (the last deploy outcome, last-seen
+  # reachability, recorded image drift), never a fresh probe. Until persistent
+  # ingestion lands (#6 in decisions/open/ui-roadmap.md), "running" means "last we
+  # knew". The precise word rides the row's tooltip; nothing here may overclaim
+  # truth we don't have.
+  #
+  # `placement_gap` is deliberately *not* folded in: an intention is not a state
+  # (decisions/drift-is-surfaced-never-closed.md), and the UI keeps them apart.
+  STATES = %w[failed unreachable drift deploying pending running unplaced].freeze
+
+  # The states that need a person. Transient states (deploying/pending) and healthy
+  # ones stay quiet — they resolve on their own or are already fine. Read by the
+  # Status page's exception list and by the Installs headline, so "needs a look"
+  # means one thing in both places.
+  EXCEPTION_STATES = %w[failed unreachable drift].freeze
+
+  def needs_a_look? = EXCEPTION_STATES.include?(state)
+
+  def state
+    targets = install_targets.reject(&:install_retired?)
+    return "unplaced" if targets.empty?
+    return "failed"      if targets.any?(&:install_failed?)
+    return "unreachable" if targets.any? { |t| t.install_running? && t.machine.seen_unreachable? }
+    return "drift"       if targets.any? { |t| t.install_running? && t.current_image.present? && !t.in_sync? }
+    return "deploying"   if targets.any?(&:install_deploying?)
+    return "pending"     if targets.any?(&:install_pending?)
+    "running"
+  end
+
+  # Free-text list search over what identifies a placement: its own name, the
+  # hostname it serves, the app it came from, and the box it runs on. No selector
+  # grammar here — installs carry no labels, and the categorical axes (project, app,
+  # exposure, edge, state) are the *grouping*, so a selector would be a second way
+  # to ask a question the chips already answer. See decisions/open/list-search.md.
+  def self.search(query)
+    query = query.to_s.strip
+    return all if query.blank?
+
+    like = "%#{query}%"
+    where(id: joins("LEFT JOIN apps ON apps.id = installs.app_id")
+              .where("installs.name LIKE :q OR installs.hostname LIKE :q OR apps.name LIKE :q", q: like)
+              .select(:id))
+      .or(where(id: joins(install_targets: :machine).where("machines.name LIKE ?", like).select(:id)))
+  end
 
   # The desired-state envelope Steward's `deploy` reads on stdin
   # (steward/deploy.go `deployEnvelope`/`appSpec`). The Install *is* the spec; a

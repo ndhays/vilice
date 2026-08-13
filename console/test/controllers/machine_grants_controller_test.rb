@@ -16,7 +16,7 @@ class MachineGrantsControllerTest < ActionDispatch::IntegrationTest
       post machine_grants_path(@machine), params: { project_id: @guest.id }
     end
     assert @machine.reload.permits?(@guest)
-    assert_equal "shared machine", Event.latest.first.action
+    assert_equal "granted", Event.latest.first.action
     assert ProjectMachine.new(project: @guest, machine: @machine).valid?
   end
 
@@ -29,6 +29,6 @@ class MachineGrantsControllerTest < ActionDispatch::IntegrationTest
       end
     end
     refute @machine.reload.permits?(@guest)
-    assert_equal "unshared machine", Event.latest.first.action
+    assert_equal "revoked", Event.latest.first.action
   end
 end

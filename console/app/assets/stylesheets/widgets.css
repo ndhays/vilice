@@ -12,6 +12,29 @@
 .btn.sm { padding: 0.25rem 0.65rem; font-size: 0.85rem; border-radius: 7px; }
 
 pre.raw { background: var(--raw-bg); color: var(--raw-ink); padding: 1rem; border-radius: 8px; overflow: auto; font-size: 0.82rem; }
+
+/* ── A command to run, with its copy button ──────────────────────────────────
+   Every command shown here is meant to be pasted into a shell on a box, and an
+   `authorize` line carries a whole public key — selecting one by hand is exactly
+   the operation that half-succeeds. The button sits top-right, inside the block. */
+.cmd-block { position: relative; }
+.cmd-block pre.raw.cmd { padding-right: 3rem; margin: 0; }
+.cmd-copy {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.85rem; height: 1.85rem; padding: 0; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06); color: var(--raw-ink);
+  /* Faintly visible at rest, per the docs site's rule — never hidden until hover,
+     because a control you cannot see is a control you do not know exists. */
+  opacity: 0.55; transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+.cmd-block:hover .cmd-copy, .cmd-copy:focus-visible { opacity: 1; }
+.cmd-copy:hover { border-color: rgba(255, 255, 255, 0.4); }
+.cmd-copy .cmd-copy-done { display: none; }
+.cmd-copy.copied { opacity: 1; color: var(--dot-green); border-color: var(--dot-green); }
+.cmd-copy.copied .cmd-copy-idle { display: none; }
+.cmd-copy.copied .cmd-copy-done { display: inline-flex; }
 .flash { padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
 .flash.notice { background: var(--observe-soft); color: var(--observe); }
 .flash.alert { background: var(--bad-soft); color: var(--bad); }
@@ -20,14 +43,16 @@ pre.raw { background: var(--raw-bg); color: var(--raw-ink); padding: 1rem; borde
 .star { color: #eab308; }
 .starred-heading { display: flex; align-items: center; gap: 0.4rem; }
 
-/* Status "all clear" — calm, reassuring; the default state of a healthy fleet. */
+/* Status "nothing to report" — the healthy fleet's whole page, so it is drawn as
+   the destination rather than as a notice: centred, roomy, one big green check.
+   An empty inbox should look like an achievement, not like a missing list. */
 .all-clear {
-  display: flex; align-items: center; gap: 0.75rem;
-  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-  padding: 1.1rem 1.35rem; color: var(--ink);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 0.15rem; padding: 4rem 1.35rem 4.5rem; color: var(--ink);
 }
-.all-clear > .icon { color: var(--ok); flex: none; }
-.all-clear .muted { font-size: 0.9rem; margin-top: 0.1rem; }
+.all-clear-mark { color: var(--ok); margin-bottom: 0.75rem; }
+.all-clear-head { font-size: 1.35rem; font-weight: 600; margin: 0; }
+.all-clear-sub { color: var(--muted); font-size: 0.9rem; margin: 0; }
 
 /*
  * ── Mono: machine truth ─────────────────────────────────────────────────
@@ -59,14 +84,13 @@ pre.raw { background: var(--raw-bg); color: var(--raw-ink); padding: 1rem; borde
   display: flex; align-items: center; gap: 0.5rem;
   color: var(--muted); font-size: 0.95rem; margin: 0.15rem 0 1.25rem;
 }
-.health-line.warn { color: var(--warn); }
-.health-line.crit { color: var(--bad); font-weight: 600; }
+.health-line.warn { color: var(--warn); font-weight: 600; }
+/* Unreachable is not a footnote: it is the whole answer for this box, and every
+   other thing on the page is qualified by it. */
+.health-line.crit { color: var(--bad); font-weight: 700; font-size: 1.15rem; }
 
-/* Hardening posture line (observe panel) — same calm shape as the health line. */
-.hardening-line {
-  display: flex; align-items: center; gap: 0.5rem;
-  color: var(--muted); font-size: 0.9rem; margin: 0.15rem 0 0.75rem;
-}
+/* Hardening posture line lives in record.css, with the panel it sits in. It used to
+   be duplicated here, and this copy — loaded later — quietly won. */
 .hardening-line .muted { opacity: 0.75; }
 
 /* "You are here" — the box Steward Console itself runs on (identity, not observe). */
@@ -121,7 +145,8 @@ h1 .button_to { margin: 0 0 0 0.2rem; display: inline-flex; vertical-align: midd
   font: inherit; font-size: 0.85rem; font-weight: 600; line-height: 1;
   padding: 0.35rem 0.7rem; border-radius: 8px; cursor: pointer;
   border: 1px solid var(--line); background: var(--card); color: var(--ink);
-  transition: transform 0.1s ease, border-color 0.15s ease, color 0.15s ease;
+  /* Colour only — blueprint/design/tokens.md allows no transform transitions. */
+  transition: border-color 0.15s ease, color 0.15s ease;
 }
 .star-btn .icon { color: var(--muted); flex: none; transition: color 0.15s ease; }
 .star-btn:hover { border-color: #eab308; }
@@ -147,13 +172,15 @@ h1 .button_to { margin: 0 0 0 0.2rem; display: inline-flex; vertical-align: midd
 .badge .icon { vertical-align: -0.12em; margin-right: 0.2rem; }
 
 /* ── Record filter ──────────────────────────────────────────────────────────
-   Selector-grammar search over actor/action/target + a time window. A filtered
-   record is a shareable link. */
+   Who / what / for whom / when, plus free text. The dropdowns carry the three
+   dimensions worth a click, so the text box is only text and no longer has to be
+   wide enough to hold a selector expression. A filtered record is a shareable
+   link. */
 .filter-bar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-/* Search box and time dropdown share a height so the row reads as one control. */
-.filter-search, .filter-range { min-height: 2.4rem; }
+/* Search box and dropdowns share a height so the row reads as one control. */
+.filter-search, .filter-select { min-height: 2.4rem; }
 .filter-search {
-  display: flex; align-items: center; gap: 0.4rem; flex: 1 1 18rem;
+  display: flex; align-items: center; gap: 0.4rem; flex: 0 1 20rem;
   border: 1px solid var(--line); border-radius: 8px; background: var(--card);
   padding: 0 0.6rem; color: var(--muted);
 }
@@ -163,17 +190,26 @@ h1 .button_to { margin: 0 0 0 0.2rem; display: inline-flex; vertical-align: midd
 }
 .filter-search input:focus-visible { outline: none; }
 .filter-search:focus-within { border-color: var(--accent); }
-.filter-range {
+.filter-select {
   font: inherit; font-size: 0.9rem; padding: 0 0.5rem; color: var(--ink);
   border: 1px solid var(--line); border-radius: 8px; background: var(--card); cursor: pointer;
+  max-width: 11rem;
 }
 .filter-clear { font-size: 0.85rem; color: var(--muted); }
 .filter-clear:hover { color: var(--accent); }
 .result-count { font-size: 0.85rem; margin: 0 0 0.75rem; }
 
+/* Action filter — toggle pills, multi-select, under a label that says what the
+ * row of pills is *for*. Without it a bare row of verbs reads as a list of things
+ * that happened rather than as a control. */
+.action-filter { display: flex; align-items: baseline; gap: 0.6rem; flex-basis: 100%; margin-top: 0.15rem; }
+.filter-label {
+  flex: none; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted); padding-top: 0.25rem;
+}
 /* Action filter — toggle pills, multi-select. The label is the pill; its hidden
  * checkbox carries the state. Picked pills light up in the accent. */
-.action-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; flex-basis: 100%; }
+.action-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; flex: 1; }
 .action-chips .chip {
   display: inline-flex; align-items: center;
   font-size: 0.82rem; padding: 0.2rem 0.65rem; border-radius: 999px; cursor: pointer;
@@ -217,10 +253,8 @@ details.menu > summary::-webkit-details-marker { display: none; }
 .btn:disabled, .btn-quiet:disabled { opacity: 0.45; cursor: default; }
 .btn:disabled:hover, .btn-quiet:disabled:hover { background: var(--card); border-color: var(--line); color: var(--muted); }
 
-/* Status "Latest" — the live head of the record, in eyeline on the home page. A
- * small-caps section heading with an optional trailing link. (Distinct from
+/* A small-caps section heading with an optional trailing link. (Distinct from
  * layout.css's .section-head, which is an h2 + action — they used to collide.) */
-.latest { margin-top: 1.75rem; }
 /* Spacing between the Status page's exception blocks (installs, then machines). */
 .status-section { margin-top: 1.75rem; }
 .section-kicker {
@@ -252,6 +286,9 @@ details.menu > summary::-webkit-details-marker { display: none; }
   position: relative; color: var(--muted); cursor: pointer;
   display: inline-flex; vertical-align: middle;
 }
+/* The -2px lifts the small help glyph onto a text baseline. A row glyph sits in a
+   flex cell with no baseline to meet, so it would just look off-centre — the rows
+   opt out below (lists.css). */
 .hint svg { display: block; margin-top: -2px; }
 .hint::after {
   content: attr(data-tip);

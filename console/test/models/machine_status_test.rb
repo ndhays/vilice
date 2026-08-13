@@ -138,7 +138,7 @@ class MachineStatusTest < ActiveSupport::TestCase
     refute s.online?
     assert_equal :offline, s.health
     assert_nil s.mem_percent
-    assert_equal "Can't reach this box", s.narrative
+    assert_equal "Unreachable", s.narrative
     assert_equal "ssh exited 255", s.error
   end
 end

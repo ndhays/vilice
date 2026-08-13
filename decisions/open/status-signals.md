@@ -2,7 +2,7 @@
 
 > The Status page ("Now") leads with **exceptions**: installs that are `failed`,
 > `unreachable`, or in `drift`, with the boxes behind them. The page and its rollups
-> ([`install_status`](../../console/app/helpers/application_helper.rb)) are built —
+> ([`Install#state`](../../console/app/models/install.rb)) are built —
 > but an audit of what's actually *persisted* found that most of those signals could
 > never fire. This is the thread that tracks closing that gap. As each piece settles,
 > its truth migrates into `decisions/` (the why) and `blueprint/` (the canonical

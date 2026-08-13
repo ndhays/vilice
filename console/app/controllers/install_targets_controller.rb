@@ -54,9 +54,9 @@ class InstallTargetsController < ApplicationController
     Install.transaction do
       @install.install_targets.create!(machine: machine, status: "pending")
       Event.record!(
-        actor: Current.user.email_address, action: "placed install",
+        actor: Current.user.email_address, action: "placed",
         project: @install.project, install: @install, machine: machine,
-        summary: "Placed #{@install.name} on #{machine.name}"
+        summary: "#{@install.name} on #{machine.name}"
       )
     end
     true

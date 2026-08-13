@@ -1,4 +1,4 @@
-<% content_for :title, "Settings — Steward Console" %>
+<% content_for :title, "Settings — Steward" %>
 
 <h1>Settings</h1>
 
@@ -22,6 +22,28 @@
     <%= safe_join([ icon("save", size: 14), "Save Settings" ], " ") %>
   <% end %>
 <% end %>
+
+<%# Appearance — yours, not the fleet's, so it saves on its own. A theme is a set of
+    token values; mode picks its light or dark half, or follows your system. %>
+<div class="card setting appearance">
+  <div class="title">Appearance</div>
+  <%= form_with url: settings_appearance_path, method: :patch, class: "stack-form" do |f| %>
+    <label class="field"><span>Theme</span>
+      <%= f.select :theme,
+            Theme::ALL.map { |t| [ t.label, t.name ] }, { selected: @user.theme } %>
+    </label>
+    <p class="note muted"><%= Theme.find(@user.theme).blurb %></p>
+    <label class="field"><span>Mode</span>
+      <%= f.select :mode,
+            Theme::MODES.map { |m| [ Theme::MODE_LABELS[m], m ] }, { selected: @user.mode } %>
+    </label>
+    <p class="note muted">Every theme has a light and a dark half. Following your
+      system is the default.</p>
+    <%= button_tag class: "btn" do %>
+      <%= safe_join([ icon("save", size: 14), "Save Appearance" ], " ") %>
+    <% end %>
+  <% end %>
+</div>
 
 <%# Account — change your own password (separate form from the fleet settings above). %>
 <div class="card setting account">
@@ -54,7 +76,7 @@
 
 <section class="about">
   <h2>About</h2>
-  <p class="muted"><strong>Steward Console</strong> is the control plane for your app's fleet — projects, machines,
+  <p class="muted"><strong>Steward</strong> is the control plane for your app's fleet — projects, machines,
     and apps in one place, with every change written to an accountable record.<br/><br/>
     <strong>Steward</strong> is its command-line companion: a single Go binary (no daemon)
     that runs scoped deploys and operations against your machines.</p>

@@ -18,7 +18,7 @@ class LabelsControllerTest < ActionDispatch::IntegrationTest
 
     e = Event.latest.first
     assert_equal @user.email_address, e.actor
-    assert_equal "added label", e.action
+    assert_equal "added", e.action
     assert_equal @machine, e.machine
   end
 
@@ -37,7 +37,7 @@ class LabelsControllerTest < ActionDispatch::IntegrationTest
       end
     end
     e = Event.latest.first
-    assert_equal "removed label", e.action
+    assert_equal "removed", e.action
     assert_equal @user.email_address, e.actor
   end
 end

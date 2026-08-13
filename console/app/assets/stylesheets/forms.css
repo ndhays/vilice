@@ -38,12 +38,19 @@
   background: var(--card); border: 1px solid var(--line); border-radius: 12px;
 }
 .auth-card .stack-form { max-width: none; }
-.auth-card .form-actions { justify-content: space-between; flex-wrap: wrap; row-gap: 0.6rem; margin-top: 0.9rem; }
-.auth-brand { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem; font-size: 1.15rem; font-weight: 700; }
-.auth-brand .mark { color: var(--accent); display: inline-flex; }
+/* The card has one action, so it takes the full width rather than sitting in a
+   row beside the link — nothing is competing with it for the press. */
+.auth-submit {
+  display: block; width: 100%; margin-top: 1.1rem;
+  padding: 0.55rem 0.65rem; font-size: 0.9rem; border-radius: 8px;
+}
+.auth-brand { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem; font-size: 1.3rem; }
+/* The mark takes the page's ink, per blueprint/design/logo.md — only the door and
+   the switch are yellow, and they bring it themselves. */
+.auth-brand .mark { color: var(--ink); display: inline-flex; }
 /* Optional heading under the brand (reset pages) — sits closer to the mark. */
 .auth-title { margin: -0.5rem 0 1.1rem; font-size: 1rem; font-weight: 600; }
-.auth-link { font-size: 0.85rem; color: var(--muted); }
+.auth-link { display: block; margin-top: 0.9rem; text-align: center; font-size: 0.85rem; color: var(--muted); }
 .auth-link:hover { color: var(--accent); }
 
 /* ── Install form — the progressive-reveal flow + its catalog picker ──────── */

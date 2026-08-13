@@ -1,4 +1,4 @@
-<% content_for :title, "Set New Password — Steward Console" %>
+<% content_for :title, "Set New Password — Steward" %>
 
 <div class="auth">
   <div class="auth-card">
@@ -13,12 +13,8 @@
         <%= form.password_field :password_confirmation, required: true,
               autocomplete: "new-password", maxlength: 72, placeholder: "••••••••" %></label>
 
-      <div class="form-actions">
-        <%= button_tag class: "btn mutate" do %>
-          <%= safe_join([ icon("save", size: 14), "Save" ], " ") %>
-        <% end %>
-        <%= link_to "Back to sign in", new_session_path, class: "auth-link" %>
-      </div>
+      <%= button_tag "Save New Password", class: "btn auth-submit" %>
+      <%= link_to "Back to sign in", new_session_path, class: "auth-link" %>
     <% end %>
   </div>
 </div>

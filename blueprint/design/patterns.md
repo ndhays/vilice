@@ -101,15 +101,37 @@ actually type on the right, `1fr / 3fr` so the command has the room. It stacks b
 `640px`, figure first. The figure is the mark as line art on `currentColor`, so it
 takes the page's ink and there is no second copy of the asset in another colour.
 
+Under the mark sits the **version badge**: the terminal surface shrunk to a pill,
+`--term-bg` with the number in `--font-mono` and `--term-yellow` — the one accent
+that is contrast-safe as text, and it lives here for the same reason the terminal
+block does. The label *Current version* sits above the number rather than beside it,
+both centred: the figure column is 180px at the page's full width, and the two set on
+one line measure 204px — they overhang the card. Stacked they are 145px, and the
+label is still a word, so no meaning is carried by colour alone. It reads as a
+caption on the mark, which is what a version is. Both the badge and the
+install command beside it are filled
+from `VERSION` at build time (`{{version}}`, replaced by `site/versions.js`); a docs page
+claiming a release that is not the current one is a failure mode worth removing
+rather than remembering.
+
 **The tool list.** Other people's projects, one per row on a hairline. Each line is
 the name and a plain sentence saying what the tool is *for* — never how it compares
 to Steward. A comparison table would be a claim about software we do not maintain.
 
+Indented one step (`--space-6`, and `--space-4` below `640px`), so the run of rows
+reads as a block belonging to the sentence above it rather than as more prose at the
+same left edge. The indent is padding inside `--measure`, so the block still ends
+where the paragraphs do: inset, not pushed out.
+
 The page uses it twice, and the same rule holds both times: once for what Steward
-**stands on** (OpenSSH, systemd, Podman, Caddy, restic, and the hardening tools),
-and once for what a reader might **choose instead**. Naming the substrate is not a
-disclaimer — a tool that hides what it drives is asking to be trusted rather than
-checked, and every one of these writes its own plain config that outlives us.
+**stands on** (*Dependencies* — OpenSSH, systemd, Podman, Caddy, restic, and the
+hardening tools), and once for what a reader might **choose instead**
+(*Inspiration*). Each run gets its own `h3` **and a tagline**, so the two lists are
+told apart at a glance rather than by inferring it from a lead-in sentence — the
+heading is one word, and the tagline carries the qualifier the heading would
+otherwise have to swallow. Naming the substrate is not a disclaimer — a tool that
+hides what it drives is asking to be trusted rather than checked, and every one of
+these writes its own plain config that outlives us.
 
 **The provisional card.** `--inset` fill inside a 2px dashed `--line-strong`
 border. Dashed because that is how scaffolding has read since long before the web,
@@ -136,8 +158,10 @@ change here — the page cannot show one the binary does not have.
 
 ## Page chrome
 
-**Header.** The lockup on the left, primary nav on the right. Nav items are
-`--text-sm`, `--ink-soft`, and go `--ink` on hover with a `--brand-yellow`
+**Header.** The lockup on the left, primary nav on the right: Home, Overview,
+Commands, Console, Source. Home is named rather than left to the mark — a lockup is
+a convention, and a reader who does not know it should not have to guess. Nav items
+are `--text-sm`, `--ink-soft`, and go `--ink` on hover with a `--brand-yellow`
 underline. One hairline under the whole thing.
 
 **Banner.** Full width, above the header, for a notice that must not be missed —
@@ -159,6 +183,14 @@ too long to track. Tables and terminal blocks may use the full `--content` width
 Headings: `h2` takes a hairline above it and generous space; `h3` does not. Both
 carry an automatic anchor id (the site slugifies the heading text). Long pages open
 with a contents line of `·`-separated anchor links.
+
+**Taglines.** A heading may take a `.tagline` under it: the heading names the section
+in as few words as possible, the tagline says it in a few more. Always `--ink-soft`,
+always hugging its heading — the heading's own bottom margin is the gap, so no
+negative margin holds the pair together — and always **scaled to that heading**:
+`--text-sm` under a section `h3`, `--text-xl` under the hero's `h1`. The pair earns
+its place when the honest single-line heading would be a heading with a conjunction
+in it; when the heading stands alone, it stands alone.
 
 Links in prose are `--ink` with a `--brand-yellow` underline at `0.15em` offset,
 thickening on hover. The text does the contrast work; the yellow is the accent.

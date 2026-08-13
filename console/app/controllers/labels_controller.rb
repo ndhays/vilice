@@ -7,7 +7,7 @@ class LabelsController < ApplicationController
     labelable = find_labelable
     label = labelable.labels.new(label_params)
 
-    if record(action: "added label", label: label, on: labelable) { label.save }
+    if record(action: "added", label: label, on: labelable) { label.save }
       redirect_back fallback_location: labelable, notice: "Added label #{label} (recorded)."
     else
       redirect_back fallback_location: labelable, alert: label.errors.full_messages.to_sentence
@@ -17,7 +17,7 @@ class LabelsController < ApplicationController
   def destroy
     label = Label.find(params[:id])
     labelable = label.labelable
-    record(action: "removed label", label: label, on: labelable) { label.destroy! }
+    record(action: "removed", label: label, on: labelable) { label.destroy! }
     redirect_back fallback_location: labelable, notice: "Removed label #{label} (recorded)."
   end
 
@@ -48,7 +48,7 @@ class LabelsController < ApplicationController
         actor: Current.user.email_address, action: action,
         machine: on.is_a?(Machine) ? on : nil,
         project: on.is_a?(Project) ? on : nil,
-        summary: "#{action.capitalize} #{label} #{preposition} #{on.name}",
+        summary: "#{label} #{preposition} #{on.name}",
         raw: { key: label.key, value: label.value }
       )
     end

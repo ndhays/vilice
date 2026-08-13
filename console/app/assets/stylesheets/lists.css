@@ -17,6 +17,25 @@
 }
 .rows .row:last-child { border-bottom: none; }
 .rows .row:hover { background: var(--inset); }
+
+/* ── The whole row is the link ────────────────────────────────────────────────
+   Every row already leads somewhere, and the row already lights up on hover, so
+   asking for the name specifically was a smaller target than the row looked.
+   The name stays the *real* anchor — it keeps the href, the focus ring and the
+   accessible name — and its ::after is stretched across the row, so a click
+   anywhere in the row lands on it. No JS and no clickable <div>.
+   The overlay measures against .row, so the cells must stay unpositioned. */
+.rows .row-name::after { content: ""; position: absolute; inset: 0; }
+/* Everything else that can be clicked or hovered is lifted back above the
+   overlay: the owner/project links, the outbound hostname, row buttons and the
+   select box — and anything carrying a tooltip, including the leading status
+   glyph, which sits *before* the name in the DOM and would otherwise lose its
+   hover to the overlay. */
+.rows .row a:not(.row-name), .rows .row button, .rows .row input,
+.rows .row form, .rows .row .row-icon,
+.rows .row [title] { position: relative; z-index: 1; }
+.rows .row .hint { position: relative; z-index: 2; }
+
 .rows .cell-name { display: flex; align-items: center; gap: 0.4rem; min-width: 0; }
 .rows .row-icon { color: var(--muted); display: inline-flex; flex: none; }
 .rows .row-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -31,10 +50,74 @@
 /* Machines — a calm compact row: identity + reachability glyph + name · labels
    (compact) · owning project · last seen · scope glyph (a quiet trailing marker).
    Detail is a click in. */
-.rows.machine-rows { grid-template-columns: minmax(7rem, max-content) minmax(1rem, 1fr) max-content max-content max-content; }
-.rows .cell-scope { justify-self: end; display: inline-flex; }
-.rows .scope-ico { display: inline-flex; flex: none; color: var(--muted); }
+.rows.machine-rows { grid-template-columns: minmax(7rem, max-content) minmax(1rem, 1fr) max-content max-content max-content max-content; }
+.rows .cell-scope, .rows .cell-role { justify-self: end; display: inline-flex; align-items: center; }
+.rows .scope-ico, .rows .role-ico { display: inline-flex; flex: none; color: var(--muted); }
+.rows .role-ico { margin-right: 0.1rem; }
+/* Row glyphs are centred in a flex cell, not set on a text baseline, so they drop
+   the .hint baseline nudge that would otherwise ride them 2px high. */
+.rows .hint { align-items: center; }
+.rows .hint svg { margin-top: 0; }
+
+/* ── Fleet view: a balancer and the hosts it fronts ───────────────────────────
+   The relationship is drawn, not described — an indent and a hairline elbow, in
+   the same --line the rest of the page uses for structure. Static geometry only:
+   nothing moves, so the motion rule is untouched. The tree is decoration over an
+   order the model already fixed (MachineGroups' `within`), so a screen reader
+   still meets the balancer first and the hosts after it. */
+.rows.fleet-rows .row.is-edge .row-name { font-weight: 700; }
+.rows.fleet-rows .row.is-behind { padding-left: 2.1rem; }
+/* The trunk: a vertical hairline running down through the fronted boxes. It stops
+   halfway on the last one, so the tree closes instead of trailing off. */
+.rows.fleet-rows .row.is-behind::before {
+  content: ""; position: absolute; left: 1.15rem; top: 0; bottom: 0;
+  border-left: 1px solid var(--line);
+}
+.rows.fleet-rows .row.is-behind:last-child::before { bottom: 50%; }
+/* The elbow into each host. */
+.rows.fleet-rows .row.is-behind::after {
+  content: ""; position: absolute; left: 1.15rem; top: 50%; width: 0.55rem;
+  border-top: 1px solid var(--line);
+}
+/* "behind edge-01" — the edge fronting this box, trailing its name. Quiet: it is
+   context, not the row's protagonist, and it is absent on a box behind nothing. */
+.rows .behind-edge { color: var(--muted); font-size: 0.8rem; white-space: nowrap; flex: none; }
+.rows .behind-edge a { color: var(--muted); }
+.rows .behind-edge a:hover { color: var(--accent); }
+
 .rows .cell-owner { font-size: 0.85rem; white-space: nowrap; justify-self: end; }
+
+/* ── The headline: one line of what this layer owns, above its list ───────────
+   Facts only, and only this ring's facts. Colour is never alone — each figure is
+   read with its own word beside it. */
+.headline { margin: -0.3rem 0 1rem; color: var(--muted); font-size: 0.9rem; }
+.headline .bad { color: var(--bad); font-weight: 600; }
+.headline .ok  { color: var(--ok); }
+
+/* ── Grouped lists ────────────────────────────────────────────────────────────
+   A heading per group with its count, then the ordinary rows. The fade is
+   opacity only, 150ms — nothing moves layout, so the canonical motion rule in
+   blueprint/design/tokens.md holds as written, and prefers-reduced-motion in
+   base.css switches it off. */
+.grouped-list { animation: list-in 0.15s ease; }
+@keyframes list-in { from { opacity: 0; } to { opacity: 1; } }
+
+.group-head {
+  display: flex; align-items: baseline; gap: 0.5rem;
+  margin: 1.3rem 0 0.4rem; font-size: 0.78rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+}
+.group-head:first-child { margin-top: 0.2rem; }
+.group-head .group-count {
+  font-weight: 400; letter-spacing: 0; text-transform: none;
+  color: var(--muted); background: var(--inset);
+  border-radius: 999px; padding: 0.05rem 0.45rem; font-size: 0.75rem;
+}
+/* The "Group by" lead-in sits with the chips but is not one. */
+.action-chips .chip-label {
+  align-self: center; font-size: 0.78rem; text-transform: uppercase;
+  letter-spacing: 0.06em; margin-right: 0.15rem;
+}
 .rows .cell-owner .owner-link { color: var(--muted); }
 .rows .cell-owner .owner-link:hover { color: var(--fg); }
 /* Compact labels: smaller, with a quiet "+N" overflow. */
@@ -152,16 +235,96 @@
 
 /* The leading status glyph carries its own colour (overrides .row-icon's muted).
    Built from stored state — see ApplicationHelper::INSTALL_STATUS. */
-.rows .row-icon.status-ico.ok    { color: var(--ok); }
-.rows .row-icon.status-ico.warn  { color: var(--warn); }
-.rows .row-icon.status-ico.bad   { color: var(--bad); }
-.rows .row-icon.status-ico.muted { color: var(--muted); }
+/* The dot tokens, not the text ones: these are graphical, so they answer to the
+   3:1 rule and are free to be more saturated than text may be. Slightly larger
+   than the other row glyphs, because reachability is the thing you scan for. */
+.rows .row-icon.status-ico.ok    { color: var(--dot-green); }
+.rows .row-icon.status-ico.warn  { color: var(--dot-yellow); }
+.rows .row-icon.status-ico.bad   { color: var(--dot-red); }
+.rows .row-icon.status-ico.muted { color: var(--dot-gray); }
 
 /* Hostname links out to the live site (new tab). The external-link glyph sits
    just after the host, quiet until hover. */
 .cell-host .host-link { display: inline-flex; align-items: center; gap: 0.25rem; }
 .cell-host .host-link svg { color: var(--muted); }
 .cell-host .host-link:hover svg { color: inherit; }
+
+/* ── Apps on a box — what the box reports it is running ───────────────────────
+   The reason the box exists, so it gets the room: name, whose it is, the digest it
+   is actually running, and the one act that belongs here. Reuses .rows. */
+.rows.app-box-rows { grid-template-columns: minmax(8rem, max-content) max-content minmax(6rem, 1fr) max-content; }
+.rows.app-box-rows .row { padding: 0.55rem 0.95rem; min-height: 3rem; align-items: center; }
+.rows .cell-image { min-width: 0; justify-self: start; }
+
+/* An image reference, shown short and copyable. The full ref is 80+ characters and
+   was shouldering the columns either side of it out of the row; the digest is what
+   you actually compare. Click copies the *whole* reference, never the truncation. */
+.digest-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem; max-width: 100%;
+  font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);
+  background: var(--inset); border: 1px solid var(--line); border-radius: 6px;
+  padding: 0.15rem 0.45rem; cursor: pointer;
+}
+.digest-chip:hover { border-color: var(--accent); color: var(--ink); }
+.digest-chip .digest-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.digest-chip .digest-copy, .digest-chip .digest-done { flex: none; opacity: 0.7; }
+/* The controller adds `copied` for 1.2s — swap the glyph rather than move anything. */
+.digest-chip .digest-done { display: none; }
+.digest-chip.copied .digest-copy { display: none; }
+.digest-chip.copied .digest-done { display: inline-flex; opacity: 1; color: var(--ok); }
+.digest-chip.copied { border-color: var(--ok); color: var(--ok); }
+
+/* ── The machine header — identity on one line, facts on the next ─────────────
+   It was five stacked blocks before the page said anything about the box. */
+.machine-head { display: flex; align-items: center; flex-wrap: wrap; gap: 0.45rem; }
+.machine-facts { margin-bottom: 0.5rem; }
+
+/* Role — the box's own word for what it is, and the first thing worth knowing. It
+   is a statement, never a control: `prepare` sets it once and will not convert it. */
+.badge.role-host { color: var(--observe); }
+.badge.role-balancer { color: var(--mutate); }
+.badge.role-unprepared { color: var(--warn); }
+.badge.role-unknown { color: var(--muted); }
+.badge.role-host .icon, .badge.role-balancer .icon,
+.badge.role-host, .badge.role-balancer { display: inline-flex; align-items: center; gap: 0.25rem; }
+
+/* ── Access — the rights ledger, one key per row ──────────────────────────────
+   Reuses the .rows machinery like every other list: actor · box · reach · key ·
+   fingerprint. It replaced a raw <table> per machine, which had no styling at all
+   and could only ever answer "who can act on this box". */
+.rows.access-rows {
+  grid-template-columns:
+    minmax(8rem, max-content) max-content max-content minmax(4rem, 1fr) max-content;
+}
+.rows.access-rows .row { padding: 0.55rem 0.95rem; min-height: 2.9rem; align-items: center; }
+.rows .cell-box, .rows .cell-reach { font-size: 0.85rem; white-space: nowrap; }
+.rows .cell-key { color: var(--muted); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The fingerprint is long and the same shape every time, so it trails at a fixed
+   size with the full value on the title — it is for comparing, not for reading. */
+.rows .cell-print {
+  color: var(--muted); font-size: 0.78rem; justify-self: end; white-space: nowrap;
+  max-width: 14rem; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Reach: the scope ladder, plus the rung above it that is not a scope at all. */
+.rows .reach-ico { flex: none; }
+.rows .reach-ico.bad { color: var(--bad); }
+.rows .reach-ico.reach-grant { color: var(--mutate); }
+.rows .reach-ico.reach-operate { color: var(--mutate); }
+.rows .reach-ico.reach-observe { color: var(--observe); }
+.badge.reach-ungated { color: var(--bad); border-color: var(--bad); }
+.badge.reach-grant, .badge.reach-operate { color: var(--mutate); }
+.badge.reach-observe { color: var(--observe); }
+
+/* A key Steward did not write. It is the reason this page exists, so the row is
+   marked in the ink of the thing it is — not left to a glyph alone. */
+.rows.access-rows .row.ungated { background: var(--bad-soft); }
+.rows.access-rows .row.ungated:hover { background: var(--bad-soft); }
+.rows.access-rows .row.ungated .row-name { color: var(--bad); }
+
+/* Boxes whose ledger could not be read — listed, because unknown is not absent. */
+.unreadable { list-style: none; margin: 0.4rem 0 0; padding: 0; font-size: 0.9rem; }
+.unreadable li { padding: 0.15rem 0; }
 
 /* Projects — a compact list (reuses .rows machinery): name · counts · labels · contact. */
 .rows.project-rows { grid-template-columns: minmax(8rem, max-content) max-content minmax(1rem, 1fr) max-content; }
@@ -184,16 +347,19 @@
 .badge.unknown { color: var(--muted); }
 .badge.scope-observe { color: var(--observe); }
 .badge.scope-operate { color: var(--mutate); }
+/* The top rung had no rule at all, so `grant` — the one scope that can admit other
+   keys — rendered identically to read-only. */
+.badge.scope-grant { color: var(--mutate); font-weight: 700; }
 .badge.shared { color: var(--warn); }
 /* Install state — running is good, failed is bad, in-flight/queued is warn,
    not-yet-placed is quiet. The protagonist of the install row. */
 .badge.state-running { color: var(--ok); }
-.badge.state-failed { color: var(--bad); }
+.badge.state-failed, .badge.state-unreachable { color: var(--bad); }
+.badge.state-drift { color: var(--warn); }
 .badge.state-deploying, .badge.state-pending { color: var(--warn); }
 .badge.state-unplaced { color: var(--muted); }
 
-/* Tighten the badge box so LATEST sits centred next to the version, and pin it
- * flush (the `.latest` section margin in widgets.css must not bleed onto it). */
+/* Tighten the badge box so LATEST sits centred next to the version. */
 .tag { line-height: 1; }
 .tag.latest { margin-top: 0; }
 

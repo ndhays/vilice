@@ -1,4 +1,4 @@
-<% content_for :title, "Installs — Steward Console" %>
+<% content_for :title, "Installs — Steward" %>
 
 <%# Placement, fleet-wide: what should run where. One ring above the machine view
     (which reads a single box) and one below Projects (which is a lens on tenancy,
@@ -8,11 +8,52 @@
   <%= button_link_to "Add Install", new_install_path, icon: "plus", class: "btn" %>
 <% end %>
 
+<%# The headline — this layer's story in one line, and only this ring's facts. It
+    counts placements and the ones in a state that needs a person; the moment it
+    mentions boxes or clients it has stepped out of its ring. %>
+<% if @total.positive? %>
+  <p class="headline">
+    <%= pluralize(@total, "install") %><%
+      %><% if @needs_look.positive? %> · <span class="bad"><%= @needs_look %> need a look</span><% end %><%
+      %><% if @short.positive? %> · <span class="muted"><%= @short %> short of their intention</span><% end %><%
+      %><% if @needs_look.zero? && @short.zero? %> · <span class="ok">all running as asked</span><% end %>
+  </p>
+<% end %>
+
+<%= render layout: "shared/list_toolbar",
+      locals: { search_url: installs_path, q: @q, placeholder: "install, host, app, or box",
+                selectable: false, hidden: { group: @group } } do %><% end %>
+
+<%# Group by — the same primitive the fleet list is built on. Each choice is a link,
+    so the grouped view has its own URL and can be shared or bookmarked. %>
+<div class="action-chips filter-row" role="group" aria-label="Group the installs by">
+  <span class="chip-label muted">Group by</span>
+  <% InstallGroups::ALL.each do |grouping| %>
+    <%= link_to installs_path(group: grouping.key, q: @q),
+          class: "chip #{'on' if @group == grouping.key}",
+          "aria-pressed": (@group == grouping.key).to_s do %>
+      <%= grouping.label %>
+    <% end %>
+  <% end %>
+</div>
+
 <% if @installs.any? %>
-  <ul class="rows install-rows">
-    <%= render partial: "installs/row", collection: @installs, as: :install,
-          locals: { show_project: true } %>
-  </ul>
+  <%# `key` changes whenever the grouping does, so Turbo replaces the list rather
+      than morphing it — the 150ms fade in lists.css is the whole of the motion. %>
+  <div class="grouped-list" key="installs-<%= @group %>">
+    <% @groups.each do |heading, installs| %>
+      <h2 class="group-head">
+        <span class="group-name"><%= heading %></span>
+        <span class="group-count"><%= installs.size %></span>
+      </h2>
+      <ul class="rows install-rows">
+        <%= render partial: "installs/row", collection: installs, as: :install,
+              locals: { show_project: true } %>
+      </ul>
+    <% end %>
+  </div>
+<% elsif @q.present? %>
+  <p class="empty">No installs match this search. <%= link_to "Clear it", installs_path %>.</p>
 <% else %>
   <p class="empty">No installs yet — place an app on a box to start.</p>
 <% end %>

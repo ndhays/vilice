@@ -1,0 +1,7 @@
+<%# The lockup: the mark, a gap, then `steward` in mono, lowercase — the canonical
+    wordmark from blueprint/design/logo.md, lowercase because that is how you type
+    it. One product, one name: the console dropped "Console" from its chrome, so
+    what the rail and the sign-in card wear is now the same wordmark the docs site
+    wears. Locals: size (px) for the mark. %>
+<% size = local_assigns.fetch(:size, 24) %>
+<span class="mark"><%= render "shared/mark", size: size %></span><span class="wordmark">steward</span>

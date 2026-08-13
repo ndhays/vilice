@@ -14,7 +14,7 @@ class VersionsController < ApplicationController
       ok = @version.save
       raise ActiveRecord::Rollback unless ok
       @app.set_latest!(@version) if make_latest
-      record("added version", "Added #{@app.name} #{@version.tag}")
+      record("added", "#{@app.name} #{@version.tag}")
     end
 
     if ok
@@ -28,7 +28,7 @@ class VersionsController < ApplicationController
   def latest
     version = @app.versions.find(params[:id])
     @app.set_latest!(version)
-    record("set latest version", "Set #{@app.name} latest to #{version.tag}")
+    record("set", "#{@app.name} latest to #{version.tag}")
     redirect_to @app, notice: "#{version.tag} is now latest."
   end
 
@@ -36,7 +36,7 @@ class VersionsController < ApplicationController
     version = @app.versions.find(params[:id])
     App.transaction do
       version.destroy!
-      record("removed version", "Removed #{@app.name} #{version.tag}")
+      record("removed", "#{@app.name} #{version.tag}")
     end
     redirect_to @app, notice: "Removed #{@app.name} #{version.tag}."
   end

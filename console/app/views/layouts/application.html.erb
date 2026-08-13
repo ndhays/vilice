@@ -1,19 +1,33 @@
 <!DOCTYPE html>
-<html>
+<%# Appearance comes from the signed-in operator's own record, so the theme is
+    already right in the first byte — there is no stored copy in the browser to
+    disagree with it. `system` is the one value the server can't resolve; the
+    script below turns it into a concrete mode before paint. %>
+<html data-theme="<%= current_theme.name %>" data-mode="<%= current_mode %>">
   <head>
-    <title><%= content_for(:title) || "Steward Console" %></title>
+    <title><%= content_for(:title) || "Steward" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <%# Apply the stored skin before paint so there's no flash of the wrong theme. %>
+    <%# Turbo 8 prefetches a link on hover. Off here, because in this app a page
+        view is not free: a machine page reads the box over SSH, and /access reads
+        every box in the fleet. Prefetching would open connections to machines the
+        operator only moved the pointer across. Viewing is free — but it should
+        still be something you chose to do. %>
+    <meta name="turbo-prefetch" content="false">
+    <%# Resolve `system` against the OS before first paint, and keep following it
+        if the OS flips while the page is open. This reads the preference off the
+        element — it never writes one — so the user record stays the only answer. %>
     <script>
       (function () {
-        try {
-          var t = localStorage.getItem("theme");
-          if (t) document.documentElement.setAttribute("data-theme", t);
-        } catch (e) {}
+        var root = document.documentElement;
+        if (root.getAttribute("data-mode") !== "system") return;
+        var q = window.matchMedia("(prefers-color-scheme: dark)");
+        var apply = function () { root.setAttribute("data-mode", q.matches ? "dark" : "light"); };
+        apply();
+        q.addEventListener("change", apply);
       })();
     </script>
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Steward Console">
+    <meta name="application-name" content="Steward">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -23,8 +37,11 @@
     <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
     <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
-    <link rel="icon" href="/icon.png" type="image/png">
+    <%# The same mark the docs site uses (site/assets/favicon.svg) — one product, one
+        icon in the tab. Declared in the site's order: the SVG is the icon, the PNG is
+        the touch icon and the PWA fallback. %>
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="/icon.png" type="image/png">
     <link rel="apple-touch-icon" href="/icon.png">
 
     <%# Stylesheets, loaded in cascade order: tokens first, then base, then
@@ -39,53 +56,64 @@
       <div class="layout">
         <nav class="sidebar">
           <%= link_to root_path, class: "brand" do %>
-            <%# The shared mark — blueprint/design/logo.md. Black is currentColor, so
-                it takes the rail's ink; only the switch is literal yellow. %>
-            <span class="mark">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="2" y="4.5" width="20" height="15" rx="2.5"/>
-                <path d="M6.4 7.5 L6.4 13.1 L10.5 10.3 Z" fill="currentColor" stroke="none"/>
-                <path d="M17.6 7.5 L17.6 13.1 L13.5 10.3 Z" fill="currentColor" stroke="none"/>
-                <circle cx="12" cy="10.3" r="1.5" fill="#F2C200" stroke="none"/>
-                <circle cx="6" cy="16.8" r="0.9" fill="#F2C200" stroke="none"/>
-                <circle cx="8.7" cy="16.8" r="0.9" fill="currentColor" stroke="none"/>
-                <line x1="11.8" y1="16.8" x2="18" y2="16.8"/>
-              </svg>
-            </span>Steward Console
+            <%# The shared lockup — blueprint/design/logo.md. Black is currentColor, so
+                the mark takes the rail's ink; only the switch is literal yellow. %>
+            <%= render "shared/lockup", size: 22 %>
           <% end %>
-          <%= link_to root_path, class: "nav #{'active' if controller_name == 'home'}" do %>
-            <%= icon "activity", size: 16 %>Status
-          <% end %>
-          <%= link_to projects_path, class: "nav #{'active' if controller_name == 'projects'}" do %>
-            <%= icon "handshake", size: 16 %>Projects
-          <% end %>
-          <%= link_to machines_path, class: "nav #{'active' if controller_name == 'machines'}" do %>
-            <%= icon "hard-drive", size: 16 %>Machines
-          <% end %>
-          <%# Placement sits between the box it lands on and the client it's for —
-              each ring optional above the one below (decisions/console-layers.md). %>
-          <%= link_to installs_path, class: "nav #{'active' if controller_name == 'installs'}" do %>
-            <%= icon "box", size: 16 %>Installs
-          <% end %>
-          <%= link_to record_path, class: "nav #{'active' if controller_name == 'record'}" do %>
-            <%= icon "disc", size: 16 %>Record
-          <% end %>
-          <%= link_to access_path, class: "nav #{'active' if controller_name == 'access'}" do %>
-            <%= icon "key-round", size: 16 %>Access
-          <% end %>
-          <%= link_to apps_path, class: "nav #{'active' if controller_name == 'apps'}" do %>
-            <%= icon "library-big", size: 16 %>App Library
-          <% end %>
-          <%= link_to settings_path, class: "nav #{'active' if controller_name == 'settings'}" do %>
-            <%= icon "settings", size: 16 %>Settings
-          <% end %>
+          <%# The rail is three bands, divided by a hairline and nothing else. They are
+              not eight peers: the spine is the record, then the three rings of
+              decisions/console-layers.md, then the surfaces that serve them. %>
+
+          <%# The spine — the record, and its head. Every other screen is a lens on it. %>
+          <div class="nav-band">
+            <%= link_to root_path, class: "nav #{'active' if controller_name == 'home'}" do %>
+              <%= icon "activity", size: 16 %>Status
+            <% end %>
+            <%= link_to record_path, class: "nav #{'active' if controller_name == 'record'}" do %>
+              <%= icon "disc", size: 16 %>Record
+            <% end %>
+          </div>
+
+          <%# The three rings, bottom-up: each is optional *above* the one below, so the
+              floor comes first and tenancy — the most declinable — comes last. Placement
+              sits between the box it lands on and the client it is for
+              (decisions/console-layers.md). %>
+          <div class="nav-band">
+            <%= link_to machines_path, class: "nav #{'active' if controller_name == 'machines'}" do %>
+              <%= icon "hard-drive", size: 16 %>Machines
+            <% end %>
+            <%= link_to installs_path, class: "nav #{'active' if controller_name == 'installs'}" do %>
+              <%= icon "box", size: 16 %>Installs
+            <% end %>
+            <%= link_to projects_path, class: "nav #{'active' if controller_name == 'projects'}" do %>
+              <%= icon "handshake", size: 16 %>Projects
+            <% end %>
+          </div>
+
+          <%# Cross-cutting surfaces: who may act, what there is to install, and config. %>
+          <div class="nav-band">
+            <%= link_to access_path, class: "nav #{'active' if controller_name == 'access'}" do %>
+              <%= icon "key-round", size: 16 %>Access
+            <% end %>
+            <%= link_to apps_path, class: "nav #{'active' if controller_name == 'apps'}" do %>
+              <%= icon "library-big", size: 16 %>App Library
+            <% end %>
+            <%= link_to settings_path, class: "nav #{'active' if controller_name == 'settings'}" do %>
+              <%= icon "settings", size: 16 %>Settings
+            <% end %>
+          </div>
           <span class="spacer"></span>
           <div class="rail-foot">
-            <button type="button" class="theme-toggle" title="Toggle light / dark"
-                    data-controller="theme" data-action="theme#toggle" aria-label="Toggle theme">
-              <%= icon "moon", size: 16, css_class: "icon-moon" %><%= icon "sun", size: 16, css_class: "icon-sun" %>
-            </button>
+            <%# Flips the mode and persists it. The JS swaps the element first so the
+                change is instant, then this carries it to the user record. %>
+            <%= form_with url: settings_appearance_path, method: :patch,
+                          data: { controller: "theme", turbo: false } do |f| %>
+              <%= f.hidden_field :mode, data: { theme_target: "mode" } %>
+              <button type="submit" class="theme-toggle" title="Toggle light / dark"
+                      data-action="theme#toggle" aria-label="Toggle light or dark mode">
+                <%= icon "moon", size: 16, css_class: "icon-moon" %><%= icon "sun", size: 16, css_class: "icon-sun" %>
+              </button>
+            <% end %>
             <span class="spacer"></span>
             <%= button_to session_path, method: :delete, class: "btn" do %>
               <%= safe_join([ icon("log-out", size: 14), "Sign Out" ], " ") %>

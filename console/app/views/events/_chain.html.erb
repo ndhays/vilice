@@ -1,25 +1,35 @@
-<%# The chain — the two records merged into one timeline, newest first
-    (decisions/two-records.md). Each entry is a named actor doing one act at one
-    time. Mutations carry the amber dot; acts only *witnessed* from the box record
-    (not issued by this Steward Console) are marked as such. %>
+<%# The record, as a list of what happened — newest first (decisions/two-records.md).
+    Each entry is one named actor doing one act at one time, and it reads in that
+    order: what happened, then who did it and where, then when.
+
+    Deliberately *not* drawn as a connected chain. The entries share a record, not a
+    causal thread — a label edit on one project and a deploy on another box are
+    neighbours by clock alone — so a rail between them drew a relationship that
+    isn't there. Separation is a hairline, the way a list of unrelated things is
+    normally separated. Mutations carry the amber glyph; acts only *witnessed* from
+    the box record (not issued here) are marked as such. %>
 <% within = local_assigns[:within] %>
 <% if items.any? %>
   <ol class="chain">
     <% items.each do |item| %>
-      <li class="chain-entry <%= event_kind(item) %><%= " is-#{item.outcome}" if item.outcome.present? %>">
-        <span class="chain-dot"><%= icon event_icon_name(item), size: 13 %></span>
+      <li class="chain-entry<%= " is-#{item.outcome}" if item.outcome.present? %>">
+        <span class="chain-dot"><%= icon event_icon_name(item), size: 16 %></span>
         <div class="chain-body">
           <div class="chain-line">
-            <span class="chain-what"><%= item.summary %></span>
-            <% if item.witnessed? %><span class="tag witnessed" title="Seen in the box record — not issued by this Steward Console">witnessed</span><% end %>
+            <%# Verb first and in bold, then what it touched. Two columns of the record,
+                shown as two parts of one sentence — the glyph alone never said which
+                act this was. %>
+            <span class="chain-what"><span class="chain-act"><%= item.action %></span><%
+              %><% if (detail = act_detail(item)).present? %> <%= detail %><% end %></span>
+            <% if item.witnessed? %><span class="tag witnessed" title="Seen in the box record — not issued by this console">witnessed</span><% end %>
             <%= outcome_tag(item) %>
           </div>
           <div class="chain-meta">
-            <span class="chain-actor mono"><%= item.actor %></span>
+            by <span class="chain-actor mono"><%= item.actor %></span>
             <% if (ctx = event_context(item, within: within)) %> · <%= ctx %><% end %>
-            · <time title="<%= item.at %>"><%= time_ago_in_words(item.at) %> ago</time>
           </div>
         </div>
+        <time class="chain-when" title="<%= item.at %>"><%= time_ago_in_words(item.at) %> ago</time>
       </li>
     <% end %>
   </ol>

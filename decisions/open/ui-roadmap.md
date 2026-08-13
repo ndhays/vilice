@@ -36,7 +36,10 @@ Ordered by dependency. Built items are one line; open items keep their detail.
 7. **Unified entity page pattern** (header + head + chain-as-body) — BUILT.
 8. **The Record destination** (`/record`, filter by actor/action/target/time;
    `Event.search` selector grammar + `since`; shareable URL) — BUILT (Wave 2.3).
-9. **Now / fleet pulse** (calm, exceptions rise, live head of chain) — BUILT (Wave 2.3).
+9. **Now / fleet pulse** (calm, exceptions rise) — BUILT (Wave 2.3). The "live head of
+   the chain" half was built and then **removed**: Status is an inbox, not a feed —
+   what needs you, or *Nothing to report*. See
+   [`../status-is-an-inbox.md`](../status-is-an-inbox.md).
 10. **Focus/pin lens** — *open.* Only `Project` carries `starred` today (plus the this-box
     self-pin); Machine/Install need the same generic pin, then a "Focused" predicate over
     `Event.search`. Global pins for now; per-user when delegation (Access) lands.
@@ -69,6 +72,12 @@ Ordered by dependency. Built items are one line; open items keep their detail.
     did not write. Building it surfaced that the box had no way to *read* its own
     ledger: `authorize`/`revoke` wrote `authorized_keys` and nothing reported it, so the
     verb had to come first ([`blueprint/steward/auth.md`](../../blueprint/steward/auth.md)).
+
+    Since rebuilt as **one grouped list, not a card per box** — grouped by *reach*
+    (an ungated key has no ceiling, so it sits above `grant` on one ladder), by *box*,
+    or by *actor*, which answers "where does this actor reach" — a question the card
+    layout could not answer at all. Graduated to
+    [`blueprint/console/interface.md`](../../blueprint/console/interface.md).
 
     *Still open:* **authorize/revoke as a ceremony** from this page. It is a mutate, so
     it belongs in the mutate component (#11) with the record-before-act confirm, and it
@@ -105,10 +114,25 @@ row-context UI), and the **migrate/re-target** verb (move an install to another 
   live-SSH only, not persisted. Persisting `reported_hostname` + `last_seen` *is* ingestion;
   fold this in there.
 - **Live-watch transport** (#15): held SSH connection vs. poll.
-- **Record interleave rule**: confirm "acts-always / status-at-transitions" against the
-  built Record destination.
+- **Status transitions in the timeline** — the second half of the interleave rule. The
+  first half is settled and enforced: a routine sample is not an act and never enters a
+  chain (`Event.acts` + `ChainItem#status?`, graduated to
+  [`../../blueprint/console/interface.md`](../../blueprint/console/interface.md), why in
+  [`../a-sample-is-not-an-act.md`](../a-sample-is-not-an-act.md)). Surfacing real
+  transitions — "went critical 03:12", "recovered 03:40" — is **blocked on #6**:
+  `Snapshot` is declared but nothing writes it, so there is no series to derive one from.
 - **Command-palette scope**: nav + observe only (current call) vs. compose-mutate later.
 - **Pin scope**: global now; per-user when Access lands.
+- **Token name convergence** — the console's palette now matches
+  [`../../blueprint/design/tokens.md`](../../blueprint/design/tokens.md) by *value*, but
+  still says `--bg`/`--muted` where the canonical document says `--paper`/`--ink-soft`.
+  The rename is a mechanical sweep across the seven console stylesheets; it was held back
+  from the theme change so that one was a palette change and nothing else. Until it lands
+  the mapping table in that document is the bridge.
+- **Operator-defined themes** — `Theme::ALL` plus a pair of `tokens.css` blocks is the
+  whole contract, so a user-supplied theme is a matter of storing token values rather than
+  restructuring anything. Open: where they live (a row per theme vs. a blob on the user),
+  and whether a custom theme may set the rail colours or only the palette.
 - **List mechanics** (search / sort / pagination, label-aware) — the plan is in
   [`list-search.md`](list-search.md).
 - **Board view** is a later *skin* over the state-forward list — machines as lanes, installs

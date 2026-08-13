@@ -54,6 +54,18 @@ class EventTest < ActiveSupport::TestCase
     assert_equal Event.all.sort, Event.search("").sort               # blank = everything
   end
 
+  # The record is two streams (blueprint/console/interface.md): acts are the chain's
+  # spine, status is a sample series. A sample reports that we looked, not that
+  # anything happened, so it stays out of every chain the UI renders.
+  test "acts excludes routine status samples, both spellings" do
+    act = Event.record!(actor: "alice", action: "deployed", summary: "shipped api")
+    Event.record!(actor: "snapshot.timer", action: "observed", summary: "Status sample ingested")
+    Event.record!(actor: "snapshot.timer", action: "observe", summary: "box timer")
+
+    assert_equal [ act ], Event.acts
+    assert_equal 3, Event.count, "the samples are still recorded — only the chain drops them"
+  end
+
   test "search is case-insensitive and AND-composes selectors with free text" do
     box = Machine.create!(name: "Prod-Box", ssh_host: "4.4.4.4")
     hit = Event.record!(actor: "Alice", action: "Deployed", machine: box, summary: "shipped api")

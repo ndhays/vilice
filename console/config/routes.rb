@@ -14,6 +14,10 @@ Rails.application.routes.draw do
   # Access — the rights ledger: who may act on which box, at what scope. Read
   # straight from each box's authorized_keys through `steward actors`.
   get "access", to: "access#index"
+  # Re-read every box's ledger, bypassing the 30s cache. A POST because it opens an
+  # SSH connection to every box in the fleet — a GET must be safe to repeat unasked,
+  # and Turbo prefetches links on hover. Same rule as machines#refresh.
+  post "access/refresh", to: "access#refresh", as: :refresh_access
 
   # Installs — placement: this app, on these boxes. Top-level, because a placement
   # doesn't belong to a client (decisions/console-layers.md). A project is optional
@@ -71,15 +75,15 @@ Rails.application.routes.draw do
     resources :apps, only: %i[ new create destroy ], module: :machines, as: :box_apps
     resources :labels, only: %i[ create destroy ], shallow: true
     member do
-      # Observe — re-read the machine's live status (a read; bypasses the cache).
-      get :refresh
+      # Observe — re-read the machine's live status, bypassing the 30s cache. It
+      # reads the box and changes nothing *there*, but it opens an SSH connection
+      # and projects the result onto our own columns, so it is a POST: a GET must
+      # be safe to repeat unasked, and Turbo prefetches links on hover.
+      post :refresh
       # Sharing & ownership (the Access panel) — set the sharing mode, transfer or
       # release the owner. machine-ownership.md.
       patch :sharing
       patch :transfer
-      # Take (or drop) the balancer role — a box willing to front others. A recorded
-      # own-record act; it changes nothing on the box until routing is applied.
-      patch :balancer
     end
     # The sharing allowlist (sharing = list): which projects may pick up the box.
     resources :grants, only: %i[ create destroy ], controller: "machine_grants"
@@ -92,6 +96,9 @@ Rails.application.routes.draw do
   resource :settings, only: %i[ show update ], controller: "settings"
   # Change the signed-in user's own password.
   patch "settings/password", to: "settings#change_password", as: :settings_password
+  # This operator's own theme and mode. Personal, not fleet policy — and reachable
+  # from the rail's toggle as well as the Settings form.
+  patch "settings/appearance", to: "settings#appearance", as: :settings_appearance
   # Dev-only: wipe all fleet data for a clean slate (guarded in the controller).
   delete "settings/data", to: "settings#destroy_data", as: :settings_data
 end

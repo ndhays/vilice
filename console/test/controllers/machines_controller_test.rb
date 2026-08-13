@@ -57,7 +57,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "steward", machine.ssh_user            # forced, not a form choice
     assert machine.ssh_private_key.present?, "private key generated + stored"
     assert_match(/\Assh-ed25519 /, machine.ssh_public_key)
-    assert_equal "added machine", Event.latest.first.action
+    assert_equal "added", Event.latest.first.action
     assert_redirected_to machine_path(machine)
   end
 
@@ -89,6 +89,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     stub_observe(status: offline, record: offline) { get machine_path(machine) }
     assert_response :success
     assert_select ".access pre.cmd", /steward authorize .* --client console --scope operate/
+    assert_select ".access .cmd-block .cmd-copy[aria-label=?]", "Copy command"
   end
 
   # End-to-end through a real request: with the fake-observe seam on, the machine
@@ -113,7 +114,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       gone.labels.create!(key: "fake-health", value: "offline")
       get machine_path(gone)
       assert_response :success
-      assert_select ".integrity.off"        # box record unreachable
+      assert_select ".integrity.bad", /Box record unavailable/   # red: old news, not absent
     end
   end
 
@@ -124,9 +125,10 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       box.labels.create!(key: "fake-updates", value: "3")
       get machine_path(box)
       assert_response :success
-      assert_select ".maint-line", /Maintenance — daily at 04:00/
-      assert_select ".maint-pending", /3 updates pending/
-      assert_select ".acts a", /Apply Now/
+      assert_select ".panel.mutate .kicker", "Maintenance"
+      assert_select ".maint-line", /Daily at 04:00/
+      assert_select ".maint-pending", /3 updates waiting/
+      assert_select ".panel.mutate a", /Apply now/
     end
   end
 
@@ -137,10 +139,27 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       box.labels.create!(key: "fake-health", value: "ok") # ok band → 0 updates
       get machine_path(box)
       assert_response :success
-      assert_select ".maint-line", /Maintenance — daily at/
+      assert_select ".maint-line", /Daily at/
       assert_select ".updates-current"
-      assert_select ".acts a", { text: /Apply Now/, count: 0 }
+      assert_select ".panel.mutate a", { text: /Apply now/, count: 0 }
     end
+  end
+
+  # Settings configure the box; they do not report on it. They sit apart and closed,
+  # so reaching a destructive control takes a deliberate click.
+  test "machine settings are a closed section, not part of the page's body" do
+    sign_in_as @user
+    m = Machine.create!(name: "edge-set", ssh_host: "x", scope: "operate")
+    get machine_path(m)
+    assert_response :success
+    assert_select "details.machine-settings > summary", /Machine Settings/
+    assert_select "details.machine-settings[open]", count: 0
+    # The controls are inside it, not loose on the page.
+    assert_select "details.machine-settings .access-panel"
+    assert_select "details.machine-settings .panel.danger-remove"
+    # Removing is a panel, not a second disclosure: the section is already the gate,
+    # and two nested <details> read as one pattern repeated rather than two things.
+    assert_select "details.danger-remove", count: 0
   end
 
   test "the machine page offers an honest Remove with the revoke line" do
@@ -149,6 +168,10 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     get machine_path(m)
     assert_response :success
     assert_select ".danger-remove pre.cmd", /steward revoke console/
+    # Every command shown is meant to be pasted into a shell, so none has to be
+    # selected by hand — the button copies the exact text shown.
+    assert_select ".danger-remove .cmd-block .cmd-copy[data-clipboard-text-value=?]",
+                  "steward revoke console"
     assert_select ".danger-remove form[action=?]", machine_path(m)
   end
 
@@ -161,7 +184,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       end
     end
     assert_redirected_to machines_path
-    assert_equal "removed machine", Event.latest.first.action
+    assert_equal "removed", Event.latest.first.action
   end
 
   test "removing a machine that still runs installs is refused, naming the apps" do
@@ -194,27 +217,146 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     end
     assert install.reload.persisted?
     # The removal event survives with no machine link (events nullify on destroy).
-    assert_equal "removed machine", Event.latest.first.action
+    assert_equal "removed", Event.latest.first.action
   end
 
-  # ── Index search + unowned filter ──────────────────────────────────────────
-  test "index searches by name and filters to unowned with a presence count" do
+  # ── Index search + grouping ────────────────────────────────────────────────
+  test "index searches by name" do
     sign_in_as @user
     owner = Project.create!(name: "Acme-idx")
     Machine.create!(name: "web-alpha", ssh_host: "x", owner: owner)
     Machine.create!(name: "db-beta",   ssh_host: "x", owner: owner)
-    Machine.create!(name: "free-gamma", ssh_host: "x") # unowned
 
     get machines_path(q: "alpha")
     assert_response :success
     assert_select ".rows .row-name", text: "web-alpha"
     assert_select ".rows .row-name", text: "db-beta", count: 0
+  end
 
-    get machines_path(unowned: "1")
+  # Grouping replaced the old "unowned" filter: it showed one answer at a time,
+  # where the grouping shows every answer at once, with counts.
+  test "grouping by project heads each group and gathers the boxes with no home" do
+    sign_in_as @user
+    owner = Project.create!(name: "Acme-idx")
+    Machine.create!(name: "web-alpha", ssh_host: "x", owner: owner)
+    Machine.create!(name: "free-gamma", ssh_host: "x") # unowned
+
+    get machines_path(group: "project")
+    assert_response :success
+    # Both are on the page — a grouping narrows nothing.
+    assert_select ".rows .row-name", text: "web-alpha"
     assert_select ".rows .row-name", text: "free-gamma"
-    assert_select ".rows .row-name", text: "web-alpha", count: 0
-    assert_select ".action-chips .chip.on"
-    assert_select ".action-chips .chip .chip-count", text: "1"
+    # "No project" leads, because a box with no home is the one that needs a look.
+    assert_select ".group-head:first-of-type .group-name", text: "No project"
+    assert_select ".group-head .group-name", text: "Acme-idx"
+    assert_select ".action-chips .chip.on", text: /Project/
+  end
+
+  test "grouping by reachability leads with the boxes that cannot be reached" do
+    sign_in_as @user
+    Machine.create!(name: "up-1",   ssh_host: "x", status: "reachable")
+    Machine.create!(name: "down-1", ssh_host: "x", status: "unreachable")
+
+    get machines_path(group: "status")
+    assert_response :success
+    assert_select ".group-head:first-of-type .group-name", text: "Unreachable"
+  end
+
+  # The headline states this ring's facts and no others.
+  test "the headline counts boxes, unreachable, and never-seen" do
+    sign_in_as @user
+    Machine.create!(name: "down-2", ssh_host: "x", status: "unreachable")
+    Machine.create!(name: "new-2",  ssh_host: "x") # status defaults to unknown
+
+    get machines_path
+    assert_response :success
+    assert_select ".headline .bad", text: /1 unreachable/
+    assert_select ".headline .muted", text: /1 not yet seen/
+  end
+
+  # A grouping has its own URL, so the view can be shared — the rule the Record
+  # destination already follows. A stale one degrades to the default view.
+  test "an unknown grouping falls back to reachability rather than erroring" do
+    sign_in_as @user
+    Machine.create!(name: "solo-1", ssh_host: "x")
+    get machines_path(group: "no-such-grouping")
+    assert_response :success
+    assert_select ".rows .row-name", text: "solo-1"
+    assert_select ".group-head .group-name", text: "Not yet seen"
+  end
+
+  # The page opens grouped, without being asked.
+  test "the fleet is grouped by reachability by default" do
+    sign_in_as @user
+    Machine.create!(name: "down-9", ssh_host: "x", status: "unreachable")
+    get machines_path
+    assert_response :success
+    assert_select ".group-head .group-name", text: "Unreachable"
+    assert_select ".action-chips .chip.on", text: /Reachability/
+  end
+
+  # An icon that carries meaning explains itself on hover *and* on keyboard focus,
+  # and is labelled for a screen reader — a native title does none of that.
+  test "row icons carry a focusable, labelled tooltip" do
+    sign_in_as @user
+    Machine.create!(name: "tip-1", ssh_host: "x", status: "reachable", balancer: true)
+    get machines_path
+    assert_response :success
+    assert_select ".status-ico.hint[data-tip=?][tabindex=?]", "Reachable", "0"
+    assert_select ".role-ico.hint[data-tip=?]", "Load Balancer — 0 hosts"
+    assert_select ".scope-ico.hint[aria-label*=?]", "OBSERVE"
+  end
+
+  # The fleet view draws the edge relationship instead of describing it: the
+  # balancer heads its group, the boxes it fronts are marked as sitting behind it.
+  test "the fleet view marks the balancer and the hosts behind it" do
+    sign_in_as @user
+    project = Project.create!(name: "Tree-idx")
+    edge    = Machine.create!(name: "aaa-edge", ssh_host: "x", scope: "operate", balancer: true)
+    host    = Machine.create!(name: "zzz-host", ssh_host: "x")
+    loose   = Machine.create!(name: "mmm-loose", ssh_host: "x")
+    install = project.installs.create!(name: "app-tree", image: "x@sha256:a",
+                                       exposure: "balanced", balancer: edge)
+    install.install_targets.create!(machine: host, status: "running")
+
+    get machines_path(group: "fleet")
+    assert_response :success
+    assert_select ".rows.fleet-rows .row.is-edge .row-name", text: "aaa-edge"
+    assert_select ".rows.fleet-rows .row.is-behind .row-name", text: "zzz-host"
+    # A box under no balancer gets a plain list — there is no edge to sit under.
+    assert_select ".row.is-behind .row-name", text: "mmm-loose", count: 0
+    # The tree already draws the edge here, so the row does not also spell it out.
+    assert_select ".rows.fleet-rows .row.is-behind .behind-edge", count: 0
+
+    # Under any *other* grouping the relationship can't be drawn — a group of
+    # unreachable boxes is not a fleet — so the row names its edge instead. It is a
+    # fact about the one box, which is why it survives the change of grouping.
+    get machines_path(group: "status")
+    assert_response :success
+    assert_select ".row", text: /zzz-host/ do
+      assert_select ".behind-edge a[href=?]", machine_path(edge), text: "aaa-edge"
+    end
+    # The edge itself is behind nothing, and neither is a box with no balancer.
+    assert_select ".behind-edge", 1
+  end
+
+  # The trailing glyph says what the box carries, not just what kind it is.
+  test "the role tooltip counts apps on a host and hosts behind a balancer" do
+    sign_in_as @user
+    project = Project.create!(name: "Roles-idx")
+    host    = Machine.create!(name: "host-idx", ssh_host: "x")
+    edge    = Machine.create!(name: "edge-idx", ssh_host: "x", scope: "operate", balancer: true)
+    install = project.installs.create!(name: "app-idx", image: "x@sha256:a",
+                                       exposure: "balanced", balancer: edge)
+    install.install_targets.create!(machine: host, status: "running")
+    Machine.create!(name: "bare-idx", ssh_host: "x") # carries nothing
+
+    get machines_path
+    assert_response :success
+    assert_select ".role-ico.hint[data-tip=?]", "Host — 1 app"
+    assert_select ".role-ico.hint[data-tip=?]", "Load Balancer — 1 host"
+    # A box carrying nothing says so plainly rather than claiming a count of zero.
+    assert_select ".role-ico.hint[data-tip=?]", "Host"
   end
 
   # ── Ownership & sharing (machine-ownership.md) ─────────────────────────────
@@ -235,7 +377,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       patch sharing_machine_path(m), params: { machine: { sharing: "everyone" } }
     end
     assert m.reload.sharing_everyone?
-    assert_equal "set sharing", Event.latest.first.action
+    assert_equal "set", Event.latest.first.action
   end
 
   test "transfer reassigns the owner, and release leaves it unowned — both recorded" do
@@ -246,11 +388,11 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
 
     patch transfer_machine_path(m), params: { machine: { owner_id: b.id } }
     assert_equal b, m.reload.owner
-    assert_equal "transferred machine", Event.latest.first.action
+    assert_equal "transferred", Event.latest.first.action
 
     patch transfer_machine_path(m), params: { machine: { owner_id: "" } }
     assert m.reload.unowned?
-    assert_equal "released machine", Event.latest.first.action
+    assert_equal "released", Event.latest.first.action
   end
 
   private
@@ -284,7 +426,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     machine = Machine.create!(name: "edge-box", ssh_host: "10.0.0.11", scope: "observe")
     stub_observe(status: status_reply("balancer")) { get machine_path(machine) }
     assert_response :success
-    assert_no_match(/Observe · apps/, response.body)
+    assert_select ".kicker", { text: "Apps on this box", count: 0 }
   end
 
   # A box that has never been prepared has no role to report. That reads as unknown,
@@ -294,16 +436,29 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     machine = Machine.create!(name: "fresh-box", ssh_host: "10.0.0.10", scope: "observe")
     stub_observe(status: status_reply("")) { get machine_path(machine) }
     assert_response :success
-    assert_match(/not prepared/, response.body)
-    assert_match(/Observe · apps/, response.body)
+    assert_select "h1 .badge.role-unprepared", "not prepared"
+    assert_select ".kicker", "Apps on this box"
   end
 
-  # The dangerous misreading is an unreachable box looking like an empty one.
-  test "an unreachable box reports what runs there as unknown, not none" do
+  # The dangerous misreading is an unreachable box looking like an empty one. It is
+  # prevented structurally now rather than by a sentence: the cards that could only
+  # have held a live read are *absent*, so nothing is left to be read as "none".
+  test "an unreachable box shows no live-read card at all, so none can read as empty" do
     sign_in_as @user
     machine = Machine.create!(name: "gone-box2", ssh_host: "10.0.0.12", scope: "observe")
     stub_observe(status: { ok: false, error: "connection refused" }) { get machine_path(machine) }
     assert_response :success
-    assert_match(/unknown, not none/, response.body)
+    # One card owns the message.
+    assert_select ".panel.unreachable", /could not reach/
+    # Nothing anywhere claims the box runs nothing, or is healthy, or is hardened.
+    assert_select ".app-box-rows", count: 0
+    assert_select "body", text: /No apps on this box/, count: 0
+    assert_select ".metrics", count: 0
+    assert_select ".hardening-line", count: 0
+    # Every act travels the same connection that just failed, so none is offered.
+    assert_select "a", { text: /Deploy an app/, count: 0 }
+    assert_select "a", { text: /Apply now/, count: 0 }
+    # …but re-reading is exactly what you want to do next.
+    assert_select ".panel.unreachable form[action=?]", refresh_machine_path(machine)
   end
 end

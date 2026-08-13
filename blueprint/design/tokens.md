@@ -4,7 +4,27 @@
 > (`site/assets/tokens.css`, `console/app/assets/stylesheets/tokens.css`). A value
 > that differs between them is a bug in one of them.
 
-**Status:** Canonical. Last touched 2026-08-09.
+**Status:** Canonical. Last touched 2026-08-11.
+
+> **The console uses different *names* for the neutrals, with the same values.** The
+> table below is the site's vocabulary; the console's `tokens.css` says `--bg` where
+> this says `--paper`, and `--muted` where this says `--ink-soft`. The values were
+> converged on 2026-08-11 — before that the console also ran a different *palette*
+> (an auburn-red accent on light, lime-and-magenta on dark), which was a plain
+> violation of the rule above. The remaining rename is tracked in
+> [`decisions/open/ui-roadmap.md`](../../decisions/open/ui-roadmap.md); until it
+> lands, this is the mapping:
+>
+> | This document | Console |
+> |---|---|
+> | `--paper` | `--bg` |
+> | `--ink-soft` | `--muted` |
+> | `--term-bg` / `--term-ink` | `--raw-bg` / `--raw-ink` |
+> | `--yellow-deep` | `--accent-text` |
+>
+> The console additionally carries what the site has no need for: the observe/mutate
+> spine, the rail, and the health-dot scale. Those are its own extension, not a
+> divergence — see [`blueprint/console/interface.md`](../console/interface.md).
 
 ---
 

@@ -14,10 +14,24 @@ class SettingsController < ApplicationController
     Setting.transaction do
       setting.update!(settings_params)
       restricted = setting.installs_library_only
-      Event.record!(actor: Current.user.email_address, action: "changed settings",
-                    summary: "Installs #{restricted ? 'restricted to' : 'opened beyond'} the App Library")
+      Event.record!(actor: Current.user.email_address, action: restricted ? "restricted" : "opened",
+                    summary: "installs #{restricted ? 'to' : 'beyond'} the App Library")
     end
     redirect_to settings_path, notice: "Settings updated."
+  end
+
+  # Appearance — this operator's own theme and mode. Not a recorded act: it changes
+  # nothing about the fleet and touches no box, so it stays off the record, the same
+  # line the observe side is on. Either field may arrive alone (the rail's toggle
+  # sends only `mode`).
+  def appearance
+    user = Current.user
+    if user.update(params.permit(:theme, :mode).compact_blank)
+      redirect_back fallback_location: settings_path
+    else
+      redirect_back fallback_location: settings_path,
+                    alert: user.errors.full_messages.to_sentence
+    end
   end
 
   # Change the signed-in user's own password — verify the current one, then set the

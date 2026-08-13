@@ -84,6 +84,4 @@ h2 { font-size: 1.15rem; margin: 2.5rem 0 1rem; }
 .access summary .icon { color: var(--observe); }
 .access .note { margin: 0.5rem 0 0.3rem; font-size: 0.88rem; }
 .access pre.cmd { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.78rem; }
-.danger-remove { margin-top: 1.75rem; }
-.danger-remove summary .icon { color: var(--bad); }
-.danger-remove .btn { margin-top: 0.6rem; }
+/* .danger-remove is a panel now, styled with the machine settings in record.css. */

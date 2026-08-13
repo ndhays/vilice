@@ -73,7 +73,7 @@ Naming it, because an article that can't point at code isn't applied:
 
 - **The two halves never merge.** `Install#count` is the claim; `Install#serving_count`
   counts only targets the *box* reports running, on a machine still reachable. The gap is
-  `placement_gap`, and it is kept out of `install_status` on purpose, so an intention can
+  `placement_gap`, and it is kept out of `Install#state` on purpose, so an intention can
   never be rendered through the status glyph.
 - **Placing is not closing.** `POST /installs/:id/targets` creates a `pending` target and
   records a `placed install` act. The gap does not move. It narrows only when observe

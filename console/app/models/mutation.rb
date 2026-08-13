@@ -16,7 +16,7 @@ class Mutation
 
   ACTS = {
     "apply-updates" => Act.new(verb: "apply-updates", label: "Apply Updates",
-                               past: "applied updates", target: :machine,
+                               past: "updated", target: :machine,
                                build: ->(_m, _i) { "apply-updates --json" }),
     "restart"       => Act.new(verb: "restart", label: "Restart", past: "restarted",
                                target: :install,
@@ -96,12 +96,11 @@ class Mutation
 
   def summary
     case act.verb
-    when "deploy"   then "deployed #{install.name} on #{machine.name} @#{short_digest}"
-    when "rollback" then "rolled back #{install.name} on #{machine.name}"
+    when "deploy"   then "#{install.name} on #{machine.name} @#{short_digest}"
+    when "rollback" then "#{install.name} on #{machine.name}"
     when "route"    then route_summary
     else
-      target = install ? "#{install.name} on #{machine.name}" : machine.name
-      "#{act.past} #{target}"
+      install ? "#{install.name} on #{machine.name}" : machine.name
     end
   end
 
@@ -109,10 +108,10 @@ class Mutation
   # db-1" tells a later reader nothing about what changed.
   def route_summary
     routes = machine.routing_table
-    return "routed #{machine.name} — fronting nothing" if routes.empty?
+    return "#{machine.name} — fronting nothing" if routes.empty?
 
     hosts = routes.flat_map(&:hostnames).join(", ")
-    "routed #{machine.name} → #{hosts} across #{routes.sum { |r| r.upstreams.size }} upstreams"
+    "#{machine.name} → #{hosts} across #{routes.sum { |r| r.upstreams.size }} upstreams"
   end
 
   # Compose fields — what the operator picks, each defaulting from the Install.

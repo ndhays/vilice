@@ -1,5 +1,16 @@
 /* The two sides of the spine, made visible. */
 .panel { border-radius: 10px; padding: 1.1rem 1.35rem; margin-bottom: 1.5rem; }
+
+/* A card's own header: what it is on the left, the one thing it does on the right.
+   Each card does one job, so it gets at most one action — and that action belongs
+   beside the title, not as a full-width button hanging off the bottom. */
+.panel-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 0.75rem; margin-bottom: 0.6rem;
+}
+.panel-head .kicker { margin-bottom: 0; }
+.panel-head .panel-action { flex: none; }
+.panel-head form { margin: 0; }
 .panel.observe { background: var(--card); border: 1px solid var(--line); }
 .panel.mutate  { background: var(--mutate-bg); border: 1px solid var(--mutate-line); }
 .panel .kicker {
@@ -9,6 +20,54 @@
 .panel.observe .kicker { color: var(--observe); }
 .panel.mutate  .kicker { color: var(--mutate); }
 .panel.mutate .note { color: var(--mutate); font-size: 0.85rem; margin-top: 0.5rem; }
+/* Unreachable — the box is not answering, so the page has nothing current to show.
+   Not a dimmed version of the live cards: those are gone, because there is nothing
+   to dim. This card is what is left, and it is loud, because every other thing on
+   the page is qualified by it. */
+.panel.unreachable { background: var(--bad-soft); border: 1px solid var(--bad); }
+.panel.unreachable .kicker { color: var(--bad); }
+.panel.unreachable .unreachable-line { font-size: 1.05rem; color: var(--ink); margin: 0 0 0.7rem; }
+.panel.unreachable .unreachable-line .icon {
+  color: var(--bad); vertical-align: -0.2em; margin-right: 0.4rem;
+}
+.panel.unreachable .note { font-size: 0.9rem; margin-top: 0.7rem; }
+.panel.unreachable .btn { border-color: var(--bad); color: var(--bad); }
+.panel.unreachable .btn:hover { background: var(--bad-soft); }
+
+/* The box's own record could not be read. Red, not muted: the entries below are
+   ours alone and stop at the last read, which a reader has to be told. */
+.integrity.bad .icon { flex: none; }
+
+/* ── Machine settings — a section, behind a click ─────────────────────────────
+   Ownership, the key, removal. They configure the box rather than report on it, so
+   they sit apart and closed: changing one should be something you chose to do. */
+.machine-settings { margin: 3.5rem 0 1.5rem; border-top: 1px solid var(--line); padding-top: 1.75rem; }
+.machine-settings > summary {
+  display: flex; align-items: center; gap: 0.5rem; cursor: pointer;
+  font-size: 1.15rem; font-weight: 600; color: var(--ink); list-style: none;
+  padding: 0.35rem 0.1rem;
+}
+.machine-settings > summary::-webkit-details-marker { display: none; }
+.machine-settings > summary:hover { color: var(--accent); }
+.machine-settings > summary:hover .icon { color: var(--accent); }
+/* The subtitle trails to the far edge, the way a section header's count would. */
+.machine-settings > summary .muted { font-size: 0.85rem; font-weight: 400; margin-left: auto; }
+.machine-settings > summary .icon { color: var(--muted); }
+.machine-settings > summary .settings-caret { transition: transform 0.15s ease; }
+.machine-settings[open] > summary .settings-caret { transform: rotate(180deg); }
+.machine-settings[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; }
+
+/* Removing a box is destructive, so it reads as its own panel rather than as one
+   more disclosure — the accordion above is already the gate, and the button carries
+   its own confirm. Dashed bad, so it is neither the calm card nor the loud one. */
+.panel.danger-remove { background: transparent; border: 1px dashed var(--bad); margin-top: 2rem; }
+.panel.danger-remove .danger-head {
+  display: flex; align-items: center; gap: 0.45rem;
+  font-size: 1rem; font-weight: 600; color: var(--bad); margin: 0 0 0.5rem;
+}
+.panel.danger-remove .note { font-size: 0.9rem; }
+.panel.danger-remove .btn { margin-top: 0.8rem; }
+
 /* Read-only (observe key): calm, not the amber witnessed treatment. */
 .panel.readonly { background: var(--card); border: 1px dashed var(--line); }
 .panel.readonly .kicker { color: var(--muted); }
@@ -133,8 +192,13 @@
 /* The name the box reports for itself, close under the machine name — machine truth. */
 .hostname { color: var(--muted); font-size: 0.85rem; margin: 0.1rem 0 0.6rem; display: flex; align-items: center; gap: 0.3rem; }
 
-/* Hardening shown as a lock (keep the dot colors). */
-.hardening-line { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--muted); margin-top: 0.6rem; }
+/* Hardening shown as a lock (keep the dot colors). It is a security claim about the
+   box, so it reads at the weight of one rather than as another muted footnote. */
+.hardening-line {
+  display: flex; align-items: center; gap: 0.45rem;
+  font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-top: 0.8rem;
+}
+.hardening-line .muted { font-weight: 400; font-size: 0.85rem; }
 .harden-lock { display: inline-flex; vertical-align: -0.15em; }
 .harden-lock.green  { color: var(--dot-green); }
 .harden-lock.yellow { color: var(--dot-yellow); }
@@ -147,7 +211,7 @@
 
 /* An address / identifier line under a title (replaces prose subtitles). */
 .addr { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.25rem; }
-.label-row { margin: 0 0 1.25rem; }
+.label-row { margin: 1.4rem 0 1.75rem; }
 .addr:has(+ .label-row) { margin-bottom: 0.5rem; }
 
 /* ── Chain integrity — un-bypassability, made visible ───────────────────── */
@@ -156,29 +220,41 @@
 .integrity.bad { color: var(--bad); font-weight: 600; }
 .integrity.off { color: var(--muted); }
 
-/* ── The chain — the record as a timeline (the observe spine) ────────────── */
+/* ── The record — one act per line ───────────────────────────────────────────
+   Read as an inbox, not as a timeline: the act is the subject line and carries
+   the weight, who and where are the quiet second line, and when is the right-hand
+   column. Entries are separated by a hairline and nothing else — they are
+   neighbours by clock, not links in a thread (see events/_chain.html.erb). */
 .chain { list-style: none; margin: 0; padding: 0; }
-.chain-entry { display: flex; gap: 0.7rem; padding: 0.45rem 0; position: relative; }
-/* the rail connecting the dots */
-.chain-entry::before {
-  content: ""; position: absolute; left: 0.74rem; top: 0; bottom: 0;
-  width: 1px; background: var(--line);
+/* The glyph and the timestamp centre against the whole two-line entry, not against
+   its first line — an inbox row's leading icon sits in the middle of the row. */
+.chain-entry {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.75rem 0.15rem; border-top: 1px solid var(--line);
 }
-.chain-entry:first-child::before { top: 0.85rem; }
-.chain-entry:last-child::before  { bottom: auto; height: 0.85rem; }
-.chain-dot {
-  flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%;
-  display: grid; place-items: center; z-index: 1;
-  background: var(--inset); color: var(--muted); border: 1px solid var(--line);
-}
-.chain-entry.mutate .chain-dot {
-  color: var(--mutate); background: var(--mutate-bg); border-color: var(--mutate-line);
-}
-.chain-body { min-width: 0; padding-top: 0.1rem; }
-.chain-what { font-weight: 500; }
-.chain-meta { color: var(--muted); font-size: 0.85rem; margin-top: 0.05rem; }
+.chain-entry:first-child { border-top: none; }
+/* The glyph alone — no disc around it, and one neutral grey for every verb. It used
+   to go amber on acts that touched a box, but the verb is now spelled out beside it
+   and a witnessed act already carries its own tag and outcome; a column of colour
+   saying what the words say made the list louder without saying more. Colour on this
+   page is reserved for the two things that are genuinely exceptional: a failed act,
+   and an entry still running. */
+.chain-dot { flex: none; display: inline-flex; color: var(--muted); }
+
+.chain-body { min-width: 0; flex: 1; }
+/* Blockified as a flex item, which is also what lets ::first-letter apply. */
+.chain-line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.1rem 0.4rem; }
+.chain-what { color: var(--ink); }
+/* The verb carries the weight; what it touched reads at normal weight beside it. */
+.chain-act { font-weight: 700; }
+/* The record is append-only, so a summary is never rewritten to fix its case —
+   it is sentence-cased here, at the point of reading, which also brings entries
+   written before this rule into line. */
+.chain-what::first-letter { text-transform: uppercase; }
+.chain-meta { color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem; }
 .chain-meta a { color: var(--accent); }
 .chain-actor { color: var(--ink); }
+.chain-when { flex: none; color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
 
 /* a small inline tag (lower-key than a badge) for "witnessed" on mutate acts */
 .tag { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }

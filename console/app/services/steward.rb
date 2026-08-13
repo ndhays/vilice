@@ -50,7 +50,25 @@ module Steward
 
       machine.update_columns(status: "reachable", last_seen_at: result[:at] || Time.current)
       reconcile_name(machine, result.dig(:data, "data", "machine", "hostname"))
+      reconcile_role(machine, result.dig(:data, "data", "role"))
       reconcile_running_images(machine, result.dig(:data, "data", "apps"))
+    end
+
+    # What the box was prepared as, mirrored onto the column the fleet list reads.
+    #
+    # The role is **the box's fact, and it is set once**: `steward prepare <role>`
+    # writes it, and re-preparing into the other role is refused — you take the apps
+    # off, uninstall, and prepare again (blueprint/steward/provision.md). So the
+    # console does not get an opinion about it. It used to: a button offered "Make
+    # this a balancer", which wrote this column with nothing behind it, and a `host`
+    # so marked would accept balanced installs and then be refused by its own box.
+    #
+    # A box we have not read reports no role, and that is *unknown*, not "host" — so
+    # a blank leaves the column alone rather than quietly demoting it.
+    def reconcile_role(machine, role)
+      return if role.blank?
+      is_balancer = role.to_s == "balancer"
+      machine.update_columns(balancer: is_balancer) unless machine.balancer? == is_balancer
     end
 
     # The name mirrors the box: at Add time we seed it with the SSH host (we can't read
@@ -127,7 +145,7 @@ module Steward
     def run(machine, command, actor:, action:, install: nil, summary: nil, stdin: nil)
       event = Event.record!(
         actor: actor, action: action, machine: machine, install: install,
-        summary: summary || "#{action} on #{machine.name}",
+        summary: summary || machine.name,
         outcome: "pending", raw: { command: command }
       )
       result = Steward.read(machine, command, stdin: stdin)

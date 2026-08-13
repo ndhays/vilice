@@ -1,4 +1,10 @@
 module ApplicationHelper
+  # Appearance, for the <html> element. Signed out there is no operator to have a
+  # preference, so the default theme following the OS is the honest answer — it is
+  # also what the login page wants.
+  def current_theme = Theme.find(Current.user&.theme)
+  def current_mode  = Current.user&.mode || "system"
+
   # Reachability badge — observe-side, reflects the last read from Steward.
   def status_badge(machine)
     label = machine.status.sub("unknown", "not yet seen")
@@ -13,14 +19,34 @@ module ApplicationHelper
 
   # Reachability as a single leading glyph for the compact machine row — the one
   # thing you glance for (is it up). Reuses the .status-ico colours.
+  # One solid dot, read at a glance. The shape differs per state as well as the
+  # colour — filled / slashed / hollow — so the meaning survives without colour
+  # (blueprint/design/tokens.md: status colour is never the only signal).
   MACHINE_STATUS_ICON = {
-    "reachable"   => { icon: "circle-check", klass: "ok",    word: "Reachable" },
-    "unreachable" => { icon: "circle-x",     klass: "bad",   word: "Unreachable" },
-    "unknown"     => { icon: "circle-dot",   klass: "muted", word: "Not yet seen" }
+    "reachable"   => { icon: "circle-filled", klass: "ok",    word: "Reachable" },
+    "unreachable" => { icon: "circle-cut",    klass: "bad",   word: "Unreachable" },
+    "unknown"     => { icon: "circle-hollow", klass: "muted", word: "Not yet seen" }
   }.freeze
   def machine_status_icon(machine)
     s = MACHINE_STATUS_ICON.fetch(machine.status)
-    tag.span(icon(s[:icon], size: 15), class: "row-icon status-ico #{s[:klass]}", title: s[:word])
+    icon_tip(s[:icon], s[:word], size: 19, css_class: "row-icon status-ico #{s[:klass]}")
+  end
+
+  # What the box is *for*, as a single trailing glyph beside the scope marker.
+  # Today that is only the balancer role, which is the one role Steward Console
+  # stores (decisions/one-primitive-composed.md: a role over Machine). The role the
+  # box itself reports needs ingestion before it can appear in a list — see
+  # decisions/open/ui-roadmap.md — so this says what we actually know.
+  def role_icon(machine)
+    if machine.balancer?
+      hosts = machine.fronted_host_count
+      icon_tip("earth", "Load Balancer — #{pluralize(hosts, 'host')}",
+               size: 13, css_class: "role-ico")
+    else
+      apps = machine.app_count
+      tip  = apps.positive? ? "Host — #{pluralize(apps, 'app')}" : "Host"
+      icon_tip("hard-drive", tip, size: 13, css_class: "role-ico")
+    end
   end
 
   # Scope as a compact, muted trailing glyph: observe = an eye (read), operate =
@@ -33,7 +59,115 @@ module ApplicationHelper
   }.freeze
   def scope_icon(machine)
     s = SCOPE_ICON.fetch(machine.scope)
-    tag.span(icon(s[:icon], size: 13), class: "scope-ico", title: s[:word])
+    icon_tip(s[:icon], s[:word], size: 13, css_class: "scope-ico")
+  end
+
+  # ── The box's role ──────────────────────────────────────────────────────────
+  # What a box was prepared as — `host` (runs apps) or `balancer` (fronts others).
+  # It is the box's own fact and it is **set once**: `steward prepare <role>` writes
+  # it, and re-preparing into the other role is refused (blueprint/steward/provision.md).
+  # So it renders as a statement, never a control — the console used to offer a "Make
+  # this a balancer" button, which wrote a column the box had never agreed to.
+  #
+  # The live read is the source when we have one; the stored column is our mirror of
+  # the last read, and is what the fleet list can afford to show. A box we have never
+  # reached has no role — *unknown*, which is not "host".
+  ROLE_BADGE = {
+    "balancer" => { icon: "earth",      word: "Prepared as a balancer — fronts other boxes, runs no containers" },
+    "host"     => { icon: "hard-drive", word: "Prepared as a host — runs apps" }
+  }.freeze
+
+  # Three states, and they are not the same thing:
+  #   the box said so        → the role, live
+  #   the box said nothing   → *not prepared* — we asked and it has no role file
+  #   we could not ask       → *unknown*, falling back to the last read we mirrored
+  def machine_role(machine, status = nil)
+    return status.role.presence if status&.online?
+    machine.last_seen_at.present? ? (machine.balancer? ? "balancer" : "host") : nil
+  end
+
+  def machine_role_icon_name(machine, status = nil)
+    ROLE_BADGE.dig(machine_role(machine, status), :icon) || "circle-help"
+  end
+
+  def machine_role_badge(machine, status = nil)
+    role = machine_role(machine, status)
+
+    if role.nil? && status&.online?
+      # Reached it, and it named no role: it has never been prepared. A different
+      # fact from never having reached it, and it has a fix the operator can run.
+      return tag.span("not prepared", class: "badge role-unprepared",
+                      title: "This box has no role — run `steward prepare <role>` on it")
+    elsif role.nil?
+      return tag.span("role unknown", class: "badge role-unknown",
+                      title: "Not read yet, so what this box was prepared as is unknown")
+    end
+
+    stale = status&.online? ? nil : " (last known)"
+    tag.span(safe_join([ icon(ROLE_BADGE.dig(role, :icon), size: 13), role ], " "),
+             class: "badge role-#{role}", title: "#{ROLE_BADGE.dig(role, :word)}#{stale}")
+  end
+
+  # A long image reference, shown short and copyable. The digest is the thing you
+  # actually compare, and the full ref is 80+ characters that shouldered the columns
+  # either side of it out of the row. Click copies the **whole** reference, not the
+  # truncation — copying an abbreviation would be worse than not offering it.
+  def digest_chip(image)
+    return tag.span("—", class: "muted") if image.blank?
+
+    tag.button(type: "button", class: "digest-chip mono", title: image,
+               data: { controller: "clipboard", clipboard_text_value: image,
+                       action: "click->clipboard#copy" }) do
+      safe_join([ tag.span(short_image(image), class: "digest-text"),
+                  icon("copy", size: 12, css_class: "icon digest-copy"),
+                  icon("check", size: 12, css_class: "icon digest-done") ])
+    end
+  end
+
+  # A command to run, with a copy button. Every command the console shows is meant to
+  # be pasted into a shell on a box, so none of them should have to be selected by
+  # hand — a `steward authorize` line carries a whole public key, and a half-selected
+  # one fails in a way that is tedious to diagnose.
+  #
+  # The same shape as the docs site's blocks (blueprint/design/patterns.md): a real
+  # <button> with an aria-label and an aria-hidden icon, not a click handler on the
+  # <pre>. Copies the exact text, so what you paste is what is shown.
+  def command_block(command, label: "Copy command")
+    return if command.blank?
+
+    tag.div(class: "cmd-block") do
+      safe_join([
+        tag.pre(command, class: "raw cmd"),
+        tag.button(type: "button", class: "cmd-copy", "aria-label": label, title: label,
+                   data: { controller: "clipboard", clipboard_text_value: command,
+                           action: "click->clipboard#copy" }) do
+          safe_join([ icon("copy", size: 14, css_class: "icon cmd-copy-idle"),
+                      icon("check", size: 14, css_class: "icon cmd-copy-done") ])
+        end
+      ])
+    end
+  end
+
+  # ── The Access ledger ───────────────────────────────────────────────────────
+  # How far one key reaches, as a leading glyph. The scope rungs reuse SCOPE_ICON, so
+  # a key's scope draws the same everywhere in the app. An ungated line is not a rung
+  # — it is the absence of a ceiling — so it wears the alert, in the bad colour.
+  REACH_ICON = {
+    "ungated" => { icon: "triangle-alert", klass: "bad",
+                   word: "No forced command — this key reaches the box without passing the gate" }
+  }.freeze
+
+  def access_reach_icon(line)
+    r = REACH_ICON[line.reach]
+    r ||= { icon: SCOPE_ICON.dig(line.reach, :icon) || "circle-help",
+            klass: "reach-#{line.reach}", word: SCOPE_ICON.dig(line.reach, :word) || "Unknown scope" }
+    icon_tip(r[:icon], r[:word], size: 16, css_class: "row-icon reach-ico #{r[:klass]}")
+  end
+
+  # The same word as a badge, for the axes where reach is not the heading.
+  def access_reach_badge(line)
+    return tag.span("ungated", class: "badge reach-ungated") if line.ungated?
+    tag.span(line.reach.presence || "unknown", class: "badge reach-#{line.reach}")
   end
 
   # How a box is shared. Dedicated is the quiet default (no badge); everyone/list
@@ -68,21 +202,20 @@ module ApplicationHelper
     machine.ssh_port.to_i == 22 ? machine.ssh_host : "#{machine.ssh_host}:#{machine.ssh_port}"
   end
 
-  # An install's state, rolled up from its live targets (retired ones don't count).
-  # Severity order, so the worst-but-actionable state wins: failed → deploying →
-  # pending → running. No live target = not yet placed on a box.
-  INSTALL_STATE_ORDER = %w[ failed deploying pending running ].freeze
+  # State-forward badge, on the Install page. Reads `Install#state` — the one ladder
+  # (blueprint/console/interface.md). It used to compute its own, shallower one that
+  # knew only failed/deploying/pending/running/unplaced, so the *deep-dive* page for
+  # an install was the least accurate thing about it: a drifted install, or one whose
+  # box had gone unreachable, read here as plainly "running".
+  INSTALL_STATE_LABEL = {
+    "unplaced"    => "not placed",
+    "unreachable" => "machine unreachable"
+  }.freeze
 
-  def install_state(install)
-    live = install.install_targets.reject(&:install_retired?).map(&:status)
-    return "unplaced" if live.empty?
-    INSTALL_STATE_ORDER.find { |s| live.include?(s) } || "running"
-  end
-
-  # State-forward badge for the install list — the protagonist of the row.
   def install_state_badge(install)
-    state = install_state(install)
-    tag.span(state == "unplaced" ? "not placed" : state, class: "badge state-#{state}")
+    state = install.state
+    tag.span(INSTALL_STATE_LABEL.fetch(state, state), class: "badge state-#{state}",
+             title: INSTALL_STATUS.dig(state, :word))
   end
 
   # ── The intention, rendered as a gap ───────────────────────────────────────
@@ -110,13 +243,9 @@ module ApplicationHelper
     "#{gap} more serving than were asked for. Removing one is an act."
   end
 
-  # The install's rolled-up health as a single glyph — the at-a-glance signal that
-  # leads the install row. Worst-but-actionable wins across live targets.
-  #
-  # HONESTY NOTE: this is built from *stored* state (the last deploy outcome,
-  # last-seen reachability, and recorded image drift), NOT a fresh probe. Until
-  # persistent ingestion lands (#6), "ok" means "last we knew". The precise word
-  # rides the tooltip; don't let the glyph overclaim truth we don't have.
+  # How each `Install#state` draws: the glyph that leads the install row, its colour,
+  # and the precise word on the tooltip. The state ladder — and the honesty note about
+  # what it is built from — lives with the logic, on `Install`.
   INSTALL_STATUS = {
     "failed"      => { icon: "circle-x",       klass: "bad",   word: "Failed" },
     "unreachable" => { icon: "circle-x",       klass: "bad",   word: "Machine unreachable" },
@@ -127,21 +256,12 @@ module ApplicationHelper
     "unplaced"    => { icon: "circle-dot",     klass: "muted", word: "Not placed" }
   }.freeze
 
-  def install_status(install)
-    targets = install.install_targets.reject(&:install_retired?)
-    return "unplaced" if targets.empty?
-    return "failed"      if targets.any?(&:install_failed?)
-    return "unreachable" if targets.any? { |t| t.install_running? && t.machine.seen_unreachable? }
-    return "drift"       if targets.any? { |t| t.install_running? && t.current_image.present? && !t.in_sync? }
-    return "deploying"   if targets.any?(&:install_deploying?)
-    return "pending"     if targets.any?(&:install_pending?)
-    "running"
-  end
-
   # The leading glyph for an install row. Sits in the row-icon slot but carries its
-  # own status colour and the precise word as a tooltip.
+  # own status colour and the precise word as a tooltip. The state itself is
+  # `Install#state` — domain logic, so it lives on the model where the grouping and
+  # the Status page can read the same ladder.
   def install_status_icon(install)
-    s = INSTALL_STATUS.fetch(install_status(install))
+    s = INSTALL_STATUS.fetch(install.state)
     tag.span(icon(s[:icon], size: 15), class: "row-icon status-ico #{s[:klass]}", title: s[:word])
   end
 
@@ -240,7 +360,15 @@ module ApplicationHelper
   # The chain-integrity line — un-bypassability made visible. The box's record is
   # hash-chained; this surfaces that it reads back unbroken (or that it doesn't).
   def record_integrity(record)
-    return tag.p("Box record unreachable.", class: "integrity off") unless record && record[:ok]
+    unless record && record[:ok]
+      # Not "off" — unreachable. The box's own record is the witnessed half, and a
+      # reader who cannot tell "we could not read it" from "there is nothing" is
+      # being misled about the one thing this page exists to show.
+      return tag.p(class: "integrity bad") do
+        safe_join([ icon("circle-cut", size: 14),
+                    "Box record unavailable — the entries below end at the last read." ], " ")
+      end
+    end
     env = record.dig(:data, "data") || {}
     count = env["count"].to_i
     noun = count == 1 ? "entry" : "entries"
@@ -259,10 +387,10 @@ module ApplicationHelper
   # something is wrong (the old app's gem, recomputed from a live read).
   def health_line(status)
     mod = case status.health
-          when :crit, :offline then " crit"
-          when :warn then " warn"
-          else ""
-          end
+    when :crit, :offline then " crit"
+    when :warn then " warn"
+    else ""
+    end
     tag.div(class: "health-line#{mod}") do
       safe_join([ tag.span("", class: "dot dot-#{status.dot}"), status.narrative ], " ")
     end
@@ -304,18 +432,13 @@ module ApplicationHelper
     safe_join(parts, " · ") if parts.any?
   end
 
-  # Acts that change something (a box, or Steward Console's own domain) read as
-  # mutations; everything else is a quiet observe/system note. Works on an Event
-  # or a ChainItem (both carry `action`). A heuristic on the verb for now — the
-  # box record carries a real scope we could read instead.
-  WITNESSED_VERBS = %w[deploy rollback roll start stop restart remove apply
-                       authorize revoke grant link add create set store connect
-                       label].freeze
-
-  def event_kind(item)
-    return :mutate if WITNESSED_VERBS.any? { |v| item.action.to_s.downcase.include?(v) }
-    :observe
-  end
+  # `event_kind` lived here: a hand-kept list of substrings that decided whether an
+  # entry's glyph went amber. It is gone with the amber. The list was the kind of
+  # thing that rots without failing — `updated` had already fallen out of it, so
+  # apply-updates was quietly drawing as an observe — and it was guessing at
+  # something the record can eventually be asked directly (the box record carries a
+  # real scope). Nothing replaces it, because nothing needed it: a witnessed act is
+  # marked by its `witnessed` tag and its outcome, in words.
 
   # The outcome of a witnessed act, settled on its own entry: pending acts read
   # "running", a settled act shows ok/failed (failed carries the box's reason).
@@ -332,17 +455,54 @@ module ApplicationHelper
     end
   end
 
-  def event_icon_name(item)
-    case item.action.to_s.downcase
-    when /deploy/                 then "box"
-    when /rollback/               then "rotate-cw"
-    when /start|restart/          then "play"
-    when /stop|remove/            then "square"
-    when /authorize|revoke|grant/ then "shield"
-    when /label/                  then "tag"
-    when /observ|snapshot|status/ then "activity"
-    when /link/                   then "handshake"
-    else                               "circle-dot"
+  # What an act touched, without the verb. `action` and `summary` are two columns —
+  # the verb and its object — and the entry renders them as two parts of one
+  # sentence. Entries recorded before they were kept apart lead with the verb
+  # ("Deployed acme-web on devbox"); the record is append-only, so the duplicate is
+  # dropped here rather than rewritten. Returns "" when nothing is left, which is
+  # also the case for an entry whose summary was only ever the verb.
+  def act_detail(item)
+    verb, summary = item.action.to_s, item.summary.to_s
+    # Try the whole verb, then just its first word — an entry recorded under the old
+    # "linked machine" still leads its summary with "Linked" alone.
+    [ verb, verb.split.first ].compact.reject(&:blank?).uniq.each do |lead|
+      stripped = summary.sub(/\A#{Regexp.escape(lead)}\b[\s:—-]*/i, "")
+      return stripped.strip unless stripped == summary
+    end
+    summary.strip
+  end
+
+  def event_icon_name(item) = action_icon_name(item.action)
+
+  # The glyph for a verb. Taken by name rather than by entry so the Record's action
+  # filter can wear the same glyph the entries do — a pill and the rows it selects
+  # should not be two different vocabularies for one word.
+  # The verbs are single words (`updated`, `authorized`, `linked`), but the older
+  # two-word spellings are still matched: the record is append-only, so entries
+  # written before the rename keep their recorded verb and must still draw right.
+  def action_icon_name(action)
+    case action.to_s.downcase
+    when "updated", /applied update/ then "check-check"
+    when /deploy/                    then "rocket"
+    when /rollback|rolled/           then "rotate-cw"
+    when /restart|start/             then "play"
+    when /stop/                      then "square"
+    when /remov/                     then "trash-2"
+    when /authoriz|revok|grant/      then "key-round"
+    when /label/                     then "tag"
+    when /observ|snapshot|status/    then "activity"
+    when /link/                      then "link"
+    when /imported|exported/         then "file-up"
+    when /added/                     then "plus"
+    when /edited|restated/           then "pencil"
+    when /star/                      then "star"
+    when /placed/                    then "map-pin"
+    when /promoted|demoted|routed/   then "earth"
+    when /transferred|released/      then "handshake"
+    when /restricted/                then "lock"
+    when /opened/                    then "lock-open"
+    when "set"                       then "settings-2"
+    else                                  "circle-dot"
     end
   end
 end

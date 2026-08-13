@@ -9,9 +9,9 @@ class MachineGrantsController < ApplicationController
     grant = MachineGrant.new(machine: @machine, project: project)
     MachineGrant.transaction do
       grant.save!
-      Event.record!(actor: Current.user.email_address, action: "shared machine",
+      Event.record!(actor: Current.user.email_address, action: "granted",
                     machine: @machine, project: project,
-                    summary: "Allowed #{project.name} on #{@machine.name}")
+                    summary: "#{project.name} on #{@machine.name}")
     end
     redirect_to @machine, notice: "Allowed #{project.name} on #{@machine.name}."
   rescue ActiveRecord::RecordInvalid => e
@@ -23,9 +23,9 @@ class MachineGrantsController < ApplicationController
     project = grant.project
     MachineGrant.transaction do
       grant.destroy!
-      Event.record!(actor: Current.user.email_address, action: "unshared machine",
+      Event.record!(actor: Current.user.email_address, action: "revoked",
                     machine: @machine, project: project,
-                    summary: "Removed #{project.name} from #{@machine.name}")
+                    summary: "#{project.name} on #{@machine.name}")
     end
     redirect_to @machine, notice: "Removed #{project.name} from #{@machine.name}."
   end

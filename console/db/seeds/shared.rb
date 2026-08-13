@@ -89,6 +89,69 @@ module Scenario
     app
   end
 
+  # A stocked App Library, so the install flow has something real to run through.
+  # Chosen to cover every shape the install form has to handle rather than to be a
+  # recommended list: no inputs at all, plain env, secret env, a mounted secret
+  # file, and a service that is not HTTP (no health path — nothing for Caddy to
+  # probe). Ports are all >= 1024: the box refuses anything lower, and the App
+  # model mirrors that so it fails here with a sentence instead of at deploy.
+  #
+  # Images are pinned by tag here, not digest. The install ceremony resolves a tag
+  # to a digest at deploy — a tag means something different tomorrow, which is the
+  # whole reason `steward deploy` insists on the pin.
+  def library!
+    library_app!("nginx", image: "docker.io/nginxinc/nginx-unprivileged", tag: "v1",
+                 port: 8080, health: "/",
+                 description: "Unprivileged nginx — the unprivileged-port app contract demo.")
+
+    library_app!("gitea", image: "docker.io/gitea/gitea", tag: "v1.22",
+                 port: 3000, health: "/api/healthz",
+                 description: "Git hosting with a web UI. Small enough for one box.",
+                 env: [ { "key" => "GITEA__server__ROOT_URL", "secret" => false },
+                        { "key" => "GITEA__database__PASSWD", "secret" => true } ])
+
+    library_app!("uptime-kuma", image: "docker.io/louislam/uptime-kuma", tag: "v1",
+                 port: 3001, health: "/",
+                 description: "Uptime monitoring. No inputs — deploy and open it.")
+
+    library_app!("grafana", image: "docker.io/grafana/grafana", tag: "v11",
+                 port: 3000, health: "/api/health",
+                 description: "Dashboards over your metrics.",
+                 env: [ { "key" => "GF_SERVER_ROOT_URL", "secret" => false },
+                        { "key" => "GF_SECURITY_ADMIN_PASSWORD", "secret" => true } ])
+
+    library_app!("miniflux", image: "docker.io/miniflux/miniflux", tag: "v2",
+                 port: 8080, health: "/healthcheck",
+                 description: "A quiet RSS reader. Wants a database URL and an admin password.",
+                 env: [ { "key" => "ADMIN_USERNAME", "secret" => false },
+                        { "key" => "DATABASE_URL", "secret" => true },
+                        { "key" => "ADMIN_PASSWORD", "secret" => true } ])
+
+    library_app!("vaultwarden", image: "docker.io/vaultwarden/server", tag: "v1",
+                 port: 8080, health: "/alive",
+                 description: "Password vault. The admin token is off-record, on stdin.",
+                 env: [ { "key" => "DOMAIN", "secret" => false },
+                        { "key" => "ADMIN_TOKEN", "secret" => true } ])
+
+    # The secret-*file* case: a whole config mounted into the container, never a
+    # value on a command line. The App model's own docs use this example.
+    library_app!("zot", image: "docker.io/project/zot", tag: "v2",
+                 port: 5000, health: "/v2/",
+                 description: "An OCI registry. Its config arrives as a mounted secret file.",
+                 secret_files: [ { "name" => "config", "path" => "/etc/zot/config.json" } ])
+
+    # Not HTTP: no health path, because there is nothing for Caddy to probe. Blank
+    # is a legitimate answer here, not missing data.
+    library_app!("redis", image: "docker.io/library/redis", tag: "v7", port: 6379,
+                 description: "In-memory store. Not an HTTP service — no health path.")
+
+    library_app!("postgres", image: "docker.io/library/postgres", tag: "v16", port: 5432,
+                 description: "The database. Not HTTP either; its password is off-record.",
+                 env: [ { "key" => "POSTGRES_DB", "secret" => false },
+                        { "key" => "POSTGRES_USER", "secret" => false },
+                        { "key" => "POSTGRES_PASSWORD", "secret" => true } ])
+  end
+
   def report!
     name = ENV.fetch("SCENARIO", "empty")
     puts "Seeded [#{name}]: #{Project.count} projects, #{Machine.count} machines, " \

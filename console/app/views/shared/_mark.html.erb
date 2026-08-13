@@ -1,0 +1,24 @@
+<%# The Steward mark — blueprint/design/logo.md, and the same drawing as
+    app/assets/images/logo.svg. One copy, because two hand-inlined copies is how
+    the sign-in page ended up wearing a different logo than the rail.
+
+    Everything black is currentColor, so the mark takes the ink of whatever it
+    sits in; only the switch and the lit door are literal brand yellow. Inline,
+    so it is aria-hidden and the adjacent wordmark is the accessible name.
+
+    Locals: size (px, default 24 — the mark is only legible at 24 and up). %>
+<% size = local_assigns.fetch(:size, 24) %>
+<svg width="<%= size %>" height="<%= size %>" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+     stroke-linejoin="round" aria-hidden="true">
+  <%# The box. Everything else happens inside it: one machine, one door. %>
+  <rect x="2" y="4.5" width="20" height="15" rx="2.5"/>
+  <%# Two callers arriving from opposite sides, converging on the one door. %>
+  <path d="M6.4 7.5 L6.4 13.1 L10.5 10.3 Z" fill="currentColor" stroke="none"/>
+  <path d="M17.6 7.5 L17.6 13.1 L13.5 10.3 Z" fill="currentColor" stroke="none"/>
+  <circle cx="12" cy="10.3" r="1.5" fill="var(--brand-yellow)" stroke="none"/>
+  <%# The prompt: this is a terminal, and it is waiting for a named command. %>
+  <circle cx="6" cy="16.8" r="0.9" fill="var(--brand-yellow)" stroke="none"/>
+  <circle cx="8.7" cy="16.8" r="0.9" fill="currentColor" stroke="none"/>
+  <line x1="11.8" y1="16.8" x2="18" y2="16.8"/>
+</svg>

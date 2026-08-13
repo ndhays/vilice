@@ -2,6 +2,9 @@
 
 > Files: `site/assets/logo.svg`, `site/assets/favicon.svg`,
 > `site/assets/logo.png`, `console/app/assets/images/logo.svg`.
+> In the console the mark is inlined — one partial, `app/views/shared/_mark.html.erb`,
+> rendered by the rail and by the auth lockup. It takes a `size:` and nothing else,
+> so there is no second hand-drawn copy to drift.
 
 **Status:** Canonical. Last touched 2026-08-09.
 
@@ -77,8 +80,11 @@ wide by the cap height — where the lockup has room to be the page's identity: 
 site header, the README, an `og:image`. Leave it off in tight chrome. It never
 blinks; an animated cursor in a header is a distraction with no information in it.
 
-The wordmark is `steward` alone. "Steward Console" is set as the mark plus the words
-in `--font-sans`, and is the console's lockup, not this one.
+The wordmark is `steward` alone — and it is now the *only* lockup. The console used
+to set "Steward Console" as the mark plus the words in `--font-sans`; it dropped the
+second word, so the rail and the sign-in card wear this one. "Steward Console" names
+the Rails app, and appears nowhere in the UI
+([`blueprint/console/interface.md`](../console/interface.md)).
 
 ---
 

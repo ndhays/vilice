@@ -23,7 +23,7 @@ class AppsController < ApplicationController
 
   def create
     @app = App.new(app_params)
-    if save_recording(@app, "added app", "Added #{@app.name} to the App Library")
+    if save_recording(@app, "added", "#{@app.name} to the App Library")
       redirect_to @app, notice: "Added #{@app.name}. Add a version to install it."
     else
       render :new, status: :unprocessable_entity
@@ -32,7 +32,7 @@ class AppsController < ApplicationController
 
   def update
     @app.assign_attributes(app_params)
-    if save_recording(@app, "updated app", "Updated #{@app.name}")
+    if save_recording(@app, "edited", @app.name)
       redirect_to @app, notice: "Updated #{@app.name}."
     else
       render :edit, status: :unprocessable_entity
@@ -42,7 +42,7 @@ class AppsController < ApplicationController
   def destroy
     App.transaction do
       @app.destroy!
-      record("removed app", "Removed #{@app.name} from the App Library")
+      record("removed", "#{@app.name} from the App Library")
     end
     redirect_to apps_path, notice: "Removed #{@app.name} from the App Library."
   end
@@ -70,7 +70,7 @@ class AppsController < ApplicationController
 
     apps  = Library.import(data)
     count = apps.size
-    record("imported library", "Imported #{count} #{'app'.pluralize(count)} from #{source}",
+    record("imported", "#{count} #{'app'.pluralize(count)} from #{source}",
            detail: apps.map(&:name).sort.join(", ")) if count.positive?
     redirect_to apps_path, notice: "Imported #{count} #{'app'.pluralize(count)}."
   rescue Library::UnsupportedFormat => e
@@ -88,7 +88,7 @@ class AppsController < ApplicationController
     if names.any?
       App.transaction do
         apps.destroy_all
-        record("removed apps", "Removed #{names.size} #{'app'.pluralize(names.size)} from the App Library",
+        record("removed", "#{names.size} #{'app'.pluralize(names.size)} from the App Library",
                detail: names.join(", "))
       end
       redirect_to apps_path, notice: "Removed #{names.size} #{'app'.pluralize(names.size)}."

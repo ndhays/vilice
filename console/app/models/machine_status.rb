@@ -149,7 +149,7 @@ class MachineStatus
 
   # The plain-language health line — the old app's gem, from the live read.
   def narrative
-    return "Can't reach this box" unless online?
+    return "Unreachable" unless online?
     problem || "Online"
   end
 

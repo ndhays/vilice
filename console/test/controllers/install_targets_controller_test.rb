@@ -44,8 +44,8 @@ class InstallTargetsControllerTest < ActionDispatch::IntegrationTest
       post install_targets_path(@install), params: { machine_id: @free.id }
     end
     event = Event.latest.first
-    assert_equal "placed install", event.action
-    assert_equal "Placed web on b2", event.summary
+    assert_equal "placed", event.action
+    assert_equal "web on b2", event.summary
     assert_equal @user.email_address, event.actor
     # The new target is placed, not yet serving — the deploy is a separate, witnessed act.
     assert_equal "pending", InstallTarget.last.status

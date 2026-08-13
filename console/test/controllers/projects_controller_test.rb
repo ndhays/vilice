@@ -28,7 +28,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Hank Scorpio", project.contact_name
     e = Event.latest.first
     assert_equal @user.email_address, e.actor
-    assert_equal "added project", e.action
+    assert_equal "added", e.action
     assert_redirected_to project_path(project)
   end
 
@@ -46,7 +46,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     @project.reload
     assert_equal "Acme Corp", @project.name
     assert_equal "Wile E.", @project.contact_name
-    assert_equal "updated project", Event.latest.first.action
+    assert_equal "edited", Event.latest.first.action
     assert_redirected_to project_path(@project)
   end
 
@@ -63,7 +63,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
       end
     end
     assert_redirected_to projects_path
-    assert_equal "removed project", Event.latest.first.action
+    assert_equal "removed", Event.latest.first.action
   end
 
   test "destroy is refused while the project still runs a live app" do
@@ -115,11 +115,11 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     end
     e = Event.latest.first
     assert_equal @user.email_address, e.actor
-    assert_equal "starred project", e.action
+    assert_equal "starred", e.action
 
     # …and back off.
     patch star_project_path(@project)
     refute @project.reload.starred?
-    assert_equal "unstarred project", Event.latest.first.action
+    assert_equal "unstarred", Event.latest.first.action
   end
 end

@@ -1,4 +1,4 @@
-<% content_for :title, "Sign In — Steward Console" %>
+<% content_for :title, "Sign In — Steward" %>
 
 <div class="auth">
   <div class="auth-card">
@@ -13,12 +13,11 @@
         <%= form.password_field :password, required: true, maxlength: 72,
               autocomplete: "current-password", placeholder: "••••••••" %></label>
 
-      <div class="form-actions">
-        <%= button_tag class: "btn mutate" do %>
-          <%= safe_join([ icon("log-in", size: 14), "Sign In" ], " ") %>
-        <% end %>
-        <%= link_to "Forgot password?", new_password_path, class: "auth-link" %>
-      </div>
+      <%# No icon: the word is the whole button, and a glyph beside "Sign In" says
+          nothing the word doesn't. Amber is reserved for a recorded act against a
+          box (blueprint/design/tokens.md), so this is the plain ink button. %>
+      <%= button_tag "Sign In", class: "btn auth-submit" %>
+      <%= link_to "Forgot password?", new_password_path, class: "auth-link" %>
     <% end %>
   </div>
 </div>

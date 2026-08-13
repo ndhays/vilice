@@ -18,7 +18,7 @@ class ProjectMachinesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_includes @project.reload.machines, @machine
     assert_redirected_to project_path(@project)
-    assert_equal "added machine", Event.latest.first.action
+    assert_equal "added", Event.latest.first.action
   end
 
   test "a dedicated box owned by another project is refused" do

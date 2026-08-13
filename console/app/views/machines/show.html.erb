@@ -1,146 +1,233 @@
-<% content_for :title, "#{@machine.name} — Steward Console" %>
+<% content_for :title, "#{@machine.name} — Steward" %>
 
 <%= breadcrumb [["Machines", machines_path], [@machine.name, nil]] %>
 
-<h1>
-  <%# On the box this Steward Console runs on, lead with a location pin, not the machine
-      glyph — it reads as "you are here" at a glance. %>
-  <%= icon(you_are_here?(@status) ? "map-pin" : "hard-drive", size: 20) %>
-  <%= @machine.name %>
+<%# ── Identity: one line, then one line of facts ────────────────────────────
+    This used to be five stacked blocks — title, reported hostname, health line,
+    address, labels — before the page said anything about the box. What a box *is*
+    fits on two lines, and the room that buys goes to what is running on it. %>
+<h1 class="machine-head">
+  <%# On the box Steward runs on, lead with a location pin — it reads as "you are
+      here" at a glance. Otherwise the glyph is the role, which is the first thing
+      worth knowing about a box. %>
+  <%= icon(you_are_here?(@status) ? "map-pin" : machine_role_icon_name(@machine, @status), size: 22) %>
+  <span class="machine-name"><%= @machine.name %></span>
+  <%= machine_role_badge(@machine, @status) %>
   <%= status_badge(@machine) %>
   <%= scope_badge(@machine) %>
   <%= sharing_badge(@machine) %>
   <%= owner_badge(@machine) %>
   <% if you_are_here?(@status) %>
-    <%# NOTE: acting on the self box is the OOM-sensitive path (Steward Console deploying
-        its own box) — the mutate ceremony will need self-aware handling here
-        (warn/guard) before #20 self-deploy. See decisions/open/ui-shape.md. %>
-    <span class="badge self" title="The box this Steward Console is running on">you are here</span>
+    <%# NOTE: acting on the self box is the OOM-sensitive path (Steward deploying its
+        own box) — the mutate ceremony will need self-aware handling here (warn/guard)
+        before #20 self-deploy. See decisions/open/ui-shape.md. %>
+    <span class="badge self" title="The box Steward runs on">you are here</span>
   <% end %>
 </h1>
-<% if @status.online? && @status.hostname.present? %>
-  <%# The name the box reports for itself — machine truth (mono). Pulled over a
-      verified SSH connection, so a wrong box surfaces on its own (host-key
-      failure or an obviously-wrong name); no separate match/mismatch check. %>
-  <div class="hostname mono" title="as reported by the machine">
-    <%= icon "hard-drive", size: 12 %> <%= @status.hostname %>
-  </div>
-<% end %>
-<%= health_line(@status) %>
-<p class="addr">
+
+<%# One line of facts: the name the box reports for itself (machine truth, pulled over
+    a verified SSH connection), the address we dial, the clients it serves, and the
+    plain-language health. %>
+<p class="addr machine-facts">
+  <% if @status.online? && @status.hostname.present? %>
+    <span class="mono" title="as reported by the machine"><%= @status.hostname %></span> ·
+  <% end %>
   <span class="mono"><%= ssh_address(@machine) %></span>
   <% if @machine.projects.any? %>
     · <%= safe_join(@machine.projects.map { |p| link_to(p.name, p) }, ", ") %>
   <% end %>
 </p>
+<%= health_line(@status) %>
 <div class="label-row"><%= render "labels/editor", labelable: @machine %></div>
 
-<%# Access — Steward Console's scoped key for this box, and the line to authorize it.
-    Steward Console generates the key (private encrypted); the operator runs this on the
-    box once to let Steward Console in. See machine-onboarding.md / Access (#16). %>
-<% if @machine.authorize_command %>
-  <details class="access" <%= "open" unless @status.online? %>>
-    <summary><%= icon "shield", size: 13 %> Steward Console's key · authorize on the box</summary>
-    <p class="note">Run this once on the box (as the operator) to let Steward Console in:</p>
-    <pre class="raw cmd"><%= @machine.authorize_command %></pre>
-    <p class="note muted">Steward Console holds the matching private key (encrypted) and never root.</p>
-  </details>
-<% end %>
+<%# ── Unreachable ─────────────────────────────────────────────────────────────
+    When the box does not answer we know **nothing current** about it, so the page
+    does not lay out empty cards that each apologise in their own words. One card
+    owns the message, and every card that could only have held a live read is gone
+    rather than dimmed — there is nothing to dim, because there is nothing.
 
-<%= render "machines/sharing", machine: @machine, projects: @projects %>
-
-<%# ── Observe ─────────────────────────────────────────────────────────── %>
-<div class="panel observe">
-  <div class="kicker">Observe · live status (cached)</div>
-  <% if @status.online? %>
-    <strong><%= @status.hostname %></strong>
-    <ul class="metrics">
-      <%# What the box was prepared as — its own answer to "what am I for". The view
-          shapes itself around this: a balancer shows no Apps section, because it has
-          no container runtime and would refuse a deploy by name. A box that has never
-          been prepared reports nothing, which reads as unknown. %>
-      <li><span class="k"><%= icon "hard-drive", size: 13 %> role</span><span class="v"><%= @status.role.presence || "not prepared" %></span></li>
-      <li><span class="k"><%= icon "cpu", size: 13 %> load</span><span class="v"><%= @status.load1 %></span></li>
-      <li><span class="k"><%= icon "memory-stick", size: 13 %> memory used</span><span class="v"><%= @status.mem_percent %>%</span></li>
-      <li><span class="k"><%= icon "container", size: 13 %> disk used</span><span class="v"><%= @status.disk_percent %>%</span></li>
-      <li><span class="k"><%= icon "clock", size: 13 %> uptime</span><span class="v"><%= distance_of_time_in_words(0, @status.uptime_sec) %></span></li>
-    </ul>
-    <%# Hardening posture, read from the fact the box published (not a live check). %>
-    <%= hardening_line(@status) %>
-    <details>
-      <summary>raw</summary>
-      <pre class="raw"><%= JSON.pretty_generate(@status.raw) %></pre>
-    </details>
-  <% else %>
-    <p>Couldn't read this machine.</p>
+    Our own record is a different matter and stays at full strength further down: it
+    is not stale, it is simply the only half we still have. %>
+<% if !@status.online? %>
+  <div class="panel unreachable">
+    <div class="panel-head">
+      <div class="kicker">Unreachable</div>
+      <%= button_to refresh_machine_path(@machine), class: "btn sm panel-action" do %>
+        <%= safe_join([ icon("rotate-cw", size: 13), "Try again" ], " ") %>
+      <% end %>
+    </div>
+    <p class="unreachable-line">
+      <%= icon "circle-cut", size: 18 %>
+      Steward could not reach <strong><%= @machine.name %></strong><%
+        %><% if @machine.last_seen_at %>, last heard from <%= time_ago_in_words(@machine.last_seen_at) %> ago<% end %>.
+    </p>
     <pre class="raw"><%= @status.error %></pre>
-  <% end %>
-  <p><%= button_link_to "Read Now", refresh_machine_path(@machine), icon: "eye", class: "btn" %></p>
+  </div>
+
+<%# ── Observe · live status ───────────────────────────────────────────────── %>
+<% else %>
+<div class="panel observe">
+  <div class="panel-head">
+    <div class="kicker">Observe · live status (cached)</div>
+    <%# A POST, not a link: it opens an SSH connection to the box, so it must not be
+        something a hover or a prefetch can fire. Top-right, where a card's action
+        belongs — it was a full-width button at the bottom of the card. %>
+    <%= button_to refresh_machine_path(@machine), class: "btn sm panel-action" do %>
+      <%= safe_join([ icon("rotate-cw", size: 13), "Read now" ], " ") %>
+    <% end %>
+  </div>
+
+  <ul class="metrics">
+    <li><span class="k"><%= icon "cpu", size: 13 %> load</span><span class="v"><%= @status.load1 %></span></li>
+    <li><span class="k"><%= icon "memory-stick", size: 13 %> memory used</span><span class="v"><%= @status.mem_percent %>%</span></li>
+    <li><span class="k"><%= icon "container", size: 13 %> disk used</span><span class="v"><%= @status.disk_percent %>%</span></li>
+    <li><span class="k"><%= icon "clock", size: 13 %> uptime</span><span class="v"><%= distance_of_time_in_words(0, @status.uptime_sec) %></span></li>
+  </ul>
+  <%# Hardening posture, read from the fact the box published (not a live check). It
+      is a security claim about the box, so it reads at the weight of one. %>
+  <%= hardening_line(@status) %>
+  <details>
+    <summary>raw</summary>
+    <pre class="raw"><%= JSON.pretty_generate(@status.raw) %></pre>
+  </details>
 </div>
 
-<%# ── Apps on this box — read-only. App lifecycle (deploy, start/stop, remove, …)
-    happens on the Install page; here we just list what runs where, and link
-    through. See decisions/install-the-app-actions-home.md. The project is shown
-    only when there is one — an install needs no client. %>
-<% if @installs.any? %>
-  <h2>Apps</h2>
-  <ul class="box-apps">
-    <% @installs.each do |install| %>
-      <li>
-        <span class="app-name"><%= icon "box", size: 14 %>
-          <%= link_to install.name, install %></span>
-        <span class="app-project">
-          <%= link_to install.project.name, install.project if install.project %>
-        </span>
-      </li>
-    <% end %>
-  </ul>
-<% end %>
+<%# ── Apps ────────────────────────────────────────────────────────────────────
+    What the box says is running, which is the reason the box exists — so it gets the
+    room. Each row carries the image digest it is actually running, truncated with
+    click-to-copy, and links through to the Install where we have one: app lifecycle
+    lives there (decisions/install-the-app-actions-home.md), never here.
 
-<%# ── Apps on this box ─────────────────────────────────────────────────── %>
-<%# Absent only where the box says it is a balancer — that box runs no containers.
-    An unreachable or unprepared box still shows the section, because no role read
-    is *unknown*, not *runs nothing*. Lists what the box says is running, not what
-    we think it should be. No Project required: a machine-view deploy sends an
-    AppConfig and keeps nothing. %>
+    Absent only where the box says it is a balancer — that box runs no containers and
+    would refuse a deploy by name. An unreachable or unprepared box still shows the
+    section, because no role read is *unknown*, not *runs nothing*. %>
 <% unless @status.balancer? %>
   <div class="panel observe">
-    <div class="kicker">Observe · apps</div>
-    <% if !@status.online? %>
-      <p class="muted">Unreachable — what is running here is unknown, not none.</p>
-    <% elsif @status.apps.empty? %>
+    <div class="panel-head">
+      <div class="kicker">Apps on this box</div>
+      <%# Deploying travels the same SSH connection as the read that just failed, so
+          on an unreachable box the act is absent rather than offered and refused. %>
+      <% if @machine.operate? %>
+        <%= link_to safe_join([ icon("rocket", size: 13), "Deploy an app" ], " "),
+              new_machine_box_app_path(@machine), class: "btn sm panel-action" %>
+      <% end %>
+    </div>
+
+    <% if @status.apps.empty? %>
       <p class="muted">No apps on this box.</p>
     <% else %>
-      <ul class="box-apps">
+      <ul class="rows app-box-rows">
         <% @status.apps.each do |app| %>
-          <li>
-            <span class="app-name"><%= icon "box", size: 14 %> <%= app["name"] %></span>
-            <span class="app-project"><%= app["image"] %></span>
-            <% if @machine.operate? %>
-              <%= button_to "Remove", machine_box_app_path(@machine, app["name"]),
-                    method: :delete, class: "btn-quiet",
-                    form: { data: { turbo_confirm: "Remove #{app['name']} from #{@machine.name}? This is a recorded act on the box." } } %>
-            <% end %>
+          <% install = @installs.find { |i| i.name == app["name"] } %>
+          <li class="row">
+            <span class="cell-name">
+              <%= icon "box", size: 15, css_class: "icon row-icon" %>
+              <% if install %>
+                <%= link_to app["name"], install, class: "row-name" %>
+              <% else %>
+                <span class="row-name"><%= app["name"] %></span>
+              <% end %>
+            </span>
+            <span class="cell-project">
+              <% if install&.project %>
+                <%= link_to install.project.name, install.project, class: "owner-link" %>
+              <% elsif install.nil? %>
+                <%# The box runs it, our record doesn't know it — a machine-view deploy
+                    keeps no Install, and so does anything deployed outside the console. %>
+                <span class="badge unowned" title="Running on the box with no placement recorded here">not in our record</span>
+              <% end %>
+            </span>
+            <span class="cell-image"><%= digest_chip(app["image"]) %></span>
+            <span class="cell-actions">
+              <% if @machine.operate? %>
+                <%= button_to machine_box_app_path(@machine, app["name"]),
+                      method: :delete, class: "btn-quiet danger sm",
+                      form: { data: { turbo_confirm: "Remove #{app['name']} from #{@machine.name}? This is a recorded act on the box." } } do %>
+                  <%= icon "trash-2", size: 13 %>
+                <% end %>
+              <% end %>
+            </span>
           </li>
         <% end %>
       </ul>
     <% end %>
 
-    <% if @machine.operate? %>
-      <p><%= link_to "Deploy an app", new_machine_box_app_path(@machine), class: "btn" %></p>
-    <% else %>
-      <p class="muted">This machine's key carries observe scope — reads only.</p>
+    <%# Placements we hold that the box did not report back. The gap is stated, never
+        closed on its own (decisions/drift-is-surfaced-never-closed.md). %>
+    <% missing = @installs.reject { |i| @status.apps.any? { |a| a["name"] == i.name } } %>
+    <% if missing.any? %>
+        <p class="note muted">
+          <%= icon "triangle-alert", size: 13 %>
+          Placed here but not reported running:
+        <%= safe_join(missing.map { |i| link_to(i.name, i) }, ", ") %>.
+      </p>
+    <% end %>
+
+    <% unless @machine.operate? %>
+      <p class="note muted">This box holds an <strong>observe</strong> key — reads only.</p>
     <% end %>
   </div>
 <% end %>
 
+<%# ── Maintenance — its own card, because it is its own thing: when the box patches
+    itself, and the one act that jumps the queue. Amber, because Apply Now is
+    witnessed. %>
+<% if @machine.operate? && @status.online? %>
+  <div class="panel mutate">
+    <div class="panel-head">
+      <div class="kicker">Maintenance</div>
+      <% if @status.updates_available? %>
+        <%= link_to safe_join([ icon("check-check", size: 13), "Apply now" ], " "),
+              new_machine_mutation_path(@machine, act: "apply-updates"),
+              class: "btn mutate sm panel-action", data: { turbo_frame: "ceremony" } %>
+      <% end %>
+    </div>
+
+    <% if @status.maintenance_known? %>
+      <p class="maint-line"><%= icon "stethoscope", size: 15 %>
+        <strong>Daily at <%= @status.maintenance_time %></strong></p>
+      <p class="muted maint-note">Security patches install themselves<%=
+        "; the box reboots then if the kernel needs it" if @status.auto_reboot? %>.</p>
+    <% else %>
+      <p class="maint-line muted"><%= icon "stethoscope", size: 15 %>
+        <strong>No maintenance window.</strong></p>
+      <p class="muted maint-note">Updates wait until someone applies them.</p>
+    <% end %>
+
+    <% if @status.updates_available? %>
+      <p class="maint-pending" title="<%= @status.update_packages.join("\n") %>">
+        <%= pluralize(@status.update_count, "update") %> waiting.
+        Runs <code>steward apply-updates</code> over scoped SSH — previewed, then recorded before it runs.
+      </p>
+    <% else %>
+      <p class="muted updates-current"><%= icon "circle-check", size: 15 %> <strong>Up to date.</strong></p>
+    <% end %>
+  </div>
+
+  <%# The ceremony lands here: pick an act → this frame fills with the preview of the
+      exact record line, then Confirm writes & runs it. %>
+  <%= turbo_frame_tag "ceremony" %>
+<% elsif !@machine.operate? %>
+  <div class="panel readonly">
+    <div class="kicker">Read-only</div>
+    <p class="note">This box holds an <strong>observe</strong> key. Steward can read it,
+      but cannot act on it — grant <strong>operate</strong> to enable changes here.</p>
+  </div>
+<% end %>
+
 <%# ── The edge, when this box is a balancer ─────────────────────────────────
-    Two halves again, and kept visibly apart: the table this box *should* serve, derived
-    from the installs that select it, and the addresses it *reports* fronting. Nothing
+    Two halves, kept visibly apart: the table this box *should* serve, derived from the
+    installs that select it, and the addresses it *reports* fronting. Nothing
     reconciles them — applying is an act (drift-is-surfaced-never-closed.md). %>
-<% if @machine.balancer? %>
+<% if @machine.balancer? && @status.online? %>
   <div class="panel intent">
-    <div class="kicker">Edge · derived from the installs behind it</div>
+    <div class="panel-head">
+      <div class="kicker">Edge · derived from the installs behind it</div>
+      <% if @machine.operate? %>
+        <%= button_link_to "Apply routing", new_machine_mutation_path(@machine, act: "route"),
+                 icon: "earth", class: "btn mutate sm panel-action" %>
+      <% end %>
+    </div>
     <% if @table.any? %>
       <ul class="route-table">
         <% @table.each do |r| %>
@@ -157,98 +244,89 @@
         applying it would tell the box to front nothing.</p>
     <% end %>
 
-    <%# Reality. An unreachable box reports nothing, and "nothing" must not read as
-        "fronting nothing" — that's the dangerous misreading. %>
+    <%# Reality — what the box reports fronting, beside the plan above it. %>
     <p class="note muted">
-      <% if !@status.online? %>
-        Unreachable — what this box is fronting is <strong>unknown</strong>, not none.
-      <% elsif @status.routes.any? %>
+      <% if @status.routes.any? %>
         Box reports fronting: <span class="mono"><%= @status.routes.join(", ") %></span>
       <% else %>
         Box reports fronting nothing yet.
       <% end %>
     </p>
-
-    <% if @machine.operate? %>
-      <p><%= button_link_to "Apply Routing", new_machine_mutation_path(@machine, act: "route"),
-               icon: "earth", class: "btn mutate" %></p>
-    <% else %>
+    <% unless @machine.operate? %>
       <p class="note muted">This box holds an observe key — applying routes needs operate.</p>
     <% end %>
   </div>
 <% end %>
 
-<%# ── Mutate (operate) vs. read-only (observe) ─────────────────────────── %>
-<% if @machine.operate? %>
-  <div class="panel mutate">
-    <div class="kicker">Mutate · witnessed</div>
-    <p>This machine's key carries <strong>operate</strong> scope. Machine-level acts are
-       previewed, then recorded before they run. App lifecycle lives on each app's project.</p>
-
-    <%# Maintenance is the surface: when the box patches/reboots on its own, and an "apply
-        now" when there's something pending. The package list is a hover detail, not the
-        headline. (Reschedule — changing the time — is the next slice.) %>
-    <% if @status.online? %>
-      <div class="maintenance">
-        <% if @status.maintenance_known? %>
-          <p class="maint-line"><%= icon "stethoscope", size: 14 %>
-            <strong>Maintenance — daily at <%= @status.maintenance_time %></strong></p>
-          <p class="muted maint-note">Security patches apply automatically<%=
-            ", and the box reboots then if a kernel update needs it" if @status.auto_reboot? %>.</p>
-        <% else %>
-          <p class="muted maint-line"><%= icon "stethoscope", size: 14 %> No automatic maintenance window set.</p>
-        <% end %>
-
-        <% if @status.updates_available? %>
-          <p class="maint-pending" title="<%= @status.update_packages.join("\n") %>">
-            <%= pluralize(@status.update_count, "update") %> pending<%= " — apply now, or wait for the window" if @status.maintenance_known? %>.
-          </p>
-          <div class="acts">
-            <%= link_to safe_join([ icon("stethoscope", size: 14), "Apply Now" ], " "),
-                  new_machine_mutation_path(@machine, act: "apply-updates"),
-                  class: "btn mutate", data: { turbo_frame: "ceremony" } %>
-          </div>
-          <p class="note">Runs <code>steward apply-updates</code> over scoped SSH.</p>
-        <% else %>
-          <p class="muted updates-current"><%= icon "circle-check", size: 14 %> Up to date.</p>
-        <% end %>
-      </div>
-    <% else %>
-      <p class="muted">Can't read this box right now, so no acts are offered.</p>
-    <% end %>
-  </div>
-
-  <%# The ceremony lands here: pick an act → this frame fills with the preview of
-      the exact record line, then Confirm writes & runs it. %>
-  <%= turbo_frame_tag "ceremony" %>
-<% else %>
-  <div class="panel readonly">
-    <div class="kicker">Read-only</div>
-    <p class="note">This machine holds an <strong>observe</strong> key — Steward Console can
-       read it, but can't act on it. Grant <strong>operate</strong> to enable changes here.</p>
-  </div>
 <% end %>
 
-<h2>Record</h2>
+<%# ── Record — this box's half of the two records, newest first ─────────────── %>
+<h2 class="section-kicker"><%= icon "disc", size: 15 %> Record</h2>
 <%= record_integrity(@record) %>
-<%= render "events/chain", items: @chain, within: @machine %>
-
-<%# ── Remove — forget this box in the control plane. The box keeps running; this only
-    deletes Steward Console's record of it. An honest confirm, no blocking. %>
-<% remove_note = "Remove #{@machine.name} from Steward Console?\n\n" \
-                 "The box keeps running — this only forgets it here, and Steward Console's key " \
-                 "stays authorized until you revoke it on the box." %>
-<% remove_note += "\n\n#{pluralize(@installs.size, 'app')} deployed here will lose their deployment record." if @installs.any? %>
-<details class="access danger-remove">
-  <summary><%= icon "trash-2", size: 13 %> Remove this Machine</summary>
-  <p class="note">This only forgets <strong><%= @machine.name %></strong> in Steward Console — the box
-    keeps running, and Steward Console's key stays authorized until you revoke it on the box:</p>
-  <pre class="raw cmd"><%= @machine.revoke_command %></pre>
-  <% if @installs.any? %>
-    <p class="note muted"><%= pluralize(@installs.size, "app") %> deployed here
-      (<%= @installs.map(&:name).join(", ") %>) will lose their deployment record.</p>
+<%# The chain is assembled from two sources — our own events and the box's — so the
+    search filters the assembled list rather than a relation. A plain GET, so a
+    narrowed record stays a link you can send. %>
+<%= form_with url: machine_path(@machine), method: :get, class: "filter-bar" do |f| %>
+  <span class="filter-search">
+    <%= icon "search", size: 15 %>
+    <%= f.search_field :q, value: @q, autocomplete: "off", spellcheck: false,
+          placeholder: "Search this box's record" %>
+  </span>
+  <%= f.submit "Search", class: "btn sm" %>
+  <% if @q.present? %>
+    <%= link_to "Clear", machine_path(@machine), class: "filter-clear" %>
   <% end %>
-  <%= button_to safe_join([ icon("trash-2", size: 14), %(Remove "#{@machine.name}") ], " "),
-        machine_path(@machine), method: :delete, class: "btn danger",
-        data: { turbo_confirm: remove_note } %>
+<% end %>
+<% if @chain.empty? && @q.present? %>
+  <p class="empty">Nothing in this box's record matches. <%= link_to "Clear it", machine_path(@machine) %>.</p>
+<% else %>
+  <%= render "events/chain", items: @chain, within: @machine %>
+<% end %>
+
+<%# ── Machine settings ────────────────────────────────────────────────────────
+    A different section entirely, and behind a click. Ownership, the key, and removal
+    configure the box — they do not report on it — and they were taking the top of
+    the page. Collapsed by default so that changing anything is a thing you chose to
+    do, the same rule the destructive controls inside already follow. %>
+<details class="machine-settings">
+  <summary>
+    <%= icon "chevron-down", size: 16, css_class: "icon settings-caret" %>
+    <%= icon "settings", size: 16 %>
+    <span>Machine Settings</span>
+    <span class="muted">ownership, sharing, the key, and removal</span>
+  </summary>
+
+  <%= render "machines/sharing", machine: @machine, projects: @projects %>
+
+  <%# Steward's scoped key for this box, and the line to authorize it. Steward generates
+      the key (private encrypted); the operator runs this on the box once to let it in.
+      See machine-onboarding.md / Access (#16). %>
+  <% if @machine.authorize_command %>
+    <details class="access" <%= "open" unless @status.online? %>>
+      <summary><%= icon "shield", size: 13 %> Steward’s key · authorize on the box</summary>
+      <p class="note">Run this once on the box (as the operator) to let Steward in:</p>
+      <%= command_block(@machine.authorize_command) %>
+      <p class="note muted">Steward holds the matching private key (encrypted) and never root.</p>
+    </details>
+  <% end %>
+
+  <%# Remove — forget this box in the control plane. The box keeps running; this only
+      deletes Steward's record of it. An honest confirm, no blocking. %>
+  <% remove_note = "Remove #{@machine.name} from Steward?\n\n" \
+                   "The box keeps running — this only forgets it here, and Steward’s key " \
+                   "stays authorized until you revoke it on the box." %>
+  <% remove_note += "\n\n#{pluralize(@installs.size, 'app')} deployed here will lose their deployment record." if @installs.any? %>
+  <div class="panel danger-remove">
+    <h3 class="danger-head"><%= icon "trash-2", size: 15 %> Remove this Machine</h3>
+    <p class="note">This only forgets <strong><%= @machine.name %></strong> in Steward — the box
+      keeps running, and Steward’s key stays authorized until you revoke it on the box:</p>
+    <%= command_block(@machine.revoke_command) %>
+    <% if @installs.any? %>
+      <p class="note muted"><%= pluralize(@installs.size, "app") %> deployed here
+        (<%= @installs.map(&:name).join(", ") %>) will lose their deployment record.</p>
+    <% end %>
+    <%= button_to safe_join([ icon("trash-2", size: 14), %(Remove "#{@machine.name}") ], " "),
+          machine_path(@machine), method: :delete, class: "btn danger",
+          data: { turbo_confirm: remove_note } %>
+  </div>
 </details>

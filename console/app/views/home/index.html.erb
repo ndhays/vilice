@@ -1,7 +1,11 @@
-<% content_for :title, "Status — Steward Console" %>
+<% content_for :title, "Status — Steward" %>
 
 <h1><%= icon "activity", size: 20 %> Status</h1>
 
+<%# The page is an inbox: either there is something for you to deal with, or there
+    is nothing. Nothing else belongs here — the record has its own destination, and
+    a feed of things that are already fine is noise on the one screen whose job is
+    to be empty most days. %>
 <% if @problem_installs.any? || @down_machines.any? %>
   <%# Installs that need a look — the unit of concern, rendered through the same
       row as the project and fleet pages so the page reads the same everywhere.
@@ -27,22 +31,15 @@
     </section>
   <% end %>
 <% else %>
+  <%# The empty state is the *goal*, so it is drawn like one: a large green check
+      and one sentence. The counts underneath are the proof it is empty because we
+      looked, not because there is nothing to look at. %>
   <div class="all-clear">
-    <%= icon "circle-check", size: 20 %>
-    <div>
-      <strong>All clear.</strong>
-      <div class="muted"><%= pluralize(@install_count, "install") %> ·
-        <%= pluralize(@machine_count, "machine") %></div>
-    </div>
+    <%= icon "circle-check", size: 60, css_class: "all-clear-mark" %>
+    <p class="all-clear-head">Nothing to report</p>
+    <p class="all-clear-sub">
+      <%= pluralize(@install_count, "install") %> ·
+      <%= pluralize(@machine_count, "machine") %> · all healthy
+    </p>
   </div>
 <% end %>
-
-<%# The live head of the record — the most recent acts across the fleet, in
-    eyeline. The full, filterable record is one click away. %>
-<section class="latest">
-  <h2 class="section-kicker">
-    <%= icon "disc", size: 15 %> Latest
-    <%= link_to "Full Record →", record_path, class: "section-link" %>
-  </h2>
-  <%= render "events/chain", items: @recent %>
-</section>

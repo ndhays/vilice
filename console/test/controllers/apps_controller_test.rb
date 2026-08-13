@@ -60,7 +60,7 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to app                                # → show, to add a version
     assert_equal 8080, app.port
     event = Event.latest.first
-    assert_equal "added app", event.action
+    assert_equal "added", event.action
     assert_equal @user.email_address, event.actor
   end
 
@@ -79,7 +79,7 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
       patch app_path(app), params: { app: { description: "new" } }
     end
     assert_equal "new", app.reload.description
-    assert_equal "updated app", Event.latest.first.action
+    assert_equal "edited", Event.latest.first.action
   end
 
   test "the inputs editor saves env (with a secret flag) and secret files" do
@@ -94,7 +94,7 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ { "key" => "LOG", "secret" => false },
                    { "key" => "TOKEN", "secret" => true } ], app.env
     assert_equal [ { "name" => "config", "path" => "/etc/web/config" } ], app.secret_files
-    assert_equal "updated app", Event.latest.first.action
+    assert_equal "edited", Event.latest.first.action
   end
 
   test "removing an app records it and leaves the record intact" do
@@ -105,7 +105,7 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
         delete app_path(app)
       end
     end
-    assert_equal "removed app", Event.latest.first.action
+    assert_equal "removed", Event.latest.first.action
   end
 
   test "export streams the library as a yaml attachment" do
@@ -128,7 +128,7 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
       end
     end
     event = Event.latest.first
-    assert_equal "imported library", event.action
+    assert_equal "imported", event.action
     assert_equal "abc, xyz", event.detail                     # reconstructable, one row
   end
 
@@ -152,7 +152,7 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
         delete remove_selected_apps_path, params: { ids: [ a.id, b.id ] }
       end
     end
-    assert_equal "removed apps", Event.latest.first.action
+    assert_equal "removed", Event.latest.first.action
     assert_equal %w[ keep ], App.pluck(:name)
   end
 end

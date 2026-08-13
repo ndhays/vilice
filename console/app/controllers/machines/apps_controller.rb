@@ -31,8 +31,8 @@ class Machines::AppsController < ApplicationController
     outcome = Steward::Mutate.run(
       @machine, "deploy #{name} --json",
       actor: Current.user&.email_address || "console",
-      action: "deploy",
-      summary: "deploy #{name} on #{@machine.name}",
+      action: "deployed",
+      summary: "#{name} on #{@machine.name}",
       stdin: spec.to_json
     )
 
@@ -49,8 +49,8 @@ class Machines::AppsController < ApplicationController
     outcome = Steward::Mutate.run(
       @machine, "remove #{name} --json",
       actor: Current.user&.email_address || "console",
-      action: "remove",
-      summary: "remove #{name} from #{@machine.name}"
+      action: "removed",
+      summary: "#{name} from #{@machine.name}"
     )
     if outcome[:result][:ok]
       redirect_to @machine, notice: "Removed #{name}."

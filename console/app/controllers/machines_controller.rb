@@ -1,17 +1,31 @@
 class MachinesController < ApplicationController
-  before_action :set_machine, only: %i[ show refresh destroy sharing transfer balancer ]
+  before_action :set_machine, only: %i[ show refresh destroy sharing transfer ]
 
-  # All Machines — the fleet. Searchable by name/label; an "unowned" toggle filters
-  # to boxes with no owner (released/fleet-registered), with a light presence count
-  # so they're never lost (decisions/machine-ownership.md, list-search.md).
+  # All Machines — the fleet, and the floor of the three rings. This page is about
+  # the *shape* of the fleet, so grouping is the primitive rather than filtering: a
+  # filter answers one question at a time, a grouping answers all of them at once
+  # (see MachineGroups). The old "unowned" toggle is gone — it was one grouping
+  # wearing a filter's clothes, and `group=owner` says it better.
+  #
+  # It states only what this layer owns. No install counts, no project health: a
+  # box's page knows nothing about placement or tenancy except the one owner
+  # grouping, which is offered rather than assumed (decisions/console-layers.md).
   def index
-    @q             = params[:q]
-    @only_unowned  = params[:unowned].present?
-    @unowned_count = Machine.unowned.count
+    @q     = params[:q]
+    @group = params[:group].presence || MachineGroups::DEFAULT.key
 
-    machines = @q.present? ? Machine.search(@q) : Machine.all
-    machines = machines.unowned if @only_unowned
-    @machines = machines.order(:name).includes(:projects, :owner, :labels)
+    machines  = @q.present? ? Machine.search(@q) : Machine.all
+    # Everything the row and the groupings read, preloaded: a list must not ask the
+    # database once per box any more than it may ask the *boxes* once per row.
+    @machines = machines.order(:name)
+                        .includes(:owner, :labels, { installs: :balancer },
+                                  { fronted_installs: :install_targets })
+    @groups   = MachineGroups.apply(@machines.to_a, @group)
+
+    @label_keys  = MachineGroups.label_keys
+    @total       = Machine.count
+    @unreachable = Machine.where(status: "unreachable").count
+    @never_seen  = Machine.where(status: "unknown").count
   end
 
   # ── Onboarding (Add Machine) ───────────────────────────────────────────────
@@ -53,9 +67,10 @@ class MachinesController < ApplicationController
   # status, and the box's own record. The chain merges the two records — this
   # machine's Steward Console events (authored) with the box record (witnessed).
   def show
+    @q        = params[:q].to_s.strip
     @status   = MachineStatus.from(Steward::Observe.status(@machine))
     @record   = Steward::Observe.record(@machine)
-    @chain    = chain_for(@machine, @record)
+    @chain    = chain_for(@machine, @record).select { |i| i.matches?(@q) }
     @installs = @machine.installs.includes(:project).order(:name) # placements on this box (project optional)
     @projects = Project.order(:name) # for the ownership / sharing controls
     # The edge table this box should serve, derived rather than stored. Empty for a box
@@ -90,11 +105,11 @@ class MachinesController < ApplicationController
     name = @machine.name
     Machine.transaction do
       @machine.destroy!
-      Event.record!(actor: Current.user.email_address, action: "removed machine",
-                    summary: "Removed #{name} from Steward Console")
+      Event.record!(actor: Current.user.email_address, action: "removed",
+                    summary: "#{name} from Steward")
     end
     redirect_to machines_path,
-                notice: "Removed #{name}. The box keeps running — revoke Steward Console's key on it to cut access."
+                notice: "Removed #{name}. The box keeps running — revoke Steward’s key on it to cut access."
   end
 
   # ── Sharing & ownership (the Access panel) ─────────────────────────────────
@@ -104,8 +119,8 @@ class MachinesController < ApplicationController
     mode = params.require(:machine).permit(:sharing)[:sharing]
     Machine.transaction do
       @machine.update!(sharing: mode)
-      Event.record!(actor: Current.user.email_address, action: "set sharing",
-                    machine: @machine, summary: "Set #{@machine.name} sharing to #{mode}")
+      Event.record!(actor: Current.user.email_address, action: "set",
+                    machine: @machine, summary: "#{@machine.name} sharing to #{mode}")
     end
     redirect_to @machine, notice: "Updated sharing for #{@machine.name}."
   rescue ActiveRecord::RecordInvalid => e
@@ -119,38 +134,13 @@ class MachinesController < ApplicationController
     owner = Project.find_by(id: params.dig(:machine, :owner_id).presence)
     Machine.transaction do
       @machine.update!(owner: owner)
-      summary = owner ? "Transferred #{@machine.name} to #{owner.name}" :
-                        "Released #{@machine.name} — now unowned"
+      summary = owner ? "#{@machine.name} to #{owner.name}" :
+                        "#{@machine.name} — now unowned"
       Event.record!(actor: Current.user.email_address,
-                    action: owner ? "transferred machine" : "released machine",
+                    action: owner ? "transferred" : "released",
                     machine: @machine, project: owner, summary: summary)
     end
     redirect_to @machine, notice: owner ? "Transferred to #{owner.name}." : "Released — now unowned."
-  end
-
-  # Take or drop the balancer role. A control-plane act with no box behind it: the box
-  # learns nothing until routing is applied, which is a separate witnessed act. Dropping
-  # the role nullifies the installs that selected it (never deletes them) — they surface
-  # as balanced installs with no balancer, which is a visible problem rather than a
-  # silent disappearance.
-  def balancer
-    taking = ActiveModel::Type::Boolean.new.cast(params.require(:machine)[:balancer])
-    orphaned = taking ? 0 : @machine.fronted_installs.count
-
-    Machine.transaction do
-      @machine.update!(balancer: taking)
-      Event.record!(actor: Current.user.email_address,
-                    action: taking ? "took balancer role" : "dropped balancer role",
-                    machine: @machine,
-                    summary: "#{@machine.name} #{taking ? 'is now a balancer' : 'is no longer a balancer'}")
-    end
-
-    notice = taking ? "#{@machine.name} can now front other boxes." :
-                      "#{@machine.name} is no longer a balancer."
-    notice += " #{helpers.pluralize(orphaned, 'install')} now have no balancer." if orphaned.positive?
-    redirect_to @machine, notice: notice
-  rescue ActiveRecord::RecordInvalid => e
-    redirect_to @machine, alert: e.message
   end
 
   private
@@ -174,9 +164,9 @@ class MachinesController < ApplicationController
       machine.owner = link_to if link_to
       machine.save!
       ProjectMachine.create!(project: link_to, machine: machine) if link_to
-      summary = "Added #{machine.name} (#{machine.scope})"
+      summary = "#{machine.name} (#{machine.scope})"
       summary += " to #{link_to.name}" if link_to
-      Event.record!(actor: Current.user.email_address, action: "added machine",
+      Event.record!(actor: Current.user.email_address, action: "added",
                     machine: machine, project: link_to, summary: summary)
     end
     true
@@ -190,10 +180,14 @@ class MachinesController < ApplicationController
   # own client issued it). See decisions/two-records.md.
   def chain_for(machine, record)
     client = ENV.fetch("STEWARD_CLIENT_NAME", "console")
-    own = machine.events.latest.includes(:project, :install).limit(40)
+    own = machine.events.acts.latest.includes(:project, :install).limit(40)
                  .map { |e| ChainItem.from_event(e) }
+    # The box record carries its own timer's observe entries. They are the status
+    # series, not the chain, and on a box polled every minute they would be the
+    # whole page — so they are dropped here on the same rule as `Event.acts`.
     box = (record.dig(:data, "data", "entries") || [])
             .map { |e| ChainItem.from_record_entry(e, client: client) }
+            .reject(&:status?)
     (own + box).sort_by(&:at).reverse.first(40)
   end
 end

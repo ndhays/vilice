@@ -102,4 +102,39 @@ class Steward::FakeTest < ActiveSupport::TestCase
       assert rec.dig(:data, "data", "intact")
     end
   end
+
+  # The seam hooks Steward.read, which Steward::Mutate shares. Answering a mutate
+  # would settle a witnessed Event as *succeeded* for an act that never reached a
+  # box — a record entry asserting something that did not happen.
+  test "a mutate is refused, not faked" do
+    with_fake do
+      result = Steward.read(machine("ok"), "deploy nginx --image ghcr.io/x@sha256:abc")
+      assert_not result[:ok], "fake-observe answered a deploy"
+      assert_match(/will not fake/, result[:error])
+      assert_match(/STEWARD_FAKE_OBSERVE/, result[:error])
+    end
+  end
+
+  # An act still writes its pending entry first (record before act) and then settles
+  # honestly as failed — the invariant holds, and the reason is on the entry.
+  test "a refused mutate settles its Event as failed rather than ok" do
+    with_fake do
+      m = machine("ok")
+      m.update_columns(scope: "operate")
+      assert_difference -> { Event.count }, 1 do
+        Steward::Mutate.run(m, "restart nginx", actor: "alice", action: "restarted")
+      end
+      assert_equal "failed", Event.latest.first.outcome
+    end
+  end
+
+  # `actors` is a read, but this seam does not model a rights ledger. Inventing an
+  # empty one would render as "nobody has access", the dangerous misreading the
+  # Access page exists to prevent.
+  test "a read it does not model is refused rather than answered empty" do
+    with_fake do
+      result = Steward::Observe.actors(machine("ok"), refresh: true)
+      assert_not result[:ok]
+    end
+  end
 end

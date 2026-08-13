@@ -65,7 +65,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     install = Install.last
     assert_nil install.project_id
     assert_equal loose, install.install_targets.sole.machine
-    assert_equal "Added web on loose", Event.latest.first.summary   # no client in the line
+    assert_equal "web on loose", Event.latest.first.summary   # no client in the line
     assert_redirected_to new_machine_mutation_path(loose, act: "deploy", install_id: install.id)
   end
 
@@ -118,7 +118,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @version.id, install.version_id        # latest
     assert_equal @version.image, install.image
     assert_equal "web", install.name                    # defaulted from the app
-    assert_equal "added install", Event.latest.first.action
+    assert_equal "added", Event.latest.first.action
     assert_redirected_to new_machine_mutation_path(@operator, act: "deploy", install_id: install.id)
   end
 
@@ -284,7 +284,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal(-2, install.placement_gap, "asking for more opens a gap")
 
     event = Event.latest.first
-    assert_equal "restated intention", event.action
+    assert_equal "restated", event.action
     assert_equal "web: asked for 1 box, edge → 3 boxes, balanced", event.summary
     assert_nil event.outcome, "a control-plane act with no box has nothing to settle"
   end

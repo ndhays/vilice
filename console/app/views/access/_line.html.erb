@@ -1,0 +1,37 @@
+<%# One line of one box's rights ledger. The leading glyph is how far the key reaches;
+    an ungated line wears the alert, because it has no ceiling at all.
+
+    `group` is the axis the page is grouped by, so the cell that would just repeat the
+    heading above every row is left empty. The cell is still rendered — the subgrid
+    columns have to line up across rows. %>
+<% group = local_assigns[:group] %>
+<li class="row<%= " ungated" if line.ungated? %>">
+  <span class="cell-name">
+    <%= access_reach_icon(line) %>
+    <span class="row-name"><%= line.name %></span>
+  </span>
+
+  <span class="cell-box">
+    <% unless group == "box" %>
+      <%= link_to line.machine.name, line.machine, class: "owner-link" %>
+    <% end %>
+  </span>
+
+  <span class="cell-reach">
+    <% unless group == "reach" %>
+      <%= access_reach_badge(line) %>
+    <% end %>
+  </span>
+
+  <span class="cell-key mono">
+    <%= line.key_type || "unreadable key" %><%
+      %><% if line.comment.present? && line.comment != line.name %> · <%= line.comment %><% end %>
+  </span>
+
+  <%# The fingerprint is the one field you can check against a key in hand — it is the
+      same string `ssh-keygen -lf` prints. Truncated to fit; the full value is on the
+      title, and the key material itself is never reproduced. %>
+  <span class="cell-print mono" title="<%= line.fingerprint %>">
+    <%= line.fingerprint || "—" %>
+  </span>
+</li>

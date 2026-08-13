@@ -29,4 +29,17 @@ ChainItem = Struct.new(:at, :actor, :action, :summary, :origin, :machine, :proje
   end
 
   def witnessed? = origin == :witnessed
+
+  # Free-text search over an assembled chain. The machine page's record is the merge
+  # of two sources — our events and the box's own entries — so it cannot be filtered
+  # with a relation; it is filtered here, over what an entry actually says.
+  def matches?(query)
+    return true if query.blank?
+    [ actor, action, summary ].compact.join(" ").downcase.include?(query.downcase)
+  end
+
+  # A routine status sample, from either record — the box's own timer entries
+  # arrive here the same way Steward Console's do. Judged by the same rule as
+  # `Event.acts`, so one definition covers both streams.
+  def status? = Event::STATUS_ACTIONS.include?(action.to_s.downcase)
 end

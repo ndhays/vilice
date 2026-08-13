@@ -39,14 +39,14 @@ class RouteActTest < ActiveSupport::TestCase
   # reader nothing about what changed.
   test "the recorded summary names the hostnames and upstream count" do
     m = Mutation.build("route", machine: @edge, actor: "nick@example.com")
-    assert_equal "routed edge-1 → app.example.com across 1 upstreams", m.summary
+    assert_equal "edge-1 → app.example.com across 1 upstreams", m.summary
     assert_equal "routed", m.action
   end
 
   test "a balancer fronting nothing says so rather than looking broken" do
     @install.update!(balancer: nil)
     m = Mutation.build("route", machine: @edge.reload, actor: "nick@example.com")
-    assert_equal "routed edge-1 — fronting nothing", m.summary
+    assert_equal "edge-1 — fronting nothing", m.summary
     assert_equal '{"routes":[]}', m.stdin
   end
 end

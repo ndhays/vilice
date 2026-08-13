@@ -21,8 +21,8 @@ class ProjectsController < ApplicationController
     @project = Project.new(project_params)
     ActiveRecord::Base.transaction do
       @project.save!
-      Event.record!(actor: Current.user.email_address, action: "added project",
-                    project: @project, summary: "Added #{@project.name}")
+      Event.record!(actor: Current.user.email_address, action: "added",
+                    project: @project, summary: @project.name)
     end
     redirect_to @project, notice: "Added #{@project.name}."
   rescue ActiveRecord::RecordInvalid
@@ -35,8 +35,8 @@ class ProjectsController < ApplicationController
     ActiveRecord::Base.transaction do
       project.update!(starred: !project.starred?)
       verb = project.starred? ? "starred" : "unstarred"
-      Event.record!(actor: Current.user.email_address, action: "#{verb} project",
-                    project: project, summary: "#{verb.capitalize} #{project.name}")
+      Event.record!(actor: Current.user.email_address, action: verb,
+                    project: project, summary: project.name)
     end
     redirect_back fallback_location: project
   end
@@ -49,8 +49,8 @@ class ProjectsController < ApplicationController
     @project = Project.find(params[:id])
     ActiveRecord::Base.transaction do
       @project.update!(project_params)
-      Event.record!(actor: Current.user.email_address, action: "updated project",
-                    project: @project, summary: "Updated #{@project.name}")
+      Event.record!(actor: Current.user.email_address, action: "edited",
+                    project: @project, summary: @project.name)
     end
     redirect_to @project, notice: "Updated #{@project.name}."
   rescue ActiveRecord::RecordInvalid
@@ -78,8 +78,8 @@ class ProjectsController < ApplicationController
     end
 
     ActiveRecord::Base.transaction do
-      Event.record!(actor: Current.user.email_address, action: "removed project",
-                    project: project, summary: "Removed #{project.name}")
+      Event.record!(actor: Current.user.email_address, action: "removed",
+                    project: project, summary: project.name)
       project.destroy!
     end
     redirect_to projects_path, notice: "Removed #{project.name}."
@@ -102,7 +102,7 @@ class ProjectsController < ApplicationController
     # Show only the head of the record here — the spine stays visible but bounded,
     # leaving room for Installs and Machines. The full, filterable record
     # is one click away, scoped to this project (mirrors Home's "Latest").
-    @chain        = @project.events.latest.includes(:machine, :install).limit(RECORD_HEAD)
+    @chain        = @project.events.acts.latest.includes(:machine, :install).limit(RECORD_HEAD)
                             .map { |e| ChainItem.from_event(e) }
     @record_total = @project.events.count
   end

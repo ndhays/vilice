@@ -65,6 +65,10 @@ Skip for trivial commits (typos, formatting). The point is to keep `blueprint/` 
   one that handles it. (The Agora preamble's "deeply skeptical of innovation," applied
   to day-to-day choices.)
 
+- When making UI changes, do not bother with inspecting the actual result. Browser tools
+  are not connected so the Chrome plugin is disabled. All UI (appearance) should be tested 
+  by a human manually.
+
 # Conventions (where preferences live)
 
 **Project-wide preferences live here, in this file.** Surface-specific style lives

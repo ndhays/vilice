@@ -61,6 +61,29 @@ the server by hand, set it yourself:
 STEWARD_FAKE_OBSERVE=1 bin/rails server
 ```
 
+### It fakes reads, and refuses everything else
+
+The seam answers **`status`, `record`, `doctor`** and nothing more (`Fake::ANSWERS`).
+It hooks `Steward.read`, which `Steward::Mutate` also goes through, so anything else
+— a deploy, a restart, `actors` — comes back as a **failed read** with a message
+telling you to unset the flag.
+
+That is deliberate. A canned `ok` for a mutate would settle a witnessed `Event` as
+**succeeded** for an act that never reached a box: a record entry asserting
+something that did not happen. Refusing keeps the record honest — the pending entry
+still gets written first, then settles as failed with the reason on it.
+
+The practical consequence: **while the flag is set you cannot exercise a real box at
+all**, not even one with a real key, because the short-circuit is at the transport
+and applies to every machine. Machines you add will also be renamed to
+`<name>.fake`, since the console mirrors the hostname the "box" reports
+(`decisions/machine-name-mirrors-the-box.md`) and the fake reports that one. To
+drive a real box, boot without the flag:
+
+```bash
+bin/rails server
+```
+
 ## Adding a scenario
 
 Drop a `db/seeds/<name>.rb` that `include Scenario` and uses the builders in
