@@ -38,24 +38,27 @@
    ours alone and stop at the last read, which a reader has to be told. */
 .integrity.bad .icon { flex: none; }
 
-/* ── Machine settings — a section, behind a click ─────────────────────────────
-   Ownership, the key, removal. They configure the box rather than report on it, so
-   they sit apart and closed: changing one should be something you chose to do. */
-.machine-settings { margin: 3.5rem 0 1.5rem; border-top: 1px solid var(--line); padding-top: 1.75rem; }
-.machine-settings > summary {
+/* ── Settings — a section, behind a click ────────────────────────────────────
+   The controls that *configure* an entity rather than report on it: a machine's
+   ownership and key and removal, a project's details and deletion. They sit apart
+   and closed, so changing one is something you chose to do. Drawn as a section
+   header, not a card, because the panels inside it are cards — a container shaped
+   like its contents reads as one pattern repeated. */
+.page-settings { margin: 3.5rem 0 1.5rem; border-top: 1px solid var(--line); padding-top: 1.75rem; }
+.page-settings > summary {
   display: flex; align-items: center; gap: 0.5rem; cursor: pointer;
   font-size: 1.15rem; font-weight: 600; color: var(--ink); list-style: none;
   padding: 0.35rem 0.1rem;
 }
-.machine-settings > summary::-webkit-details-marker { display: none; }
-.machine-settings > summary:hover { color: var(--accent); }
-.machine-settings > summary:hover .icon { color: var(--accent); }
+.page-settings > summary::-webkit-details-marker { display: none; }
+.page-settings > summary:hover { color: var(--accent); }
+.page-settings > summary:hover .icon { color: var(--accent); }
 /* The subtitle trails to the far edge, the way a section header's count would. */
-.machine-settings > summary .muted { font-size: 0.85rem; font-weight: 400; margin-left: auto; }
-.machine-settings > summary .icon { color: var(--muted); }
-.machine-settings > summary .settings-caret { transition: transform 0.15s ease; }
-.machine-settings[open] > summary .settings-caret { transform: rotate(180deg); }
-.machine-settings[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; }
+.page-settings > summary .muted { font-size: 0.85rem; font-weight: 400; margin-left: auto; }
+.page-settings > summary .icon { color: var(--muted); }
+.page-settings > summary .settings-caret { transition: transform 0.15s ease; }
+.page-settings[open] > summary .settings-caret { transform: rotate(180deg); }
+.page-settings[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; }
 
 /* Removing a box is destructive, so it reads as its own panel rather than as one
    more disclosure — the accordion above is already the gate, and the button carries
@@ -148,9 +151,27 @@
 .acts-app-verbs { align-items: center; }
 .verb-sep { width: 1px; align-self: stretch; background: var(--mutate-line); margin: 0.1rem 0.15rem; }
 
-/* the running/desired image under a target on the install page — quiet, indented
-   under the box name, mono (machine truth). Drift reads in the line itself. */
-.target-image { color: var(--muted); font-size: 0.8rem; margin: 0 0 0.5rem 1.85rem; }
+/* The running/desired image under a target on the install page — indented under the
+   box name. The digests are chips: this is the drift case, the one moment you most
+   want to paste a digest somewhere, and it used to be plain text. */
+.target-image {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem;
+  color: var(--muted); font-size: 0.8rem; margin: 0 0 0.6rem 1.85rem;
+}
+.target-image .drift-word { color: var(--warn); font-weight: 700; }
+
+/* The intention's supporting facts — exposure, and whether it can replicate at all.
+   Chips, not paragraphs: they qualify the number above them, they do not teach the
+   model. The card states the ask and offers the one act that changes it. */
+.intent-facts { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.2rem; }
+.intent-fact {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.8rem; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.12rem 0.55rem;
+}
+
+/* An unreachable box takes no act, so the verbs are replaced by the reason. */
+.acts-app-verbs.note { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; }
 
 /* Apps on a box — read-only list on the machine page: the app (→ its install) and
    the project it serves. Neutral (not the amber act styling); acting is elsewhere. */

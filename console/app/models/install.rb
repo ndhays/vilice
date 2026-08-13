@@ -107,15 +107,12 @@ class Install < ApplicationRecord
 
   def needs_a_look? = EXCEPTION_STATES.include?(state)
 
+  # The worst state among the live placements — one ladder, defined once on the
+  # target and folded here, so a target row and the install header can never disagree.
   def state
-    targets = install_targets.reject(&:install_retired?)
-    return "unplaced" if targets.empty?
-    return "failed"      if targets.any?(&:install_failed?)
-    return "unreachable" if targets.any? { |t| t.install_running? && t.machine.seen_unreachable? }
-    return "drift"       if targets.any? { |t| t.install_running? && t.current_image.present? && !t.in_sync? }
-    return "deploying"   if targets.any?(&:install_deploying?)
-    return "pending"     if targets.any?(&:install_pending?)
-    "running"
+    states = live_targets.map(&:state)
+    return "unplaced" if states.empty?
+    STATES.find { |s| states.include?(s) } || "running"
   end
 
   # Free-text list search over what identifies a placement: its own name, the

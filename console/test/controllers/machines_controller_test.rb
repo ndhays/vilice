@@ -152,11 +152,11 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     m = Machine.create!(name: "edge-set", ssh_host: "x", scope: "operate")
     get machine_path(m)
     assert_response :success
-    assert_select "details.machine-settings > summary", /Machine Settings/
-    assert_select "details.machine-settings[open]", count: 0
+    assert_select "details.page-settings > summary", /Machine Settings/
+    assert_select "details.page-settings[open]", count: 0
     # The controls are inside it, not loose on the page.
-    assert_select "details.machine-settings .access-panel"
-    assert_select "details.machine-settings .panel.danger-remove"
+    assert_select "details.page-settings .access-panel"
+    assert_select "details.page-settings .panel.danger-remove"
     # Removing is a panel, not a second disclosure: the section is already the gate,
     # and two nested <details> read as one pattern repeated rather than two things.
     assert_select "details.danger-remove", count: 0

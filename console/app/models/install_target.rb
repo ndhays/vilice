@@ -27,6 +27,24 @@ class InstallTarget < ApplicationRecord
     install_running? && current_image.present? && current_image == desired_image
   end
 
+  # Where this one placement stands, in the same words `Install#state` uses — that
+  # ladder is now literally "the worst of these". The install page used to badge a
+  # target with its raw `status`, which knows nothing about the box being unreachable
+  # or the image having drifted, so a row could read `running` under a header that
+  # said `unreachable`.
+  def state
+    return "failed"      if install_failed?
+    return "unreachable" if install_running? && machine.seen_unreachable?
+    return "drift"       if install_running? && current_image.present? && !in_sync?
+    return "deploying"   if install_deploying?
+    return "pending"     if install_pending?
+    "running"
+  end
+
+  # An act travels scoped SSH to this box. If we cannot reach it, every verb is
+  # certain to fail — so none is offered (blueprint/console/interface.md).
+  def actionable? = machine.operate? && !machine.seen_unreachable?
+
   private
 
   # Other live targets on this same box. A retired target frees its name.

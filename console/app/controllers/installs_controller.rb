@@ -46,7 +46,8 @@ class InstallsController < ApplicationController
     @install = Install.find(params[:id])
     @project = @install.project
     @targets = @install.install_targets.includes(:machine).where.not(status: "retired").order(:id)
-    @chain   = @install.events.acts.latest.includes(:machine, :install).limit(20)
+    @q       = params[:q].to_s.strip
+    @chain   = @install.events.acts.search(@q).latest.includes(:machine, :install).limit(20)
                        .map { |e| ChainItem.from_event(e) }
   end
 

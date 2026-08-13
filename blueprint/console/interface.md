@@ -128,6 +128,20 @@ enough to make a group read as a group.
   page. A lens over placement, not a container for it: its Installs list is *this
   client's* placements, and the project column is dropped there because it would only
   repeat the page.
+
+  **It leads with a headline**, in the same grammar as every list page: how much is
+  placed for this client, and what of it needs a person — *1 install · 2 machines ·
+  1 need a look · 1 unreachable*. It is the line that answers "does my client have a
+  problem" without scanning three lists. Only this lens's facts.
+
+  **Star stays in the title; Edit and Delete do not.** A destructive control does not
+  belong in a page title — deletion moved into a **Project Settings** section at the
+  foot, the same closed section the machine view uses. (It is guarded server-side
+  besides: a project with live installs or owned machines is refused, naming them.)
+  The star is a focus lens rather than a setting, so it stays where you can reach it.
+
+  A section that can only ever say "None" is absent instead — Shared Machines renders
+  only when something is shared, the same rule the unreachable cards follow.
 - **Installs → Install** — placement, fleet-wide: what should run where. One ring above
   the machine view (which reads a single box) and below Projects. The list carries every
   placement, with the project shown where there is one and a plain dash where there isn't
@@ -147,6 +161,18 @@ enough to make a group read as a group.
   Ring 2 is this page's floor — an Install *is* the placement ring — and `project` is
   the single chip that reaches out to tenancy, so with tenancy never mounted the list
   loses one chip and nothing else.
+
+  **No act is offered on a box that cannot take one.** `operate` is the key's
+  ceiling; reachability is the other half, and every verb travels the same scoped SSH
+  connection — so on an unreachable box all six were certain to fail. The gate lives
+  in `installs/_acts`, because the rule is about the box rather than about which page
+  is asking; the row says why instead.
+
+  **One state word, defined on the target and folded by the install.**
+  `InstallTarget#state` is the ladder; `Install#state` is the worst of them. A target
+  row used to badge its raw `status`, which knows nothing about the box being
+  unreachable or the image having drifted, so a row could read *running* under a
+  header that said *unreachable*.
 
   **The page has two halves, and they must not look alike.** An *Intention* panel states
   what was asked for — `asked for 3 boxes · serving 1` — and a *Where it runs* panel shows

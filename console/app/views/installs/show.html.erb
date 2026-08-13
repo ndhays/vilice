@@ -9,12 +9,13 @@
   <%= breadcrumb [["Installs", installs_path], [@install.name, nil]] %>
 <% end %>
 
-<h1>
-  <%= icon "box", size: 20 %>
-  <%= @install.name %>
+<h1 class="machine-head">
+  <%= icon "box", size: 22 %>
+  <span class="machine-name"><%= @install.name %></span>
   <%= install_state_badge(@install) %>
 </h1>
-<p class="addr">
+<%# One line of facts: whose work it is, what it runs, and where it answers. %>
+<p class="addr machine-facts">
   <% if @project %><%= link_to @project.name, @project %> · <% end %>
   <% if @install.app %>
     <%= link_to @install.app.name, @install.app %><% if @install.version %> ·
@@ -23,13 +24,11 @@
     custom image
   <% end %>
   <% if @install.hostname.present? %> · <span class="mono"><%= @install.hostname %></span><% end %>
+  <% if @install.volumes.any? %>
+    · <%= icon "hard-drive", size: 13 %>
+    <%= safe_join(@install.volumes.map { |v| tag.span(v, class: "mono") }, " ") %>
+  <% end %>
 </p>
-<% if @install.volumes.any? %>
-  <p class="addr">
-    <%= icon "hard-drive", size: 13 %>
-    <% @install.volumes.each do |v| %><span class="mono"><%= v %></span> <% end %>
-  </p>
-<% end %>
 
 <%# ── The intention ─────────────────────────────────────────────────────────
     What was *asked for*, kept deliberately apart from the panel below, which is what
@@ -39,41 +38,32 @@
 
     Nothing here reconciles. The gap is stated and a person closes it, or it stays open. %>
 <div class="panel intent">
-  <div class="kicker">Intention · asked for, not observed</div>
+  <div class="panel-head">
+    <div class="kicker">Intention · asked for, not observed</div>
+    <%= button_link_to "Change the ask", edit_install_path(@install),
+          icon: "pencil", class: "btn-quiet panel-action" %>
+  </div>
   <p class="intent-head"><%= placement_gap_line(@install, verbose: true) %></p>
   <p class="note muted"><%= placement_gap_word(@install) %></p>
 
-  <%# Exposure is the reason a count is or isn't allowed above 1, so it belongs here
-      rather than filed with the spec. %>
-  <p class="note muted">
-    <%= icon @install.exposure_edge? ? "earth" : "boxes", size: 13 %>
-    <% if @install.exposure_edge? %>
-      <strong>On the edge</strong> — DNS points at the box, which terminates its own TLS.
-      One box; put it behind a balancer to run more.
-    <% else %>
-      <strong>Behind a balancer</strong> — the box is a backend and DNS points at the
-      balancer in front of it. The console doesn't manage that balancer yet.
+  <%# Exposure is the reason a count is or is not allowed above one, so it reads as a
+      chip on the intention rather than as a paragraph teaching the model. %>
+  <p class="intent-facts">
+    <span class="intent-fact">
+      <%= icon @install.exposure_edge? ? "earth" : "boxes", size: 13 %>
+      <%= @install.exposure_edge? ? "On the edge — one box" : "Behind a balancer" %>
+    </span>
+    <% unless @install.replicable? %>
+      <span class="intent-fact">
+        <%= icon "hard-drive", size: 13 %> Single-placement — it keeps data
+      </span>
     <% end %>
   </p>
 
-  <% unless @install.in_step? %>
-    <% if @install.placement_gap.negative? %>
-      <p><%= button_link_to "Place on another box", new_install_target_path(@install),
-               icon: "plus", class: "btn" %></p>
-    <% else %>
-      <p class="note muted">More boxes are serving this than were asked for. Take one off
-        with <strong>Remove</strong> below, or raise the intention to match.</p>
-    <% end %>
+  <% if @install.placement_gap.negative? %>
+    <p><%= button_link_to "Place on another box", new_install_target_path(@install),
+             icon: "plus", class: "btn" %></p>
   <% end %>
-
-  <% unless @install.replicable? %>
-    <p class="note muted"><%= icon "hard-drive", size: 13 %>
-      Single-placement: this app declares a volume, so replicas would each keep their own
-      copy of that data.</p>
-  <% end %>
-
-  <p><%= button_link_to "Change what's asked for", edit_install_path(@install),
-           icon: "pencil", class: "btn-quiet" %></p>
 </div>
 
 <%# Where it runs — each live target box, its state, image drift, and the witnessed
@@ -89,23 +79,24 @@
           <span class="acts-app-name">
             <%= icon "hard-drive", size: 13 %>
             <%= link_to target.machine.name, target.machine %>
-            <span class="badge state-<%= target.status %>"><%= target.status %></span>
+            <span class="badge state-<%= target.state %>"><%= target.state %></span>
           </span>
           <% if target.machine.operate? %>
             <%= render "installs/acts", install: @install, machine: target.machine, from: "install" %>
           <% else %>
-            <span class="note muted">observe only — grant operate to act here</span>
+            <span class="acts-app-verbs note muted">observe only — grant operate to act here</span>
           <% end %>
         </li>
-        <div class="target-image mono">
+        <div class="target-image">
           <% if target.in_sync? %>
-            running <%= short_image(target.current_image) %>
+            running <%= digest_chip(target.current_image) %>
           <% elsif target.current_image.present? %>
-            running <%= short_image(target.current_image) %> · desired <%= short_image(target.desired_image) %> (drift)
+            running <%= digest_chip(target.current_image) %>
+            · desired <%= digest_chip(target.desired_image) %> <span class="drift-word">drift</span>
           <% elsif target.desired_image.present? %>
-            desired <%= short_image(target.desired_image) %>, not yet running
+            desired <%= digest_chip(target.desired_image) %>, not yet running
           <% else %>
-            <%= short_image(@install.image) %>
+            <%= digest_chip(@install.image) %>
           <% end %>
         </div>
       <% end %>
@@ -119,5 +110,23 @@
     of the exact record line, then Confirm writes & runs it. %>
 <%= turbo_frame_tag "ceremony" %>
 
-<h2>Record</h2>
-<%= render "events/chain", items: @chain, within: @project %>
+<h2 class="section-kicker">
+  <%= icon "disc", size: 15 %> Record
+  
+</h2>
+<%= form_with url: install_path(@install), method: :get, class: "filter-bar" do |f| %>
+  <span class="filter-search">
+    <%= icon "search", size: 15 %>
+    <%= f.search_field :q, value: @q, autocomplete: "off", spellcheck: false,
+          placeholder: "Search this install's record" %>
+  </span>
+  <%= f.submit "Search", class: "btn sm" %>
+  <% if @q.present? %>
+    <%= link_to "Clear", install_path(@install), class: "filter-clear" %>
+  <% end %>
+<% end %>
+<% if @chain.empty? && @q.present? %>
+  <p class="empty">Nothing in this record matches. <%= link_to "Clear it", install_path(@install) %>.</p>
+<% else %>
+  <%= render "events/chain", items: @chain, within: @project %>
+<% end %>

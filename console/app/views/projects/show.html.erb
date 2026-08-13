@@ -2,20 +2,33 @@
 
 <%= breadcrumb [["Projects", projects_path], [@project.name, nil]] %>
 
-<h1>
-  <%= icon "handshake", size: 20 %> <%= @project.name %>
+<h1 class="machine-head">
+  <%= icon "handshake", size: 22 %>
+  <span class="machine-name"><%= @project.name %></span>
+  <%# Star is a focus lens, not a setting — it stays where you can reach it. Edit and
+      Delete moved to the settings section at the foot: a destructive control does not
+      belong in a page title. %>
   <%= button_to star_project_path(@project), method: :patch,
         class: "star-btn #{'on' if @project.starred?}" do %>
     <%= icon "star", size: 15 %><%= @project.starred? ? "Unstar" : "Star" %>
   <% end %>
-  <%= button_link_to "Edit", edit_project_path(@project), icon: "pencil", class: "btn-quiet" %>
-  <%= button_to project_path(@project), method: :delete, class: "btn-quiet danger",
-        form: { data: { turbo_confirm: "Delete #{@project.name}? This can't be undone." } } do %>
-    <%= safe_join([ icon("trash-2", size: 14), "Delete" ], " ") %>
-  <% end %>
 </h1>
+
+<%# The headline leads: what is placed for this client, and what of it needs a person.
+    Only this lens's facts — it is the one line that answers "does my client have a
+    problem" without scanning three lists. %>
+<p class="headline">
+  <%= pluralize(@installs.size, "install") %><%
+    %> · <%= pluralize(@owned_machines.size + @shared_machines.size, "machine") %><%
+    %><% if @needs_look.positive? %> · <span class="bad"><%= @needs_look %> need a look</span><% end %><%
+    %><% if @down_boxes.positive? %> · <span class="bad"><%= @down_boxes %> unreachable</span><% end %><%
+    %><% if @short.positive? %> · <span class="muted"><%= @short %> short of their intention</span><% end %><%
+    %><% if @needs_look.zero? && @down_boxes.zero? && @short.zero? && @installs.any? %><%
+      %> · <span class="ok">all running as asked</span><% end %>
+</p>
+
 <% if @project.contact_name.present? || @project.contact_email.present? %>
-  <p class="addr">
+  <p class="addr machine-facts">
     <%= @project.contact_name %><% if @project.contact_email.present? %>
       <% if @project.contact_name.present? %>·<% end %>
       <span class="mono"><%= @project.contact_email %></span>
@@ -57,15 +70,13 @@
 
 <%# Shared — boxes another project owns, shared with this one. The owner links out
     to the owning project (its context). Attach an existing permitted box below. %>
-<div class="section-head">
-  <h2>Shared Machines</h2>
-</div>
 <% if @shared_machines.any? %>
+  <div class="section-head">
+    <h2>Shared Machines</h2>
+  </div>
   <ul class="rows machine-rows">
     <%= render partial: "machines/row", collection: @shared_machines, as: :machine %>
   </ul>
-<% else %>
-  <p class="empty">None shared with this project.</p>
 <% end %>
 
 <%# Attach an existing box this project is permitted on — a box it owns but hasn't
@@ -81,10 +92,57 @@
   <% end %>
 <% end %>
 
-<div class="section-head">
-  <h2>Record</h2>
+<h2 class="section-kicker">
+  <%= icon "disc", size: 15 %> Record
   <% if @record_total > ProjectsController::RECORD_HEAD %>
     <%= link_to "Full Record →", record_path(q: %(project="#{@project.name}")), class: "section-link" %>
   <% end %>
-</div>
-<%= render "events/chain", items: @chain, within: @project %>
+</h2>
+<%= form_with url: project_path(@project), method: :get, class: "filter-bar" do |f| %>
+  <span class="filter-search">
+    <%= icon "search", size: 15 %>
+    <%= f.search_field :q, value: @q, autocomplete: "off", spellcheck: false,
+          placeholder: "Search this client's record" %>
+  </span>
+  <%= f.submit "Search", class: "btn sm" %>
+  <% if @q.present? %>
+    <%= link_to "Clear", project_path(@project), class: "filter-clear" %>
+  <% end %>
+<% end %>
+<% if @chain.empty? && @q.present? %>
+  <p class="empty">Nothing in this record matches. <%= link_to "Clear it", project_path(@project) %>.</p>
+<% else %>
+  <%= render "events/chain", items: @chain, within: @project %>
+<% end %>
+
+<%# ── Project settings — the controls that configure this client rather than report
+    on it. Behind a click, and at the foot: Delete was sitting in the page title. %>
+<details class="page-settings">
+  <summary>
+    <%= icon "chevron-down", size: 16, css_class: "icon settings-caret" %>
+    <%= icon "settings", size: 16 %>
+    <span>Project Settings</span>
+    <span class="muted">name, contact, and deletion</span>
+  </summary>
+
+  <div class="panel observe">
+    <div class="panel-head">
+      <div class="kicker">Details</div>
+      <%= button_link_to "Edit", edit_project_path(@project), icon: "pencil",
+            class: "btn-quiet panel-action" %>
+    </div>
+    <p class="note muted">The client's name and who to contact about their work.</p>
+  </div>
+
+  <%# Deleting is guarded server-side: a project that still has live installs or owns
+      machines is refused, naming them. The confirm is the second gate, not the first. %>
+  <div class="panel danger-remove">
+    <h3 class="danger-head"><%= icon "trash-2", size: 15 %> Delete this Project</h3>
+    <p class="note">Removing the client. Refused while it still has live installs or owns
+      machines — take those off or transfer them first.</p>
+    <%= button_to project_path(@project), method: :delete, class: "btn danger",
+          form: { data: { turbo_confirm: "Delete #{@project.name}? This can't be undone." } } do %>
+      <%= safe_join([ icon("trash-2", size: 14), %(Delete "#{@project.name}") ], " ") %>
+    <% end %>
+  </div>
+</details>

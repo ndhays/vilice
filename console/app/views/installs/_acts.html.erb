@@ -3,7 +3,14 @@
     lens) — see decisions/install-the-app-actions-home.md. `from` tells the ceremony
     where to return ("install" → the install page; anything else → the machine page).
     Each link fills the page's #ceremony frame with the preview. Locals: install,
-    machine, from. %>
+    machine, from.
+
+    An act is offered only when the box can take one. `operate` is the key's ceiling;
+    reachability is the other half — every verb below travels the same scoped SSH
+    connection, so on a box we cannot reach they are all certain to fail. The machine
+    page reaches this by not rendering its apps card at all; the install page lists
+    targets across boxes of mixed reachability, so the gate lives here. %>
+<% unless machine.seen_unreachable? %>
 <span class="acts-app-verbs">
   <%# Already running here, so deploy reads "Re-deploy"; first-install from the
       Library reads "Install". %>
@@ -23,3 +30,8 @@
         new_machine_mutation_path(machine, act: "remove", install_id: install.id, from: from),
         class: "btn-quiet danger", data: { turbo_frame: "ceremony" } %>
 </span>
+<% else %>
+  <span class="acts-app-verbs note muted">
+    <%= icon "circle-cut", size: 13 %> box unreachable — no act can be issued
+  </span>
+<% end %>

@@ -102,9 +102,17 @@ class ProjectsController < ApplicationController
     # Show only the head of the record here — the spine stays visible but bounded,
     # leaving room for Installs and Machines. The full, filterable record
     # is one click away, scoped to this project (mirrors Home's "Latest").
-    @chain        = @project.events.acts.latest.includes(:machine, :install).limit(RECORD_HEAD)
+    @q            = params[:q].to_s.strip
+    @chain        = @project.events.acts.search(@q).latest.includes(:machine, :install).limit(RECORD_HEAD)
                             .map { |e| ChainItem.from_event(e) }
     @record_total = @project.events.count
+
+    # The headline's figures — this client's work, in the words the rest of the app
+    # uses. Counted off rows already loaded, and only this lens's facts: what is
+    # placed for them, and what of it needs a person.
+    @needs_look   = @installs.count(&:needs_a_look?)
+    @short        = @installs.count { |i| i.placement_gap.negative? }
+    @down_boxes   = (@owned_machines + @shared_machines).count(&:seen_unreachable?)
   end
 
   private
