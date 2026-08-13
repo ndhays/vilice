@@ -103,4 +103,18 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert User.exists?(@user.id), "the operator's login survives"
     assert Setting.exists?, "the Setting survives"
   end
+
+  # Every card on this page keeps its own Save. The fleet-policy card's used to sit
+  # loose beneath it — a leftover from when one form spanned several cards — which left
+  # no gap at all between it and the card following.
+  test "each settings card carries its own action, inside the card" do
+    sign_in_as @user
+    get settings_path
+    assert_response :success
+    assert_select ".card.setting form .card-actions button", /Save Settings/
+    assert_select ".card.setting.appearance form .card-actions button", /Save Appearance/
+    assert_select ".card.setting.account form .card-actions button", /Change Password/
+    # Nothing is left loose between the cards.
+    assert_select "body > form", count: 0
+  end
 end

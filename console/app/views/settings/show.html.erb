@@ -8,20 +8,22 @@
     <%= pluralize(@machine_count, "machine") %> (<%= @shared_count %> shared)</p>
 </div>
 
-<%# One form over all setting cards; a single Save sits outside the cards. %>
-<%= form_with model: @setting, url: settings_path, method: :patch do |f| %>
-  <div class="card setting">
-    <div class="title">Installs</div>
+<%# Fleet policy. Its Save lives in the card, like every other card here — it used to
+    sit loose beneath, from when one form spanned several cards. %>
+<div class="card setting">
+  <div class="title">Installs</div>
+  <%= form_with model: @setting, url: settings_path, method: :patch do |f| %>
     <label class="toggle">
       <%= f.check_box :installs_library_only %>
       <span>Only allow installs from the App Library (no custom images)</span>
     </label>
-  </div>
-
-  <%= button_tag class: "btn" do %>
-    <%= safe_join([ icon("save", size: 14), "Save Settings" ]) %>
+    <div class="card-actions">
+      <%= button_tag class: "btn" do %>
+        <%= safe_join([ icon("save", size: 14), "Save Settings" ]) %>
+      <% end %>
+    </div>
   <% end %>
-<% end %>
+</div>
 
 <%# Appearance — yours, not the fleet's, so it saves on its own. A theme is a set of
     token values; mode picks its light or dark half, or follows your system. %>
@@ -39,9 +41,11 @@
     </label>
     <p class="note muted">Every theme has a light and a dark half. Following your
       system is the default.</p>
-    <%= button_tag class: "btn" do %>
-      <%= safe_join([ icon("save", size: 14), "Save Appearance" ]) %>
-    <% end %>
+    <div class="card-actions">
+      <%= button_tag class: "btn" do %>
+        <%= safe_join([ icon("save", size: 14), "Save Appearance" ]) %>
+      <% end %>
+    </div>
   <% end %>
 </div>
 
@@ -58,19 +62,23 @@
     <label class="field"><span>Repeat new password</span>
       <%= f.password_field :password_confirmation, required: true, autocomplete: "new-password",
             maxlength: 72 %></label>
-    <%= button_tag class: "btn" do %>
-      <%= safe_join([ icon("lock", size: 14), "Change Password" ]) %>
-    <% end %>
+    <div class="card-actions">
+      <%= button_tag class: "btn" do %>
+        <%= safe_join([ icon("lock", size: 14), "Change Password" ]) %>
+      <% end %>
+    </div>
   <% end %>
 </div>
 
 <% if Rails.env.local? %>
   <div class="card setting danger-zone">
     <div class="title">Danger zone (development only)</div>
-    <%= button_to settings_data_path, method: :delete, class: "btn-quiet danger",
-          form: { data: { turbo_confirm: "Erase ALL fleet data? This cannot be undone." } } do %>
-      <%= safe_join([ icon("trash-2", size: 14), "Erase All Data" ]) %>
-    <% end %>
+    <div class="card-actions">
+      <%= button_to settings_data_path, method: :delete, class: "btn-quiet danger",
+            form: { data: { turbo_confirm: "Erase ALL fleet data? This cannot be undone." } } do %>
+        <%= safe_join([ icon("trash-2", size: 14), "Erase All Data" ]) %>
+      <% end %>
+    </div>
   </div>
 <% end %>
 

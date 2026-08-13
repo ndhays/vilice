@@ -59,10 +59,17 @@ h2 { font-size: 1.15rem; margin: 2.5rem 0 1rem; }
   color: var(--muted); margin-bottom: 0.3rem;
 }
 .fleet-info p { margin: 0; }
-.card.setting { padding: 1.1rem 1.35rem; }
+/* One rhythm for the settings cards. Two carried an ad-hoc 2rem top margin and the
+   rest carried none, so the page's gaps ran 0.75rem, 2rem, and — where a Save sat
+   loose between two cards — nothing at all. */
+.card.setting { padding: 1.1rem 1.35rem; margin-bottom: 1.25rem; }
 .card.setting .title { margin-bottom: 0.85rem; }
-.card.setting.account { margin-top: 2rem; }
-.card.setting.danger-zone { margin-top: 2rem; }
+/* Destructive, and set apart: dashed and unfilled, like the machine page's Remove. */
+.card.setting.danger-zone {
+  margin-top: 2.5rem; background: transparent;
+  border-color: var(--bad); border-style: dashed;
+}
+.card.setting.danger-zone .title { color: var(--bad); }
 .toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
 .toggle input { width: 1rem; height: 1rem; accent-color: var(--accent); flex: none; }
 
