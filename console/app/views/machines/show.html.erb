@@ -53,7 +53,7 @@
     <div class="panel-head">
       <div class="kicker">Unreachable</div>
       <%= button_to refresh_machine_path(@machine), class: "btn sm panel-action" do %>
-        <%= safe_join([ icon("rotate-cw", size: 13), "Try again" ], " ") %>
+        <%= safe_join([ icon("rotate-cw", size: 13), "Try again" ]) %>
       <% end %>
     </div>
     <p class="unreachable-line">
@@ -73,7 +73,7 @@
         something a hover or a prefetch can fire. Top-right, where a card's action
         belongs — it was a full-width button at the bottom of the card. %>
     <%= button_to refresh_machine_path(@machine), class: "btn sm panel-action" do %>
-      <%= safe_join([ icon("rotate-cw", size: 13), "Read now" ], " ") %>
+      <%= safe_join([ icon("rotate-cw", size: 13), "Read now" ]) %>
     <% end %>
   </div>
 
@@ -108,7 +108,7 @@
       <%# Deploying travels the same SSH connection as the read that just failed, so
           on an unreachable box the act is absent rather than offered and refused. %>
       <% if @machine.operate? %>
-        <%= link_to safe_join([ icon("rocket", size: 13), "Deploy an app" ], " "),
+        <%= link_to safe_join([ icon("rocket", size: 13), "Deploy an app" ]),
               new_machine_box_app_path(@machine), class: "btn sm panel-action" %>
       <% end %>
     </div>
@@ -177,7 +177,7 @@
     <div class="panel-head">
       <div class="kicker">Maintenance</div>
       <% if @status.updates_available? %>
-        <%= link_to safe_join([ icon("check-check", size: 13), "Apply now" ], " "),
+        <%= link_to safe_join([ icon("check-check", size: 13), "Apply now" ]),
               new_machine_mutation_path(@machine, act: "apply-updates"),
               class: "btn mutate sm panel-action", data: { turbo_frame: "ceremony" } %>
       <% end %>
@@ -325,7 +325,7 @@
       <p class="note muted"><%= pluralize(@installs.size, "app") %> deployed here
         (<%= @installs.map(&:name).join(", ") %>) will lose their deployment record.</p>
     <% end %>
-    <%= button_to safe_join([ icon("trash-2", size: 14), %(Remove "#{@machine.name}") ], " "),
+    <%= button_to safe_join([ icon("trash-2", size: 14), %(Remove "#{@machine.name}") ]),
           machine_path(@machine), method: :delete, class: "btn danger",
           data: { turbo_confirm: remove_note } %>
   </div>

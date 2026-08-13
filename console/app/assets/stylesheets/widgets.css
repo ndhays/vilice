@@ -1,5 +1,6 @@
 .btn {
-  display: inline-block; border: 1px solid var(--accent); color: var(--accent);
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  border: 1px solid var(--accent); color: var(--accent);
   background: var(--card); border-radius: 7px; padding: 0.25rem 0.65rem;
   font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
   white-space: nowrap;

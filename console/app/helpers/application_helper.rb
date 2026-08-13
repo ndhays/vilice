@@ -345,7 +345,7 @@ module ApplicationHelper
   # A button-styled link with an optional leading icon — the icon+label pattern
   # repeated across the app. Pass the button class via :class (e.g. "btn", "btn-quiet").
   def button_link_to(text, path, icon: nil, size: 14, **opts)
-    label = icon ? safe_join([ icon(icon, size: size), text ], " ") : text
+    label = icon ? safe_join([ icon(icon, size: size), text ]) : text
     link_to label, path, **opts
   end
 

@@ -56,14 +56,16 @@
         <% end %>
       </div>
     </div>
-    <p class="declared-note muted">
-      Values are supplied at install. Everything on the left is written to the record;
-      everything on the right reaches the box off-record and is never written down.
+    <p class="declared-note">
+      Values are supplied at install. All keys are stored in the record, but only the
+      values on the left. Values for everything on the right do not appear in the record.
     </p>
   </div>
 
   <%# ── The editor, revealed ──────────────────────────────────────────────────── %>
   <%= form_with model: app, class: "inputs-form" do %>
+    <%# Says "the editor posted this", so no rows means none — see apps#app_params. %>
+    <%= hidden_field_tag "app[inputs_form]", "1" %>
     <% if app.errors.any? %>
       <div class="flash alert"><%= app.errors.full_messages.to_sentence %></div>
     <% end %>

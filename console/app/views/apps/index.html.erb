@@ -8,7 +8,7 @@
   <%# Import — a small menu, since a manifest can come from a file or a URL (the
       marketplace path). Degrades to two plain forms with no JS. %>
   <details class="menu">
-    <summary class="btn sm"><%= safe_join([ icon("file-up", size: 14), "Import Library" ], " ") %></summary>
+    <summary class="btn sm"><%= safe_join([ icon("file-up", size: 14), "Import Library" ]) %></summary>
     <div class="menu-pop">
       <%= form_with url: import_apps_path, method: :post, html: { multipart: true }, class: "menu-form" do |f| %>
         <span class="menu-label">From a file</span>
@@ -35,7 +35,7 @@
           locals: { search_url: apps_path, q: @q, placeholder: "name  ·  key=value label" } do %>
       <%= button_tag type: "submit", form: "apps-bulk", class: "btn-quiet danger",
             formnovalidate: true, disabled: true, data: { selection_target: "action" } do %>
-        <%= safe_join([ icon("trash-2", size: 14), "Remove" ], " ") %>
+        <%= safe_join([ icon("trash-2", size: 14), "Remove" ]) %>
       <% end %>
     <% end %>
 

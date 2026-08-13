@@ -37,12 +37,12 @@
           <span class="version-actions">
             <% unless v.latest? %>
               <%= button_to latest_app_version_path(@app, v), method: :patch, class: "btn-quiet" do %>
-                <%= safe_join([ icon("book-check", size: 14), "Make Latest" ], " ") %>
+                <%= safe_join([ icon("book-check", size: 14), "Make Latest" ]) %>
               <% end %>
             <% end %>
             <%= button_to app_version_path(@app, v), method: :delete, class: "btn-quiet danger",
                   data: { turbo_confirm: "Remove #{@app.name} #{v.tag}?" } do %>
-              <%= safe_join([ icon("trash-2", size: 14), "Remove" ], " ") %>
+              <%= safe_join([ icon("trash-2", size: 14), "Remove" ]) %>
             <% end %>
           </span>
         </li>

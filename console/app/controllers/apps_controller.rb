@@ -108,14 +108,20 @@ class AppsController < ApplicationController
 
     # The env / secret-file editors post indexed rows. Build the stored lists by hand
     # (names only — no values), dropping blank rows and coercing the secret checkbox.
-    if (rows = params.dig(:app, :env_rows))
-      attrs["env"] = rows.values.filter_map { |r|
+    #
+    # `inputs_form` is why the rows are read at all. Removing the last row leaves the
+    # editor with no `env_rows` / `secret_file_rows` key to post, and treating an
+    # absent key as "leave it alone" meant the last variable or file could not be
+    # deleted — it came back on every save. But the *details* form (name, port, health)
+    # posts to this same action and carries neither key, and there "leave it alone" is
+    # exactly right. The marker separates the two: absent rows mean **empty** only when
+    # the editor is the thing that was submitted.
+    if params.dig(:app, :inputs_form)
+      attrs["env"] = Array(params.dig(:app, :env_rows)&.values).filter_map { |r|
         key = r[:key].to_s.strip
         { "key" => key, "secret" => r[:secret] == "1" } if key.present?
       }
-    end
-    if (rows = params.dig(:app, :secret_file_rows))
-      attrs["secret_files"] = rows.values.filter_map { |r|
+      attrs["secret_files"] = Array(params.dig(:app, :secret_file_rows)&.values).filter_map { |r|
         name = r[:name].to_s.strip
         { "name" => name, "path" => r[:path].to_s.strip } if name.present?
       }

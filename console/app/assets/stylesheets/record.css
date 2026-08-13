@@ -123,7 +123,8 @@
 
 /* a lower-key button for the inline per-app verbs and Cancel */
 .btn-quiet {
-  display: inline-block; border: 1px solid var(--line); color: var(--ink);
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  border: 1px solid var(--line); color: var(--ink);
   background: var(--card); border-radius: 7px; padding: 0.25rem 0.6rem;
   font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
 }

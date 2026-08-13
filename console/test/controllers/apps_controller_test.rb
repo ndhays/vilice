@@ -86,6 +86,7 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     app = App.create!(name: "web")
     patch app_path(app), params: { app: {
+      inputs_form: "1",
       env_rows: { "0" => { key: "LOG", secret: "0" }, "1" => { key: "TOKEN", secret: "1" },
                   "2" => { key: "", secret: "0" } }, # blank row dropped
       secret_file_rows: { "0" => { name: "config", path: "/etc/web/config" } }
@@ -95,6 +96,42 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
                    { "key" => "TOKEN", "secret" => true } ], app.env
     assert_equal [ { "name" => "config", "path" => "/etc/web/config" } ], app.secret_files
     assert_equal "edited", Event.latest.first.action
+  end
+
+  # The bug: removing the last row leaves the editor with no rows key to post, and an
+  # absent key was read as "leave it alone" — so the last secret file (or the last
+  # variable) came back on every save and could not be deleted at all.
+  test "removing the last secret file actually removes it" do
+    sign_in_as @user
+    app = App.create!(name: "web", env: [ { "key" => "TOKEN", "secret" => true } ],
+                      secret_files: [ { "name" => "config", "path" => "/etc/web/config" } ])
+    patch app_path(app), params: { app: {
+      inputs_form: "1",
+      env_rows: { "0" => { key: "TOKEN", secret: "1" } }
+      # no secret_file_rows at all — the editor posts none once the last row is gone
+    } }
+    assert_empty app.reload.secret_files
+    assert_equal [ { "key" => "TOKEN", "secret" => true } ], app.env
+  end
+
+  test "removing the last variable actually removes it" do
+    sign_in_as @user
+    app = App.create!(name: "web", env: [ { "key" => "ONLY", "secret" => false } ])
+    patch app_path(app), params: { app: { inputs_form: "1" } }
+    assert_empty app.reload.env
+  end
+
+  # …but the details form posts to the same action and carries neither key, and there
+  # an absent key really does mean "leave it alone".
+  test "editing name or port leaves the declaration untouched" do
+    sign_in_as @user
+    app = App.create!(name: "web", env: [ { "key" => "TOKEN", "secret" => true } ],
+                      secret_files: [ { "name" => "config", "path" => "/etc/web/config" } ])
+    patch app_path(app), params: { app: { name: "web", port: 9090 } }
+    app.reload
+    assert_equal 9090, app.port
+    assert_equal [ { "key" => "TOKEN", "secret" => true } ], app.env
+    assert_equal [ { "name" => "config", "path" => "/etc/web/config" } ], app.secret_files
   end
 
   test "removing an app records it and leaves the record intact" do

@@ -4,7 +4,7 @@
   <%# Re-reads every box. A POST: it opens an SSH connection per machine, and a GET
       must be safe to repeat unasked. %>
   <%= button_to refresh_access_path(q: @q.presence, group: @group), class: "btn" do %>
-    <%= safe_join([ icon("rotate-cw", size: 14), "Re-read" ], " ") %>
+    <%= safe_join([ icon("rotate-cw", size: 14), "Re-read" ]) %>
   <% end %>
 <% end %>
 

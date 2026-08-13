@@ -30,7 +30,7 @@
 
       <div class="ceremony-actions">
         <%= button_tag class: "btn mutate" do %>
-          <%= safe_join([ icon("eye", size: 14), "Preview" ], " ") %>
+          <%= safe_join([ icon("eye", size: 14), "Preview" ]) %>
         <% end %>
         <%= link_to "Cancel", @return_path,
               class: "btn-quiet", data: { turbo_frame: "ceremony" } %>

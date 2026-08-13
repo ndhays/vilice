@@ -24,7 +24,7 @@
     <% confirm = { act: @mutation.act.verb, install_id: @mutation.install&.id, from: @from } %>
     <% confirm.merge!(image: @mutation.image, hostname: @mutation.hostname, port: @mutation.port, health: @mutation.health) if @mutation.needs_compose? %>
     <div class="ceremony-actions">
-      <%= button_to safe_join([ icon("check", size: 14), "Confirm — write & run" ], " "),
+      <%= button_to safe_join([ icon("check", size: 14), "Confirm — write & run" ]),
             machine_mutation_path(@machine), method: :post, class: "btn mutate", params: confirm %>
       <%= link_to "Cancel", @return_path,
             class: "btn-quiet", data: { turbo_frame: "ceremony" } %>

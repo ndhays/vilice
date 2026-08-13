@@ -93,7 +93,7 @@
           options_from_collection_for_select(@attachable, :id, :name),
           prompt: "Attach an existing machine…", class: "select" %>
     <%= button_tag class: "btn sm" do %>
-      <%= safe_join([ icon("plus", size: 14), "Attach" ], " ") %>
+      <%= safe_join([ icon("plus", size: 14), "Attach" ]) %>
     <% end %>
   <% end %>
 <% end %>
@@ -148,7 +148,7 @@
       machines — take those off or transfer them first.</p>
     <%= button_to project_path(@project), method: :delete, class: "btn danger",
           form: { data: { turbo_confirm: "Delete #{@project.name}? This can't be undone." } } do %>
-      <%= safe_join([ icon("trash-2", size: 14), %(Delete "#{@project.name}") ], " ") %>
+      <%= safe_join([ icon("trash-2", size: 14), %(Delete "#{@project.name}") ]) %>
     <% end %>
   </div>
 </details>

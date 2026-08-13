@@ -139,7 +139,7 @@
 
 /* Versions read as a small table: a bordered frame, a muted header row, ruled rows
    with roomy columns, the latest row tinted, and actions aligned right. */
-.version-list { list-style: none; margin: 0.4rem 0 1rem; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.version-list { list-style: none; margin: 0 0 0.75rem; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .version { display: flex; align-items: center; gap: 1.25rem; padding: 0.55rem 0.85rem; border-top: 1px solid var(--line); }
 .version:first-child { border-top: none; }
 .version.is-latest { background: var(--inset); }
@@ -162,7 +162,7 @@
 .copy-btn .icon-copied { display: none; }
 .version-image.copied .copy-btn .icon-copy { display: none; }
 .version-image.copied .copy-btn .icon-copied { display: inline; color: var(--ok); }
-.version-add { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.4rem; }
+.version-add { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0; }
 .version-add input {
   font: inherit; font-size: 0.85rem; padding: 0.35rem 0.55rem;
   border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink);
@@ -337,7 +337,7 @@
 .declared-list li.is-file .icon { flex: none; opacity: 0.7; }
 .declared-path { color: var(--muted); font-size: 0.8rem; margin-left: auto; }
 .declared-none { color: var(--muted); font-size: 0.85rem; font-style: italic; margin: 0; }
-.declared-note { font-size: 0.82rem; margin: 0.7rem 0 0; }
+.declared-note { font-size: 0.9rem; color: var(--muted); margin: 0.8rem 0 0; }
 
 /* ── Access — the rights ledger, one key per row ──────────────────────────────
    Reuses the .rows machinery like every other list: actor · box · reach · key ·
