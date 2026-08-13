@@ -72,7 +72,7 @@ make release               # sign + publish artifacts to RELEASE_DEST
 **Install steward on a box** (run on the box; verifies the signature first):
 
 ```bash
-./install.sh 0.3.0
+./install.sh 0.3.1
 ```
 
 **Docs site** (`cd site`):

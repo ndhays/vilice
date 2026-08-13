@@ -23,7 +23,10 @@ the current `VERSION` is published — run `make -C ../steward release` first.
 - `page.ori` — the shared HTML layout (banner, header, sidebar, footer).
 - `site.ori` — the build tree: which pages exist, plus assets, fonts, and releases.
 - `assets/` — `tokens.css`, `styles.css`, `copy.js`, the mark.
-- `versions.js` — reads the platform version from `VERSION` at build time.
+- `versions.js` — reads the platform version from `VERSION` at build time, and fills
+  `{{version}}` in the hand-written pages. Write `{{version}}` rather than a number:
+  the home page's badge and its install line both come from `VERSION`, so a release
+  never leaves the docs quoting the one before it.
 
 Presentation is specified in `blueprint/design/` — tokens, the mark, and the shared
 patterns. `assets/tokens.css` is a projection of `blueprint/design/tokens.md`; change

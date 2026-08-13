@@ -45,9 +45,19 @@ tag is not a thing you can redeploy: it means something different
 tomorrow, and "the image that was running" has to be an answer.
 
 The flags cover the common app. Anything with env, secrets, or volumes
-sends a full spec on stdin instead — that spec is the desired state
-and it replaces the old one wholesale, so what you send is what runs.`,
-			Usage: "<app> --image <ref> [--port <n>] [--hostname <host>]\n  steward deploy <app> < spec.json   (full spec: env, secrets, volumes)",
+sends its desired state on stdin instead, as an envelope of two halves:
+
+  {"app": {…the spec…}, "secret_values": {"NAME": "value"}}
+
+The app half is the desired state, and it replaces the old one
+wholesale — what you send is what runs, and a field you leave out is
+removed. It is recorded, by digest.
+
+The secret_values half is not recorded: values arrive here so they
+never touch the command line. The spec declares its secrets by name
+only, and every name it declares needs a value on every deploy — a
+missing one is refused rather than carried over from last time.`,
+			Usage: "<app> --image <ref> [--port <n>] [--hostname <host>]\n  steward deploy <app> < envelope.json   (env, secrets, volumes)",
 			Flags: []core.Flag{
 				{Name: "image", Arg: "<ref>", What: "The image to run, pinned by digest: ref@sha256:… Required."},
 				{Name: "port", Arg: "<n>", What: "Port the app listens on inside the container. Default 8080."},
@@ -56,7 +66,7 @@ and it replaces the old one wholesale, so what you send is what runs.`,
 			},
 			Examples: []core.Example{
 				{Cmd: "steward deploy blog --image ghcr.io/me/blog@sha256:ab12… \\\n    --hostname blog.example.com", What: "Deploy and route a straightforward web app."},
-				{Cmd: "steward deploy blog < blog.json", What: "Deploy the full spec: env, secrets, volumes, backup hook."},
+				{Cmd: "steward deploy blog < envelope.json", What: "Send the whole envelope: env, secrets, volumes, backup hook."},
 			},
 			Run: deployCmd},
 		{Name: "rollback", Scope: core.ScopeOperate, Summary: "Re-deploy the last-good image",

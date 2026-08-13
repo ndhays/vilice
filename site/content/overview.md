@@ -4,7 +4,7 @@ title: Overview
 ---
 # Overview
 
-**Contents:** [Roles](#roles) &middot; [Apps](#apps) &middot; [AppConfig](#appconfig) &middot; [Spec](#spec)
+**Contents:** [Roles](#roles) &middot; [Apps](#apps) &middot; [AppConfig](#appconfig) &middot; [Spec](#spec) &middot; [Secrets](#secrets) &middot; [Examples](#examples)
 
 Steward hosts web applications on a Linux server. It is one Go binary — a gate and a
 scribe, not a runtime. Every action is a named actor, a declared scope, and a record
@@ -12,8 +12,7 @@ written before it runs, and there is no path to the box's power that skips that.
 
 ## Roles
 
-A box says what it is for when you prepare it, and what gets installed follows from that.
-There are two roles, because there are two things a box does here.
+Steward prepares a box for a specific role.
 
 <div class="roles">
 <div class="role">
@@ -31,51 +30,40 @@ it would never use is only surface to patch.</p>
 </div>
 </div>
 
-A balancer owns `:80` and `:443` and therefore cannot sit behind itself; that is what makes
-it a role rather than an app. Anything that *can* run in a container is an app, which is
-why the list is short and stays short. Re-preparing a box as a different role is refused —
-converting a machine is a decision, not a typo.
+### Note on Roles
+
+A balancer is a separate role precisely because it owns `:80` and `:443` and would not
+function inside a container. Steward CLI also enforces that once a box is prepared for one
+role, it cannot be re-prepared as the other — converting a machine is a decision, not a
+typo. (Re-stating the role it already has is idempotent, like the rest of `prepare`.)
 
 ## Apps
 
-An app on Steward is a container image, a hostname, and a document that says how they go
-together. Nothing else: no cluster, no scheduler, no controller loop.
+An app on Steward is a container image that is defined with a JSON config.
 
-[`steward deploy`](/commands/deploy.html) pulls the image, brings the new container up
+[`steward deploy`](/commands/deploy.html) pulls the app image, brings the new container up
 alongside the one already serving, polls it until it answers healthy, and only then moves
 traffic across. If it never answers, the old app is left running and the deploy fails — a
 bad image costs you an error message, not an outage. The image that was serving is
 remembered as last-good, so [`steward rollback`](/commands/rollback.html) is always
 available.
 
-Images are **digest-pinned** (`ref@sha256:…`). A tag is refused, because a tag is not a
-thing you can redeploy: it means something different tomorrow, and *"the image that was
-running"* has to be an answer.
+Images are **digest-pinned** (`ref@sha256:…`) so there is never confusion about which
+version of the app is deployed and running.
 
-Steward drives three tools it did not write — [Podman](https://podman.io) for rootless
-containers, [Caddy](https://caddyserver.com) for routing and automatic HTTPS, and
-[restic](https://restic.net) for encrypted backups. Everything it writes is the underlying
-tool's own plain config file, readable by an admin who has never heard of Steward, and left
-in place if Steward is removed.
+Steward drives helpful open source hosting tools it did not write —
+[Podman](https://podman.io) for rootless containers, [Caddy](https://caddyserver.com) for
+routing and automatic HTTPS, and [restic](https://restic.net) for encrypted backups.
+Everything it writes uses the underlying tool's config, so it is readable by an admin who
+has never heard of Steward, and left in place if Steward is removed.
 
 ## AppConfig
 
-An AppConfig is one document that says what an app is — its code, its config, its data, its
-secrets. One app should need one document, not a pile of objects spread across a cluster
-scheduler. **The config *is* the app.**
+The AppConfig defines the app. It exists separately from its app code (which means the same
+codebase image could be deployed in different configurations to different machines). A
+change in config is necessarily a redeployment.
 
-It is **values plus references**. A value is inline: a hostname, a port. A reference points
-at something kept apart because it is immutable, heavy, or secret:
-
-- **image** points at the **code** — immutable, pinned by content digest, kept in a registry.
-- **volume** points at the **data** — heavy and mutable, on disk, surviving every deploy.
-- **secret** points at a **sensitive value** — kept off the record, in the box's secret store.
-
-Steward converges one box to one AppConfig. The image is just a field, so *"update the
-code"* and *"change the config"* stay separate, separately-recorded acts. Every deploy
-records the config **by digest**: one digest is one set of values, forever.
-
-Here is one — the AppConfig for Steward Console itself:
+Here is an example of the AppConfig (Steward Console itself):
 
 ```jsonc
 // console.json — the desired state, recorded by digest on every deploy
@@ -90,6 +78,10 @@ Here is one — the AppConfig for Steward Console itself:
 }
 ```
 
+[`steward deploy`](/commands/deploy.html) reads this as the `app` half of an envelope on
+stdin. The other half carries the [secret values](#secrets), which the config itself never
+holds.
+
 ### Spec
 
 | Field | Type | Required | Description |
@@ -99,10 +91,107 @@ Here is one — the AppConfig for Steward Console itself:
 | `port` | number | yes | The port the app listens on inside its container. |
 | `health` | string | no | HTTP path Steward probes before sending traffic. Defaults to root `/`. |
 | `env` | object | no | Non-secret environment, as key/value pairs. Recorded in the clear. |
-| `secrets` | string[] | no | **Names** of secrets the box injects as env. Values are supplied at deploy and **never recorded** — see below. |
+| `secrets` | string[] | no | **Names** of secrets the box injects as env. Values are supplied at deploy and **never recorded** — see [Secrets](#secrets). |
 | `volumes` | string[] | no | Volume mounts, `name:/path/in/container`. The **declaration**, not the data; volumes survive redeploys. A host path instead of a name is a bind mount, and must live under `/srv`. |
 
-**Secrets are names here, values at deploy.** The AppConfig lists only the *names* of its
-secrets. The values ride a separate channel at deploy time, over stdin, so they stay out of
-the recorded command line and out of the config. Steward puts each value in its Podman
-secret store and injects it as container env.
+## Secrets
+
+**A secret is a name in the config and a value on stdin.** The two never travel together,
+which is what keeps the config safe to record and safe to keep in version control.
+
+### The Envelope
+
+`app` is the AppConfig, in full. `secret_values` is a value for each name it declares:
+
+```jsonc
+{
+  "app":           { "secrets": ["RAILS_MASTER_KEY"] },  // recorded, by digest
+  "secret_values": { "RAILS_MASTER_KEY": "…" }           // never recorded
+}
+```
+
+Steward puts each value in the box's Podman secret store and injects it into the container
+as env. Nothing about it reaches the record or the command line.
+
+### On Every Deploy
+
+Every name in `secrets` needs a value in `secret_values`, every time — a missing one is
+refused, not carried over from last time. A value whose name the config does not declare is
+refused too.
+
+The plain way is a file, and it needs nothing you do not have:
+
+```bash
+steward deploy console < envelope.json
+```
+
+To keep the value out of a second file, build the envelope in the pipe instead. `jq` does
+that in one line, though it is not on a fresh Ubuntu box — `sudo apt install jq` first:
+
+```bash
+jq --arg key "$RAILS_MASTER_KEY" \
+   '{ app: ., secret_values: { RAILS_MASTER_KEY: $key } }' console.json \
+  | steward deploy console
+```
+
+The deploy scripts in
+[`examples/`](https://git.agoraforge.org/agoraforge/steward/src/branch/main/examples) build
+the same envelope with `python3`, which every Ubuntu box already has.
+
+## Examples
+
+Three real apps, from the smallest thing that deploys to one that needs a secret.
+
+### nginx — A Web Server
+
+[nginx](https://nginx.org) answers HTTP requests and serves files. This is the smallest
+config that works: the image, the hostname Caddy should route, and the port the app listens
+on inside its container. Everything else takes a default — Steward polls `/` for health.
+
+```jsonc
+// nginx.json
+{
+  "image":     "docker.io/nginxinc/nginx-unprivileged@sha256:…",
+  "hostnames": ["www.example.com"],
+  "port":      8080
+}
+```
+
+### Prometheus — A Metrics Database
+
+[Prometheus](https://prometheus.io) records numbers about your services over time and
+answers questions about them. Two fields more than nginx: `health`, because the path it
+answers readiness on is not `/`, and `volumes`, because the numbers have to outlive the
+deploy. A volume is a *name*, and the same name is still there after the next one.
+
+```jsonc
+// prometheus.json
+{
+  "image":     "docker.io/prom/prometheus@sha256:…",
+  "hostnames": ["metrics.example.com"],
+  "port":      9090,
+  "health":    "/-/healthy",
+  "volumes":   ["prometheus-data:/prometheus"]
+}
+```
+
+### code-server — VS Code in the Browser
+
+[code-server](https://github.com/coder/code-server) runs the VS Code editor on the box and
+puts it behind a URL, so a password is the door. `PASSWORD` is a name here and a value on
+stdin — see [Secrets](#secrets).
+
+```jsonc
+// code-server.json
+{
+  "image":     "docker.io/codercom/code-server@sha256:…",
+  "hostnames": ["code.example.com"],
+  "port":      8080,
+  "health":    "/healthz",
+  "secrets":   ["PASSWORD"]
+}
+```
+
+More of these, with the deploy scripts that resolve each digest on the box, live in
+[`examples/`](https://git.agoraforge.org/agoraforge/steward/src/branch/main/examples) in
+the repository.

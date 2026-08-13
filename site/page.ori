@@ -5,7 +5,7 @@
 // Document fields the chrome reads, all optional:
 //   title    — the <title> and og:title
 //   nav      — which nav item is current: "home" | "overview" | "commands" |
-//              "console". The brand mark is the link home, so "home" marks nothing.
+//              "console"
 //   command  — on a command page, which command, so the sidebar can mark it
 //   sidebar  — true to render the command sidebar
 //
@@ -40,6 +40,7 @@
         <svg class="mark" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4.5" width="20" height="15" rx="2.5"/><path d="M6.4 7.5 L6.4 13.1 L10.5 10.3 Z" fill="currentColor" stroke="none"/><path d="M17.6 7.5 L17.6 13.1 L13.5 10.3 Z" fill="currentColor" stroke="none"/><circle cx="12" cy="10.3" r="1.5" fill="#F2C200" stroke="none"/><circle cx="6" cy="16.8" r="0.9" fill="#F2C200" stroke="none"/><circle cx="8.7" cy="16.8" r="0.9" fill="currentColor" stroke="none"/><line x1="11.8" y1="16.8" x2="18" y2="16.8"/></svg><span class="wordmark">steward</span><span class="cursor" aria-hidden="true"></span>
       </a>
       <nav aria-label="Primary">
+        <a href="/index.html"${ doc.nav === "home" ? ` class="current" aria-current="page"` : `` }>Home</a>
         <a href="/overview.html"${ doc.nav === "overview" ? ` class="current" aria-current="page"` : `` }>Overview</a>
         <a href="/commands/"${ doc.nav === "commands" ? ` class="current" aria-current="page"` : `` }>Commands</a>
         <a href="/console.html"${ doc.nav === "console" ? ` class="current" aria-current="page"` : `` }>Console</a>

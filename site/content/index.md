@@ -18,13 +18,14 @@ help improve it.
 <div class="split">
 <div class="split-figure">
 <img src="/assets/logo.svg" alt="" width="120" height="120">
+<p class="version"><span>Current version</span><strong>v{{version}}</strong></p>
 </div>
 <div class="split-do">
 
 **Install Steward:**
 
 ```bash
-curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- 0.3.0
+curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- {{version}}
 ```
 
 [View all Steward commands here](/commands/).
@@ -37,6 +38,10 @@ scoped SSH key, and every action that changes the box is written to a hash-chain
 the machine — *before* it is executed, so nothing happens off the books. Security starts by
 locking down a fresh Ubuntu box with standard commands and tooling, and then preparing that
 machine for its purpose as an app host or a load balancer.
+
+### Dependencies
+
+<p class="tagline">Tools Steward Builds On</p>
 
 Steward writes almost none of this itself. It is a gate and a scribe, and the work is done
 by open source tools that already do it well:
@@ -57,7 +62,9 @@ by open source tools that already do it well:
 Everything they write is their own plain config file, readable by an admin who has never
 heard of Steward — and left in place if Steward is removed.
 
-### Inspiration and Other Self-Hosting Tools
+### Inspiration
+
+<p class="tagline">Other Self-Hosting Tools</p>
 
 Kamal (and [Once](https://once.com)) were the inspiration that led to the creation of
 Steward. The reliability of Linux, the ever-worsening-doom-loop of big name tech, cloud
@@ -80,7 +87,8 @@ other great self-hosting tools out there that may be better for your specific ne
 
 ### Proof of Concept
 
-The current version of Steward is a proof of concept. The goal is one day to rebuild it by
+The current version of Steward is a proof of concept, built with significant use of LLM
+tools. The goal is one day to rebuild it by
 hand and host it on [Codeberg](https://codeberg.org), in a way that complies with the
 generative-AI clause of their
 [Terms of Use](https://codeberg.org/Codeberg/org/commit/96fac426a32d1ba91ff879366d59bf1af54080c2).

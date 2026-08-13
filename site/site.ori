@@ -16,10 +16,11 @@
   // verbatim `--help` page for each. Keyed by command name, in `steward help` order.
   (help) = help.js
 
-  // Hand-written pages.
-  index.html = page.ori(Origami.mdHtml(content/index.md), versions, help)
-  console.html = page.ori(Origami.mdHtml(content/console.md), versions, help)
-  overview.html = page.ori(Origami.mdHtml(content/overview.md), versions, help)
+  // Hand-written pages. `versions.fill` replaces `{{version}}` in the body, so a page
+  // can quote the current release without anyone retyping it at release time.
+  index.html = page.ori(versions.fill(Origami.mdHtml(content/index.md)), versions, help)
+  console.html = page.ori(versions.fill(Origami.mdHtml(content/console.md)), versions, help)
+  overview.html = page.ori(versions.fill(Origami.mdHtml(content/overview.md)), versions, help)
 
   // Generated: one page per command, plus the index. `/commands/` serves the index,
   // so the nav links to a folder rather than a file.

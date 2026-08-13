@@ -39,19 +39,22 @@ if (missing.length) {
   );
 }
 
-// 2. The install page's copy-paste command must reference this exact version, so
-//    the page can't drift from VERSION.
+// 2. The install page's copy-paste command must take its version from VERSION
+//    rather than from someone's memory. `{{version}}` is filled at build time by
+//    site/versions.js, so a page written that way cannot drift; a page with the
+//    number typed into it can, and this is what catches the retyping.
 //
 //    One command, not two: the home page used to also carry a `V=<version>`
 //    verify-by-hand block, and that block was cut when the page became the hook.
 //    The guard tracks what is on the page — a check for a string that can no longer
 //    appear fails every build and teaches people to delete the guard.
 const installMd = readFileSync(join(root, "site", "content", "index.md"), "utf8");
-const want = `bash -s -- ${version}`;
+const want = "bash -s -- {{version}}";
 if (!installMd.includes(want)) {
   die(
-    `index.md does not reference v${version} (looking for "${want}").\n` +
-      `  Update site/content/index.md to the current version.`
+    `index.md's install command doesn't read the version from VERSION ` +
+      `(looking for "${want}").\n` +
+      `  Write {{version}} in site/content/index.md — don't type v${version} in.`
   );
 }
 

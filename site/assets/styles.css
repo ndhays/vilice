@@ -314,6 +314,19 @@ h3 {
   margin-top: 0;
 }
 
+/* A tagline is the subordinate line under a heading — the heading says what the
+   section is, the tagline says it in a few more words. Always --ink-soft, always
+   hugging the heading it belongs to, and scaled to that heading: --text-sm under a
+   section h3 here, --text-xl under the hero's h1 (which overrides on specificity).
+   The heading's own bottom margin is the gap, so there is no negative margin
+   holding the pair together. */
+.tagline {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  margin: 0 0 var(--space-4);
+  max-width: var(--measure);
+}
+
 /* Links: near-black text with a yellow underline. The text does the contrast
    work; the yellow is decoration, and a reader who cannot see it still sees an
    underline (WCAG 1.4.1). */
@@ -547,11 +560,12 @@ main > details > summary {
   border-radius: var(--radius-sm);
   background: var(--brand-yellow);
 }
+/* The tagline at hero scale — the same pattern as the section taglines, sized to the
+   heading above it. The yellow rule sits between, so this one is spaced off the h1
+   rather than hugging it. */
 .hero .tagline {
   font-size: var(--text-xl);
-  color: var(--ink-soft);
   margin: var(--space-4) 0 0;
-  max-width: var(--measure);
 }
 
 /* The split: a figure beside the thing you would actually type. Below 640px it
@@ -567,9 +581,13 @@ main > details > summary {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
 }
+/* The mark, and the version badge under it. A column so the badge reads as a caption
+   on the mark rather than as the first line of the install instructions. */
 .split-figure {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
 }
 /* The mark is line art on `currentColor`, so it takes the page's ink and needs no
    second copy in another colour. */
@@ -582,6 +600,37 @@ main > details > summary {
 .split-do > :first-child {
   margin-top: 0;
 }
+/* The version badge: the terminal surface shrunk to a pill, because that is the one
+   place --brand-yellow is contrast-safe as text. The label is a word, so the number
+   is never left to be guessed from its colour. It reads {{version}} from VERSION at
+   build time (site/versions.js) — the install command beside it comes from the same
+   number, and neither is retyped at release. Spacing is the figure column's gap. */
+.version {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--term-bg);
+  border-radius: var(--radius);
+}
+/* Label over number, not beside it. The figure column is 180px at the page's full
+   width; the two set on one line measure 204px and overhang the card. Stacked they
+   are 145px. Measured against the shipped Plex faces, not guessed. */
+.version span {
+  font-size: var(--text-xs);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--term-muted);
+}
+.version strong {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  line-height: 1;
+  color: var(--term-yellow);
+}
 .split-do > :last-child {
   margin-bottom: 0;
 }
@@ -590,10 +639,15 @@ main > details > summary {
 }
 
 /* The tool list: other people's work, so each line says what the tool is for
-   rather than how it compares. Bold name, plain sentence. */
+   rather than how it compares. Bold name, plain sentence.
+
+   Indented one step, so the run of rows reads as a block belonging to the sentence
+   that introduces it rather than as more prose at the same left edge. The indent is
+   padding inside `--measure` (box-sizing is border-box), so the block still ends
+   where the paragraphs do — it is inset, not pushed out. */
 .tools ul {
   list-style: none;
-  padding: 0;
+  padding: 0 0 0 var(--space-6);
   margin: var(--space-6) 0;
   max-width: var(--measure);
 }
@@ -682,6 +736,10 @@ main h2.section {
   }
   .hero h1 {
     font-size: clamp(2.25rem, 12vw, 3rem);
+  }
+  /* A step smaller: 24px of a phone's width is a line break the reader pays for. */
+  .tools ul {
+    padding-left: var(--space-4);
   }
   .split {
     grid-template-columns: minmax(0, 1fr);
