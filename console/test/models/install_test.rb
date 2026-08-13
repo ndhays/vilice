@@ -36,27 +36,27 @@ class InstallTest < ActiveSupport::TestCase
   test "deploy_envelope carries declared volumes as the AppConfig `volumes` key" do
     install = Install.new(project: @project, name: "web",
                           config: { "volumes" => ["storage:/rails/storage"] })
-    env = install.deploy_envelope(image: "ghcr.io/acme/web@sha256:abc")
+    env = install.deploy_envelope(image: "ghcr.io/acme/web@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
     assert_equal ["storage:/rails/storage"], env.dig(:app, :volumes)
   end
 
   test "deploy_envelope omits volumes when none are declared" do
     install = Install.new(project: @project, name: "web")
-    env = install.deploy_envelope(image: "ghcr.io/acme/web@sha256:abc")
+    env = install.deploy_envelope(image: "ghcr.io/acme/web@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
     assert_not env[:app].key?(:volumes)
   end
 
   # The inversion (decisions/console-layers.md). Placement doesn't depend on tenancy:
   # an install needs a box, not a client.
   test "a project is optional — a placement with no tenant is valid" do
-    assert Install.new(name: "pihole", image: "img@sha256:abc").valid?
+    assert Install.new(name: "pihole", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca").valid?
   end
 
   # Names are free fleet-wide because the namespace they land in is the box. Two
   # projects, or no project at all, may each run an `api`; `InstallTarget` is what
   # refuses two of them on one machine (see install_target_test).
   test "the same name may exist many times across the fleet" do
-    @project.installs.create!(name: "api", image: "img@sha256:abc")
+    @project.installs.create!(name: "api", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
     assert Install.new(project: @project, name: "api").valid?   # even within one project
     assert Install.new(name: "api").valid?
   end
@@ -120,7 +120,7 @@ class InstallTest < ActiveSupport::TestCase
   # having asked. A target we placed but that isn't running yet doesn't count as serving.
   test "the placement gap counts boxes actually serving, not boxes asked for" do
     machine = Machine.create!(name: "b1", ssh_host: "10.0.0.1", scope: "operate", ssh_private_key: "k")
-    install = @project.installs.create!(name: "web", image: "img@sha256:abc",
+    install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca",
                                         count: 2, exposure: "balanced")
 
     assert_equal 0, install.serving_count
@@ -140,7 +140,7 @@ class InstallTest < ActiveSupport::TestCase
   test "a running target on an unreachable box does not count as serving" do
     machine = Machine.create!(name: "b1", ssh_host: "10.0.0.1", scope: "operate",
                               ssh_private_key: "k", status: "unreachable")
-    install = @project.installs.create!(name: "web", image: "img@sha256:abc", count: 1)
+    install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca", count: 1)
     install.install_targets.create!(machine: machine, status: "running")
 
     assert_equal 0, install.serving_count
@@ -148,7 +148,7 @@ class InstallTest < ActiveSupport::TestCase
   end
 
   test "serving more boxes than asked for is a positive gap, not an error" do
-    install = @project.installs.create!(name: "web", image: "img@sha256:abc", count: 1)
+    install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca", count: 1)
     2.times do |i|
       m = Machine.create!(name: "b#{i}", ssh_host: "10.0.0.#{i}", scope: "operate",
                           ssh_private_key: "k", status: "reachable")
@@ -164,7 +164,7 @@ class InstallTest < ActiveSupport::TestCase
   test "retired targets leave the intention short rather than lingering" do
     machine = Machine.create!(name: "b1", ssh_host: "10.0.0.1", scope: "operate",
                               ssh_private_key: "k", status: "reachable")
-    install = @project.installs.create!(name: "web", image: "img@sha256:abc", count: 1)
+    install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca", count: 1)
     target  = install.install_targets.create!(machine: machine, status: "running")
     assert install.reload.in_step?
 

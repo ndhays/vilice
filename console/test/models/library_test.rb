@@ -8,8 +8,8 @@ class LibraryTest < ActiveSupport::TestCase
                       env: [ { "key" => "LOG", "secret" => false },
                              { "key" => "TOKEN", "secret" => true } ],
                       secret_files: [ { "name" => "config", "path" => "/etc/web/config" } ])
-    app.versions.create!(tag: "v1.0.0", image: "img@sha256:old")
-    v2 = app.versions.create!(tag: "v1.1.0", image: "img@sha256:new")
+    app.versions.create!(tag: "v1.0.0", image: "img@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf")
+    v2 = app.versions.create!(tag: "v1.1.0", image: "img@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e")
     app.set_latest!(v2)
 
     row = Library.export["apps"].sole
@@ -44,7 +44,7 @@ class LibraryTest < ActiveSupport::TestCase
 
   test "round-trips an exported library back to an equivalent manifest" do
     app = App.create!(name: "web", port: 8080)
-    app.set_latest!(app.versions.create!(tag: "v1", image: "img@sha256:a"))
+    app.set_latest!(app.versions.create!(tag: "v1", image: "img@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
     manifest = Library.export
 
     App.destroy_all
@@ -61,27 +61,27 @@ class LibraryTest < ActiveSupport::TestCase
 
   test "re-import upserts versions by tag and refreshes the image, deleting nothing" do
     app = App.create!(name: "web")
-    app.set_latest!(app.versions.create!(tag: "v1", image: "img@sha256:old"))
+    app.set_latest!(app.versions.create!(tag: "v1", image: "img@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf"))
 
     Library.import("format" => 1, "apps" => [ {
       "name" => "web",
-      "versions" => [ { "tag" => "v1", "image" => "img@sha256:fixed" },
-                      { "tag" => "v2", "image" => "img@sha256:two", "latest" => true } ],
+      "versions" => [ { "tag" => "v1", "image" => "img@sha256:f98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98e" },
+                      { "tag" => "v2", "image" => "img@sha256:47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f4", "latest" => true } ],
     } ])
 
-    assert_equal "img@sha256:fixed", app.versions.find_by(tag: "v1").image
+    assert_equal "img@sha256:f98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98e", app.versions.find_by(tag: "v1").image
     assert_equal "v2", app.reload.latest_version.tag
     assert_equal 2, app.versions.count
   end
 
   test "a re-import without a latest flag leaves the chosen latest alone" do
     app = App.create!(name: "web")
-    app.versions.create!(tag: "v1", image: "img@sha256:a")
-    v2 = app.versions.create!(tag: "v2", image: "img@sha256:b")
+    app.versions.create!(tag: "v1", image: "img@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    v2 = app.versions.create!(tag: "v2", image: "img@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
     app.set_latest!(v2)
 
     Library.import("format" => 1, "apps" => [ {
-      "name" => "web", "versions" => [ { "tag" => "v1", "image" => "img@sha256:a" } ],
+      "name" => "web", "versions" => [ { "tag" => "v1", "image" => "img@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" } ],
     } ])
 
     assert_equal "v2", app.reload.latest_version.tag

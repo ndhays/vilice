@@ -34,11 +34,11 @@ class AppTest < ActiveSupport::TestCase
 
   test "latest_version is the one flagged latest, and set_latest! keeps exactly one" do
     app = App.create!(name: "web")
-    v1 = app.versions.create!(tag: "v1", image: "img@sha256:1")
+    v1 = app.versions.create!(tag: "v1", image: "img@sha256:1111111111111111111111111111111111111111111111111111111111111111")
     app.set_latest!(v1)
     assert_equal v1, app.reload.latest_version
 
-    v2 = app.versions.create!(tag: "v2", image: "img@sha256:2")
+    v2 = app.versions.create!(tag: "v2", image: "img@sha256:2222222222222222222222222222222222222222222222222222222222222222")
     app.set_latest!(v2)
     assert_equal v2, app.reload.latest_version
     assert_equal 1, app.versions.where(latest: true).count   # only one latest
@@ -86,7 +86,7 @@ class AppTest < ActiveSupport::TestCase
 
   test "destroying an app takes its versions and labels with it" do
     app = App.create!(name: "web")
-    app.versions.create!(tag: "v1", image: "img")
+    app.versions.create!(tag: "v1", image: "ghcr.io/acme/app@sha256:abababababababababababababababababababababababababababababababab")
     app.labels.create!(key: "x")
     assert_difference [ -> { Version.count }, -> { Label.count } ], -1 do
       app.destroy

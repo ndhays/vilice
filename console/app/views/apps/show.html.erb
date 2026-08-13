@@ -58,7 +58,9 @@
     <% end %>
     <%= f.text_field :tag, placeholder: "v1.2.0", required: true, autocomplete: "off" %>
     <%= f.text_field :image, class: "mono", placeholder: "ghcr.io/acme/web@sha256:…",
-          required: true, autocomplete: "off", spellcheck: false %>
+          required: true, autocomplete: "off", spellcheck: false,
+          pattern: ".+@sha256:[0-9a-f]{64}",
+          title: "Pin the digest: ref@sha256: followed by 64 hex characters. A tag means something different tomorrow." %>
     <label class="version-latest"><%= check_box_tag "make_latest", "1", true %> latest</label>
     <%= f.submit "Add Version", class: "btn mutate" %>
   <% end %>

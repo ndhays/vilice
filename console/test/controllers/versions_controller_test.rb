@@ -10,7 +10,7 @@ class VersionsControllerTest < ActionDispatch::IntegrationTest
   test "the first version is made latest and recorded" do
     sign_in_as @user
     assert_difference [ -> { Version.count }, -> { Event.count } ], 1 do
-      post app_versions_path(@app), params: { version: { tag: "v1", image: "img@sha256:1" } }
+      post app_versions_path(@app), params: { version: { tag: "v1", image: "img@sha256:1111111111111111111111111111111111111111111111111111111111111111" } }
     end
     assert_redirected_to @app
     assert_equal "v1", @app.reload.latest_version&.tag
@@ -19,8 +19,8 @@ class VersionsControllerTest < ActionDispatch::IntegrationTest
 
   test "make latest flips the flag to exactly one, recorded" do
     sign_in_as @user
-    v1 = @app.versions.create!(tag: "v1", image: "i1"); @app.set_latest!(v1)
-    v2 = @app.versions.create!(tag: "v2", image: "i2")
+    v1 = @app.versions.create!(tag: "v1", image: "ghcr.io/acme/app@sha256:9191919191919191919191919191919191919191919191919191919191919191"); @app.set_latest!(v1)
+    v2 = @app.versions.create!(tag: "v2", image: "ghcr.io/acme/app@sha256:9292929292929292929292929292929292929292929292929292929292929292")
     assert_difference -> { Event.count }, 1 do
       patch latest_app_version_path(@app, v2)
     end
@@ -30,14 +30,14 @@ class VersionsControllerTest < ActionDispatch::IntegrationTest
 
   test "a non-first version with make_latest off does not steal latest" do
     sign_in_as @user
-    v1 = @app.versions.create!(tag: "v1", image: "i1"); @app.set_latest!(v1)
-    post app_versions_path(@app), params: { version: { tag: "v2", image: "i2" }, make_latest: "0" }
+    v1 = @app.versions.create!(tag: "v1", image: "ghcr.io/acme/app@sha256:9191919191919191919191919191919191919191919191919191919191919191"); @app.set_latest!(v1)
+    post app_versions_path(@app), params: { version: { tag: "v2", image: "ghcr.io/acme/app@sha256:9292929292929292929292929292929292929292929292929292929292929292" }, make_latest: "0" }
     assert_equal v1, @app.reload.latest_version
   end
 
   test "removing a version is recorded" do
     sign_in_as @user
-    v = @app.versions.create!(tag: "v1", image: "i1")
+    v = @app.versions.create!(tag: "v1", image: "ghcr.io/acme/app@sha256:9191919191919191919191919191919191919191919191919191919191919191")
     assert_difference -> { Version.count }, -1 do
       assert_difference -> { Event.count }, 1 do
         delete app_version_path(@app, v)

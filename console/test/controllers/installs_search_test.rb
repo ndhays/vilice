@@ -11,11 +11,11 @@ class InstallsSearchTest < ActionDispatch::IntegrationTest
     @other = Machine.create!(name: "node-999", ssh_host: "x")
     @nginx = App.create!(name: "nginx")
 
-    @web = @acme.installs.create!(name: "acme-web", image: "x@sha256:a",
+    @web = @acme.installs.create!(name: "acme-web", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                                  hostname: "shop.example.com", app: @nginx)
     @web.install_targets.create!(machine: @box, status: "running")
 
-    @api = @acme.installs.create!(name: "billing-api", image: "x@sha256:b")
+    @api = @acme.installs.create!(name: "billing-api", image: "x@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
     @api.install_targets.create!(machine: @other, status: "running")
   end
 
@@ -90,7 +90,7 @@ class InstallsSearchTest < ActionDispatch::IntegrationTest
   test "the list does not query per row" do
     counts = [ 2, 10 ].map do |n|
       n.times do |i|
-        inst = @acme.installs.create!(name: "bulk-#{n}-#{i}", image: "x@sha256:c")
+        inst = @acme.installs.create!(name: "bulk-#{n}-#{i}", image: "x@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")
         inst.install_targets.create!(machine: @box, status: "running")
       end
       queries = 0

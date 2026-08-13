@@ -65,7 +65,7 @@ class RoutingTableTest < ActiveSupport::TestCase
 
   test "installs that select another balancer are not in this one's table" do
     other = balancer_box("edge-2")
-    install = Install.create!(name: "web", image: "img@sha256:abc", hostname: "app.example.com",
+    install = Install.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca", hostname: "app.example.com",
                               exposure: "balanced", balancer: other)
     serving(install, @backend1)
 
@@ -103,7 +103,7 @@ class RoutingTableTest < ActiveSupport::TestCase
   end
 
   def balanced_install(name, hostname, count: 1, port: nil)
-    Install.create!(name: name, image: "img@sha256:abc", hostname: hostname, port: port,
+    Install.create!(name: name, image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca", hostname: hostname, port: port,
                     exposure: "balanced", count: count, balancer: @edge)
   end
 

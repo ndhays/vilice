@@ -90,7 +90,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     Setting.current  # materialize the singleton so "survives" is meaningful
     project = Project.create!(name: "Doomed")
     machine = Machine.create!(name: "m1", ssh_host: "10.0.0.1")
-    Install.create!(project: project, name: "web", image: "img@sha256:abc")
+    Install.create!(project: project, name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
            .install_targets.create!(machine: machine)
     Event.record!(actor: @user.email_address, action: "added", summary: "x")
 

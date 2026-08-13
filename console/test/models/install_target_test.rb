@@ -4,17 +4,17 @@ class InstallTargetTest < ActiveSupport::TestCase
   setup do
     @project = Project.create!(name: "P-#{SecureRandom.hex(2)}")
     @machine = Machine.create!(name: "m-#{SecureRandom.hex(2)}", ssh_host: "10.0.0.2")
-    @install = @project.installs.create!(name: "web", image: "img@sha256:abc")
+    @install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
   end
 
   test "in_sync? only when running and images match" do
-    t = @install.install_targets.create!(machine: @machine, desired_image: "img@sha256:abc")
+    t = @install.install_targets.create!(machine: @machine, desired_image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
     refute t.in_sync?, "pending target is not in sync"
 
-    t.update!(status: "running", current_image: "img@sha256:abc")
+    t.update!(status: "running", current_image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
     assert t.in_sync?
 
-    t.update!(current_image: "img@sha256:old")
+    t.update!(current_image: "img@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf")
     refute t.in_sync?, "a drifted image is not in sync"
   end
 
@@ -57,6 +57,6 @@ class InstallTargetTest < ActiveSupport::TestCase
 
   def other_project_install(name:, hostname: nil)
     Project.create!(name: "P-#{SecureRandom.hex(2)}")
-           .installs.create!(name: name, image: "img@sha256:def", hostname: hostname)
+           .installs.create!(name: name, image: "img@sha256:defdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefd", hostname: hostname)
   end
 end

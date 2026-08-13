@@ -13,7 +13,7 @@ class InstallProjectPagesTest < ActionDispatch::IntegrationTest
                             status: "unreachable", owner: @project)
     ProjectMachine.create!(project: @project, machine: @up)
     ProjectMachine.create!(project: @project, machine: @down)
-    @install = @project.installs.create!(name: "acme-web", image: "img@sha256:want0000")
+    @install = @project.installs.create!(name: "acme-web", image: "img@sha256:7ae400007ae400007ae400007ae400007ae400007ae400007ae400007ae40000")
   end
 
   # ── Install page ──────────────────────────────────────────────────────────
@@ -47,11 +47,11 @@ class InstallProjectPagesTest < ActionDispatch::IntegrationTest
 
   test "the digest is a copy chip, carrying the whole reference" do
     @install.install_targets.create!(machine: @up, status: "running",
-                                     current_image: "img@sha256:aaaabbbbccccdddd", desired_image: "img@sha256:1111222233334444")
+                                     current_image: "img@sha256:aaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccdddd", desired_image: "img@sha256:1111222233334444111122223333444411112222333344441111222233334444")
     get install_path(@install)
-    assert_select ".target-image .digest-chip[data-clipboard-text-value=?]", "img@sha256:aaaabbbbccccdddd"
+    assert_select ".target-image .digest-chip[data-clipboard-text-value=?]", "img@sha256:aaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccdddd"
     assert_select ".target-image .digest-chip .digest-text", "@aaaabbbbcccc"
-    assert_select ".target-image .digest-chip[data-clipboard-text-value=?]", "img@sha256:1111222233334444"
+    assert_select ".target-image .digest-chip[data-clipboard-text-value=?]", "img@sha256:1111222233334444111122223333444411112222333344441111222233334444"
     assert_select ".target-image .drift-word", "drift"
   end
 
@@ -79,7 +79,7 @@ class InstallProjectPagesTest < ActionDispatch::IntegrationTest
   end
 
   test "the verdict agrees with its own count" do
-    other = @project.installs.create!(name: "second", image: "img@sha256:x")
+    other = @project.installs.create!(name: "second", image: "img@sha256:8888888888888888888888888888888888888888888888888888888888888888")
     [ @install, other ].each { |i| i.install_targets.create!(machine: @down, status: "running") }
     get project_path(@project)
     assert_select ".verdict-head", /2 installs need a look/

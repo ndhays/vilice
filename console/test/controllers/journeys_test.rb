@@ -203,7 +203,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
 
     # The card lists what the *box* reports, and attaches our record to it — so the
     # box has to report it.
-    apps   = [ { "name" => "globex-api", "image" => "ghcr.io/globex/api@sha256:abcdef0123456789" } ]
+    apps   = [ { "name" => "globex-api", "image" => "ghcr.io/globex/api@sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789" } ]
     canned = { ok: true, at: Time.current,
                data: { "data" => { "machine" => { "hostname" => "op.local" }, "apps" => apps } } }
     record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
@@ -240,7 +240,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
   # machine-view deploy keeps no Install, so this is a normal state, not an alarm.
   test "an app the box runs with no placement of ours says so" do
     sign_in_as @user
-    apps   = [ { "name" => "stray", "image" => "docker.io/stray@sha256:0011223344556677" } ]
+    apps   = [ { "name" => "stray", "image" => "docker.io/stray@sha256:0011223344556677001122334455667700112233445566770011223344556677" } ]
     canned = { ok: true, at: Time.current,
                data: { "data" => { "machine" => { "hostname" => "op.local" }, "apps" => apps } } }
     record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
@@ -275,7 +275,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_select "input[name=image]"
 
     get new_machine_mutation_path(@operator, act: "deploy", install_id: app.id,
-          image: "ghcr.io/acme/web@sha256:new")
+          image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e")
     assert_select ".ceremony .spec"
     assert_select ".chain-entry.is-pending .chain-what", /deployed web/
   end
@@ -289,15 +289,15 @@ class JourneysTest < ActionDispatch::IntegrationTest
       steward.on(/deploy web/, data: { "ok" => true })
       assert_difference -> { Event.count }, 1 do
         post machine_mutation_path(@operator, act: "deploy", install_id: app.id,
-              image: "ghcr.io/acme/web@sha256:new")
+              image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e")
       end
-      assert_match "@sha256:new", steward.stdin_for(/deploy web/), "envelope on stdin"
+      assert_match "@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e", steward.stdin_for(/deploy web/), "envelope on stdin"
     end
 
     event = Event.latest.first
     assert_equal "deployed", event.action
     assert_equal "ok", event.outcome
-    assert_equal "ghcr.io/acme/web@sha256:new", target.reload.desired_image
+    assert_equal "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e", target.reload.desired_image
   end
 
   test "rollback issues the parameterless command and records it" do
@@ -325,7 +325,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
   # An app with a running target on the operate machine, ready to deploy.
   def deployable_app
     project = Project.create!(name: "Proj-#{SecureRandom.hex(3)}")
-    app = project.installs.create!(name: "web", image: "ghcr.io/acme/web@sha256:old",
+    app = project.installs.create!(name: "web", image: "ghcr.io/acme/web@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf",
                                    hostname: "acme.example", port: 8080, health: "/up")
     app.install_targets.create!(machine: @operator, status: "running")
     app

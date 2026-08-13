@@ -8,7 +8,7 @@ class InstallTargetStateTest < ActiveSupport::TestCase
     @project = Project.create!(name: "Ladder")
     @up   = Machine.create!(name: "up-1", ssh_host: "x", scope: "operate", status: "reachable")
     @down = Machine.create!(name: "down-1", ssh_host: "x", scope: "operate", status: "unreachable")
-    @install = @project.installs.create!(name: "app", image: "img@sha256:want")
+    @install = @project.installs.create!(name: "app", image: "img@sha256:7ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae4")
   end
 
   def target(machine: @up, **attrs) = @install.install_targets.create!(machine: machine, **attrs)
@@ -20,7 +20,7 @@ class InstallTargetStateTest < ActiveSupport::TestCase
   end
 
   test "a running target whose image differs from the desired one has drifted" do
-    t = target(status: "running", current_image: "img@sha256:old", desired_image: "img@sha256:want")
+    t = target(status: "running", current_image: "img@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf", desired_image: "img@sha256:7ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae4")
     assert_equal "drift", t.state
   end
 
@@ -29,7 +29,7 @@ class InstallTargetStateTest < ActiveSupport::TestCase
   end
 
   test "the install takes the worst of its targets" do
-    target(status: "running", current_image: "img@sha256:want", desired_image: "img@sha256:want")
+    target(status: "running", current_image: "img@sha256:7ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae4", desired_image: "img@sha256:7ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae47ae4")
     target(machine: @down, status: "running")
     assert_equal "unreachable", @install.reload.state
   end

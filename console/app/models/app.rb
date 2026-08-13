@@ -47,6 +47,15 @@ class App < ApplicationRecord
 
   # The env var names this app declares (both plain and secret).
   def env_keys = env.filter_map { |e| e["key"] }
+
+  # The declaration split by what actually happens to the value, sorted, for the
+  # verification lists on the app page. The editor is a single run of chips you toggle,
+  # which is quick but hard to *audit* — the mistake that matters is a variable that
+  # should have been marked secret and wasn't, and its value is then written to an
+  # append-only record where it cannot be taken back. Two sorted columns make that
+  # mistake something you can scan for rather than something you have to notice.
+  def env_recorded = env.reject { |e| e["secret"] }.filter_map { |e| e["key"] }.sort
+  def env_off_record = env.select { |e| e["secret"] }.filter_map { |e| e["key"] }.sort
   # The names whose values must be supplied off-record (secret env vars + every file).
   def secret_keys = env.select { |e| e["secret"] }.filter_map { |e| e["key"] }
 

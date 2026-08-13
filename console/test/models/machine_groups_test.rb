@@ -64,7 +64,7 @@ class MachineGroupsTest < ActiveSupport::TestCase
     host    = box("host-mg")
     loose   = box("loose-mg")
 
-    install = project.installs.create!(name: "app-mg", image: "x@sha256:a",
+    install = project.installs.create!(name: "app-mg", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                                        exposure: "balanced", balancer: edge)
     install.install_targets.create!(machine: host, status: "running")
 

@@ -61,7 +61,7 @@ module Scenario
       t.strategy      = "single"
       t.status        = status
       t.desired_image = image
-      t.current_image = drift ? "#{image.split('@').first}@sha256:stale000" : image
+      t.current_image = drift ? "#{image.split('@').first}@sha256:34ace00034ace00034ace00034ace00034ace00034ace00034ace00034ace000" : image
     end
     install
   end

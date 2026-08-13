@@ -9,7 +9,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     @user     = users(:one)
     @project  = Project.create!(name: "Acme")
     @app      = App.create!(name: "web", port: 8080, health: "/up")
-    @version  = @app.versions.create!(tag: "v1", image: "ghcr.io/acme/web@sha256:abc")
+    @version  = @app.versions.create!(tag: "v1", image: "ghcr.io/acme/web@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
     @app.set_latest!(@version)
     @operator = Machine.create!(name: "op", ssh_host: "10.0.0.4", scope: "operate", ssh_private_key: "k", owner: @project)
     ProjectMachine.create!(project: @project, machine: @operator)
@@ -71,8 +71,8 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "the fleet-wide install list carries projectless placements" do
     sign_in_as @user
-    mine  = @project.installs.create!(name: "web", image: "img@sha256:abc")
-    loose = Install.create!(name: "pihole", image: "img@sha256:def")
+    mine  = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
+    loose = Install.create!(name: "pihole", image: "img@sha256:defdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefd")
 
     get installs_path
     assert_response :success
@@ -124,7 +124,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "create can pin a specific version (the default is latest)" do
     sign_in_as @user
-    v2 = @app.versions.create!(tag: "v2", image: "ghcr.io/acme/web@sha256:def")  # @version (v1) stays latest
+    v2 = @app.versions.create!(tag: "v2", image: "ghcr.io/acme/web@sha256:defdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefd")  # @version (v1) stays latest
     post installs_path(project_id: @project), params: { install: {
       app_id: @app.id, version_id: v2.id, machine_id: @operator.id, hostname: "acme.example"
     } }
@@ -173,7 +173,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "a custom image is refused while library-only, allowed when off" do
     sign_in_as @user
-    params = { install: { image: "ghcr.io/x@sha256:z", machine_id: @operator.id, hostname: "x", name: "raw" } }
+    params = { install: { image: "ghcr.io/x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", machine_id: @operator.id, hostname: "x", name: "raw" } }
 
     assert_no_difference -> { Install.count } do
       post installs_path(project_id: @project), params: params   # library-only (default)
@@ -186,7 +186,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     end
     install = Install.last
     assert_nil install.app_id
-    assert_equal "ghcr.io/x@sha256:z", install.image
+    assert_equal "ghcr.io/x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", install.image
   end
 
   # The Install is the app-actions home (decisions/install-the-app-actions-home.md).
@@ -239,7 +239,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     @operator.update!(sharing: "everyone")
     other = Project.create!(name: "Other")
     ProjectMachine.create!(project: other, machine: @operator)
-    other.installs.create!(name: "web", image: "img@sha256:abc")
+    other.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
          .install_targets.create!(machine: @operator)
 
     assert_no_difference [ -> { Install.count }, -> { InstallTarget.count }, -> { Event.count } ] do
@@ -254,7 +254,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "edit reaches the intention and not the spec" do
     sign_in_as @user
-    install = @project.installs.create!(name: "web", image: "img@sha256:abc")
+    install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
 
     get edit_install_path(install)
     assert_response :success
@@ -268,7 +268,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "restating the intention records the act and moves the gap" do
     sign_in_as @user
-    install = @project.installs.create!(name: "web", image: "img@sha256:abc")
+    install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
     install.install_targets.create!(machine: @operator, status: "running")
     @operator.update!(status: "reachable")
     assert install.reload.in_step?
@@ -292,7 +292,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   # The corollary that matters most: a changed number is not a destructive call.
   test "asking for fewer boxes removes nothing" do
     sign_in_as @user
-    install = @project.installs.create!(name: "web", image: "img@sha256:abc",
+    install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca",
                                         count: 3, exposure: "balanced")
     install.install_targets.create!(machine: @operator, status: "running")
 
@@ -307,7 +307,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "an intention the exposure can't deliver is refused" do
     sign_in_as @user
-    install = @project.installs.create!(name: "web", image: "img@sha256:abc")
+    install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
 
     assert_no_difference -> { Event.count } do
       patch install_path(install), params: { install: { count: 4, exposure: "edge" } }
@@ -318,7 +318,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "restating nothing records nothing" do
     sign_in_as @user
-    install = @project.installs.create!(name: "web", image: "img@sha256:abc")
+    install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
 
     assert_no_difference -> { Event.count } do
       patch install_path(install), params: { install: { count: 1, exposure: "edge" } }
@@ -330,7 +330,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   # no project to be scoped by.
   test "a projectless install collides with a project's install on the same box" do
     sign_in_as @user
-    @project.installs.create!(name: "web", image: "img@sha256:abc")
+    @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
             .install_targets.create!(machine: @operator)
 
     assert_no_difference [ -> { Install.count }, -> { InstallTarget.count } ] do

@@ -13,7 +13,7 @@ class InstallGroupsTest < ActiveSupport::TestCase
 
   def install(name, project: @acme, app: nil, machine: @box, status: "running", **attrs)
     i = (project ? project.installs : Install).create!(
-      name: name, image: "x@sha256:a", app: app, **attrs)
+      name: name, image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", app: app, **attrs)
     i.install_targets.create!(machine: machine, status: status) if machine
     i
   end

@@ -192,7 +192,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     project = Project.create!(name: "Acme-rm")
     m = Machine.create!(name: "edge-inst", ssh_host: "x", scope: "operate", owner: project)
     ProjectMachine.create!(project: project, machine: m)
-    install = project.installs.create!(name: "web-rm", image: "img@sha256:x")
+    install = project.installs.create!(name: "web-rm", image: "img@sha256:8888888888888888888888888888888888888888888888888888888888888888")
     install.install_targets.create!(machine: m, status: "running")
 
     assert_no_difference [ -> { Machine.count }, -> { InstallTarget.count }, -> { Event.count } ] do
@@ -207,7 +207,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     project = Project.create!(name: "Acme-retired")
     m = Machine.create!(name: "edge-retired", ssh_host: "x", scope: "operate", owner: project)
     ProjectMachine.create!(project: project, machine: m)
-    install = project.installs.create!(name: "web-old", image: "img@sha256:x")
+    install = project.installs.create!(name: "web-old", image: "img@sha256:8888888888888888888888888888888888888888888888888888888888888888")
     install.install_targets.create!(machine: m, status: "retired")
 
     assert_no_difference -> { Install.count } do          # the install survives
@@ -315,7 +315,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     edge    = Machine.create!(name: "aaa-edge", ssh_host: "x", scope: "operate", balancer: true)
     host    = Machine.create!(name: "zzz-host", ssh_host: "x")
     loose   = Machine.create!(name: "mmm-loose", ssh_host: "x")
-    install = project.installs.create!(name: "app-tree", image: "x@sha256:a",
+    install = project.installs.create!(name: "app-tree", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                                        exposure: "balanced", balancer: edge)
     install.install_targets.create!(machine: host, status: "running")
 
@@ -346,7 +346,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     project = Project.create!(name: "Roles-idx")
     host    = Machine.create!(name: "host-idx", ssh_host: "x")
     edge    = Machine.create!(name: "edge-idx", ssh_host: "x", scope: "operate", balancer: true)
-    install = project.installs.create!(name: "app-idx", image: "x@sha256:a",
+    install = project.installs.create!(name: "app-idx", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                                        exposure: "balanced", balancer: edge)
     install.install_targets.create!(machine: host, status: "running")
     Machine.create!(name: "bare-idx", ssh_host: "x") # carries nothing

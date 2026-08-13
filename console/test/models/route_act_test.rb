@@ -9,7 +9,7 @@ class RouteActTest < ActiveSupport::TestCase
                                ssh_private_key: "k", status: "reachable", balancer: true)
     @backend = Machine.create!(name: "b1", ssh_host: "10.0.0.1", scope: "operate",
                                ssh_private_key: "k", status: "reachable")
-    @install = Install.create!(name: "web", image: "img@sha256:abc", hostname: "app.example.com",
+    @install = Install.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca", hostname: "app.example.com",
                                exposure: "balanced", balancer: @edge)
     @install.install_targets.create!(machine: @backend, status: "running")
   end

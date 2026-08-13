@@ -37,14 +37,14 @@ class StewardObserveTest < ActiveSupport::TestCase
   end
 
   test "current_image is reconciled from the box's reported apps (the drift input)" do
-    install = @project.installs.create!(name: "web", image: "ghcr.io/acme/web@sha256:desired")
+    install = @project.installs.create!(name: "web", image: "ghcr.io/acme/web@sha256:de392edde392edde392edde392edde392edde392edde392edde392edde392edd")
     target  = install.install_targets.create!(machine: @machine, status: "running",
-                                              desired_image: "ghcr.io/acme/web@sha256:desired")
-    apps = [ { "name" => "web", "image" => "ghcr.io/acme/web@sha256:other" } ]
+                                              desired_image: "ghcr.io/acme/web@sha256:de392edde392edde392edde392edde392edde392edde392edde392edde392edd")
+    apps = [ { "name" => "web", "image" => "ghcr.io/acme/web@sha256:f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e" } ]
     stub_returning(Steward, :read, status_result(apps: apps)) do
       Steward::Observe.status(@machine, refresh: true)
     end
-    assert_equal "ghcr.io/acme/web@sha256:other", target.reload.current_image
+    assert_equal "ghcr.io/acme/web@sha256:f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e", target.reload.current_image
     refute target.in_sync?, "running a different image than desired = drift"
   end
 

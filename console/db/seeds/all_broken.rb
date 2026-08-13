@@ -23,11 +23,11 @@ warn = machine!("db-1", health: "warn", scope: "observe", status: "reachable",
 link!(globex, crit)
 
 # Drifted (running image lags desired), failed, and a retired remnant.
-drifted = install!(acme, "acme-web", machine: crit, image: "ghcr.io/acme/web@sha256:want999",
+drifted = install!(acme, "acme-web", machine: crit, image: "ghcr.io/acme/web@sha256:7ae49997ae49997ae49997ae49997ae49997ae49997ae49997ae49997ae49997",
                    hostname: "acme.example", port: 8080, health: "/up", drift: true)
-failed  = install!(acme, "acme-api", machine: gone, image: "ghcr.io/acme/api@sha256:broken",
+failed  = install!(acme, "acme-api", machine: gone, image: "ghcr.io/acme/api@sha256:b2fbeeb2fbeeb2fbeeb2fbeeb2fbeeb2fbeeb2fbeeb2fbeeb2fbeeb2fbeeb2fb",
                    status: "failed", hostname: "api.acme.example")
-install!(globex, "globex-site", machine: crit, image: "ghcr.io/globex/site@sha256:old", status: "retired")
+install!(globex, "globex-site", machine: crit, image: "ghcr.io/globex/site@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf", status: "retired")
 
 label!(acme, "tier", "gold")
 label!(acme, "env", "prod")
@@ -41,7 +41,7 @@ event!(actor: "operator@console.test", action: "updated", machine: warn, project
        summary: "db-1", at: 1.day.ago,
        outcome: "failed", detail: "sudo: a password is required")
 event!(actor: "ci-deployer", action: "deployed", machine: crit, install: drifted, project: acme,
-       summary: "acme-web @sha256:want999", at: 20.minutes.ago,
+       summary: "acme-web @sha256:7ae49997ae49997ae49997ae49997ae49997ae49997ae49997ae49997ae49997", at: 20.minutes.ago,
        outcome: "pending") # issued, never settled — honest "outcome unknown"
 
 library!

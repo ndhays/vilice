@@ -84,7 +84,7 @@ class MachineTest < ActiveSupport::TestCase
     host    = Machine.create!(name: "host-1", ssh_host: "x")
     plain   = Machine.create!(name: "plain-1", ssh_host: "x")
 
-    fronted = project.installs.create!(name: "app-a", image: "x@sha256:a",
+    fronted = project.installs.create!(name: "app-a", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                                        exposure: "balanced", balancer: edge)
     fronted.install_targets.create!(machine: host, status: "running")
     # The balancer also runs the app it fronts: it is not behind itself.

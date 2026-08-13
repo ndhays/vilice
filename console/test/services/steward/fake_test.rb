@@ -108,7 +108,7 @@ class Steward::FakeTest < ActiveSupport::TestCase
   # box — a record entry asserting something that did not happen.
   test "a mutate is refused, not faked" do
     with_fake do
-      result = Steward.read(machine("ok"), "deploy nginx --image ghcr.io/x@sha256:abc")
+      result = Steward.read(machine("ok"), "deploy nginx --image ghcr.io/x@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
       assert_not result[:ok], "fake-observe answered a deploy"
       assert_match(/will not fake/, result[:error])
       assert_match(/STEWARD_FAKE_OBSERVE/, result[:error])

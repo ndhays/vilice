@@ -68,7 +68,7 @@ class StewardTest < ActiveSupport::TestCase
   test "a mutation pipes a stdin payload to the box (the deploy envelope)" do
     with_fake_steward do |steward|
       steward.on(/deploy/, data: { "ok" => true })
-      envelope = %({"app":{"image":"ghcr.io/x@sha256:abc"}})
+      envelope = %({"app":{"image":"ghcr.io/x@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca"}})
 
       Steward::Mutate.run(machine, "deploy app1 --json", actor: "alice",
                           action: "deployed app1", stdin: envelope)

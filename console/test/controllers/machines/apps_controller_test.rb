@@ -10,7 +10,7 @@ class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
 
   HOST = { ok: true, data: { "data" => { "role" => "host" } } }.freeze
 
-  CONFIG = '{"image":"ghcr.io/x/y@sha256:abc","hostnames":["a.example.com"],"port":8080}'.freeze
+  CONFIG = '{"image":"ghcr.io/x/y@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca","hostnames":["a.example.com"],"port":8080}'.freeze
 
   def deploying(&block)
     stub_observe(status: HOST, &block)

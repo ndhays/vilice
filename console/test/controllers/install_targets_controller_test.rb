@@ -7,7 +7,7 @@ class InstallTargetsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user    = users(:one)
     @project = Project.create!(name: "Acme")
-    @install = @project.installs.create!(name: "web", image: "img@sha256:abc",
+    @install = @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca",
                                         count: 3, exposure: "balanced")
     @first   = operate_box("b1")
     @free    = operate_box("b2")
@@ -82,7 +82,7 @@ class InstallTargetsControllerTest < ActionDispatch::IntegrationTest
   test "a name collision on the target box rolls the placement back" do
     sign_in_as @user
     other = Project.create!(name: "Other")
-    other.installs.create!(name: "web", image: "img@sha256:def")
+    other.installs.create!(name: "web", image: "img@sha256:defdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefd")
          .install_targets.create!(machine: @free, status: "running")
 
     assert_no_difference [ -> { InstallTarget.count }, -> { Event.count } ] do

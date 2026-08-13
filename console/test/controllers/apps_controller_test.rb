@@ -43,7 +43,7 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   test "show lists the app's versions" do
     sign_in_as @user
     app = App.create!(name: "web")
-    v = app.versions.create!(tag: "v1.2.0", image: "img@sha256:abc")
+    v = app.versions.create!(tag: "v1.2.0", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
     app.set_latest!(v)
     get app_path(app)
     assert_response :success
@@ -88,7 +88,7 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     patch app_path(app), params: { app: {
       env_rows: { "0" => { key: "LOG", secret: "0" }, "1" => { key: "TOKEN", secret: "1" },
                   "2" => { key: "", secret: "0" } }, # blank row dropped
-      secret_file_rows: { "0" => { name: "config", path: "/etc/web/config" } },
+      secret_file_rows: { "0" => { name: "config", path: "/etc/web/config" } }
     } }
     app.reload
     assert_equal [ { "key" => "LOG", "secret" => false },
@@ -154,5 +154,53 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_equal "removed", Event.latest.first.action
     assert_equal %w[ keep ], App.pluck(:name)
+  end
+
+  # The chip editor is quick to toggle and hard to audit. The mistake that matters is a
+  # variable that should have been secret and was not — its value then lands in an
+  # append-only record and cannot be taken back — so the declaration is read back a
+  # second time, sorted, split by what actually happens to the value.
+  test "the app page reads its declaration back in two sorted columns" do
+    sign_in_as @user
+    app = App.create!(name: "zot", env: [
+      { "key" => "LOG_LEVEL", "secret" => false },
+      { "key" => "DATABASE_PASSWORD", "secret" => true },
+      { "key" => "API_URL", "secret" => false },
+      { "key" => "S3_SECRET_KEY", "secret" => true } ])
+
+    get app_path(app)
+    assert_response :success
+    recorded = css_select(".declared-col:not(.is-secret) .declared-list li").map(&:text)
+    secret   = css_select(".declared-col.is-secret .declared-list li").map(&:text)
+    assert_equal %w[API_URL LOG_LEVEL], recorded          # alphabetical, so it can be scanned
+    assert_equal %w[DATABASE_PASSWORD S3_SECRET_KEY], secret
+    # The columns name the consequence, not the word "secret" — the failure is not
+    # knowing what the flag does.
+    assert_select ".declared-col:not(.is-secret) h4", /Written to the record/
+    assert_select ".declared-col.is-secret h4", /Never recorded/
+  end
+
+  test "an app with no declared variables says so in both columns" do
+    sign_in_as @user
+    app = App.create!(name: "bare")
+    get app_path(app)
+    assert_select ".declared .empty", 2
+  end
+
+  # The browser refuses it before the round trip; the model refuses it regardless.
+  test "the version form asks for a digest-pinned image" do
+    sign_in_as @user
+    app = App.create!(name: "pinned")
+    get app_path(app)
+    assert_select "input[name=?][pattern=?]", "version[image]", ".+@sha256:[0-9a-f]{64}"
+  end
+
+  test "a floating tag is refused, and the app page says why" do
+    sign_in_as @user
+    app = App.create!(name: "floating")
+    assert_no_difference -> { Version.count } do
+      post app_versions_path(app), params: { version: { tag: "v1", image: "ghcr.io/a/b:latest" } }
+    end
+    assert_match(/digest-pinned/, response.body)
   end
 end

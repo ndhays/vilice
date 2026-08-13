@@ -43,7 +43,7 @@ project!("Globex", contact_name: "Hank Scorpio")
 link!(acme, devbox)
 
 if acme.installs.none?
-  install = acme.installs.create!(name: "acme-web", image: "ghcr.io/acme/web@sha256:demo", hostname: "acme.example")
+  install = acme.installs.create!(name: "acme-web", image: "ghcr.io/acme/web@sha256:dedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedf", hostname: "acme.example")
   install.install_targets.create!(machine: devbox, strategy: "single", status: "running",
                                   desired_image: install.image, current_image: install.image)
 end
@@ -55,7 +55,7 @@ if Event.none?
   event!(actor: "operator@console.test", action: "authorized",
          machine: devbox, project: acme, summary: "ci-deployer at operate on devbox", at: 2.days.ago)
   event!(actor: "ci-deployer", action: "deployed", machine: devbox,
-         install: install, project: acme, summary: "acme-web @sha256:demo", at: 26.hours.ago)
+         install: install, project: acme, summary: "acme-web @sha256:dedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedf", at: 26.hours.ago)
   event!(actor: "ci-deployer", action: "restarted", machine: devbox,
          install: install, project: acme, summary: "acme-web on devbox", at: 90.minutes.ago)
 end
@@ -70,7 +70,7 @@ if (tb = Machine.find_by(name: "this-box"))
   end
   if tb.installs.none?
     app = acme.installs.find_or_create_by!(name: "console") do |i|
-      i.image = "ghcr.io/console/console@sha256:demo"
+      i.image = "ghcr.io/console/console@sha256:dedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedf"
       i.hostname = "console.local"
     end
     app.install_targets.find_or_create_by!(machine: tb) do |t|

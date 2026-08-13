@@ -69,7 +69,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
   test "destroy is refused while the project still runs a live app" do
     machine = Machine.create!(name: "box1", ssh_host: "10.0.0.1", scope: "operate", owner: @project)
     ProjectMachine.create!(project: @project, machine: machine)
-    @project.installs.create!(name: "web", image: "img@sha256:abc")
+    @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
             .install_targets.create!(machine: machine, status: "running")
 
     assert_no_difference -> { Project.count } do
@@ -87,7 +87,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     machine = Machine.create!(name: "box1", ssh_host: "10.0.0.1", scope: "operate",
                               owner: owner, sharing: "everyone")
     ProjectMachine.create!(project: @project, machine: machine)
-    @project.installs.create!(name: "web", image: "img@sha256:abc")
+    @project.installs.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
             .install_targets.create!(machine: machine, status: "retired")
 
     assert_difference -> { Project.count }, -1 do

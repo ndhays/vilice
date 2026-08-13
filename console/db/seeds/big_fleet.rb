@@ -43,7 +43,7 @@ PROJECTS.times do |p|
     link!(project, machine)
 
     if i < 3 # the first few boxes in each project run an app
-      img = "ghcr.io/fleet/app#{p}-#{i}@sha256:img#{format('%04d', n)}"
+      img = "ghcr.io/fleet/app#{p}-#{i}@sha256:9d79d79d79d79d79d79d79d79d79d79d79d79d79d79d79d79d79d79d79d79d79#{format('%04d', n)}"
       drift = health == "crit"
       status = health == "offline" ? "failed" : "running"
       # Where there's an edge box, the app sits behind it — which is what makes a

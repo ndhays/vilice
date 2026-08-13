@@ -369,6 +369,23 @@ enough to make a group read as a group.
   a GET must be safe to repeat unasked.
 - **App Library** — the curated app catalog (the install front-of-funnel — see
   [`journeys.md`](journeys.md)).
+
+  **A release must be digest-pinned.** The box refuses an unpinned image
+  (`steward/internal/app/deploy.go`), so a floating tag in the library is a release
+  that *looks* installable and is rejected at the far end, after someone has built a
+  placement on it — the same shape as the balancer toggle that wrote a column the box
+  never agreed to. `Version` mirrors `validDigestPin` exactly, doubled-prefix case
+  included, and the form carries the pattern so the browser catches it first.
+
+  **The env declaration is read back, sorted, in two columns.** The chip editor is
+  quick to toggle and hard to audit, and the mistake that matters is a variable that
+  should have been marked secret and was not: its value is then written to an
+  append-only record and cannot be taken back. So the same declaration appears a
+  second time beneath the editor — alphabetical, split into **Written to the record**
+  and **Never recorded**. Deliberately redundant: reading a sorted list is how that
+  mistake gets caught, and scanning an unordered run of chips is how it gets missed.
+  The columns name the *consequence* rather than the word "secret", because the
+  failure is not knowing what the flag does.
 - **Settings.**
 
 ## The one page pattern

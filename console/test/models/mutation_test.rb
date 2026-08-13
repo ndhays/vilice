@@ -5,7 +5,7 @@ class MutationTest < ActiveSupport::TestCase
   setup do
     @machine = Machine.create!(name: "op", ssh_host: "10.0.0.9", scope: "operate")
     @project = Project.create!(name: "Acme")
-    @install = @project.installs.create!(name: "web", image: "ghcr.io/acme/web@sha256:old",
+    @install = @project.installs.create!(name: "web", image: "ghcr.io/acme/web@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf",
                                          hostname: "acme.example", port: 8080, health: "/up")
     InstallTarget.create!(install: @install, machine: @machine, status: "running")
   end
@@ -30,7 +30,7 @@ class MutationTest < ActiveSupport::TestCase
     m = build("deploy")
     assert m.needs_compose?
     refute m.composed?, "no image yet"
-    assert build("deploy", image: "ghcr.io/acme/web@sha256:new").composed?
+    assert build("deploy", image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e").composed?
   end
 
   test "deploy builds the command and the stdin envelope from the Install + chosen digest" do
@@ -48,7 +48,7 @@ class MutationTest < ActiveSupport::TestCase
   end
 
   test "compose fields override the Install defaults" do
-    m = build("deploy", image: "ghcr.io/acme/web@sha256:new", hostname: "staging.example", port: "9090")
+    m = build("deploy", image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e", hostname: "staging.example", port: "9090")
     env = JSON.parse(m.stdin)
     assert_equal [ "staging.example" ], env.dig("app", "hostnames")
     assert_equal 9090, env.dig("app", "port") # coerced to an integer for Steward's appSpec
