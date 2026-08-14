@@ -279,6 +279,13 @@ time-boxed, offline-verifiable, per-action ("operator Z may deploy image X to bo
 expires in 5 minutes"). SSH keys are too coarse for this; a capability-token scheme is
 the candidate. Revisit when fleet delegation is real, not before.
 
+## An MCP for Steward — its own doc
+
+Handing an AI agent a tool surface over Steward. Nothing planned; the shapes, the one
+new threat (prompt injection), and the shapes already forbidden are written up in
+[steward-mcp.md](steward-mcp.md). It leans on *time-boxed grants* and *scoped observe*
+above, which is why it is flagged from here.
+
 ## Security smoke-tests — industry-standard tools
 
 **Mostly built** — see [`decisions/security-audit.md`](../security-audit.md) for the why
