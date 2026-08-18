@@ -39,7 +39,7 @@ event!(actor: "operator@console.test", action: "restarted", machine: web1, insta
        summary: "acme-web on web-1", at: 3.hours.ago, outcome: "ok")
 
 library!
-library_app!("console", image: "ghcr.io/console/console", tag: "v0.1",
+library_app!("console", image: demo_pin("ghcr.io/console/console"), tag: "v0.1",
              port: 3000, health: "/up", description: "Steward Console itself — the self-deploy proof.")
 
 report!
