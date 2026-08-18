@@ -47,6 +47,45 @@ class StewardTest < ActiveSupport::TestCase
     end
   end
 
+  # ── reached is not ok ──────────────────────────────────────────────────────
+  # ssh exits 255 when *ssh itself* could not get through; any other non-zero status is
+  # the remote command's own. Both are `ok: false` and they are completely different
+  # problems, so `read` reports which — it is what lets a failed act say "run the
+  # authorize line" instead of quoting "Permission denied (publickey)" at someone.
+
+  test "ssh's own 255 reports that the box was never reached" do
+    with_fake_steward do |steward|
+      steward.on(/status/, stdout: "Permission denied (publickey).", success: false, exit_status: 255)
+
+      res = Steward::Observe.status(machine, refresh: true)
+
+      refute res[:ok]
+      refute res[:reached]
+    end
+  end
+
+  test "a remote non-zero means we did reach the box — it answered, badly" do
+    with_fake_steward do |steward|
+      steward.on(/status/, stdout: "denied: not permitted over scoped SSH", success: false)
+
+      res = Steward::Observe.status(machine, refresh: true)
+
+      refute res[:ok]
+      assert res[:reached]
+    end
+  end
+
+  test "a reply we could not parse still counts as reaching the box" do
+    with_fake_steward do |steward|
+      steward.on(/status/, stdout: "not json at all", success: true)
+
+      res = Steward::Observe.status(machine, refresh: true)
+
+      refute res[:ok]
+      assert res[:reached]
+    end
+  end
+
   # ── Mutate: records before it acts (Invariant 2) ──────────────────────────
 
   test "a mutation records an Event, then issues the command" do

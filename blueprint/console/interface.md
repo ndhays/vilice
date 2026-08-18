@@ -591,6 +591,24 @@ recorded command line. The settle step reuses the **same timeline component** th
 side renders — the deploy screen isn't special, it's the record, live. That is how the
 record-as-spine model avoids becoming two apps.
 
+**`reached` is not `ok`.** The transport reports the two separately, because "we never
+got to the box" and "the box answered and refused" are different failures with different
+fixes, and the raw SSH output names neither. `ssh` exits **255** when ssh itself could not
+get through; any other non-zero status is the remote command's own, and an unreadable
+reply is still a reply. A failed act that never reached its box has `Machine#connection_hint`
+appended to the alert — *the authorize line has most likely not been run* for a box that has
+never answered, *check the box and the provider's own firewall* for one we had and lost.
+That firewall is the biggest gotcha in
+[`what-could-go-wrong.md`](../../decisions/open/what-could-go-wrong.md), and this is where
+it lands.
+
+The confirm step says the same thing **before** the press: a box that has never answered
+carries a caution and its authorize line, copyable. It is a **warning, never a block** —
+`last_seen_at` is a reading, and a box authorized a minute ago has not been observed yet
+and looks identical. The act stays yours to witness; the failure just stops being a
+surprise. And it is still recorded either way: we tried, so it is written, and it settles
+`failed` — record-before-act does not bend for an act we expected to fail.
+
 > **Live "watch" is still ahead** (a deploy currently blocks until it settles). Streaming
 > an act's sub-steps in place — pull → start color → health → flip → drain — needs a
 > Steward sub-step protocol; tracked in the open roadmap.

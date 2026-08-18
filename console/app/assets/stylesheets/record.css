@@ -156,6 +156,17 @@
 .ceremony-intro { margin: 0 0 0.7rem; }
 .ceremony .note { color: var(--mutate); font-size: 0.85rem; }
 .ceremony-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.9rem; }
+/* A caution inside the ceremony: this act will probably fail to connect, and here is
+   the line that fixes it. Set apart from the ceremony's own amber note so it reads as
+   an aside about the box rather than another sentence about the act — and it does not
+   disable Confirm, because the reading it is built on can be stale. */
+.ceremony-warn {
+  margin-top: 0.9rem; padding: 0.7rem 0.85rem;
+  border: 1px dashed var(--mutate); border-radius: 8px;
+}
+.ceremony-warn .note { margin: 0 0 0.5rem; }
+.ceremony-warn .note .icon { vertical-align: -2px; margin-right: 0.15rem; }
+.ceremony-warn .cmd-block { margin: 0; }
 
 /* deploy lane sits ahead of lifecycle, with a thin divider between */
 .acts-app-verbs { align-items: center; }

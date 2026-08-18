@@ -53,11 +53,18 @@ These are Steward Console-side, not box/network — they come with the install j
 ([install-journeys.md](install-journeys.md)). The same value applies: **the failure
 should tell you the fix.**
 
-- **The authorize gap.** A newly-added machine is unreachable until the operator runs the
-  surfaced `steward authorize …` line on the box. An install aimed at a box that hasn't
-  authorized Steward Console's operate key should say exactly that — *"this box hasn't
-  authorized Steward Console yet — run this line"* — not throw a cryptic SSH failure. (Check
-  reach at the install's `ready` transition.)
+- **The authorize gap — handled 2026-08-18.** A newly-added machine is unreachable until
+  the operator runs the surfaced `steward authorize …` line on the box, and "Permission
+  denied (publickey)" reads as though the console did something wrong. It is now said at
+  all three points it can bite: the install form's box picker and the *place on a box*
+  picker label such a machine **"not yet authorized"**; the mutate ceremony shows a caution
+  and the copyable line before Confirm; and a failed act that never reached its box gets
+  `Machine#connection_hint` appended, which distinguishes *never answered* (run the line)
+  from *answered before and doesn't now* (the box, or the provider firewall above).
+  The mechanism is `reached` alongside `ok` on the transport result — `ssh` exits 255 when
+  ssh itself could not get through, so a box that refused the act is never told to go run
+  an authorize line. All warnings, no blocks: `last_seen_at` is a reading, and a box
+  authorized a minute ago has not been observed yet.
 - **Provisioning failure** (automated dedicated). A bad/absent provider token, a quota,
   or the cloud firewall above can stall a Create Machine. The install's `awaiting_machine`
   state must be able to surface **"provisioning failed"** and not hang forever.

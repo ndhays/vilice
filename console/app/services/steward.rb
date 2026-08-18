@@ -169,14 +169,21 @@ module Steward
 
     out, st = ssh(machine, command, stdin: stdin)
     if st.success?
-      { ok: true, data: JSON.parse(out), at: Time.current }
+      { ok: true, reached: true, data: JSON.parse(out), at: Time.current }
     else
-      { ok: false, error: out.strip.presence || "ssh exited #{st.exitstatus}", at: Time.current }
+      # **`reached` is not `ok`.** ssh exits 255 when *ssh itself* could not get through —
+      # an unauthorized key, a refused connection, a box that is not there. Any other
+      # status is the remote command's own, which means we did reach the box and Steward
+      # answered badly. Two different problems with two different fixes, and the merged
+      # output names neither, so the caller gets told which one this was.
+      { ok: false, reached: st.exitstatus != 255,
+        error: out.strip.presence || "ssh exited #{st.exitstatus}", at: Time.current }
     end
   rescue JSON::ParserError
-    { ok: false, error: "unparseable reply: #{out.to_s.strip.truncate(200)}", at: Time.current }
+    # A reply we could not read is still a reply: something answered.
+    { ok: false, reached: true, error: "unparseable reply: #{out.to_s.strip.truncate(200)}", at: Time.current }
   rescue => e
-    { ok: false, error: e.message, at: Time.current }
+    { ok: false, reached: false, error: e.message, at: Time.current }
   end
 
   def ssh(machine, command, stdin: nil)

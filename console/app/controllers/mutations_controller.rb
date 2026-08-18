@@ -38,11 +38,20 @@ class MutationsController < ApplicationController
     if outcome[:result][:ok]
       redirect_to @return_path, notice: "#{@mutation.summary.upcase_first} (witnessed)."
     else
-      redirect_to @return_path, alert: "#{@mutation.act.label} failed: #{outcome[:result][:error]}"
+      redirect_to @return_path, alert: failure_alert(outcome[:result])
     end
   end
 
   private
+
+  # The act was recorded and it failed — that much is honest and stays. What the raw
+  # transport error does not say is *which* failure this was: a box that refused the act
+  # and a box we never got to look nothing alike and are fixed nowhere near each other.
+  # When ssh itself could not get through, the box's own diagnosis is appended.
+  def failure_alert(result)
+    base = "#{@mutation.act.label} failed: #{result[:error]}"
+    result[:reached] == false ? "#{base} — #{@machine.connection_hint}" : base
+  end
 
   def set_machine
     @machine = Machine.find(params[:machine_id])

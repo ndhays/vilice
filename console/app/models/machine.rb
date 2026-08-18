@@ -115,6 +115,25 @@ class Machine < ApplicationRecord
   # fresher. Nothing here probes a box (blueprint/console/interface.md's honesty note).
   def reached? = !never_reached? && !seen_unreachable?
 
+  # Why a call to this box most likely failed, and what to do about it. Only ever shown
+  # when the transport says it never got through (`reached: false`), because a box that
+  # answered badly is a different problem entirely.
+  #
+  # The two cases below are also different problems, and the raw SSH output names
+  # neither: "Permission denied (publickey)" is what an un-run authorize line looks
+  # like, and it reads as though the console did something wrong. This is
+  # decisions/open/what-could-go-wrong.md's rule applied where it lands — the failure
+  # should tell you the fix.
+  def connection_hint
+    if never_reached?
+      "#{name} has never answered Steward, so its authorize line has most likely not " \
+        "been run on the box yet — it is on the machine's own page."
+    else
+      "#{name} answered before and doesn't now. Check the box is up, and that the " \
+        "provider's own firewall isn't blocking 22 — that one sits in front of ufw."
+    end
+  end
+
   # How this box reads in a picker. The authorize gap belongs on the option itself —
   # a name alone lets you choose a box that cannot yet be deployed to and find out
   # only when the SSH call fails.

@@ -11,18 +11,21 @@ require "json"
 # Install it with `with_fake_steward` (see test_helper.rb).
 module FakeSteward
   # Minimal Process::Status stand-in — `read` only asks `success?` / `exitstatus`.
+  # The status matters beyond pass/fail: **255 is ssh's own**, meaning it never got
+  # through, and `Steward.read` turns that into `reached: false`. So a test can script
+  # a box that refused the act (a remote non-zero) apart from one that was never
+  # reached at all (255), which are different failures with different fixes.
   class Status
-    def initialize(success)
-      @success = success
+    def initialize(success, exitstatus = nil)
+      @success    = success
+      @exitstatus = exitstatus || (success ? 0 : 1)
     end
 
     def success?
       @success
     end
 
-    def exitstatus
-      @success ? 0 : 1
-    end
+    attr_reader :exitstatus
   end
 
   # Records issued commands and replies from a script. `ssh` matches the real
@@ -38,8 +41,12 @@ module FakeSteward
     # Script a reply, matched by exact string or Regexp. Give `data` (encoded as a
     # successful JSON stdout) for the common case, or raw `stdout` + `success:` to
     # exercise non-zero exits and unparseable output. Returns self, so calls chain.
-    def on(pattern, data: nil, stdout: nil, success: true)
-      @replies << { pattern: pattern, data: data, stdout: stdout, success: success }
+    # `exit_status:` scripts the exact status — pass 255 for "ssh never got through".
+    # Spelled out rather than `exit:`, which would shadow `Kernel#exit` and make every
+    # reader stop and check.
+    def on(pattern, data: nil, stdout: nil, success: true, exit_status: nil)
+      @replies << { pattern: pattern, data: data, stdout: stdout, success: success,
+                    exit_status: exit_status }
       self
     end
 
@@ -50,7 +57,7 @@ module FakeSteward
       @calls << { machine: machine, command: command, stdin: stdin }
       reply = @replies.find { |r| matches?(r[:pattern], command) } || { success: true, data: {} }
       out = reply[:stdout] || JSON.generate(reply[:data] || {})
-      [ out, Status.new(reply[:success]) ]
+      [ out, Status.new(reply[:success], reply[:exit_status]) ]
     end
 
     def commands

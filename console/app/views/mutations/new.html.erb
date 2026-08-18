@@ -21,6 +21,20 @@
 
     <p class="note">Issues <code><%= @mutation.command %></code> over scoped SSH<%= " (spec on stdin)" if @mutation.stdin %>.</p>
 
+    <%# Said before the press, not after the failure — and a warning, never a block. A box
+        authorized a minute ago has not been observed yet and would read exactly like this,
+        so refusing to try would be wrong (decisions/open/what-could-go-wrong.md). The act
+        is still yours to witness; this only makes sure it isn't a surprise. %>
+    <% if @machine.never_reached? && @machine.authorize_command %>
+      <div class="ceremony-warn">
+        <p class="note"><%= icon "triangle-alert", size: 14 %>
+          <strong><%= @machine.name %> has never answered Steward.</strong> If its
+          authorize line hasn't been run on the box yet, this act will fail to connect.
+          Run it there first:</p>
+        <%= command_block(@machine.authorize_command) %>
+      </div>
+    <% end %>
+
     <% confirm = { act: @mutation.act.verb, install_id: @mutation.install&.id, from: @from } %>
     <% confirm.merge!(image: @mutation.image, hostname: @mutation.hostname, port: @mutation.port, health: @mutation.health) if @mutation.needs_compose? %>
     <div class="ceremony-actions">

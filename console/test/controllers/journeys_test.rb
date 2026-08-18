@@ -351,4 +351,77 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_select ".section-note", 0
     assert_select ".install-rows a", text: "stuck"   # still listed: still short
   end
+
+  # ── The authorize gap, at the last place it can bite ───────────────────────
+  # A box that never ran its authorize line refuses the key, and ssh says "Permission
+  # denied (publickey)" — which reads as though the console did something wrong. The
+  # act is still recorded and still failed; what changes is that the alert names the
+  # fix (decisions/open/what-could-go-wrong.md).
+  test "an act that never reached the box names the authorize gap, and is still recorded" do
+    sign_in_as @user
+    assert_nil @operator.last_seen_at, "the fixture box has never answered — the case under test"
+
+    with_fake_steward do |steward|
+      steward.on(/apply-updates/, stdout: "Permission denied (publickey).",
+                 success: false, exit_status: 255)
+      assert_difference -> { Event.count }, 1 do
+        post machine_mutation_path(@operator, act: "apply-updates")
+      end
+    end
+
+    # Record before act still holds: we tried, so it is written, and it settled failed.
+    assert_equal "failed", Event.latest.first.outcome
+    assert_match(/never answered Steward/, flash[:alert])
+    assert_match(/authorize line/, flash[:alert])
+  end
+
+  # The other half of the same coin: a box that answered and refused the act is a
+  # different problem, and must not be told to go run an authorize line.
+  test "an act the box refused keeps the box's own reason and adds no connection advice" do
+    sign_in_as @user
+
+    with_fake_steward do |steward|
+      steward.on(/apply-updates/, stdout: "podman: no such app", success: false)  # exit 1, reached
+      post machine_mutation_path(@operator, act: "apply-updates")
+    end
+
+    assert_match(/podman: no such app/, flash[:alert])
+    assert_no_match(/authorize line/, flash[:alert])
+  end
+
+  # A box we reached before and have lost has a different fix again — and the
+  # provider's own firewall is the one that catches people out.
+  test "a box that answered before and does not now points at the firewall, not the key" do
+    sign_in_as @user
+    @operator.update!(last_seen_at: 1.hour.ago, status: "unreachable")
+
+    with_fake_steward do |steward|
+      steward.on(/apply-updates/, stdout: "Connection timed out", success: false, exit_status: 255)
+      post machine_mutation_path(@operator, act: "apply-updates")
+    end
+
+    assert_match(/answered before/, flash[:alert])
+    assert_match(/firewall/, flash[:alert])
+    assert_no_match(/authorize line/, flash[:alert])
+  end
+
+  # Said before the press as well as after the failure — but a warning, never a block.
+  # A box authorized a minute ago has not been observed yet and reads exactly like this.
+  test "the ceremony warns about an unauthorized box without disabling Confirm" do
+    sign_in_as @user
+    # A real box always carries one: the keypair is generated when the machine is added.
+    @operator.update!(ssh_public_key: "ssh-ed25519 AAAAC3Nz console@op")
+
+    get new_machine_mutation_path(@operator, act: "apply-updates")
+    assert_response :success
+
+    assert_select ".ceremony-warn", /never answered Steward/
+    assert_select ".ceremony-warn .cmd", /steward authorize/
+    assert_select "form[action=?]", machine_mutation_path(@operator)   # still pressable
+
+    # Once the box has answered, the caution has no reason to be there.
+    @operator.update!(last_seen_at: Time.current, status: "reachable")
+    get new_machine_mutation_path(@operator, act: "apply-updates")
+    assert_select ".ceremony-warn", 0
+  end
 end
