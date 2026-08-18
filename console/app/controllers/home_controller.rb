@@ -29,6 +29,14 @@ class HomeController < ApplicationController
 
     @problem_installs = (unhealthy + short).uniq
 
+    # Being short and being *able to do something about it* are different asks: one is a
+    # click, the other is go get a box. The page already separates unreachable machines
+    # as a root cause for the same reason — a fix that lives somewhere else earns its own
+    # line. Computed against one preloaded pool, because a list must not ask the database
+    # once per row.
+    pool = Machine.operate.includes(:project_machines).order(:name)
+    @stuck_installs = short.reject { |i| i.candidate_machines(pool).any? }
+
     @down_machines = Machine.order(:name).select(&:seen_unreachable?)
 
     @machine_count = Machine.count

@@ -173,4 +173,84 @@ class InstallTest < ActiveSupport::TestCase
     assert_equal(-1, install.placement_gap)
     assert_empty install.live_targets
   end
+
+  # ── Whether the gap can be closed right now ────────────────────────────────
+  # "Asked for 3 · serving 2" says there is a gap; it does not say whether anything can
+  # be done about it. Those are different answers with different fixes, so they are
+  # different questions.
+  class CandidatesTest < ActiveSupport::TestCase
+    setup do
+      @project = Project.create!(name: "Acme")
+      # Above one box needs a balancer in front — the count gate, doing its job.
+      @install = @project.installs.create!(name: "web", count: 3, exposure: "balanced",
+                                           image: "img@sha256:#{'a' * 64}")
+      @free    = box("free", project: @project, seen: true)
+      @taken   = box("taken", project: @project, seen: true)
+      @install.install_targets.create!(machine: @taken, status: "running")
+    end
+
+    def box(name, project: nil, scope: "operate", seen: false, status: "unknown")
+      m = Machine.create!(name: name, ssh_host: "10.0.0.#{name.bytes.sum % 200}",
+                          scope: scope, ssh_private_key: "k", status: status,
+                          owner: project, last_seen_at: seen ? Time.current : nil)
+      ProjectMachine.create!(project: project, machine: m) if project
+      m
+    end
+
+    test "a candidate is operate-scoped, in the project, and not already carrying it" do
+      box("observer", project: @project, scope: "observe", seen: true)
+      box("elsewhere", seen: true)   # no project link — not this install's to use
+
+      assert_equal [ @free ], @install.candidate_machines
+    end
+
+    test "with no project, any operate box in the fleet is a candidate" do
+      loose   = box("loose", seen: true)
+      untenanted = Install.create!(name: "solo", count: 2, exposure: "balanced",
+                                   image: "img@sha256:#{'b' * 64}")
+
+      assert_includes untenanted.candidate_machines, loose
+      assert_includes untenanted.candidate_machines, @free
+    end
+
+    # Placing works on any candidate — it reaches nothing. The deploy that follows does
+    # not, so "ready" is a narrower word than "free".
+    test "ready is narrower than candidate: only boxes we have actually heard from" do
+      never = box("never", project: @project)                                # no last_seen_at
+      lost  = box("lost", project: @project, seen: true, status: "unreachable")
+
+      assert_equal [ @free, lost, never ].sort_by(&:name), @install.candidate_machines.sort_by(&:name)
+      assert_equal [ @free ], @install.ready_machines
+      assert @install.ready_to_place?
+    end
+
+    test "short with candidates but none reached is not ready to place" do
+      @free.update!(last_seen_at: nil)
+
+      assert @install.short?
+      assert @install.candidate_machines.any?
+      assert_empty @install.ready_machines
+      assert_not @install.ready_to_place?
+    end
+
+    test "an install in step is never ready to place, however many boxes are free" do
+      @install.update!(count: 1)
+      # One target, and the box reports it running, so the intention is met.
+      @install.install_targets.sole.update!(status: "running")
+
+      assert_not @install.short?
+      assert_not @install.ready_to_place?
+    end
+
+    # The pool exists so a list can answer for many installs without a query each. Two
+    # things have to be preloaded for that to hold — the machine pool *and* the install's
+    # own targets — and if either stops being honoured the N+1 comes back silently.
+    test "a preloaded pool and targets answer without querying per install" do
+      pool  = Machine.operate.includes(:project_machines).order(:name).to_a
+      loaded = Install.includes(install_targets: :machine).find(@install.id)
+
+      assert_queries_count(0) { loaded.candidate_machines(pool) }
+      assert_equal @install.candidate_machines.map(&:id), loaded.candidate_machines(pool).map(&:id)
+    end
+  end
 end

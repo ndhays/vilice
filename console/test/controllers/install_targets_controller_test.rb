@@ -26,8 +26,10 @@ class InstallTargetsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".intent-line", /asked for 3 boxes/
     assert_select ".intent-line", /serving 1/
-    assert_select "select[name=machine_id] option", text: "b2"
-    assert_select "select[name=machine_id] option", { text: "b1", count: 0 }
+    # The same option label the create form uses — this door hands straight to a deploy,
+    # so a box that has never answered us says so before it is chosen.
+    assert_select "select[name=machine_id] option", text: "b2 — not yet authorized"
+    assert_select "select[name=machine_id] option", { text: /b1/, count: 0 }
   end
 
   # An observe key cannot deploy, so a box holding one is not a placement candidate.

@@ -15,11 +15,16 @@ class InstallTargetsController < ApplicationController
   end
 
   def create
-    @machine = placeable_machines.find_by(id: params[:machine_id])
+    # Looked up *within* the candidates, never by bare id: a box that is not one this
+    # install may land on must be refused here as well as omitted from the picker.
+    picked   = params[:machine_id].presence
+    @machines = placeable_machines
+    @machine  = @machines.find { |m| m.id.to_s == picked } if picked
 
     unless @machine
-      @machines = placeable_machines
-      flash.now[:alert] = "Pick a box to place #{@install.name} on."
+      flash.now[:alert] = picked ? "That box isn't one #{@install.name} can land on — it " \
+                                   "may already be running it, or not be yours to use." \
+                                 : "Pick a box to place #{@install.name} on."
       return render :new, status: :unprocessable_entity
     end
 
@@ -27,7 +32,7 @@ class InstallTargetsController < ApplicationController
       redirect_to new_machine_mutation_path(@machine, act: "deploy",
                                             install_id: @install.id, from: "install")
     else
-      @machines = placeable_machines
+      # The transaction rolled back, so the candidates are unchanged and already loaded.
       flash.now[:alert] = @install.errors.full_messages.to_sentence
       render :new, status: :unprocessable_entity
     end
@@ -39,14 +44,11 @@ class InstallTargetsController < ApplicationController
     @install = Install.find(params[:install_id])
   end
 
-  # Boxes this install could still go on: operate-scoped (an observe key can't deploy),
-  # within the project when there is one, and not already carrying it. The per-machine
-  # name and hostname guards still have the last word at save time — this list only
-  # keeps the obvious collisions out of the picker.
-  def placeable_machines
-    scope = (@install.project&.machines || Machine.all).operate
-    scope.where.not(id: @install.live_targets.map(&:machine_id)).order(:name)
-  end
+  # Where this install could still go — the rule lives on the model, so this picker and
+  # the readiness the install page reports can never disagree about what "free" means.
+  # The per-machine name and hostname guards still have the last word at save time; this
+  # list only keeps the obvious collisions out of the picker.
+  def placeable_machines = @install.candidate_machines
 
   # The record is written before the deploy is even composed — the placement is itself a
   # control-plane act, and the deploy that follows is witnessed separately. The write

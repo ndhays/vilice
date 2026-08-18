@@ -163,8 +163,26 @@ open heartbeat question.
     machine we can still reach. A target we placed but that isn't up yet does not count,
     and neither does one on an unreachable box.
   - `Install#placement_gap` is `serving − count`, signed: negative is short, positive is
-    more than asked for. `in_step?` is the zero case. **Deliberately not folded into
-    `Install#state`** — an intention is not a state, and the UI keeps them apart.
+    more than asked for. `in_step?` is the zero case, `short?` the negative one.
+    **Deliberately not folded into `Install#state`** — an intention is not a state, and
+    the UI keeps them apart.
+  - **Whether the gap can be closed right now is a second question**, and it is the one
+    with a fix attached: *asked for 3 · serving 2* says there is a gap, not whether that
+    is a click or an errand. `Install#candidate_machines` is where it could still go —
+    operate-scoped, in the project when there is one, not already carrying it — and it is
+    **the single definition**, read by the picker, by the page that offers the act, and by
+    Status. Three copies of that rule would drift, the way `added` and `placed` did.
+  - `Install#ready_machines` narrows candidates to boxes we have **heard from**
+    (`Machine#reached?`). Placing works on any candidate — it reaches nothing, the target
+    sits `pending` — but the deploy that follows cannot connect to a box that never
+    authorized us. So *ready* means ready to **finish**, not merely ready to record, and
+    `ready_to_place?` is `short? && ready_machines.any?`.
+  - Readiness is a **reading, not a claim**: it is as fresh as the last observe and nothing
+    here probes a box. It is surfaced beside the gap and never inside the status glyph.
+  - `candidate_machines` takes an optional preloaded **pool** so a list can answer for many
+    installs without a query each. Two preloads are required for that to hold — the pool's
+    `project_machines` and each install's `install_targets` — and it is pinned in
+    `install_test.rb`, because half of it fails silently.
   - **Two gates on `count`, both validations rather than form hints.** `exposure` must be
     `balanced`, *and* the install must be replicable. Either one alone pins it to 1, and
     the stateful gate wins even behind a balancer — a balancer in front of N diverging

@@ -13,6 +13,18 @@
   <% if @problem_installs.any? %>
     <section>
       <h2 class="section-kicker"><%= icon "triangle-alert", size: 15 %> Needs a look</h2>
+      <%# Short with a box free is a click on the install. Short with nowhere to put it
+          is a different job, done elsewhere, so it is said once here rather than
+          discovered one install at a time. %>
+      <% if @stuck_installs.any? %>
+        <p class="section-note muted">
+          <%= @stuck_installs.size == 1 ? "One install asks" : "#{@stuck_installs.size} installs ask" %>
+          for more boxes than are free to take
+          <%= @stuck_installs.one? ? "it" : "them" %> —
+          <%= safe_join(@stuck_installs.map { |i| link_to i.name, i }, ", ") %>.
+          <%= link_to "Add a machine", new_machine_path %>, or authorize one you have.
+        </p>
+      <% end %>
       <ul class="rows install-rows">
         <%= render partial: "installs/row", collection: @problem_installs, as: :install,
               locals: { show_project: true } %>

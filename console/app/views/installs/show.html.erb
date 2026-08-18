@@ -60,11 +60,39 @@
     <% end %>
   </p>
 
-  <%# "Another" is only true once there is one. An install can now be created with no box
+  <%# Whether the gap can be closed *now* is a second question, and it has a different
+      answer from "is there a gap" — one is a click, the other is go get a box. The
+      button used to appear on any negative gap and could lead to a page that had
+      nothing to offer. Still nothing here acts: it says which of the two you are in.
+
+      "Another" is only true once there is one; an install can be created with no box
       at all, so the first placement is the common first thing this button ever does. %>
-  <% if @install.placement_gap.negative? %>
-    <p><%= button_link_to @targets.any? ? "Place on another box" : "Place on a box",
-             new_install_target_path(@install), icon: "plus", class: "btn" %></p>
+  <% if @install.short? %>
+    <% candidates = @install.candidate_machines %>
+    <% ready = candidates.select(&:reached?) %>
+    <% if candidates.any? %>
+      <p><%= button_link_to @targets.any? ? "Place on another box" : "Place on a box",
+               new_install_target_path(@install), icon: "plus", class: "btn" %></p>
+      <p class="note muted">
+        <% if ready.any? %>
+          <%= pluralize(ready.size, "box") %> ready to take it<%
+            %><% if (waiting = candidates.size - ready.size).positive? %>,
+            and <%= waiting %> not yet authorized<% end %>.
+          Last read, not a live check.
+        <% else %>
+          <%= pluralize(candidates.size, "box is", plural: "boxes are") %> free, but
+          <%= candidates.one? ? "it has" : "none has" %> answered us yet — run the
+          authorize line on the box before deploying to it.
+        <% end %>
+      </p>
+    <% else %>
+      <%# The gap is real and there is nowhere to put it. Naming the fix beats a button
+          that leads to an empty picker. %>
+      <p class="note muted">No box is free to take this
+        <%= "on #{@install.project.name}" if @install.project %> — every operate-scoped
+        box already runs it, or there are none.
+        <%= link_to "Add a machine", new_machine_path(project_id: @install.project&.id) %>.</p>
+    <% end %>
   <% end %>
 </div>
 

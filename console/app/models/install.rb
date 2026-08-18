@@ -84,6 +84,40 @@ class Install < ApplicationRecord
 
   def in_step? = placement_gap.zero?
 
+  def short? = placement_gap.negative?
+
+  # ── Whether the gap can be closed right now ────────────────────────────────
+  # "Asked for 3 · serving 2" says there is a gap. It does not say whether you can do
+  # anything about it, and those want different answers: one is a click, the other is
+  # *go get a box*. Both are surfaced; neither is acted on
+  # (decisions/drift-is-surfaced-never-closed.md).
+  #
+  # Boxes this install could still be placed on: operate-scoped (an observe key cannot
+  # deploy), within the project when there is one, and not already carrying it. One
+  # definition, because the picker, the page that offers the act, and Status all ask
+  # it — and three copies would drift, the way `added` and `placed` did.
+  #
+  # Pass a preloaded `pool` to answer for many installs without a query each; a list
+  # must not ask the database once per row. **Two** preloads are needed for that to
+  # hold — the pool must carry `project_machines`, and the installs must carry their
+  # `install_targets` — and `install_test.rb` pins it, because half of it is silent.
+  def candidate_machines(pool = nil)
+    pool ||= Machine.operate.includes(:project_machines).order(:name)
+    taken = live_targets.map(&:machine_id)
+    pool.select do |m|
+      m.operate? && !taken.include?(m.id) &&
+        (project_id.nil? || m.project_machines.any? { |pm| pm.project_id == project_id })
+    end
+  end
+
+  # Candidates we have actually heard from. Placing is a control-plane act and works on
+  # any candidate — the target sits `pending` and reaches nothing — but the deploy that
+  # follows cannot connect to a box that never authorized us. So **ready** means ready
+  # to *finish*, not merely ready to record.
+  def ready_machines(pool = nil) = candidate_machines(pool).select(&:reached?)
+
+  def ready_to_place?(pool = nil) = short? && ready_machines(pool).any?
+
   # Land this install on one more box: the target, plus the `placed install` act that
   # accounts for it. **Both doors into a placement go through here** — creating an
   # install with a box already chosen, and closing a gap later from the install's own

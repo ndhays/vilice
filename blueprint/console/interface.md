@@ -109,6 +109,11 @@ enough to make a group read as a group.
   the glyph is the health of what is running, the gap is the distance from what was asked
   for. Serving *more* boxes than asked for is a gap too, but not an outage — it stays off
   this page and shows on the install.
+  An install short of its intention **with no free box to close it** is called out once,
+  above the rows: that is a different ask from the rest of the list — a click on the
+  install versus going and getting a box — and it is fixed somewhere else, which is the
+  same reason unreachable machines get their own section. Computed against one preloaded
+  pool, because a list must not ask the database once per row.
   Unreachable **machines** follow as the root cause: one down box explains many down
   installs, and it's fixed there.
   **That is the whole page** — what needs you, or nothing. With nothing wrong it says

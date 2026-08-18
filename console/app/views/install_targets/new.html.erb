@@ -18,9 +18,12 @@
     <p class="note">Adding a box records the placement, then hands off to the deploy
       ceremony — the deploy itself is witnessed like any other act.</p>
     <%= form_with url: install_targets_path(@install), method: :post, class: "stack-form" do %>
+      <%# The same option label the create form uses: a box we have never heard from
+          carries the authorize gap on the option itself, because this door hands
+          straight to a deploy that would not connect. %>
       <label class="field"><span>Machine</span>
         <%= select_tag :machine_id,
-              options_from_collection_for_select(@machines, :id, :name),
+              options_from_collection_for_select(@machines, :id, :machine_option_label),
               prompt: "Choose a box" %>
       </label>
       <div class="form-actions">

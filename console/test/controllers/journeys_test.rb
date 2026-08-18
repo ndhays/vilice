@@ -330,4 +330,25 @@ class JourneysTest < ActionDispatch::IntegrationTest
     app.install_targets.create!(machine: @operator, status: "running")
     app
   end
+
+  # Being short and being able to do something about it are different asks: one is a
+  # click on the install, the other is "go get a box". The inbox says which.
+  test "status calls out installs with a gap that no free box can close" do
+    sign_in_as @user
+    stuck = @project.installs.create!(name: "stuck", count: 2, exposure: "balanced",
+                                      image: "img@sha256:#{'c' * 64}")
+
+    get root_path
+    assert_response :success
+    # The operate box in the fleet is not this project's, so nothing can take it.
+    assert_select ".section-note", /asks for more boxes than are free/
+    assert_select ".section-note a", text: "stuck"
+
+    # Give the project a box it may use and the call-out goes away — the gap is still
+    # open, but it is now a click, not an errand.
+    ProjectMachine.create!(project: @project, machine: @operator.tap { |m| m.update!(owner: @project) })
+    get root_path
+    assert_select ".section-note", 0
+    assert_select ".install-rows a", text: "stuck"   # still listed: still short
+  end
 end

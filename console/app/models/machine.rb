@@ -106,6 +106,15 @@ class Machine < ApplicationRecord
   # we *did* reach and have since lost: that one has a different fix.
   def never_reached? = last_seen_at.nil?
 
+  # We have heard from this box, so a call aimed at it can connect. Deliberately one
+  # word for the *good* case and two distinct bad ones behind it, because they are
+  # different problems with different fixes: `never_reached?` means our key was never
+  # authorized there, `seen_unreachable?` means we had it and lost it.
+  #
+  # It is a reading of the last observe, never a claim — as fresh as that and no
+  # fresher. Nothing here probes a box (blueprint/console/interface.md's honesty note).
+  def reached? = !never_reached? && !seen_unreachable?
+
   # How this box reads in a picker. The authorize gap belongs on the option itself —
   # a name alone lets you choose a box that cannot yet be deployed to and find out
   # only when the SSH call fails.

@@ -142,3 +142,17 @@ Open, and newly answerable: **should a placement gap page someone?** The decisio
 nobody gets woken by a self-healing system because there isn't one — they get woken by "three
 asked for, two serving." The console now knows that number. Whether it should notify, and
 through what, is untouched.
+
+Sharper than it was, because the console now also knows whether the gap is *closable*
+(`Install#ready_to_place?`). Those are not the same page: "three asked for, two serving,
+and a box is sitting there" is a click someone forgot, while "and nothing is free to take
+it" is an errand. If gaps ever notify, they are two different messages, and probably only
+the second is worth waking anyone for.
+
+**Also open: readiness fleet-wide, as a group rather than a call-out.** Status names the
+stuck installs and each install page answers for itself, but the Installs list cannot yet
+be *grouped* by whether a gap is closable. `InstallGroups`' axes are `->(install)` lambdas
+with nowhere to hand a preloaded pool, so an axis that asked this question would reintroduce
+the per-row query the pool exists to avoid. It wants either a preload seam in `Groupings` or
+a stored column — and a stored one would have to be a mirror of a reading, never a claim,
+which is the part to think about before building it.
