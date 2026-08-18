@@ -66,6 +66,10 @@ image allowlist is a separate Steward-side concern (see
 export) is specified in [`data-model.md`](data-model.md).
 
 - The library is a **pure directory** — it has no install action.
+- A release carries a **tag and a digest**. **Look up digest** asks the registry what a
+  tag points at and fills the field in; it saves nothing, and nothing re-resolves later
+  ([`a-tag-is-not-a-release.md`](../../decisions/a-tag-is-not-a-release.md)). Public
+  registries only — a private one's credential lives on the box, by design.
 - Curating it (add / edit / version / remove) is a recorded **own-record** act.
 - A singleton `Setting.installs_library_only` (default on) gates the install image source:
   on → pick a library app; off → a library app **or** a custom typed image. A **guardrail,

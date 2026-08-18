@@ -25,6 +25,24 @@ class VersionsController < ApplicationController
     end
   end
 
+  # Look the digest up and put it in the field — then stop. **Resolution is a read;
+  # pinning is a decision** (app/services/registry.rb), so this saves nothing and
+  # records nothing: it hands back a filled-in form, and adding the version is still
+  # the same press it always was. The two steps are deliberately visible.
+  def resolve
+    @version  = @app.versions.new(version_params)
+    @versions = @app.versions.newest_first
+
+    begin
+      @version.image = Registry.pin(@version.image)
+      flash.now[:notice] = "Resolved to #{@version.image}. Nothing is saved yet."
+    rescue Registry::Error => e
+      flash.now[:alert] = e.message
+    end
+
+    render "apps/show"
+  end
+
   def latest
     version = @app.versions.find(params[:id])
     @app.set_latest!(version)

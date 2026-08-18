@@ -106,8 +106,9 @@ module Scenario
   #
   # Every release carries a **tag and a digest**, because that is what a release is
   # here: the tag is the name a human reads, the digest is what actually gets pulled.
-  # Whether the console should be able to resolve the first into the second is open —
-  # see decisions/open/app-library.md.
+  # The console can resolve the first into the second for you — once, into the field —
+  # and never again afterwards (decisions/a-tag-is-not-a-release.md). These digests are
+  # fabricated, so they are not what a lookup would return for these real refs.
   def library!
     library_app!("nginx", image: demo_pin("docker.io/nginxinc/nginx-unprivileged"), tag: "v1",
                  port: 8080, health: "/",

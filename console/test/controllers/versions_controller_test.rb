@@ -45,4 +45,61 @@ class VersionsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_equal "removed", Event.latest.first.action
   end
+
+  # ── Looking a tag up ───────────────────────────────────────────────────────
+  # The console can fill the digest in for you. It must not save it for you: resolution
+  # is a read and pinning is a decision (app/services/registry.rb).
+  test "resolving fills the field in and saves nothing" do
+    sign_in_as @user
+    digest = "sha256:#{'d' * 64}"
+
+    assert_no_difference [ -> { Version.count }, -> { Event.count } ] do
+      with_resolve(digest) do
+        post resolve_app_versions_path(@app),
+             params: { version: { tag: "v1", image: "ghcr.io/acme/web:v1" } }
+      end
+    end
+    assert_response :success
+    # The form comes back carrying the answer, ready for the press that does save it.
+    assert_select "input[name=?][value=?]", "version[image]", "ghcr.io/acme/web@#{digest}"
+    assert_select ".flash.notice", /Nothing is saved yet/
+  end
+
+  # A registry that wants a credential is the end of the road here, not a prompt for one:
+  # registry logins live on the box (decisions/registry-credentials.md).
+  test "a registry error is shown on the form, and still saves nothing" do
+    sign_in_as @user
+
+    assert_no_difference -> { Version.count } do
+      with_resolve_error("ghcr.io wants a credential for acme/web.") do
+        post resolve_app_versions_path(@app),
+             params: { version: { tag: "v1", image: "ghcr.io/acme/web:v1" } }
+      end
+    end
+    assert_response :success
+    assert_select ".flash.alert", /wants a credential/
+  end
+
+  test "resolving is behind the login like everything else" do
+    post resolve_app_versions_path(@app), params: { version: { tag: "v1", image: "nginx" } }
+    assert_redirected_to new_session_path
+  end
+
+  private
+
+  def with_resolve(digest)
+    original = Registry.method(:resolve)
+    Registry.define_singleton_method(:resolve) { |*| digest }
+    yield
+  ensure
+    Registry.define_singleton_method(:resolve, original)
+  end
+
+  def with_resolve_error(message)
+    original = Registry.method(:resolve)
+    Registry.define_singleton_method(:resolve) { |*| raise Registry::Error, message }
+    yield
+  ensure
+    Registry.define_singleton_method(:resolve, original)
+  end
 end

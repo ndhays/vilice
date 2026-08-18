@@ -61,6 +61,9 @@ Rails.application.routes.draw do
     # Releases of the app; one is `latest` (the install default).
     resources :versions, only: %i[ create destroy ] do
       member { patch :latest }
+      # Ask the registry what a tag points at, and hand the answer back to the form.
+      # A read, not an act: it writes nothing and creates nothing (app/services/registry.rb).
+      collection { post :resolve }
     end
     # Generic key/value metadata, like projects/machines.
     resources :labels, only: %i[ create destroy ], shallow: true

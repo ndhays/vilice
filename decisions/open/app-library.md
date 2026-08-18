@@ -39,7 +39,11 @@ is the real ceiling today — a key-holder can `steward deploy <any-image>` dire
 - **Image granularity** — repo-level (any digest from `ghcr.io/acme/web`) vs. digest-level.
   Lean repo-level + digest-pinned deploys for v1.
 - **Global vs. per-project** library — lean global v1; per-project later (multi-tenant).
-- **Registry tag auto-discovery**, version notes / yank.
+- **Registry tag discovery**, version notes / yank. Resolving *one* tag to its digest is
+  built — **Look up digest**, `Registry.pin`, and the rule it follows is
+  [`a-tag-is-not-a-release.md`](../a-tag-is-not-a-release.md). What is still open is
+  listing which tags a repository *has*, and noticing when `latest` moves — which must
+  arrive as an offer, never an update, for the same reason.
 - **Marketplace** — a shared, online library index (`applibrary.agoraforge.org`).
   Import-from-URL is built (`Library.fetch` + the Import menu); the **index** is what's
   missing, plus an *official* manifest field for categories (separate from local labels).

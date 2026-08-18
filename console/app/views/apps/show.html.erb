@@ -57,10 +57,18 @@
       <div class="flash alert"><%= @version.errors.full_messages.to_sentence %></div>
     <% end %>
     <%= f.text_field :tag, placeholder: "v1.2.0", required: true, autocomplete: "off" %>
-    <%= f.text_field :image, class: "mono", placeholder: "ghcr.io/acme/web@sha256:…",
+    <%= f.text_field :image, class: "mono", placeholder: "ghcr.io/acme/web:v1 or …@sha256:…",
           required: true, autocomplete: "off", spellcheck: false,
           pattern: ".+@sha256:[0-9a-f]{64}",
           title: "Pin the digest: ref@sha256: followed by 64 hex characters. A tag means something different tomorrow." %>
+    <%# A second submit on the same form, so it works with no JS at all. `formnovalidate`
+        is the point of it: the field's pattern demands a digest, and this is how you get
+        one — it would be a strange guard that refused to let you ask. It fills the field
+        and stops there; adding the version is still its own press, because resolution is
+        a read and pinning is a decision (app/services/registry.rb). %>
+    <%= button_tag "Look up digest", type: "submit", name: nil, class: "btn-quiet",
+          formaction: resolve_app_versions_path(@app), formnovalidate: true,
+          title: "Ask the registry what this tag points at right now, and fill in the digest" %>
     <label class="version-latest"><%= check_box_tag "make_latest", "1", true %> latest</label>
     <%= f.submit "Add Version", class: "btn mutate" %>
   <% end %>

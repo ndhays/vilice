@@ -123,6 +123,23 @@ open heartbeat question.
 - `app_id`, `tag` (unique per app, e.g. `v1.2.0`), `image` (digest-pinned), `latest:boolean`.
 - The library curates which releases exist; **exactly one per app is `latest`** (DB-enforced
   by a partial unique index; `App#set_latest!`). Install picks a version (default latest).
+- **Both halves are the release**: the tag is the name a person reads, the digest is what
+  is actually pulled. `Version` refuses an unpinned image because the box does, so it
+  fails where you type it rather than at the far end.
+- **Look up digest** (`Registry.pin`, `POST /apps/:id/versions/resolve`) asks the registry
+  what a tag points at and *fills the field in* — a second submit on the same form, so it
+  works with no JS. It saves nothing. **Resolution is a read; pinning is a decision**
+  ([`a-tag-is-not-a-release.md`](../../decisions/a-tag-is-not-a-release.md)): nothing
+  re-resolves afterwards, because a release that quietly followed a moving tag would make
+  *what was running* unanswerable. What is stored is the **full** name
+  (`docker.io/library/redis@sha256:…`), never the short one typed, because a short name
+  implies a registry instead of naming it.
+- **Public registries only, deliberately.** A private one needs a credential, and that
+  credential lives on the box
+  ([`registry-credentials.md`](../../decisions/registry-credentials.md)) precisely so the
+  console never holds pull access to your images. A registry that asks for authentication
+  gets a sentence pointing at `steward registry-login` and an invitation to paste the
+  digest — not a field to put a password in.
 
 ### `Install` — a deployed app
 - `project_id` — **nullable.** An install is a *placement*: this app, on these boxes. A
