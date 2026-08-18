@@ -50,7 +50,7 @@
       chip on the intention rather than as a paragraph teaching the model. %>
   <p class="intent-facts">
     <span class="intent-fact">
-      <%= icon @install.exposure_edge? ? "earth" : "boxes", size: 13 %>
+      <%= icon @install.exposure_edge? ? "edge" : "network", size: 13 %>
       <%= @install.exposure_edge? ? "On the edge — one box" : "Behind a balancer" %>
     </span>
     <% unless @install.replicable? %>
@@ -60,9 +60,11 @@
     <% end %>
   </p>
 
+  <%# "Another" is only true once there is one. An install can now be created with no box
+      at all, so the first placement is the common first thing this button ever does. %>
   <% if @install.placement_gap.negative? %>
-    <p><%= button_link_to "Place on another box", new_install_target_path(@install),
-             icon: "plus", class: "btn" %></p>
+    <p><%= button_link_to @targets.any? ? "Place on another box" : "Place on a box",
+             new_install_target_path(@install), icon: "plus", class: "btn" %></p>
   <% end %>
 </div>
 

@@ -2,15 +2,22 @@
     (blueprint/console/journeys.md). With one, the crumb trail and the machine list
     stay inside that client; without one, this is plain fleet-wide placement and
     nothing asks you to invent a client first (decisions/console-layers.md). %>
-<% content_for :title, @project ? "Create New Install — #{@project.name}" : "Create New Install" %>
+<%# One name for one thing. The list's button, the crumb, this heading and the submit all
+    read **Add Install**, and the act is `added install` — it had four names between them.
+    The project rides the crumb, not the heading, the same way Add Machine leaves its owner
+    to the Owner step instead of restating it up top. %>
+<% content_for :title, [ "Add Install", @project&.name, "Steward" ].compact.join(" — ") %>
 
 <% if @project %>
   <%= breadcrumb [ [ "Projects", projects_path ], [ @project.name, project_path(@project) ], [ "Add Install", nil ] ] %>
-  <h1>Create New Install for <%= @project.name %></h1>
 <% else %>
   <%= breadcrumb [ [ "Installs", installs_path ], [ "Add Install", nil ] ] %>
-  <h1>Create New Install</h1>
 <% end %>
+<h1>Add Install</h1>
+
+<p class="addr">What should run, and how much of it. <strong>Nothing is deployed by
+  filling this in</strong> — a box is optional here, and putting the app on one is a
+  separate, witnessed act.</p>
 
 <%= form_with url: installs_path(project_id: @project&.id), scope: :install, method: :post,
       class: "stack-form install-form", data: { controller: "install-form" } do |f| %>
@@ -18,65 +25,25 @@
     <div class="flash alert"><%= @install.errors.full_messages.to_sentence %></div>
   <% end %>
 
-  <%# Placement first — where it runs. One primitive: "single vs fleet" is just a count,
-      and the box is chosen or created here (decisions/one-primitive-composed.md). Single
-      + existing box is the built path; new-box (Hetzner) and fleet are previewed stubs.
-      The reveals are pure CSS (:has) — no JS, degrades to all-visible. %>
+  <%# One primitive: "single vs fleet" is just a count (decisions/one-primitive-composed.md).
+      The legend used to read "Machine Configuration", which was jargon for a plain idea and
+      had also stopped being true — no machine is configured here, and the box moved to its
+      own step. The two cards carry no hint: the words are the whole choice.
+      The reveal is pure CSS (:has) — no JS, degrades to all-visible. %>
   <fieldset class="step placement">
-    <legend>Machine Configuration</legend>
-    <div class="radio-cards">
+    <legend>Scale <%= hint "How many boxes should serve this app. One box is the default; more than one needs a balancer in front, because on the edge DNS points at a single box." %></legend>
+    <div class="radio-cards plain">
       <div class="radio-row">
         <label class="radio">
           <input type="radio" name="placement" value="single" checked>
           <%= icon "hard-drive", size: 22 %>
           <span class="radio-label">Single machine</span>
-          <small class="radio-hint">One box runs the app.</small>
         </label>
         <label class="radio">
           <input type="radio" name="placement" value="fleet">
-          <%= icon "boxes", size: 22 %>
+          <%= icon "hard-drives", size: 22 %>
           <span class="radio-label">Fleet</span>
-          <small class="radio-hint">Several boxes, one front door.</small>
         </label>
-      </div>
-    </div>
-
-    <div class="single-only">
-      <div class="radio-cards source-pick">
-        <div class="radio-row">
-          <label class="radio">
-            <input type="radio" name="machine_source" value="existing" checked>
-            <%= icon "hard-drive", size: 20 %>
-            <span class="radio-label">Existing box</span>
-            <small class="radio-hint"><%= @project ? "One on this project." : "Any box in the fleet." %></small>
-          </label>
-          <label class="radio">
-            <input type="radio" name="machine_source" value="new">
-            <%= icon "plus", size: 20 %>
-            <span class="radio-label">New box</span>
-            <small class="radio-hint">Provision via Hetzner.</small>
-          </label>
-        </div>
-      </div>
-
-      <div class="source-existing">
-        <label class="field"><span>Machine</span>
-          <% if @machines.any? %>
-            <%= f.collection_select :machine_id, @machines, :id, :name, { prompt: "Choose a machine" }, {} %>
-          <% elsif @project %>
-            <p class="muted">No machines on this project yet — create a new box, or
-              <%= link_to "add an existing one", new_machine_path(project_id: @project.id) %>.</p>
-          <% else %>
-            <p class="muted">No boxes carry an operate key yet —
-              <%= link_to "add a machine", new_machine_path %> first.</p>
-          <% end %>
-        </label>
-      </div>
-
-      <div class="source-new stub">
-        <p class="stub-note"><%= icon "clock", size: 14 %>
-          <span><strong>Create a new box (Hetzner) — coming soon.</strong> Steward will
-          provision the box, install Steward, authorize its key, then deploy.</span></p>
       </div>
     </div>
 
@@ -88,8 +55,40 @@
     </div>
   </fieldset>
 
+  <%# **Optional, in both branches.** An install is an intention and an intention does
+      not need a box (decisions/drift-is-surfaced-never-closed.md) — leaving this blank
+      states what should run and opens the gap, which is a complete answer. It is also
+      what lets Fleet submit at all: there is no "first box" problem once no box is
+      required. Provisioning one from here stays an open question
+      (decisions/open/create-machine.md). %>
   <fieldset class="step">
-    <legend>Application</legend>
+    <legend>First box <%= hint "Optional. Leave it blank to state the intention now and place it on a box later — placing is its own recorded act either way." %></legend>
+    <% if @machines.any? %>
+      <label class="field">
+        <%= f.collection_select :machine_id, @machines, :id, :machine_option_label,
+              { include_blank: "None yet — place it later" }, {} %>
+        <%# The authorize gap, said before the choice rather than after the failure: a box
+            we have never reached has not run its authorize line yet, and a deploy aimed
+            at it cannot connect (decisions/open/what-could-go-wrong.md). %>
+        <% if @machines.any?(&:never_reached?) %>
+          <small class="muted">Boxes marked <em>not yet authorized</em> have never
+            answered us — run the authorize line shown on the box's own page before
+            deploying to one.</small>
+        <% end %>
+      </label>
+    <% elsif @project %>
+      <p class="muted">No machines on this project yet —
+        <%= link_to "add one", new_machine_path(project_id: @project.id) %>, or leave this
+        install unplaced for now.</p>
+    <% else %>
+      <p class="muted">No boxes carry an operate key yet —
+        <%= link_to "add a machine", new_machine_path %>, or leave this install unplaced
+        for now.</p>
+    <% end %>
+  </fieldset>
+
+  <fieldset class="step">
+    <legend>App</legend>
     <% if @apps.any? %>
       <div class="pick-card">
         <input type="search" class="pick-search" placeholder="Search apps…" autocomplete="off"
@@ -126,8 +125,9 @@
       </label>
     <% end %>
 
+    <%# "App Version" under a legend that already says App. %>
     <label class="field" data-install-form-target="versionField">
-      <span>App Version</span>
+      <span>Version</span>
       <%= f.select :version_id, [], {}, data: { install_form_target: "version" } %>
     </label>
 
@@ -150,10 +150,12 @@
       </label>
     </fieldset>
 
+    <%# "Details" said nothing. These three are the app's own facts, arriving prefilled and
+        overridable for this one install — so the legend says whose they are. %>
     <fieldset class="step">
-      <legend>Details</legend>
-      <p class="form-note muted">Prefilled from the app's defaults — change any to override for this install.</p>
-      <label class="field"><span>App Name</span>
+      <legend>App defaults</legend>
+      <p class="form-note muted">Prefilled from the app — change any to override them for this install.</p>
+      <label class="field"><span>Name on the box <%= hint "What this install is called on the machine — its unit, its volumes, its apps/<name>.json. Letters, digits, dashes and underscores." %></span>
         <%= f.text_field :name, value: @install.name, data: { install_form_target: "name" },
               autocomplete: "off", pattern: "[A-Za-z0-9_-]+",
               title: "Letters, digits, dashes, and underscores — the app's name on the box" %></label>
@@ -182,8 +184,13 @@
     </fieldset>
 
     <div class="form-actions">
+      <%# The act is `added install`, and it reaches no box: this writes an intention.
+          It used to promise "and Deploy", which was only true when a box happened to be
+          picked, and blurred the one line that matters — setup is control-plane, the
+          deploy is a witnessed ceremony of its own. Pick a box and that ceremony is the
+          next screen; it still asks. `added` draws a plus, so the button does too. %>
       <%= button_tag class: "btn mutate" do %>
-        <%= safe_join([ icon("earth", size: 14), "Create Install and Deploy" ]) %>
+        <%= safe_join([ icon("plus", size: 14), "Add Install" ]) %>
       <% end %>
       <%= button_link_to "Cancel", @project ? project_path(@project) : installs_path, class: "btn-quiet" %>
     </div>

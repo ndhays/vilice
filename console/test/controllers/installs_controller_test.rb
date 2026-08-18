@@ -24,7 +24,9 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     get new_install_path(project_id: @project)
     assert_response :success
-    assert_select "h1", /Create New Install for Acme/
+    # One name for one thing — the crumb carries the project, the heading does not.
+    assert_select "h1", /\AAdd Install\z/
+    assert_select ".breadcrumb", /Acme/
     assert_select "input[type=radio][name=?]", "install[app_id]"  # the catalog picker
     assert_select "input[name='install[app_id]'][checked]", false # nothing pre-selected
     assert_select "select[name=?]", "install[version_id]"         # version (default latest)
@@ -43,12 +45,56 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
     get new_install_path
     assert_response :success
-    assert_select "h1", /\ACreate New Install\z/
+    assert_select "h1", /\AAdd Install\z/
     assert_select "select[name=?]", "install[project_id]", false
     # The unowned box and the project's box are both offered; the observe-only one isn't.
-    assert_select "select[name='install[machine_id]'] option", text: "loose"
-    assert_select "select[name='install[machine_id]'] option", text: "op"
-    assert_select "select[name='install[machine_id]'] option", { text: "eyes", count: 0 }
+    # Neither has ever answered us, so both carry the authorize gap on the option itself
+    # rather than letting you find it out when the SSH call fails.
+    assert_select "select[name='install[machine_id]'] option", text: "loose — not yet authorized"
+    assert_select "select[name='install[machine_id]'] option", text: "op — not yet authorized"
+    assert_select "select[name='install[machine_id]'] option", { text: /eyes/, count: 0 }
+    # And "no box" is a real option, not the absence of one.
+    assert_select "select[name='install[machine_id]'] option", text: /place it later/
+  end
+
+  # A box is optional because an install is an intention, and an intention does not need
+  # one (decisions/drift-is-surfaced-never-closed.md). What comes back is an install that
+  # states what should run and shows the gap it just opened.
+  test "create with no box states the intention and opens the gap" do
+    sign_in_as @user
+
+    assert_difference [ -> { Install.count }, -> { Event.count } ], 1 do
+      assert_no_difference -> { InstallTarget.count } do
+        post installs_path(project_id: @project), params: { install: {
+          app_id: @app.id, hostname: "acme.example", count: 2, exposure: "balanced"
+        } }
+      end
+    end
+
+    install = Install.last
+    assert_redirected_to install_path(install)
+    assert_equal "unplaced", install.state          # no targets, and the model knew this word
+    assert_equal(-2, install.placement_gap)         # asked for two, serving none
+    # One act, and it names no machine: nothing was placed and nothing was deployed.
+    act = Event.latest.first
+    assert_equal "added", act.action
+    assert_nil act.machine_id
+  end
+
+  # A blank box is a legitimate answer; a box this install may not land on is not. The
+  # second must not be quietly turned into the first.
+  test "create refuses a box outside the project instead of silently dropping it" do
+    sign_in_as @user
+    outsider = Machine.create!(name: "outsider", ssh_host: "10.0.0.7", scope: "operate",
+                               ssh_private_key: "k")
+
+    assert_no_difference [ -> { Install.count }, -> { Event.count } ] do
+      post installs_path(project_id: @project), params: { install: {
+        app_id: @app.id, machine_id: outsider.id, hostname: "acme.example"
+      } }
+    end
+    assert_response :unprocessable_entity
+    assert_match(/pick another, or leave it blank and place it later/, response.body)
   end
 
   # The acceptance test for the inversion: an app placed on a box with no client invented
@@ -57,15 +103,21 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     loose = Machine.create!(name: "loose", ssh_host: "10.0.0.8", scope: "operate", ssh_private_key: "k")
 
-    assert_difference [ -> { Install.count }, -> { InstallTarget.count }, -> { Event.count } ], 1 do
-      post installs_path, params: { install: {
-        app_id: @app.id, machine_id: loose.id, hostname: "home.example"
-      } }
+    # Two decisions, so two acts: stating what should run, and landing it on a box.
+    assert_difference [ -> { Install.count }, -> { InstallTarget.count } ], 1 do
+      assert_difference -> { Event.count }, 2 do
+        post installs_path, params: { install: {
+          app_id: @app.id, machine_id: loose.id, hostname: "home.example"
+        } }
+      end
     end
     install = Install.last
     assert_nil install.project_id
     assert_equal loose, install.install_targets.sole.machine
-    assert_equal "web on loose", Event.latest.first.summary   # no client in the line
+    placed, added = Event.latest.first(2)
+    assert_equal %w[placed added], [ placed.action, added.action ]
+    assert_equal "web on loose", placed.summary   # no client in the line
+    assert_equal "web", added.summary             # the intention names no box
     assert_redirected_to new_machine_mutation_path(loose, act: "deploy", install_id: install.id)
   end
 
@@ -82,35 +134,65 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".cell-project a", text: "Acme"
   end
 
-  test "new leads with placement — single/fleet, then existing/new box" do
+  test "new leads with placement — single or fleet, and the box is its own optional step" do
     sign_in_as @user
     get new_install_path(project_id: @project)
     assert_response :success
-    # Placement is the first step (machine moved to the top).
-    assert_select "fieldset.placement legend", /Machine Configuration/i
+    # Scale is the first step. It was "Machine Configuration" — jargon for a plain idea,
+    # and untrue once the box moved to its own step.
+    assert_select "fieldset.placement > legend", /\AScale/
     assert_select ".placement input[type=radio][name=placement][value=?]", "single"
     assert_select ".placement input[type=radio][name=placement][value=?]", "fleet"
-    assert_select ".placement input[name=machine_source][value=?]", "existing"
-    assert_select ".placement input[name=machine_source][value=?]", "new"
-    # Fleet is no longer a stub: exposure is a real choice and the count it gates is the
-    # real intention. What's still previewed is the new-box path, and the fact that the
-    # console doesn't manage the balancer an app can be marked as sitting behind.
+    # Both card pairs in this step — placement and exposure — are label-only. The whole
+    # choice is the two words; a sentence under each was restating them.
+    assert_select ".placement .radio-cards:not(.plain)", 0
+    assert_select ".placement .radio-hint", 0
+    assert_select ".placement > .radio-cards.plain .radio", 2
+    # Provisioning a box from here is not offered at all while it is an open question
+    # (decisions/open/create-machine.md) — no source radios, and no stub in the built path.
+    assert_select ".placement input[name=machine_source]", 0
+    # The box is not inside the placement step any more, and not inside a Single-only
+    # reveal: it is optional in both branches, which is what lets Fleet submit at all.
+    assert_select ".placement select[name=?]", "install[machine_id]", false
+    assert_select ".single-only", 0
+    assert_select "fieldset.step > legend", /First box/i
+    assert_select "select[name=?]", "install[machine_id]"
+    # So the submit no longer disappears on the Fleet branch, and no longer promises a
+    # deploy it only sometimes does. It wears the act's name and the act's glyph.
+    assert_select ".form-actions button", /Add Install\z/
+    assert_select ".form-actions button svg.icon", 1
+    assert_select ".stub-note", 0
+    # Fleet: exposure is a real choice and the count it gates is the real intention, and
+    # the balancer is a real picker.
     assert_select ".placement input[type=radio][name=?][value=?]", "install[exposure]", "edge"
     assert_select ".placement input[type=radio][name=?][value=?]", "install[exposure]", "balanced"
     assert_select ".placement input[type=number][name=?]", "install[count]"
-    # The balancer is real now too — a picker, not a note about something unbuilt. The
-    # new-box (Hetzner) path is the only previewed stub left in this step.
     assert_select ".placement .balanced-only"
-    assert_select ".placement .stub-note", 1
-    assert_select ".placement .stub-note", { text: /coming soon/i, count: 1 }   # new box
+  end
+
+  # The second form to follow the reference shape (blueprint/console/interface.md, "The
+  # form pattern"). Add Machine sets it; this one is the same vocabulary with more in it,
+  # so the legends are checked here too — plain words, one concern each, no bare fields.
+  test "the install form follows the reference shape Add Machine sets" do
+    sign_in_as @user
+    get new_install_path(project_id: @project)
+    assert_response :success
+
+    legends = css_select("form.stack-form fieldset.step > legend").map { |l| l.text.strip[/\A[\w ]+/].strip }
+    assert_equal [ "Scale", "First box", "App", "Hostname", "App defaults", "Storage" ], legends
+    # Nothing outside a step, including inside the progressive-reveal wrapper.
+    assert_select "form.stack-form > .field", 0
+    assert_select "form.stack-form > [data-install-form-target=rest] > .field", 0
   end
 
   test "create installs the app's latest version, then hands off to the deploy ceremony" do
     sign_in_as @user
-    assert_difference [ -> { Install.count }, -> { InstallTarget.count }, -> { Event.count } ], 1 do
-      post installs_path(project_id: @project), params: { install: {
-        app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
-      } }
+    assert_difference [ -> { Install.count }, -> { InstallTarget.count } ], 1 do
+      assert_difference -> { Event.count }, 2 do
+        post installs_path(project_id: @project), params: { install: {
+          app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+        } }
+      end
     end
     install = Install.last
     assert_equal @project.id, install.project_id
@@ -118,7 +200,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @version.id, install.version_id        # latest
     assert_equal @version.image, install.image
     assert_equal "web", install.name                    # defaulted from the app
-    assert_equal "added", Event.latest.first.action
+    assert_equal %w[placed added], Event.latest.first(2).map(&:action)
     assert_redirected_to new_machine_mutation_path(@operator, act: "deploy", install_id: install.id)
   end
 

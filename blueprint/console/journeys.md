@@ -95,22 +95,58 @@ fleet-wide placement and nothing asks you to invent a client first. The flow lea
      states the topology; pointing something at those boxes is yours.)*
    - Both are editable afterwards — **Change what's asked for** on the install, recorded as
      a `restated intention` act. Asking for fewer boxes never removes anything.
-   - For Single: **an existing box** — the project's, or any operate-scoped box in the
-     fleet when there is no project — or **a new box** (provision via Hetzner, a previewed
-     stub). The built path is single + existing box.
-2. **Choose an app** from the catalog (a real picker, searchable, shows version + labels —
+2. **First box — optional, in both branches.** An install is an intention, and **an
+   intention does not need a box**. Requiring one made the claim depend on the very
+   reality it exists to be compared against, which is the merge
+   [`drift-is-surfaced-never-closed.md`](../../decisions/drift-is-surfaced-never-closed.md)
+   refuses. Leave it blank and the form writes the intention and lands on the install's
+   own page, showing the gap it just opened — `unplaced`, *asked for 3 · serving 0* — a
+   state the model, the list, the badges and the copy already knew how to render and only
+   this form refused to create. That is also what makes **Fleet** submittable: there is no
+   "first box" problem once no box is required.
+   - The choice is **an existing box** — the project's, or any operate-scoped box in the
+     fleet when there is no project. **Provisioning one from here is not offered**;
+     whether the console should ever birth a box mid-install is still open
+     ([`create-machine.md`](../../decisions/open/create-machine.md)).
+   - Blank and refused are different answers. A box this install *may not* land on is an
+     error, not a quiet downgrade to unplaced — dropping a named choice in silence is its
+     own failure.
+   - A box we have never reached carries **"not yet authorized"** on the option itself.
+     The authorize gap is stated before the choice rather than discovered when the SSH
+     call fails ([`what-could-go-wrong.md`](../../decisions/open/what-could-go-wrong.md)).
+3. **Choose an app** from the catalog (a real picker, searchable, shows version + labels —
    not a `<select>`). Selecting it resolves the **version** inline (default **latest**, an
    inline override pins an exact one) and configures everything below: name, port, health,
-   the env schema.
-3. **Hostname** — the always-custom required field.
-4. **Confirm** — name (the app name), Port/Health labelled **"App Default"** (app-owned,
+   the env schema. **The spec is still required** — "deploy something, we'll decide what
+   later" is not an intention, it is a blank.
+4. **Hostname** — the always-custom required field.
+5. **Confirm** — name (the app name), Port/Health labelled **"App Default"** (app-owned,
    rarely touched; override under Advanced), optional env.
-5. **Deploy** — the existing witnessed ceremony.
+6. **Deploy** — the existing witnessed ceremony, and only when a box was named.
 
-One transaction writes the `Install` + `InstallTarget` + an `added install` act, then hands
-off to the deploy ceremony with the image prefilled. Setup is control-plane; the deploy
-stays witnessed. The button reads **Install** the first time, **Deploy** thereafter — never
-"Build" (which would read as making an image).
+**Two decisions, two records.** One transaction writes the `Install` and an `added install`
+act, which names no machine and reaches nothing; if a box was chosen it *also* writes the
+`InstallTarget` and a `placed install` act — the same verb the standalone **Place on a box**
+door records, through the same `Install#place_on!`. One act standing for two decisions was
+the anomaly, and it meant the two doors into a placement disagreed about what to call it.
+
+**One name for one thing.** The list's button, the crumb, the heading and the submit all
+read **Add Install**, and the act is `added install` — they were four different names for
+one journey (*Add Install* / *Create New Install* / *Create New Install for Acme* /
+*Create Install and Deploy*). The project rides the crumb, not the heading, the same way
+Add Machine leaves its owner to the Owner step.
+
+The submit wears `plus`, the glyph of the act it performs. It used to promise "and
+Deploy", which was true only when a box happened to be picked and blurred the line that
+matters: **setup is control-plane, the deploy is a witnessed ceremony of its own.** With a
+box, that ceremony is the next screen and still asks. With none, the install page is —
+carrying the gap, and the act that closes it.
+
+The steps read **Scale · First box · App · Hostname · App defaults · Storage**, following
+the reference shape in [`interface.md`](interface.md). Two legends were replaced rather
+than restyled: *Machine Configuration* was jargon for a plain idea and had stopped being
+true once the box moved to its own step, and *Details* named nothing at all — those three
+fields are the app's own facts, arriving prefilled and overridable for this one install.
 
 **Scaling is the same journey, one box at a time.** An install asking for more boxes than
 are serving shows the gap on its own page and on Status; **Place on another box** picks a

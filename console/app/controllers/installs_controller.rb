@@ -75,17 +75,41 @@ class InstallsController < ApplicationController
     end
   end
 
+  # **An install is an intention, and an intention does not need a box.** Requiring one
+  # here made the claim depend on the reality it is supposed to be compared against —
+  # the exact merge decisions/drift-is-surfaced-never-closed.md keeps apart. So the box
+  # is optional: with none, this writes the intention and lands on a page showing the
+  # gap it just opened, which is a state the model, the list and the badges already knew
+  # how to render and only this form refused to create.
+  #
+  # The spec is still required. "Deploy something, we'll decide what later" is not an
+  # intention, it is a blank.
   def create
     @install = Install.new(install_attrs.merge(project: @project))
-    @machine = placeable_machines.find_by(id: params.dig(:install, :machine_id))
+    # Blank and refused are different answers. Leaving the box out is the new legal
+    # path; naming one this install may not land on is a request we are not honouring,
+    # and quietly creating an unplaced install instead would drop it in silence.
+    picked   = params.dig(:install, :machine_id).presence
+    @machine = placeable_machines.find_by(id: picked) if picked
 
-    if @machine && @install.image.present? && place_install
+    @install.errors.add(:base, "Pick an app (or a custom image).") if @install.image.blank?
+    @install.errors.add(:base, no_machine_message) if picked && @machine.nil?
+
+    # Short-circuit: nothing is written while an answer is missing or refused.
+    if @install.errors.any? || !save_install
+      load_form
+      return render :new, status: :unprocessable_entity
+    end
+
+    # With a box, straight on to the witnessed deploy as before. Without one, the install
+    # page — where the gap this just opened is already rendered, and where the act that
+    # closes it lives. Not an error page and not a dead end: a stated intention, which is
+    # a complete thing on its own.
+    if @machine
       redirect_to new_machine_mutation_path(@machine, act: "deploy", install_id: @install.id)
     else
-      @install.errors.add(:base, no_machine_message) unless @machine
-      @install.errors.add(:base, "Pick an app (or a custom image).") if @install.image.blank?
-      load_form
-      render :new, status: :unprocessable_entity
+      redirect_to @install, notice: "Added #{@install.name}. Nothing is deployed yet — " \
+                                    "place it on a box, which is a recorded act."
     end
   end
 
@@ -106,8 +130,11 @@ class InstallsController < ApplicationController
     @project&.machines || Machine.all
   end
 
+  # Only ever shown for a box that was named and refused — never for a blank one, which
+  # is now a legitimate answer. So it says why that box, and what the ways out are.
   def no_machine_message
-    @project ? "Pick a machine on this project." : "Pick a machine."
+    lead = @project ? "That box isn't on this project" : "That box isn't one this install can use"
+    "#{lead} — pick another, or leave it blank and place it later."
   end
 
   def allow_custom? = !Setting.current.installs_library_only
@@ -152,15 +179,17 @@ class InstallsController < ApplicationController
     volumes.any? ? { "volumes" => volumes } : {}
   end
 
-  def place_install
+  # Two decisions, two records. Declaring what should run is `added install` and reaches
+  # nothing; landing it on a box is `placed install`, the same verb the standalone
+  # placement door records. Choosing a box on this form does both at once, so it writes
+  # both — one act standing for two different decisions was the anomaly, and it meant
+  # the two doors into a placement disagreed about what to call it.
+  def save_install
     Install.transaction do
       @install.save!
-      @install.install_targets.create!(machine: @machine, status: "pending")
-      Event.record!(
-        actor: Current.user.email_address, action: "added",
-        project: @project, install: @install, machine: @machine,
-        summary: placement_summary
-      )
+      Event.record!(actor: Current.user.email_address, action: "added",
+                    project: @project, install: @install, summary: added_summary)
+      @install.place_on!(@machine, actor: Current.user.email_address) if @machine
     end
     true
   rescue ActiveRecord::RecordInvalid => e
@@ -168,9 +197,8 @@ class InstallsController < ApplicationController
     false
   end
 
-  def placement_summary
-    where = @project ? " to #{@project.name}" : ""
-    "#{@install.name}#{where} on #{@machine.name}"
+  def added_summary
+    @project ? "#{@install.name} to #{@project.name}" : @install.name
   end
 
   # Only the intention. `count` and `exposure` and nothing else — a spec change would ride

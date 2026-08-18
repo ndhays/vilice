@@ -422,6 +422,39 @@ Every entity — Machine, Install, Project — renders the same shape:
 The inversion: the timeline is not a tab or a bottom-of-page feed. It **is** the page,
 and current state is its most recent vertebra.
 
+## The form pattern
+
+Entity pages have one shape; so do the forms that create them. **`machines/new` is the
+reference** — the smallest complete example — and every other `.stack-form` is that shape
+with more in it. It is written down because the two biggest forms had drifted into
+different vocabularies: one grouped its fields under legends and one ran them together,
+one put errors at the top and one put them after the first field.
+
+1. **Errors at the top**, always. An error is the reason the page is on screen again;
+   sitting it after the first field puts the answer below the question.
+2. **A run of `fieldset.step`s** — one concern each, under a plain-language legend. No
+   field hangs outside a step. A legend takes a `hint` when the concern has a
+   consequence the label cannot carry.
+3. **The concrete thing leads; tenancy comes last.** `installs/new` never asks you to
+   invent a client before you have said what you are placing, and `machines/new` asks
+   for the box's address before its owner. Optional context does not get to go first.
+4. **Radio cards carry a hint only when the label cannot carry the choice.** *Operate*
+   and *Grant* are not tellable apart from one word, and the difference is what a stolen
+   key could do — so they keep their sub-copy. *Single machine* / *Fleet* and *On the
+   edge* / *Behind a balancer* are the whole choice already, so they use `.plain` and
+   say nothing further. A sentence that restates its label is noise in the one place a
+   reader is trying to decide.
+5. **The submit wears its act's glyph**, not a picture of the noun — `added machine`
+   draws `plus`, the same glyph as the button that led there. This is the act-glyph rule
+   above, applied to the button that opens the act.
+
+The vertical rhythm is three tokens in `tokens.css` — `--tight` (a label to the thing it
+labels), `--gap` (two things inside one step), `--step` (one step to the next) — and the
+ordering is the whole point. When a within-step gap grows to the size of a between-step
+gap, the steps stop reading as steps and the page is one long column of fields. Pinned in
+`test/controllers/machines_controller_test.rb`, because a vocabulary nothing checks is one
+that drifts apart again.
+
 ## How a row reads, and how an entry reads
 
 Two shapes carry nearly every screen, so both are fixed here.
@@ -514,6 +547,19 @@ are one vocabulary. An act's glyph never collides with an outcome's — `circle-
 is the settled-ok tick and no verb may claim it; `updated` wears a double tick
 instead. That is pinned too, because `icon()` renders nothing at all for a name it
 does not know, so a typo would silently drop the glyph rather than fail.
+
+**One glyph, one meaning — nouns too.** The rule is not only about verbs. `earth` means
+*faces the public internet*: the go-live buttons, and an install exposed on the edge. It
+used to also mark a box **prepared as a balancer**, so the same glyph stood for the edge
+in one place and for the thing in front of the edge in another. The balancer now draws
+`network` — one front, many backs — everywhere it is named: the role badge, the exposure
+picker, and the install's intention chip. Its opposite, `edge`, is drawn in the same
+grammar (the world above, one box below, nothing between) so the two read as one pair
+answering one question, and `earth` is left meaning only *reachable from the public
+internet*: the go-live buttons. In the same spirit a **Fleet** is drawn as
+`hard-drives`, three of the `hard-drive` a single machine draws, because a fleet is a
+count of the same thing and not a different kind of thing
+([`decisions/one-primitive-composed.md`](../../decisions/one-primitive-composed.md)).
 
 Both rules apply to acts recorded **from here on**. Entries written earlier keep the
 verb they were recorded with — that is what append-only means — so the icon mapping

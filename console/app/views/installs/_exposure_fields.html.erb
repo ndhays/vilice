@@ -5,21 +5,20 @@
     so a second box cannot serve the same hostname and asking for one states something no
     deploy will deliver. Both are refused at validation, not merely discouraged here. %>
 <div class="exposure-pick">
-  <div class="radio-cards">
+  <%# No hint under either card. What the choice *gates* is the thing worth saying, and
+      the count's own help line below says it — a sentence here only restated the label
+      and then said "One box" a second time, next to the field that holds the number. %>
+  <div class="radio-cards plain">
     <div class="radio-row">
       <label class="radio">
         <%= f.radio_button :exposure, "edge", checked: install.exposure_edge? %>
-        <%= icon "earth", size: 20 %>
+        <%= icon "edge", size: 20 %>
         <span class="radio-label">On the edge</span>
-        <small class="radio-hint">DNS points at the box, which terminates its own TLS.
-          One box.</small>
       </label>
       <label class="radio">
         <%= f.radio_button :exposure, "balanced", checked: install.exposure_balanced? %>
-        <%= icon "boxes", size: 20 %>
+        <%= icon "network", size: 20 %>
         <span class="radio-label">Behind a balancer</span>
-        <small class="radio-hint">The box is a backend; DNS points at the balancer in
-          front of it. One box or many.</small>
       </label>
     </div>
   </div>

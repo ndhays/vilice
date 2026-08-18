@@ -1,9 +1,12 @@
-<% content_for :title, "Place #{@install.name} on another box — Steward" %>
+<%# "Another" only once there is one — an install may have been created with no box at
+    all, in which case this page is closing the gap for the first time, not widening it. %>
+<% placed = @install.live_targets.any? %>
+<% content_for :title, "Place #{@install.name} on #{placed ? 'another' : 'a'} box — Steward" %>
 
 <%= breadcrumb [ [ "Installs", installs_path ], [ @install.name, install_path(@install) ],
                  [ "Place on a box", nil ] ] %>
 
-<h1><%= icon "box", size: 20 %> Place <%= @install.name %> on another box</h1>
+<h1><%= icon "box", size: 20 %> Place <%= @install.name %> on <%= placed ? "another" : "a" %> box</h1>
 
 <%# The gap, stated plainly at the top of the thing that closes it. This page exists
     because nothing closes it automatically — see decisions/drift-is-surfaced-never-closed.md. %>

@@ -100,6 +100,17 @@ class Machine < ApplicationRecord
       (sharing_list? && granted_projects.exists?(project.id))
   end
 
+  # We have never had an answer from this box, which in practice means our key was never
+  # authorized on it — the one thing the operator must do there by hand
+  # (decisions/machine-onboarding.md). Distinct from `seen_unreachable?`, which is a box
+  # we *did* reach and have since lost: that one has a different fix.
+  def never_reached? = last_seen_at.nil?
+
+  # How this box reads in a picker. The authorize gap belongs on the option itself —
+  # a name alone lets you choose a box that cannot yet be deployed to and find out
+  # only when the SSH call fails.
+  def machine_option_label = never_reached? ? "#{name} — not yet authorized" : name
+
   # The line to run on the box to let Steward Console in — authorizes our public key as a
   # named client at this machine's scope (decisions/open/machine-onboarding.md).
   # Steward Console's key is born at observe/operate scope; never root.

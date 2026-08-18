@@ -225,7 +225,7 @@
       <div class="kicker">Edge · derived from the installs behind it</div>
       <% if @machine.operate? %>
         <%= button_link_to "Apply routing", new_machine_mutation_path(@machine, act: "route"),
-                 icon: "earth", class: "btn mutate sm panel-action" %>
+                 icon: "network", class: "btn mutate sm panel-action" %>
       <% end %>
     </div>
     <% if @table.any? %>

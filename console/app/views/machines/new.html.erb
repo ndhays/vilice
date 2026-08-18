@@ -1,56 +1,95 @@
+<%# The reference form. Every stack-form is a run of `fieldset.step`s — one concern
+    each, under a plain-language legend — with errors at the top and the act's own glyph
+    on the submit. This one is the smallest complete example, so it is where the shape
+    is set and `installs/new` follows it rather than the other way round
+    (blueprint/console/interface.md, "The form pattern"). %>
 <% content_for :title, "Add Machine — Steward" %>
 
 <%= breadcrumb [ [ "Machines", machines_path ], [ "Add Machine", nil ] ] %>
 <h1>Add Machine</h1>
 
+<p class="addr">The box is already Steward-ready. This records how to reach it and
+  generates a scoped key — it changes nothing on the box, and you authorize the key there
+  yourself.</p>
+
 <%= form_with model: @machine, url: machines_path, class: "stack-form" do |f| %>
-  <% if @project %>
-    <%= hidden_field_tag :project_id, @project.id %>
-    <div class="field">
-      <span>Machine Owner</span>
-      <p class="owner-value"><%= icon "handshake", size: 15 %> <strong><%= @project.name %></strong></p>
-    </div>
-  <% else %>
-    <label class="field"><span>Machine Owner</span>
-      <%= select_tag "machine[owner_id]",
-            options_from_collection_for_select(@projects, :id, :name),
-            include_blank: "Unassigned", class: "select" %></label>
-  <% end %>
+  <%# At the top, always. Errors are the reason you are back on this page; sitting them
+      after the first field puts the answer below the question. %>
   <% if @machine.errors.any? %>
     <div class="flash alert"><%= @machine.errors.full_messages.to_sentence %></div>
   <% end %>
 
-  <div class="field-row">
-    <label class="field"><span>SSH Host</span>
-      <%= f.text_field :ssh_host, class: "mono", required: true, autocomplete: "off",
-            placeholder: "box.example.com or 5.78.218.105" %></label>
-    <label class="field compose-narrow"><span>Port</span>
-      <%= f.number_field :ssh_port %></label>
-  </div>
+  <%# Address first — the concrete thing, the way installs/new leads with placement.
+      Tenancy is optional context and goes last; nothing should ask you to settle
+      ownership before you have said which box you mean. %>
+  <fieldset class="step">
+    <legend>Address <%= hint "Where the console reaches this box over SSH. A hostname or an IP." %></legend>
+    <div class="field-row">
+      <label class="field"><span>SSH Host</span>
+        <%= f.text_field :ssh_host, class: "mono", required: true, autocomplete: "off",
+              placeholder: "box.example.com or 5.78.218.105" %></label>
+      <label class="field compose-narrow"><span>Port</span>
+        <%= f.number_field :ssh_port %></label>
+    </div>
+    <%# The wrong-user mistake is the second entry in what-could-go-wrong.md, and this
+        is the only screen where it can be pre-empted rather than explained afterwards. %>
+    <p class="muted form-note">The console always connects as <span class="mono">steward</span>,
+      never <span class="mono">root</span> — scoped keys live in that user's
+      <span class="mono">authorized_keys</span>. It is forced, not a field.</p>
+  </fieldset>
 
-  <% scope_copy = {
-       "observe" => [ "eye",        "Observe", "Read only — status and the record." ],
-       "operate" => [ "settings-2", "Operate", "Deploy, rollback, start/stop." ],
-       "grant"   => [ "key-round",  "Grant",   "Operate, plus admit and revoke other keys." ]
-     } %>
-  <fieldset class="field radio-cards">
-    <legend>Scope</legend>
-    <div class="radio-row">
-      <% Machine.scopes.keys.each do |scope| %>
-        <% glyph, label, hint = scope_copy[scope] %>
-        <label class="radio">
-          <%= f.radio_button :scope, scope %>
-          <%= icon glyph, size: 22 %>
-          <span class="radio-label"><%= label %></span>
-          <small class="radio-hint"><%= hint %></small>
-        </label>
-      <% end %>
+  <%# Hints stay here. On the placement cards the label is the whole choice, but Operate
+      and Grant are not tellable apart from one word, and the difference is what a
+      stolen key could do. %>
+  <fieldset class="step">
+    <legend>Scope <%= hint "The ceiling on the key this console will hold for the box. The box enforces it — the console cannot exceed what you authorize there." %></legend>
+    <% scope_copy = {
+         "observe" => [ "eye",        "Observe", "Read only — status and the record." ],
+         "operate" => [ "settings-2", "Operate", "Deploy, rollback, start/stop." ],
+         "grant"   => [ "key-round",  "Grant",   "Operate, plus admit and revoke other keys." ]
+       } %>
+    <div class="radio-cards">
+      <div class="radio-row">
+        <% Machine.scopes.keys.each do |scope| %>
+          <% glyph, label, blurb = scope_copy[scope] %>
+          <label class="radio">
+            <%= f.radio_button :scope, scope %>
+            <%= icon glyph, size: 22 %>
+            <span class="radio-label"><%= label %></span>
+            <small class="radio-hint"><%= blurb %></small>
+          </label>
+        <% end %>
+      </div>
     </div>
   </fieldset>
 
+  <fieldset class="step">
+    <legend>Owner</legend>
+    <% if @project %>
+      <%= hidden_field_tag :project_id, @project.id %>
+      <div class="field">
+        <p class="owner-value"><%= icon "handshake", size: 15 %> <strong><%= @project.name %></strong></p>
+        <small class="muted">Carried from the project you came from.</small>
+      </div>
+    <% else %>
+      <%# A div, not a label: the legend names this step and repeating "Owner" above the
+          select would say it twice. The control still carries its own accessible name,
+          because a legend names the group and not the field inside it. %>
+      <div class="field">
+        <%= select_tag "machine[owner_id]",
+              options_from_collection_for_select(@projects, :id, :name),
+              include_blank: "Unassigned", class: "select", "aria-label": "Machine owner" %>
+        <small class="muted">Optional. An unassigned box still runs apps and still takes
+          installs — ownership decides who may share it, not what it can do.</small>
+      </div>
+    <% end %>
+  </fieldset>
+
+  <%# The act is `added machine`, and `added` draws a plus — the same glyph the button
+      that led here wears. A submit carries its act's glyph, not a picture of the noun. %>
   <div class="form-actions">
     <%= button_tag class: "btn mutate" do %>
-      <%= safe_join([ icon("hard-drive", size: 14), "Add Machine" ]) %>
+      <%= safe_join([ icon("plus", size: 14), "Add Machine" ]) %>
     <% end %>
     <%= button_link_to "Cancel", machines_path, class: "btn-quiet" %>
   </div>

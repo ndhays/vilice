@@ -174,7 +174,10 @@
 }
 .version-add input.mono { font-family: var(--font-mono); flex: 1 1 16rem; }
 .version-latest { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); }
-.form-note { margin: -0.4rem 0 0.8rem; font-size: 0.85rem; }
+/* A note that belongs to its neighbour above — tucked --tight against it, then a full
+   --gap before whatever follows. The negative top is what pulls it inside the
+   neighbour's own bottom margin rather than adding to it. */
+.form-note { margin: calc(var(--tight) - var(--gap)) 0 var(--gap); font-size: 0.85rem; }
 
 /* App inputs editor — env vars (with a secret flag) + secret files. A flush config
    section (not a card like Versions): no border, no inset padding. Each row is a key

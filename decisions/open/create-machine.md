@@ -13,7 +13,41 @@
 > → the four connection facts`; the linkage on `Machine` is thin and nullable; the core needs
 > no adapter (bare-SSH boxes work). What's open here is the **build** of the first adapter.
 
-**Last touched:** 2026-06-18.
+**Last touched:** 2026-08-14.
+
+---
+
+## Open, and asked first: does provisioning belong *inside the install form*?
+
+Raised 2026-08-14, when the **New box (Hetzner) — coming soon** card was removed from
+`installs/new`. That card was a stub in the middle of the built path: choosing it hid the
+submit button, so the form's most prominent second option was a dead end. Deleting it is
+not a decision about Create Machine; it is a refusal to advertise one.
+
+The question it leaves open is narrower than "should we build an adapter" (that shape is
+settled, above). It is: **should Create Machine ever be a branch of the install form, or
+only its own act?** The two readings:
+
+- **Its own act.** Boxes are made on the fleet page and arrive at the install form the
+  way every other box does — already reachable, already holding an `operate` key. The
+  install form keeps one machine question with one kind of answer, and provisioning
+  inherits nothing from the install's lifecycle. The seam is the seam we already have.
+- **A branch of the install.** "Give me a box and put this on it" is genuinely one
+  intention, and splitting it makes the newcomer's first install a two-page errand.
+  The cost is the whole `awaiting_machine → ready` machinery below — an install that
+  must survive minutes of async, resume after a crash, and surface a provisioning
+  failure without hanging — plus a form that behaves differently depending on a choice
+  made three fields earlier.
+
+The bias is **the first**, on the project's usual grounds: it is the boring option, it
+removes a failure mode rather than handling one, and the async lifecycle is a large
+mechanism bought entirely to serve one branch of one form. Worth deciding **before** the
+adapter is built, because the answer changes what the adapter has to promise: a
+standalone act can be synchronous-with-polling on its own page, while an in-form branch
+forces the install states.
+
+Not settled. When it settles, it graduates to `decisions/` and the winning shape lands in
+[`../../blueprint/console/journeys.md`](../../blueprint/console/journeys.md).
 
 ---
 

@@ -84,6 +84,22 @@ class Install < ApplicationRecord
 
   def in_step? = placement_gap.zero?
 
+  # Land this install on one more box: the target, plus the `placed install` act that
+  # accounts for it. **Both doors into a placement go through here** — creating an
+  # install with a box already chosen, and closing a gap later from the install's own
+  # page — because the same thing recorded two different ways is the drift this layer
+  # exists to prevent. It was recorded as `added` from one door and `placed` from the
+  # other until this method existed.
+  #
+  # Reaches no box: the target is `pending` and the gap does not move. It narrows only
+  # when observe reports the app running (drift-is-surfaced-never-closed.md). Raises —
+  # the caller owns the transaction and decides what a failure looks like.
+  def place_on!(machine, actor:)
+    install_targets.create!(machine: machine, status: "pending")
+    Event.record!(actor: actor, action: "placed", project: project, install: self,
+                  machine: machine, summary: "#{name} on #{machine.name}")
+  end
+
   # The rolled-up state of this placement — worst-but-actionable wins across live
   # targets, in the order below. One word, shared by the row's leading glyph, the
   # Status page's exception list, and the Installs list's grouping, so all three

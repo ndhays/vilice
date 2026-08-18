@@ -1,7 +1,9 @@
 
-/* A plain vertical form (App Library add/edit). */
+/* A plain vertical form. `machines/new` is the reference shape — a run of steps, errors
+   at the top, the act's glyph on the submit — and every other form is that shape with
+   more in it. The vertical rhythm is --tight / --gap / --step from tokens.css. */
 .stack-form { max-width: 34rem; }
-.stack-form .field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.8rem; }
+.stack-form .field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: var(--gap); }
 .stack-form .field > span { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
 .stack-form .field input {
   font: inherit; font-size: 0.9rem; padding: 0.45rem 0.6rem;
@@ -31,6 +33,26 @@
 .stack-form .field-row .field { flex: 1 1 9rem; }
 .stack-form .form-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; }
 
+/* A step — one concern, under a plain-language legend. The unit every form is built
+   from, not an install-form special: a form that groups its fields and one that runs
+   them together as a single column are two different vocabularies, and the reader
+   pays for the second one. */
+.stack-form .step { border: none; padding: 0; margin: 0 0 var(--step); }
+.stack-form .step > legend { font-weight: 600; padding: 0; margin-bottom: var(--tight); }
+/* A step's own bottom margin is the only thing separating it from the next, so no
+   trailing margin inside it gets to add to that. Every step gap is exactly --step,
+   including the steps whose last child is revealed rather than always present. */
+.stack-form .step > *:last-child,
+.stack-form .fleet-only > *:last-child,
+.stack-form .exposure-pick > *:last-child { margin-bottom: 0; }
+/* A row of side-by-side fields is one block: the row carries the gap, not the fields
+   inside it, which would otherwise pad the row out by a line they don't need. */
+.stack-form .field-row { margin-bottom: var(--gap); }
+.stack-form .field-row .field { margin-bottom: 0; }
+/* The help line under an input belongs to that input; it sits closer to it than the
+   next field does, and reads at the same measure as the rest of the muted copy. */
+.stack-form .field > small { line-height: 1.45; }
+
 /* Sign-in — a centred, branded card on the unauthenticated layout. */
 .auth { min-height: 78vh; display: grid; place-items: center; padding: 1rem; }
 .auth-card {
@@ -54,13 +76,13 @@
 .auth-link:hover { color: var(--accent); }
 
 /* ── Install form — the progressive-reveal flow + its catalog picker ──────── */
-.install-form .step { border: none; padding: 0; margin: 0 0 1.5rem; }
-.install-form .step > legend { font-weight: 600; padding: 0; margin-bottom: 0.5rem; }
+/* The steps, the gaps and the radio cards are the shared vocabulary above. What is
+   left here is the one thing only this form has: the catalog picker. */
 
-/* Step 1 — the catalog: a searchable card of apps; custom image sits outside it. */
+/* The catalog: a searchable card of apps; custom image sits outside it. */
 .pick-card {
   border: 1px solid var(--line); border-radius: 10px; background: var(--card);
-  padding: 0.4rem; margin: 0.35rem 0 0.6rem;
+  padding: 0.4rem; margin: 0 0 var(--gap);
 }
 .pick-search {
   width: 100%; box-sizing: border-box; margin-bottom: 0.4rem;
@@ -80,5 +102,6 @@
 .pick-option .row-icon { color: var(--muted); display: inline-flex; flex: none; }
 .pick-option .row-name { font-weight: 600; }
 .pick-option input[type="radio"] { flex: none; margin: 0; }
-.pick-custom { margin: 0.1rem 0 0.6rem; }
+/* Outside the card, because it is not one of the catalog's rows. */
+.pick-custom { margin: 0 0 var(--gap); }
 

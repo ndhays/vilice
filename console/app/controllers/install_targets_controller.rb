@@ -48,17 +48,11 @@ class InstallTargetsController < ApplicationController
     scope.where.not(id: @install.live_targets.map(&:machine_id)).order(:name)
   end
 
-  # The record is written here, before the deploy is even composed — the placement is
-  # itself a control-plane act, and the deploy that follows is witnessed separately.
+  # The record is written before the deploy is even composed — the placement is itself a
+  # control-plane act, and the deploy that follows is witnessed separately. The write
+  # lives on the model so this door and the create form record it identically.
   def place_on(machine)
-    Install.transaction do
-      @install.install_targets.create!(machine: machine, status: "pending")
-      Event.record!(
-        actor: Current.user.email_address, action: "placed",
-        project: @install.project, install: @install, machine: machine,
-        summary: "#{@install.name} on #{machine.name}"
-      )
-    end
+    Install.transaction { @install.place_on!(machine, actor: Current.user.email_address) }
     true
   rescue ActiveRecord::RecordInvalid => e
     @install.errors.add(:base, e.message) if @install.errors.empty?

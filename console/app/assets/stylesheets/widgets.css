@@ -357,7 +357,11 @@ details.menu > summary::-webkit-details-marker { display: none; }
    selected card lights live (no JS) via :has(). Reusable; used for the scope picker. */
 .radio-cards { border: 0; padding: 0; margin: 0; }
 .radio-cards legend { padding: 0; margin: 0 0 0.35rem; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
-.radio-cards .radio-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+/* Auto-fit, not a hardcoded two: the scope picker has three cards, and a fixed
+   two-column grid orphaned the third onto a half-width row of its own. The count of
+   options is the view's business, not the component's. */
+.radio-cards .radio-row { display: grid; gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
 .radio-cards .radio { position: relative; display: flex; flex-direction: column; align-items: flex-start;
   gap: 0.3rem; padding: 0.85rem; padding-right: 2rem; border: 1px solid var(--line);
   border-radius: 10px; cursor: pointer; }
@@ -371,19 +375,35 @@ details.menu > summary::-webkit-details-marker { display: none; }
 .radio-cards .radio-label { font-weight: 600; }
 .radio-cards .radio-hint { color: var(--muted); font-size: 0.8rem; }
 
+/* A pair with no hint under it — just a glyph and a name. Centred and given more air,
+   because two left-aligned two-word stubs read as ragged; centred, the pair reads as
+   one either/or. The shorthand padding also drops the base rule's right inset, which
+   would otherwise push the centre off-centre. */
+.radio-cards.plain .radio { align-items: center; text-align: center;
+  gap: 0.45rem; padding: 1.05rem 0.85rem; }
+.radio-cards.plain .radio input { top: 0.6rem; right: 0.6rem; }
+
 /* Install placement — reveal the sub-section that matches the radio choice, no JS.
-   Defaults (single + existing box) are checked in the HTML, so :has matches on load. */
-.placement .single-only, .placement .fleet-only,
-.placement .source-existing, .placement .source-new { display: none; }
-.placement:has(input[name="placement"][value="single"]:checked) .single-only { display: block; }
+   Single is checked in the HTML, so :has matches on load and nothing is revealed;
+   only Fleet has more to ask, because only a count needs an exposure to be allowed.
+   The box itself is asked in its own step and is optional in both branches, which is
+   what let this shrink to one reveal and the deploy button stop disappearing. */
+.placement .fleet-only { display: none; }
 .placement:has(input[name="placement"][value="fleet"]:checked) .fleet-only { display: block; }
-.placement:has(input[name="machine_source"][value="existing"]:checked) .source-existing { display: block; }
-.placement:has(input[name="machine_source"][value="new"]:checked) .source-new { display: block; }
-.placement .source-pick, .placement .single-only > * + * { margin-top: 0.6rem; }
-/* The built path is single + existing box; on a stubbed path, hide the deploy button so
-   it can't dead-end (the stub note explains why). */
-.install-form:has(input[name="machine_source"][value="new"]:checked) .form-actions,
-.install-form:has(input[name="placement"][value="fleet"]:checked) .form-actions { display: none; }
+/* What the choice reveals is one step down from the choice itself, so it gets the
+   within-step gap — never the between-step one, which would read as a new section. */
+.placement .fleet-only { margin-top: var(--gap); }
+
+/* Exposure — the same shape as placement: a choice, then what the choice reveals.
+   Shared by the create form and the edit page, so the gaps live on the block itself
+   rather than on either page. */
+.exposure-pick { margin-bottom: var(--gap); }
+.exposure-pick .radio-cards { margin-bottom: var(--gap); }
+/* Which balancer fronts it is only a question once the app is behind one. The class
+   had no rule at all, so the picker sat under "On the edge" asking about a box that
+   choice has just ruled out. */
+.exposure-pick .balanced-only { display: none; }
+.exposure-pick:has(input[name$="[exposure]"][value="balanced"]:checked) .balanced-only { display: flex; }
 
 /* A previewed-but-unbuilt path: a dashed, muted note so it reads as "coming", not broken. */
 .stub-note { display: flex; align-items: flex-start; gap: 0.45rem; margin: 0;

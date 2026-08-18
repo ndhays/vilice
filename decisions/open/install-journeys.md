@@ -57,7 +57,28 @@ Two rules: it's a **warning with guidance, not a hard block** (DNS not set yet �
 path-dependent**: an existing box has an IP → check now; a new dedicated box has no IP yet →
 the check moves to the `awaiting_machine → ready` transition.
 
+## Resolved 2026-08-18: an install does not need a box
+
+The create form now accepts a blank box, and that answers more than it looks like.
+`Install#count` was always the intention and `unplaced` was always a state the model,
+the list, the badges and the gap copy could render — only the form refused to make one.
+Requiring a box made the claim depend on the reality it exists to be compared against.
+
+Two things below were sized against that constraint and shrink with it:
+
+- **Replicas' "provisioning the backends"** is not a create-form problem. A fleet install
+  is stated once and closed one `placed install` act at a time, exactly like scaling an
+  existing one — it was only blocked because the form demanded a first box.
+- **The lifecycle states below** were bought almost entirely to carry an install across a
+  wait. An install that never needed a box has nothing to wait *for*: a box that does not
+  exist yet is a gap, and a gap is already a first-class, resumable, honest state. See
+  the open question at the head of [`create-machine.md`](create-machine.md) — if
+  provisioning is its own act rather than a branch of this form, the ladder below may
+  never need to be built at all.
+
 ## The install carries itself — lifecycle states (for the async path)
+
+> **Under review** — see above. Written when an install could not exist without a box.
 
 For the automated **Create Machine** path ([`machine-onboarding.md`](create-machine.md))
 the install must advance across an async provision without a babysitting wizard, so
@@ -109,9 +130,13 @@ table is derived from those installs, and `steward route` applies it as a witnes
 Selecting one stays optional — an operator with their own edge (Cloudflare, a cloud LB)
 just wants the count unlocked, and that is still a supported configuration.
 
+**And a fleet install can now be created as one.** The create form no longer demands a
+first box, so stating *three, behind this balancer* is a single submit that opens a gap of
+three; the stub that used to sit on that branch is gone.
+
 What remains: **rollout orchestration** across a balanced install's targets (today a deploy
 is per-box and N boxes is N acts, with no drain-then-flip across the set), the
-**managed-LB** realization, provisioning the backends, and the private-backend jump.
+**managed-LB** realization, and the private-backend jump.
 
 Open, and newly answerable: **should a placement gap page someone?** The decision says
 nobody gets woken by a self-healing system because there isn't one — they get woken by "three

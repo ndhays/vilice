@@ -23,6 +23,47 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".radio-cards input[type=radio][name=?][value=?]", "machine[scope]", "operate"
   end
 
+  # This form is the reference shape every other stack-form follows
+  # (blueprint/console/interface.md, "The form pattern"). Pinned here because a
+  # vocabulary nothing checks is a vocabulary that drifts back apart — which is how
+  # this form and installs/new came to disagree in the first place.
+  test "the reference form: steps with legends, errors at the top, the act's glyph" do
+    sign_in_as @user
+    get new_machine_path
+    assert_response :success
+
+    # Every field lives in a step, and every step says what it is for.
+    assert_select "form.stack-form fieldset.step", 3
+    assert_select "form.stack-form fieldset.step > legend", 3
+    assert_select "fieldset.step > legend", /Address/i
+    assert_select "fieldset.step > legend", /Scope/i
+    assert_select "fieldset.step > legend", /Owner/i
+    # Nothing is a bare field hanging outside a step.
+    assert_select "form.stack-form > .field", 0
+
+    # Address leads. Tenancy is optional context and comes last — the same order
+    # installs/new takes, which never asks you to settle a client first.
+    legends = css_select("fieldset.step > legend").map { |l| l.text.strip[/\A\w+/] }
+    assert_equal %w[Address Scope Owner], legends
+
+    # Hints stay where the label cannot carry the choice: Operate and Grant are not
+    # tellable apart from one word. The placement cards have none, and that is the rule.
+    assert_select ".radio-cards .radio-hint", 3
+
+    # The submit wears the act's glyph — `added machine`, and `added` draws a plus.
+    assert_select ".form-actions button svg.icon", 1
+  end
+
+  test "errors render above the first step, not after the field that failed" do
+    sign_in_as @user
+    post machines_path, params: { machine: { ssh_host: "", ssh_port: 22, scope: "operate" } }
+    assert_response :unprocessable_entity
+
+    # The error is the reason you are back on this page, so it comes before the form's
+    # first question rather than buried between two of them.
+    assert_select "form.stack-form > *:first-child.flash.alert"
+  end
+
   test "new without a project offers an optional owner dropdown (Unassigned first)" do
     sign_in_as @user
     Project.create!(name: "Acme-pick")

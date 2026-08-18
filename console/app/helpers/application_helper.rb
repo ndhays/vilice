@@ -40,7 +40,7 @@ module ApplicationHelper
   def role_icon(machine)
     if machine.balancer?
       hosts = machine.fronted_host_count
-      icon_tip("earth", "Load Balancer — #{pluralize(hosts, 'host')}",
+      icon_tip("network", "Load Balancer — #{pluralize(hosts, 'host')}",
                size: 13, css_class: "role-ico")
     else
       apps = machine.app_count
@@ -73,7 +73,7 @@ module ApplicationHelper
   # the last read, and is what the fleet list can afford to show. A box we have never
   # reached has no role — *unknown*, which is not "host".
   ROLE_BADGE = {
-    "balancer" => { icon: "earth",      word: "Prepared as a balancer — fronts other boxes, runs no containers" },
+    "balancer" => { icon: "network",    word: "Prepared as a balancer — fronts other boxes, runs no containers" },
     "host"     => { icon: "hard-drive", word: "Prepared as a host — runs apps" }
   }.freeze
 
@@ -497,7 +497,7 @@ module ApplicationHelper
     when /edited|restated/           then "pencil"
     when /star/                      then "star"
     when /placed/                    then "map-pin"
-    when /promoted|demoted|routed/   then "earth"
+    when /promoted|demoted|routed/   then "network"
     when /transferred|released/      then "handshake"
     when /restricted/                then "lock"
     when /opened/                    then "lock-open"
