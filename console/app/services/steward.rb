@@ -25,6 +25,10 @@ module Steward
     module_function
 
     CACHE_TTL = 30.seconds
+    # How much of the tail to ask for. Enough to see a boot and a crash without pulling
+    # a whole log across an SSH connection; the view offers the other two.
+    DEFAULT_TAIL = 200
+    TAILS        = [ 50, 200, 1000 ].freeze
 
     # Live machine status, cached per machine. Pass refresh: true to bypass.
     # A read also reconciles Steward Console's stored *projection* of the box —
@@ -122,6 +126,27 @@ module Steward
       end
     end
 
+    # An app's log tail, straight off the box. `steward logs` is a passthrough to
+    # `podman logs` — the container is the source of truth and Steward stores nothing —
+    # so this is the one read that owns no projection: it mirrors nothing into our
+    # columns and answers only the question that was just asked.
+    #
+    # **Deliberately not cached.** A status is a projection you compare over time; a log
+    # tail is a stream someone asked for *now*, usually while watching a deploy. Handing
+    # back a 30-second-old tail would be a lie in the shape of a feature.
+    #
+    # It is `observe` scope, which is the point: you can read the logs of a box whose key
+    # cannot act on it — exactly when you most want to.
+    def logs(machine, app, tail: DEFAULT_TAIL)
+      # The name reaches a command line, so it is checked here rather than trusted from
+      # a caller. `Install` already enforces this charset; a second guard at the seam
+      # costs nothing and is the difference between a bug and a flag injection.
+      return { ok: false, reached: true, error: "#{app.inspect} is not a valid app name." } unless
+        app.to_s.match?(Install::NAME_FORMAT)
+
+      Steward.read(machine, "logs #{app} --tail #{Integer(tail)} --json")
+    end
+
     def cached(machine, verb, refresh:)
       key = "steward:observe:#{verb}:#{machine.id}"
       Rails.cache.delete(key) if refresh
@@ -177,13 +202,27 @@ module Steward
       # answered badly. Two different problems with two different fixes, and the merged
       # output names neither, so the caller gets told which one this was.
       { ok: false, reached: st.exitstatus != 255,
-        error: out.strip.presence || "ssh exited #{st.exitstatus}", at: Time.current }
+        error: failure_message(out, st), at: Time.current }
     end
   rescue JSON::ParserError
     # A reply we could not read is still a reply: something answered.
     { ok: false, reached: true, error: "unparseable reply: #{out.to_s.strip.truncate(200)}", at: Time.current }
   rescue => e
     { ok: false, reached: false, error: e.message, at: Time.current }
+  end
+
+  # A refusal from Steward is a `Result` — `{"code":…,"message":…}` on stdout, and the
+  # CLI exits non-zero for any code but `ok`. Handing the operator that JSON was showing
+  # them our transport instead of their answer, so the sentence inside it wins when there
+  # is one. Anything else (ssh's own complaints, a bare exit) is passed through as it came.
+  def failure_message(out, status)
+    text = out.to_s.strip
+    parsed = JSON.parse(text) rescue nil
+    if parsed.is_a?(Hash) && parsed["message"].present?
+      parsed["message"].to_s.strip
+    else
+      text.presence || "ssh exited #{status.exitstatus}"
+    end
   end
 
   def ssh(machine, command, stdin: nil)

@@ -93,6 +93,11 @@ Rails.application.routes.draw do
     # Mutate — the witnessed ceremony: `new` previews the exact record line,
     # `create` records it (pending), runs it over scoped SSH, and settles it.
     resource :mutation, only: %i[ new create ]
+    # Observe — an app's log tail from this box. A GET because it is a plain read: it
+    # writes nothing, not even the projection `refresh` makes, so it is safe to repeat
+    # and worth being able to reload. (Turbo prefetch is off for the whole app, so a
+    # GET does not fire an SSH connection on hover.)
+    resource :logs, only: :show, controller: "logs"
   end
 
   # Settings.

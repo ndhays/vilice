@@ -86,6 +86,29 @@ class StewardTest < ActiveSupport::TestCase
     end
   end
 
+  # A refusal from Steward is a `Result` on stdout and a non-zero exit. Handing the
+  # operator that JSON showed them our transport instead of their answer.
+  test "a refusal is reported in the box's own words, not as its JSON envelope" do
+    with_fake_steward do |steward|
+      steward.on(/status/, success: false,
+                 stdout: { "code" => "not_found", "message" => 'no running app "web"' }.to_json)
+
+      res = Steward::Observe.status(machine, refresh: true)
+
+      refute res[:ok]
+      assert_equal 'no running app "web"', res[:error]
+    end
+  end
+
+  test "output that isn't a Result is passed through as it came" do
+    with_fake_steward do |steward|
+      steward.on(/status/, stdout: "Permission denied (publickey).", success: false, exit_status: 255)
+
+      assert_equal "Permission denied (publickey).",
+                   Steward::Observe.status(machine, refresh: true)[:error]
+    end
+  end
+
   # ── Mutate: records before it acts (Invariant 2) ──────────────────────────
 
   test "a mutation records an Event, then issues the command" do

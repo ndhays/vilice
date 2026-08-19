@@ -110,6 +110,15 @@
             <%= icon "hard-drive", size: 13 %>
             <%= link_to target.machine.name, target.machine %>
             <span class="badge state-<%= target.state %>"><%= target.state %></span>
+            <%# Logs sit with the box's name, not with the verbs, because they are not
+                one: reading is `observe` and every verb below is `operate`. That is why
+                this is offered on a box whose key cannot act — the moment you most want
+                to look is the moment you are least able to touch. %>
+            <% unless target.machine.seen_unreachable? %>
+              <%= link_to safe_join([ icon("file-text", size: 12), "Logs" ]),
+                    machine_logs_path(target.machine, install_id: @install.id),
+                    class: "logs-link", data: { turbo_frame: "logs" } %>
+            <% end %>
           </span>
           <% if target.machine.operate? %>
             <%= render "installs/acts", install: @install, machine: target.machine, from: "install" %>
@@ -139,6 +148,12 @@
 <%# The ceremony lands here: pick a verb above → this frame fills with the preview
     of the exact record line, then Confirm writes & runs it. %>
 <%= turbo_frame_tag "ceremony" %>
+
+<%# Logs land in their own frame, kept apart from the ceremony's: one is the amber
+    "this will be recorded" zone and the other is a plain read, and a reader should
+    never have to work out which of the two they are looking at. Empty until asked —
+    every tail is an SSH round trip. %>
+<%= turbo_frame_tag "logs" %>
 
 <h2 class="section-kicker">
   <%= icon "disc", size: 15 %> Record

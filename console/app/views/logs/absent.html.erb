@@ -1,0 +1,16 @@
+<%# Asked for an app's logs on a box it was never placed on. The box would refuse it
+    too, but it would refuse it in podman's words; this says the actual reason. %>
+<%= turbo_frame_tag "logs" do %>
+  <div class="panel logs-panel">
+    <div class="panel-head">
+      <div class="kicker">Logs · <%= @install.name %></div>
+      <span class="panel-action">
+        <%= link_to "Close", install_path(@install),
+              class: "btn-quiet sm", data: { turbo_frame: "logs" } %>
+      </span>
+    </div>
+    <p class="empty"><%= icon "circle-x", size: 14 %>
+      <%= @install.name %> isn't placed on <%= @machine.name %>, so there is nothing
+      of its to read there.</p>
+  </div>
+<% end %>

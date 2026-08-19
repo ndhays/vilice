@@ -21,6 +21,16 @@ decisions are enforced and tested:
   `InstallTarget#current_image`) so the Status page and the drift rollup read something
   true; `FleetObserveJob` runs the read fleet-wide on a cadence
   (→ [observe-reconciliation.md](../../decisions/observe-reconciliation.md)).
+- **`Steward::Observe.logs` is the exception to both halves**, and deliberately.
+  `steward logs` is a passthrough to `podman logs` — the container is the source of
+  truth and Steward stores nothing — so there is no projection to reconcile. And it is
+  **not cached**: a status is a projection you compare over time, a log tail is a stream
+  someone asked for *now*, usually while watching a deploy, and answering that with a
+  30-second-old tail would be a lie in the shape of a feature. Every tail is therefore
+  an SSH round trip, so it is **pulled on request and never rendered by default** — the
+  same rule that stops a list querying once per row, applied harder to asking a box.
+  The app name is re-checked against `Install::NAME_FORMAT` at the seam before it
+  reaches a command line.
 
 Partly wired: **ingestion**. The live projection above is reconciled on every read, but
 the *historical* index isn't: nothing yet writes `Snapshot` rows from Steward's

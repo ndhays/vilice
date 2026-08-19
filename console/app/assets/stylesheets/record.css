@@ -168,6 +168,35 @@
 .ceremony-warn .note .icon { vertical-align: -2px; margin-right: 0.15rem; }
 .ceremony-warn .cmd-block { margin: 0; }
 
+/* ── Logs ─────────────────────────────────────────────────────────────────────
+   A read, so a plain panel and never the mutate one — the amber zone means "this
+   will be recorded", and nothing here is. The body reuses `pre.raw`, the same
+   terminal treatment every other piece of box output gets: box output looks like
+   box output wherever it appears. */
+.logs-panel .logs-body {
+  background: var(--raw-bg); color: var(--raw-ink);
+  padding: 0.9rem 1rem; border-radius: 8px; margin: 0;
+  font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5;
+  /* Scrolls inside its own frame, both ways: a long line must never make the page
+     scroll sideways, and a long tail must not push the record off the screen. */
+  max-height: 26rem; overflow: auto; white-space: pre; tab-size: 4;
+}
+.logs-panel .note { margin: 0.5rem 0 0; font-size: 0.8rem; }
+.logs-panel .empty { margin: 0; }
+.logs-controls { display: inline-flex; align-items: center; gap: 0.5rem; }
+/* The tail sizes read as one control, so they sit together and only the chosen one
+   carries weight — a row of equally loud numbers says nothing about which is on. */
+.logs-tail { font-size: 0.78rem; color: var(--muted); text-decoration: none; }
+.logs-tail:hover { color: var(--accent); }
+.logs-tail.on { color: var(--ink); font-weight: 700; }
+/* On the target row: quiet next to the box's name, and clearly not one of the verbs
+   beside it — those are acts, this is a look. */
+.logs-link {
+  display: inline-flex; align-items: center; gap: 0.25rem; margin-left: 0.45rem;
+  font-size: 0.78rem; color: var(--muted); text-decoration: none;
+}
+.logs-link:hover { color: var(--accent); }
+
 /* deploy lane sits ahead of lifecycle, with a thin divider between */
 .acts-app-verbs { align-items: center; }
 .verb-sep { width: 1px; align-self: stretch; background: var(--mutate-line); margin: 0.1rem 0.15rem; }

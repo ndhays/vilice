@@ -158,6 +158,17 @@ enough to make a group read as a group.
   is the app-actions home
   ([`decisions/install-the-app-actions-home.md`](../../decisions/install-the-app-actions-home.md)).
 
+  **Logs sit with the box's name, not with the verbs beside it**, because they are not
+  one of them: reading is `observe` and every verb there is `operate`. So the link is
+  offered on a box whose key **cannot act** — the moment you most want to look is the
+  moment you are least able to touch. It opens its own frame, kept apart from the
+  ceremony's: one is the amber *this will be recorded* zone and the other is a plain
+  read, and nobody should have to work out which they are looking at. The body wears
+  the same `pre.raw` terminal treatment every other piece of box output does, scrolls
+  inside its own frame both ways, and says out loud that nothing was cached and nothing
+  recorded. The only control is the tail size — `podman logs` is a passthrough, and
+  there is nothing to filter here that `grep` would not do better on the far side.
+
   **Searched and grouped like the fleet list**, from the same mechanism (`Groupings`,
   shared by `MachineGroups` and `InstallGroups`). One `?q=` over what *identifies* a
   placement — its name, the host it serves, the app it came from, and the box it runs

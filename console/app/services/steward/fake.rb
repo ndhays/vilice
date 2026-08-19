@@ -40,7 +40,7 @@ module Steward
     # read, so the pending Event settles honestly as failed with the reason on the
     # entry, and `actors` (which this seam does not model) reads as a ledger that
     # could not be read — never as a box where nobody has access.
-    ANSWERS = %w[ status record doctor ].freeze
+    ANSWERS = %w[ status record doctor logs ].freeze
 
     # The {ok:, data:, at:} result Steward.read would return, per verb.
     def envelope(machine, command)
@@ -61,11 +61,36 @@ module Steward
         when "status" then { "ok" => true, "data" => status_data(machine, health) }
         when "record" then { "ok" => true, "data" => record_data(machine) }
         when "doctor" then { "ok" => true, "data" => { "checks" => [] } }
+        # Logs carry their text in `message`, the way the real `Result` does — a
+        # passthrough command has nothing structured to put in `data`.
+        when "logs"   then { "ok" => true, "message" => log_lines(command) }
         end
       { ok: true, data: data, at: at }
     end
 
     # ── per-verb payloads ──────────────────────────────────────────────────────
+
+    # A plausible boot, so the logs panel has something to be in a seeded scenario.
+    # Deliberately says it is fake in the first line: a demo that looks like real
+    # output is the sort of screenshot that ends up in a bug report.
+    def log_lines(command)
+      app  = command.to_s.split[1] || "app"
+      tail = command.to_s[/--tail (\d+)/, 1].to_i
+      base = Time.current
+      lines = [
+        "[fake-observe] these lines are generated, not read from a box",
+        "#{stamp(base - 46)} #{app} starting (pid 1)",
+        "#{stamp(base - 45)} #{app} listening on 0.0.0.0:8080",
+        "#{stamp(base - 44)} health: GET / 200 in 3ms",
+        "#{stamp(base - 12)} GET /  200  11ms",
+        "#{stamp(base - 11)} GET /assets/application.css  200  2ms",
+        "#{stamp(base - 4)}  GET /up  200  1ms"
+      ]
+      # Honour the tail the caller asked for, so the control visibly does something.
+      (tail.positive? ? lines.last(tail) : lines).join("\n")
+    end
+
+    def stamp(time) = time.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # Percentages chosen to land each health band squarely past MachineStatus's
     # warn/crit thresholds, so the dot and narrative are unambiguous.
