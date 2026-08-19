@@ -103,6 +103,26 @@ class AppsController < ApplicationController
     @app = App.find(params[:id])
   end
 
+  # One accessory row → the shape the box's spec uses, so the deploy envelope is a copy
+  # and not a translation. Volumes and env are typed as lines because that is how people
+  # think about them; secrets are names on one line, since values never live here.
+  #
+  # Nothing is coerced beyond splitting: a malformed image or an escaping volume is the
+  # model's to refuse, with a sentence, rather than something silently dropped here.
+  def accessory_from(row)
+    name = row[:name].to_s.strip
+    return nil if name.blank?
+
+    env = lines(row[:env]).to_h { |l| k, _, v = l.partition("="); [ k.strip, v.strip ] }
+    { "name"    => name,
+      "image"   => row[:image].to_s.strip,
+      "env"     => env.presence,
+      "secrets" => row[:secrets].to_s.split.presence,
+      "volumes" => lines(row[:volumes]).presence }.compact
+  end
+
+  def lines(text) = text.to_s.split("\n").map(&:strip).reject(&:blank?)
+
   def app_params
     attrs = params.require(:app).permit(:name, :port, :health, :description).to_h
 
@@ -135,6 +155,9 @@ class AppsController < ApplicationController
       attrs["secret_files"] = Array(params.dig(:app, :secret_file_rows)&.values).filter_map { |r|
         name = r[:name].to_s.strip
         { "name" => name, "path" => r[:path].to_s.strip } if name.present?
+      }
+      attrs["accessories"] = Array(params.dig(:app, :accessory_rows)&.values).filter_map { |r|
+        accessory_from(r)
       }
     end
     attrs

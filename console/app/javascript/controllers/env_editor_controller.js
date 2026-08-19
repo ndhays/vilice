@@ -6,7 +6,7 @@ import { Controller } from "@hotwired/stimulus"
 // so the server contract is just the indexed env_rows / secret_file_rows. Names only.
 export default class extends Controller {
   static targets = ["envInput", "envChips", "envTemplate", "fileList", "fileTemplate",
-                    "toggleText", "form"]
+                    "accessoryList", "accessoryTemplate", "toggleText", "form"]
 
   connect() {
     this.n = Date.now() // unique indices for new chips/rows, distinct from server-rendered
@@ -92,6 +92,21 @@ export default class extends Controller {
 
   removeFile(event) {
     event.target.closest(".kv-row")?.remove()
+    this.touch()
+  }
+
+  // Accessories — same shape as the file rows, a wider row. `removeRow` walks to
+  // whichever kind of row it is in, so one handler serves both.
+  addAccessory() {
+    const html = this.accessoryTemplateTarget.innerHTML.replaceAll("NEW", String(this.n++))
+    const row = this.node(html)
+    this.accessoryListTarget.appendChild(row)
+    row.querySelector("input")?.focus()
+    this.touch()
+  }
+
+  removeRow(event) {
+    event.target.closest(".acc-row, .kv-row")?.remove()
     this.touch()
   }
 

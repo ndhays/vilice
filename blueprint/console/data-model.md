@@ -100,8 +100,17 @@ open heartbeat question.
   it's shared with everyone, or the Project is on its allowlist. → decision 1
 
 ### `App` — an App Library entry
-- `name` (unique), `port`, `health`, `description`, `env` + `secret_files` + `release`
-  (jsonb). **Image lives on its versions, not here.**
+- `name` (unique), `port`, `health`, `description`, `env` + `secret_files` + `release` +
+  `accessories` (jsonb). **Image lives on its versions, not here.**
+- **`accessories`** are the containers this app needs on the same box and that nothing
+  else may reach — a database, a cache
+  ([`accessories-belong-to-one-app.md`](../../decisions/accessories-belong-to-one-app.md)).
+  Stored in **the box's own spec shape** (`name`, `image`, `env`, `secrets`, `volumes`),
+  so `deploy_envelope` hands them across as a copy rather than a translation and there is
+  no second definition to keep in step. Copied onto the Install at create like `release`,
+  and for the same reason. Validations mirror `validAccessories` on the box: a
+  digest-pinned image, a box-safe name that is not `a`/`b` (the deploy colors) and not the
+  app's own, and volumes under the bind root.
 - **`release`** is the command the box runs once from the new image before the new
   container starts — migrations are the case it exists for
   ([`blueprint/steward/deploy.md`](../steward/deploy.md), *The Release Step*). Stored as
@@ -225,7 +234,9 @@ open heartbeat question.
     the stateful gate wins even behind a balancer — a balancer in front of N diverging
     datasets is still N diverging datasets.
   - `Install#replicable?` gates `count > 1`, and is **derived, not stored**: an install is
-    replicable when it declares no volumes. Replication is stateless-only (a volume is data
+    replicable when it declares no volumes **and brings no accessory that keeps data**.
+    The second is the same fact as the first — an accessory's volume is data on that
+    box's disk — so it folds in rather than sitting beside it. Replication is stateless-only (a volume is data
     on *that box's* disk, so N replicas are N diverging datasets), and deriving it from the
     spec means the gate can never disagree with the spec the way a flag could. A stateful
     install is refused a count above 1 at validation, not merely discouraged in the form.

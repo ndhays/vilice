@@ -482,4 +482,68 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".spec dd", "bin/rails db:migrate"
     assert_select ".ceremony .note", /nothing is deployed/i
   end
+
+  # ── Accessories reach the box ──────────────────────────────────────────────
+  test "an install copies the app's accessories and carries them in the envelope" do
+    sign_in_as @user
+    db = { "name" => "db", "image" => "postgres@sha256:#{'b' * 64}",
+           "volumes" => [ "db-data:/var/lib/postgresql/data" ] }
+    @app.update!(accessories: [ db ])
+
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    install = Install.last
+
+    assert_equal [ db ], install.accessories
+    assert_equal [ db ], install.deploy_envelope(image: "img@sha256:#{'a' * 64}")[:app][:accessories]
+
+    # Copied, not followed: editing the library later must not change what a placed app runs.
+    @app.update!(accessories: [])
+    assert_equal [ db ], install.reload.accessories
+  end
+
+  # An accessory keeps data on *that box's* disk, exactly like a volume — so an install
+  # that brings one is single-placement for the same reason, and the count gate that
+  # already exists refuses more than one box.
+  test "an accessory with a volume makes the install single-placement" do
+    sign_in_as @user
+    @app.update!(accessories: [ { "name" => "db", "image" => "p@sha256:#{'b' * 64}",
+                                  "volumes" => [ "db-data:/data" ] } ])
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    install = Install.last
+
+    assert_not install.replicable?
+    install.count = 3
+    install.exposure = "balanced"
+    assert_not install.valid?, "an install with a stateful accessory asked for three boxes"
+  end
+
+  test "a stateless accessory leaves the install replicable" do
+    sign_in_as @user
+    @app.update!(accessories: [ { "name" => "cache", "image" => "redis@sha256:#{'c' * 64}" } ])
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+
+    assert Install.last.replicable?
+  end
+
+  test "the ceremony shows the accessories it will bring up" do
+    sign_in_as @user
+    @app.update!(accessories: [ { "name" => "db", "image" => "postgres@sha256:#{'b' * 64}" } ])
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    install = Install.last
+
+    get new_machine_mutation_path(@operator, act: "deploy", install_id: install.id,
+                                  image: install.image, hostname: install.hostname)
+
+    assert_select ".spec", /accessory/
+    assert_select ".spec dd", /db · postgres@sha256/
+    assert_select ".ceremony .note", /network only #{install.name} joins/
+  end
 end

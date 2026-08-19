@@ -307,4 +307,50 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name=?]", "app[release_line]"
     assert_select ".field small", /no shell/i
   end
+
+  # ── Accessories ────────────────────────────────────────────────────────────
+  # Typed as rows and stored in the box's own shape, so the deploy envelope is a copy
+  # rather than a translation (decisions/accessories-belong-to-one-app.md).
+  test "an accessory row is stored in the shape the box's spec uses" do
+    sign_in_as @user
+    app = App.create!(name: "web")
+
+    patch app_path(app), params: { app: { name: "web", inputs_form: "1", accessory_rows: {
+      "0" => { name: "db", image: "postgres@sha256:#{'b' * 64}",
+               volumes: "db-data:/var/lib/postgresql/data",
+               env: "POSTGRES_DB=app\nPOSTGRES_USER=app", secrets: "POSTGRES_PASSWORD" }
+    } } }
+
+    assert_equal [ { "name" => "db", "image" => "postgres@sha256:#{'b' * 64}",
+                     "env" => { "POSTGRES_DB" => "app", "POSTGRES_USER" => "app" },
+                     "secrets" => [ "POSTGRES_PASSWORD" ],
+                     "volumes" => [ "db-data:/var/lib/postgresql/data" ] } ],
+                 app.reload.accessories
+  end
+
+  test "a blank row is dropped, and removing the last one removes it" do
+    sign_in_as @user
+    app = App.create!(name: "web", accessories: [ { "name" => "db", "image" => "p@sha256:#{'b' * 64}" } ])
+
+    patch app_path(app), params: { app: { name: "web", inputs_form: "1" } }
+
+    assert_empty app.reload.accessories
+  end
+
+  # The mistakes the box would refuse are refused here, with a sentence, rather than at
+  # deploy after someone has built an install on them.
+  test "an accessory the box would refuse is refused where it is typed" do
+    sign_in_as @user
+    app = App.create!(name: "web")
+
+    [ { name: "db", image: "postgres:16" },                    # a tag, not a digest
+      { name: "a",  image: "p@sha256:#{'b' * 64}" },           # a deploy color
+      { name: "web", image: "p@sha256:#{'b' * 64}" },          # the app's own name
+      { name: "db", image: "p@sha256:#{'b' * 64}", volumes: "/etc:/etc" } ].each do |row|
+      patch app_path(app), params: { app: { name: "web", inputs_form: "1",
+                                            accessory_rows: { "0" => row } } }
+      assert_response :unprocessable_entity, "accepted #{row.inspect}"
+      assert_empty app.reload.accessories
+    end
+  end
 end

@@ -69,6 +69,12 @@ image allowlist is a separate Steward-side concern (see
 export) is specified in [`data-model.md`](data-model.md).
 
 - The library is a **pure directory** — it has no install action.
+- An app may declare **accessories** — the database or cache it needs beside it, on a
+  network only that app joins
+  ([`accessories-belong-to-one-app.md`](../../decisions/accessories-belong-to-one-app.md)).
+  Declared in the library, copied onto the install at create, shown in the ceremony before
+  the press. One that keeps data makes the install single-placement, the same rule a
+  volume already follows.
 - A release carries a **tag and a digest**. **Look up digest** asks the registry what a
   tag points at and fills the field in; it saves nothing, and nothing re-resolves later
   ([`a-tag-is-not-a-release.md`](../../decisions/a-tag-is-not-a-release.md)). Public

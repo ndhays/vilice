@@ -183,8 +183,10 @@ class InstallsController < ApplicationController
     volumes = p[:volumes].to_s.split("\n").map(&:strip).reject(&:blank?)
     config["volumes"] = volumes if volumes.any?
 
-    release = App.find_by(id: p[:app_id])&.release
-    config["release"] = release if release.present?
+    if (app = App.find_by(id: p[:app_id]))
+      config["release"]     = app.release if app.release.present?
+      config["accessories"] = app.accessories if app.accessories.present?
+    end
     config
   end
 

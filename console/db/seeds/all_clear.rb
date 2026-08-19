@@ -41,6 +41,11 @@ event!(actor: "operator@console.test", action: "restarted", machine: web1, insta
 library!
 library_app!("console", image: demo_pin("ghcr.io/console/console"), tag: "v0.1",
              release: [ "bin/rails", "db:migrate" ],
+             accessories: [ { "name" => "db",
+                              "image" => demo_pin("docker.io/library/postgres"),
+                              "env" => { "POSTGRES_DB" => "console" },
+                              "secrets" => [ "POSTGRES_PASSWORD" ],
+                              "volumes" => [ "console-db:/var/lib/postgresql/data" ] } ],
              port: 3000, health: "/up", description: "Steward Console itself — the self-deploy proof.")
 
 report!

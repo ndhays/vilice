@@ -136,4 +136,19 @@ class LibraryTest < ActiveSupport::TestCase
 
     assert_equal [ "bin/rails", "db:migrate" ], App.find_by(name: "web").release
   end
+
+  test "accessories survive an export/import round trip in the box's own shape" do
+    db = { "name" => "db", "image" => "postgres@sha256:#{'b' * 64}",
+           "env" => { "POSTGRES_DB" => "app" }, "secrets" => [ "POSTGRES_PASSWORD" ],
+           "volumes" => [ "db-data:/var/lib/postgresql/data" ] }
+    app = App.create!(name: "web", accessories: [ db ])
+    app.versions.create!(tag: "v1", image: "img@sha256:#{'a' * 64}")
+
+    manifest = Library.export
+    Version.delete_all
+    App.delete_all
+    Library.import(manifest)
+
+    assert_equal [ db ], App.find_by(name: "web").accessories
+  end
 end

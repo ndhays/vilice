@@ -102,9 +102,33 @@
       <%= icon "plus", size: 13 %> Add File
     </button>
 
+    <%# ── Accessories ──────────────────────────────────────────────────────────
+        The database or cache this app needs on the same box. Reachable by this app and
+        nothing else — no hostname, no published port, its own network
+        (decisions/accessories-belong-to-one-app.md). %>
+    <div class="kicker sub">Accessories</div>
+    <p class="muted form-note">
+      Containers this app needs beside it. Each gets a name the app dials it by
+      (<span class="mono">db:5432</span>), on a network only this app joins — nothing else
+      on the box can reach it. Images are digest-pinned like the app's, and a volume keeps
+      the data across deploys.
+    </p>
+    <div class="acc-list" data-env-editor-target="accessoryList">
+      <% app.accessories.each_with_index do |a, i| %>
+        <%= render "apps/accessory_row", i: i, name: a["name"], image: a["image"],
+              volumes: Array(a["volumes"]).join("\n"),
+              env: Hash(a["env"]).map { |k, v| "#{k}=#{v}" }.join("\n"),
+              secrets: Array(a["secrets"]).join(" ") %>
+      <% end %>
+    </div>
+    <button type="button" class="btn-quiet kv-add" data-action="env-editor#addAccessory">
+      <%= icon "plus", size: 13 %> Add Accessory
+    </button>
+
     <div class="form-actions"><%= submit_tag "Save Inputs", class: "btn mutate" %></div>
   <% end %>
 
   <template data-env-editor-target="envTemplate"><%= render "apps/env_chip", i: "NEW", key: "KEYNAME", secret: false %></template>
   <template data-env-editor-target="fileTemplate"><%= render "apps/file_row", i: "NEW", name: nil, path: nil %></template>
+  <template data-env-editor-target="accessoryTemplate"><%= render "apps/accessory_row", i: "NEW", name: nil, image: nil, volumes: nil, env: nil, secrets: nil %></template>
 </div>

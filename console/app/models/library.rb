@@ -63,6 +63,9 @@ module Library
       # argv, so it round-trips as a list. A manifest that flattened it to a string would
       # be exporting a shell command the box has no shell to run.
       "release"      => app.release.presence,
+      # Round-trips as-is: the stored shape is the box's spec shape, so a manifest that
+      # reshaped it would be inventing a second definition to keep in step.
+      "accessories"  => app.accessories.presence,
       "versions"     => app.versions.newest_first.map { |v|
         { "tag" => v.tag, "image" => v.image, "latest" => v.latest }.compact
       }.presence,
@@ -79,6 +82,7 @@ module Library
       attrs["env"] = normalize_env(row["env"]) if row["env"].present?
       attrs["secret_files"] = Array(row["secret_files"]) if row["secret_files"].present?
       attrs["release"] = Array(row["release"]) if row["release"].present?
+      attrs["accessories"] = Array(row["accessories"]) if row["accessories"].present?
       app.update!(attrs)
 
       versions = Array(row["versions"])

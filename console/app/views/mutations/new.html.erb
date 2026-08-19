@@ -27,6 +27,18 @@
         <p class="note">Runs first, from the new image. If it fails, nothing is deployed
           and <%= @mutation.install.name %> keeps serving what it serves now.</p>
       <% end %>
+      <%# Accessories come up before anything else, hold data, and are reachable by this
+          app alone. Worth seeing before the press for the same reason the release command
+          is: they are containers this act starts on the box. %>
+      <% if (accessories = @mutation.install&.accessories).present? %>
+        <dl class="spec">
+          <% accessories.each do |a| %>
+            <div><dt>accessory</dt><dd class="mono"><%= a["name"] %> · <%= a["image"] %></dd></div>
+          <% end %>
+        </dl>
+        <p class="note">Brought up first, on a network only <%= @mutation.install.name %>
+          joins. Already-running ones are left alone.</p>
+      <% end %>
     <% end %>
 
     <p class="note">Issues <code><%= @mutation.command %></code> over scoped SSH<%= " (spec on stdin)" if @mutation.stdin %>.</p>

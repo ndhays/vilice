@@ -54,6 +54,29 @@ class Install < ApplicationRecord
   # before the act, like name/port/health above.
   VOLUME_FORMAT = %r{\A([A-Za-z0-9_.-]+|/[^:\s]+):/[^:\s]+(:[A-Za-z,]+)?\z}
 
+  # A host path is confined to /srv, mirroring the box's `bindRoots`. This is not a
+  # tidiness rule: a bind mount of host root hands an operate key ~steward/.ssh, and with
+  # it a grant — the box's own `TestBindMountsAreConfinedToTheDataRoot` calls it "the
+  # escalation that was live". The box refuses it either way; refusing it here means you
+  # find out where you typed it rather than at the far end, after building on it.
+  BIND_ROOT = "/srv".freeze
+
+  # One rule, shared: an Install's own volumes and an App's accessory volumes are the
+  # same declaration going to the same place. Returns a sentence or nil.
+  def self.volume_error(v)
+    v = v.to_s
+    return "#{v.inspect} must look like storage:/path/in/container" unless v.match?(VOLUME_FORMAT)
+
+    source = v.split(":", 2).first.to_s
+    return nil unless source.start_with?("/")
+
+    clean = Pathname.new(source).cleanpath.to_s
+    return nil if clean == BIND_ROOT || clean.start_with?("#{BIND_ROOT}/")
+
+    "bind mount #{source.inspect} is outside #{BIND_ROOT} — put app data under " \
+      "#{BIND_ROOT}, or use a named volume"
+  end
+
   validate :volumes_well_formed
 
   # Named volumes that survive every redeploy — the declaration, not the data. Stored in
@@ -65,12 +88,23 @@ class Install < ApplicationRecord
   # deploy. argv, so it reaches the box as a list and never as a shell string.
   def release = Array(config["release"])
 
+  # The containers this install brings with it — a database, a cache — copied from the
+  # App at create like the release command, and for the same reason: a later library
+  # edit must not silently change what an already-placed app runs.
+  def accessories = Array(config["accessories"])
+
+  # An accessory keeps data on *that box's* disk, exactly like a volume, so an install
+  # that brings one is single-placement for the same reason. Folded into `replicable?`
+  # rather than bolted beside it, because it is the same fact: a thing that keeps data
+  # cannot be multiplied.
+  def stateful_accessories? = accessories.any? { |a| Array(a["volumes"]).any? }
+
   # ── The intention, and the gap ─────────────────────────────────────────────
   # Replication is stateless-only (one-primitive-composed.md). A volume is data on *that
   # box's* disk, so N replicas would be N diverging datasets — a stateful app is
   # single-placement, full stop. Derived from the volumes it declares rather than a flag:
   # a flag is a promise about the spec, and this is the spec.
-  def replicable? = volumes.empty?
+  def replicable? = volumes.empty? && !stateful_accessories?
 
   # Where it was actually placed. A retired target is gone, not a placement at zero.
   def live_targets = install_targets.reject(&:install_retired?)
@@ -197,6 +231,9 @@ class Install < ApplicationRecord
     app[:env]     = config["env"] if config["env"].present?
     app[:volumes] = volumes if volumes.any?
     app[:release] = release if release.any?
+    # Copied through as-is: the console's stored shape is the box's spec shape, so this
+    # is a hand-off rather than a translation, and there is no second definition to drift.
+    app[:accessories] = accessories if accessories.any?
     { app: app.compact }
   end
 
@@ -232,9 +269,10 @@ class Install < ApplicationRecord
   end
 
   def volumes_well_formed
-    bad = volumes.reject { |v| v.to_s.match?(VOLUME_FORMAT) }
-    return if bad.empty?
+    volumes.each do |v|
+      next unless (message = Install.volume_error(v))
 
-    errors.add(:base, "Volume #{bad.first.inspect} must look like storage:/path/in/container.")
+      return errors.add(:base, "Volume #{message}.")
+    end
   end
 end

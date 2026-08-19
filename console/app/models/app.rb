@@ -41,6 +41,7 @@ class App < ApplicationRecord
   validate :env_well_formed
   validate :secret_files_well_formed
   validate :release_well_formed
+  validate :accessories_well_formed
 
   # env / secret_files / release default to [] (DB default), guard against a stray nil.
   def env = self[:env] || []
@@ -55,6 +56,16 @@ class App < ApplicationRecord
   # are. An install copies it at create, so editing the library never silently changes
   # what an already-placed app runs on its next deploy.
   def release = self[:release] || []
+
+  # The containers this app needs on the same box and that nothing else may reach — a
+  # database, a cache. Subordinate by construction: no hostname, never routed, on a
+  # network only this app joins (decisions/accessories-belong-to-one-app.md).
+  #
+  # Shape matches the box's spec exactly, so the envelope is a copy rather than a
+  # translation: `{ "name", "image", "env" => {}, "secrets" => [], "volumes" => [] }`.
+  def accessories = self[:accessories] || []
+
+  def accessory_names = accessories.filter_map { |a| a["name"] }
 
   # The env var names this app declares (both plain and secret).
   def env_keys = env.filter_map { |e| e["key"] }
@@ -114,6 +125,50 @@ class App < ApplicationRecord
     if release.any? { |a| a.match?(/[\u0000-\u001f\u007f]/) }
       errors.add(:release, "contains a control character")
     end
+  end
+
+  # Mirrors the box's `validAccessories`, so a bad declaration fails where it is typed
+  # rather than at deploy. The rules that matter are the ones that would otherwise
+  # collide with something already on the box, or fail confusingly much later.
+  def accessories_well_formed
+    return errors.add(:accessories, "must be a list") unless accessories.is_a?(Array)
+
+    seen = []
+    accessories.each do |a|
+      unless a.is_a?(Hash) && a["name"].is_a?(String)
+        return errors.add(:accessories, "each accessory needs a name")
+      end
+      n = a["name"]
+      errors.add(:accessories, "#{n.inspect} may use letters, digits, dashes, and underscores") unless n.match?(NAME_FORMAT)
+      # `a` and `b` are the app's deploy colors on the box, so an accessory by either
+      # name would render a unit file that collides with a color's.
+      errors.add(:accessories, "#{n} is a deploy color — pick another name") if %w[a b].include?(n)
+      errors.add(:accessories, "#{n} can't share the app's own name") if n == name
+      errors.add(:accessories, "#{n} is listed twice") if seen.include?(n)
+      seen << n
+      accessory_image_well_formed(n, a["image"])
+      Array(a["volumes"]).each do |v|
+        if (message = Install.volume_error(v))
+          errors.add(:accessories, "#{n}: #{message}")
+        end
+      end
+      Array(a["secrets"]).each do |sec|
+        errors.add(:accessories, "#{n}: #{sec.inspect} is not a valid env name") unless sec.to_s.match?(ENV_NAME)
+      end
+    end
+  end
+
+  # The same pin a Version needs, for the same reason: a tag means something different
+  # tomorrow, and "which database was running" has to have an answer. Both halves — the
+  # marker's presence and the digest's shape — because one without the other admits
+  # `postgres:16`, which is exactly the hole the box's own test caught.
+  def accessory_image_well_formed(name, image)
+    image = image.to_s
+    return errors.add(:accessories, "#{name} has no image") if image.blank?
+    return errors.add(:accessories, "#{name}: image must be digest-pinned — ref@sha256:…") unless image.include?("@sha256:")
+
+    hex = image.split("@sha256:", 2).last.to_s
+    errors.add(:accessories, "#{name}: digest must be 64 hex characters") unless hex.match?(/\A[0-9a-f]{64}\z/)
   end
 
   def secret_files_well_formed
