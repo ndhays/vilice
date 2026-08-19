@@ -60,6 +60,11 @@ class Install < ApplicationRecord
   # the `config` blob alongside env (deploy-config-model.md: a volume is a *ref* to data).
   def volumes = Array(config["volumes"])
 
+  # The release command this install deploys with — copied from the App at create, so a
+  # later library edit never silently changes what an already-placed app runs on its next
+  # deploy. argv, so it reaches the box as a list and never as a shell string.
+  def release = Array(config["release"])
+
   # ── The intention, and the gap ─────────────────────────────────────────────
   # Replication is stateless-only (one-primitive-composed.md). A volume is data on *that
   # box's* disk, so N replicas would be N diverging datasets — a stateful app is
@@ -191,6 +196,7 @@ class Install < ApplicationRecord
             port: port.presence, health: health.presence }
     app[:env]     = config["env"] if config["env"].present?
     app[:volumes] = volumes if volumes.any?
+    app[:release] = release if release.any?
     { app: app.compact }
   end
 

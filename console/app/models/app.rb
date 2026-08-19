@@ -40,10 +40,21 @@ class App < ApplicationRecord
   # mirrors this — env vs Secret=type=env). Files are separate because they're mounted.
   validate :env_well_formed
   validate :secret_files_well_formed
+  validate :release_well_formed
 
-  # env / secret_files default to [] (DB default), but guard against a stray nil.
+  # env / secret_files / release default to [] (DB default), guard against a stray nil.
   def env = self[:env] || []
   def secret_files = self[:secret_files] || []
+
+  # The command Steward runs once from the new image before the new container starts —
+  # `bin/rails db:migrate` and its cousins. **argv, not a shell string**: the box execs it
+  # directly, so a multi-step release belongs in a script inside the image, where the
+  # image digest covers what it does (blueprint/steward/deploy.md, "The Release Step").
+  #
+  # It lives on the App because it is a property of the image the way port and health
+  # are. An install copies it at create, so editing the library never silently changes
+  # what an already-placed app runs on its next deploy.
+  def release = self[:release] || []
 
   # The env var names this app declares (both plain and secret).
   def env_keys = env.filter_map { |e| e["key"] }
@@ -83,6 +94,25 @@ class App < ApplicationRecord
       errors.add(:env, "#{key.inspect} is not a valid env name") unless key.match?(ENV_NAME)
       errors.add(:env, "#{key} is listed twice") if seen.include?(key)
       seen << key
+    end
+  end
+
+  # The box refuses a control character in the release command, because the value is
+  # rendered into a record entry and an error message. Refuse it here, where it is typed,
+  # rather than at the far end after someone has built an install on it — the same shape
+  # as the digest-pin rule on Version.
+  def release_well_formed
+    return errors.add(:release, "must be a list") unless release.is_a?(Array)
+    return if release.empty?
+
+    unless release.all? { |a| a.is_a?(String) }
+      return errors.add(:release, "must be a list of strings — the program, then its arguments")
+    end
+    if release.first.to_s.strip.empty?
+      errors.add(:release, "starts with a blank — the first entry is the program to run")
+    end
+    if release.any? { |a| a.match?(/[\u0000-\u001f\u007f]/) }
+      errors.add(:release, "contains a control character")
     end
   end
 

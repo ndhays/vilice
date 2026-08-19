@@ -112,4 +112,28 @@ class LibraryTest < ActiveSupport::TestCase
     thread&.join(2)
     server&.close
   end
+
+  # The manifest is the interchange format, so a field it drops is a field that vanishes
+  # on the way out and back. argv stays a list — flattening it to a string would export a
+  # shell command the box has no shell to run.
+  test "a release command survives an export/import round trip as argv" do
+    app = App.create!(name: "web", port: 8080, release: [ "bin/rails", "db:migrate" ])
+    app.versions.create!(tag: "v1", image: "img@sha256:#{'a' * 64}")
+
+    manifest = Library.export
+    Version.delete_all
+    App.delete_all
+    Library.import(manifest)
+
+    assert_equal [ "bin/rails", "db:migrate" ], App.find_by(name: "web").release
+  end
+
+  # Absent means "leave it alone", the same rule every other field follows here.
+  test "a manifest without a release command does not clear one" do
+    App.create!(name: "web", release: [ "bin/rails", "db:migrate" ])
+
+    Library.import({ "format" => 1, "apps" => [ { "name" => "web", "port" => 3000 } ] })
+
+    assert_equal [ "bin/rails", "db:migrate" ], App.find_by(name: "web").release
+  end
 end

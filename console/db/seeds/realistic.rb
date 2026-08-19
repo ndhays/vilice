@@ -97,6 +97,7 @@ end
 # App Library — the shared catalog, plus the self-deploy proof this scenario is for.
 library!
 library_app!("console", image: demo_pin("ghcr.io/console/console"), tag: "v0.1",
+             release: [ "bin/rails", "db:migrate" ],
              port: 3000, health: "/up",
              description: "Steward Console itself — the self-deploy proof.")
 

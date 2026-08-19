@@ -106,6 +106,17 @@ class AppsController < ApplicationController
   def app_params
     attrs = params.require(:app).permit(:name, :port, :health, :description).to_h
 
+    # The release command is typed as one line and stored as **argv**, because argv is
+    # what the box execs — it never sees a shell, so a multi-step release belongs in a
+    # script inside the image where the digest covers what it does. Splitting on
+    # whitespace is the whole translation: anything needing more is asking for a shell,
+    # and this is where that is declined rather than quietly granted.
+    #
+    # Keyed on the field being present, for the same reason the editors below are: the
+    # details form posts to this action too and carries no release field, and there
+    # "leave it alone" is right.
+    attrs["release"] = params[:app][:release_line].to_s.split if params[:app].key?(:release_line)
+
     # The env / secret-file editors post indexed rows. Build the stored lists by hand
     # (names only — no values), dropping blank rows and coercing the secret checkbox.
     #

@@ -100,8 +100,18 @@ open heartbeat question.
   it's shared with everyone, or the Project is on its allowlist. → decision 1
 
 ### `App` — an App Library entry
-- `name` (unique), `port`, `health`, `description`, `env` + `secret_files` (jsonb).
-  **Image lives on its versions, not here.**
+- `name` (unique), `port`, `health`, `description`, `env` + `secret_files` + `release`
+  (jsonb). **Image lives on its versions, not here.**
+- **`release`** is the command the box runs once from the new image before the new
+  container starts — migrations are the case it exists for
+  ([`blueprint/steward/deploy.md`](../steward/deploy.md), *The Release Step*). Stored as
+  **argv**, because argv is what the box execs: it never sees a shell, so the form takes
+  one line and splits it, and a multi-step release belongs in a script inside the image
+  where the digest covers what it does. It sits on the App because it is a property of
+  the image the way `port` and `health` are — and an **Install copies it at create**, so
+  editing the library later never silently changes what an already-placed app runs on its
+  next deploy. That is the same rule the image itself follows: copied from the Version,
+  never followed.
 - **Declared inputs — names only, no values** (values are supplied at install). `env` is a
   list of `{ key, secret }`: a `secret` entry is an env var delivered **off-record** (the
   box mirrors this — env vs `Secret=type=env`), so "secrets are env vars" with one flag.

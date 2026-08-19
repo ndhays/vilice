@@ -174,9 +174,18 @@ class InstallsController < ApplicationController
 
   # Volumes arrive as a textarea, one `name:/path` mount per line. They live in the
   # Install's `config` blob — the same desired-state the deploy envelope reads.
+  # The install's own copy of the declared spec. Volumes are typed here; the release
+  # command is **copied from the App at create** rather than read at deploy time, so
+  # editing the library later never silently changes what an already-placed app runs.
+  # Same reason the image is copied from the Version instead of followed.
   def build_config(p)
+    config  = {}
     volumes = p[:volumes].to_s.split("\n").map(&:strip).reject(&:blank?)
-    volumes.any? ? { "volumes" => volumes } : {}
+    config["volumes"] = volumes if volumes.any?
+
+    release = App.find_by(id: p[:app_id])&.release
+    config["release"] = release if release.present?
+    config
   end
 
   # Two decisions, two records. Declaring what should run is `added install` and reaches

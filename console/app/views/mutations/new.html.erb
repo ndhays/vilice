@@ -16,7 +16,17 @@
         <div><dt>hostname</dt><dd class="mono"><%= @mutation.hostname.presence || "—" %></dd></div>
         <div><dt>port</dt><dd class="mono"><%= @mutation.port || "—" %></dd></div>
         <div><dt>health</dt><dd class="mono"><%= @mutation.health.presence || "/" %></dd></div>
+        <%# The release command runs on the box, with this app's secrets, before anything
+            starts — so it is shown before the press that authorizes it, not discovered in
+            the record afterwards. That is the confirm step's actual job. %>
+        <% if (release = @mutation.install&.release).present? %>
+          <div><dt>release</dt><dd class="mono"><%= release.join(" ") %></dd></div>
+        <% end %>
       </dl>
+      <% if release.present? %>
+        <p class="note">Runs first, from the new image. If it fails, nothing is deployed
+          and <%= @mutation.install.name %> keeps serving what it serves now.</p>
+      <% end %>
     <% end %>
 
     <p class="note">Issues <code><%= @mutation.command %></code> over scoped SSH<%= " (spec on stdin)" if @mutation.stdin %>.</p>

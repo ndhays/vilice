@@ -422,4 +422,64 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_response :unprocessable_entity
   end
+
+  # ── The release command reaches the box ────────────────────────────────────
+  # Copied from the App at create rather than read at deploy time, so editing the
+  # library later never silently changes what an already-placed app runs.
+  test "an install copies the app's release command, and a later library edit does not follow" do
+    sign_in_as @user
+    @app.update!(release: [ "bin/rails", "db:migrate" ])
+
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    install = Install.last
+    assert_equal [ "bin/rails", "db:migrate" ], install.release
+
+    @app.update!(release: [ "bin/rails", "db:seed" ])
+    assert_equal [ "bin/rails", "db:migrate" ], install.reload.release
+  end
+
+  # It has to arrive as a list. A string would be a shell command, and the box has no
+  # shell to run it with.
+  test "the deploy envelope carries the release command as argv" do
+    sign_in_as @user
+    @app.update!(release: [ "bin/rails", "db:migrate" ])
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+
+    envelope = Install.last.deploy_envelope(image: "img@sha256:#{'a' * 64}")
+
+    assert_equal [ "bin/rails", "db:migrate" ], envelope[:app][:release]
+    assert_kind_of Array, envelope[:app][:release]
+  end
+
+  test "an app with no release command puts no release key in the envelope" do
+    sign_in_as @user
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+
+    envelope = Install.last.deploy_envelope(image: "img@sha256:#{'a' * 64}")
+    assert_not envelope[:app].key?(:release)
+  end
+
+  # The ceremony's job is showing you what you are about to authorize. A command that
+  # runs on the box with this app's secrets belongs there, before the press.
+  test "the deploy ceremony shows the release command before you confirm it" do
+    sign_in_as @user
+    @app.update!(release: [ "bin/rails", "db:migrate" ])
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    install = Install.last
+
+    get new_machine_mutation_path(@operator, act: "deploy", install_id: install.id,
+                                  image: install.image, hostname: install.hostname)
+
+    assert_select ".spec", /release/
+    assert_select ".spec dd", "bin/rails db:migrate"
+    assert_select ".ceremony .note", /nothing is deployed/i
+  end
 end

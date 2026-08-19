@@ -21,6 +21,18 @@
     <%= f.text_field :description, autocomplete: "off" %>
   </label>
 
+  <%# Typed as a line, stored as argv. The box never runs it through a shell, so the
+      note says what to do instead of pretending `&&` will work. %>
+  <label class="field">
+    <span>Release Command <%= hint "Run once from the new image before the new container starts — migrations are what this is for. If it fails, nothing is deployed and the running app is untouched." %></span>
+    <%= text_field_tag "app[release_line]", app.release.join(" "), class: "mono",
+          autocomplete: "off", spellcheck: false, placeholder: "bin/rails db:migrate" %>
+    <small class="muted">Optional. One command and its arguments — <strong>no shell</strong>,
+      so <span class="mono">&amp;&amp;</span> and pipes will not work. For more than one
+      step, put a script in the image (<span class="mono">bin/release</span>) and name it
+      here, where the image digest covers what it does.</small>
+  </label>
+
   <div class="form-actions">
     <%= f.submit class: "btn mutate" %>
     <%# Cancel returns where you came from: the app when editing, the library when new. %>

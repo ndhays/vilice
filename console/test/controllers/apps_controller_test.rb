@@ -267,4 +267,44 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_match(/digest-pinned/, response.body)
   end
+
+  # ── The release command ────────────────────────────────────────────────────
+  # Typed as a line, stored as argv, because argv is what the box execs — it never sees
+  # a shell (blueprint/steward/deploy.md, "The Release Step").
+  test "a release command is typed as a line and stored as argv" do
+    sign_in_as @user
+    app = App.create!(name: "web")
+
+    patch app_path(app), params: { app: { name: "web", release_line: "bin/rails db:migrate" } }
+
+    assert_equal [ "bin/rails", "db:migrate" ], app.reload.release
+  end
+
+  test "clearing the line clears the command" do
+    sign_in_as @user
+    app = App.create!(name: "web", release: [ "bin/rails", "db:migrate" ])
+
+    patch app_path(app), params: { app: { name: "web", release_line: "" } }
+
+    assert_empty app.reload.release
+  end
+
+  # The details form posts to the same action and carries no release field, and there
+  # "leave it alone" is right — the same rule the env editor follows.
+  test "a form that does not carry the field leaves the command alone" do
+    sign_in_as @user
+    app = App.create!(name: "web", release: [ "bin/rails", "db:migrate" ])
+
+    patch app_path(app), params: { app: { name: "web", port: 3000 } }
+
+    assert_equal [ "bin/rails", "db:migrate" ], app.reload.release
+  end
+
+  test "the form says a shell is not available, rather than letting one be typed" do
+    sign_in_as @user
+    get edit_app_path(App.create!(name: "web"))
+
+    assert_select "input[name=?]", "app[release_line]"
+    assert_select ".field small", /no shell/i
+  end
 end
