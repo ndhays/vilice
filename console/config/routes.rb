@@ -26,6 +26,11 @@ Rails.application.routes.draw do
   # a different number and the gap moves; nothing is deployed or removed by saying so
   # (decisions/drift-is-surfaced-never-closed.md — changing an intention must not touch a box).
   resources :installs, only: %i[ index new create show edit update ] do
+    # The values behind the names the app declares. Its own action rather than part of
+    # `update`, which is deliberately narrow — that one restates the *intention* and
+    # touches nothing that gets deployed. This is configuration, and it is the one place
+    # a secret value enters the console.
+    member { patch :configure }
     # Place this install on one more box — the act that closes a placement gap. Never
     # automatic: the console shows the gap and a person presses the button
     # (decisions/drift-is-surfaced-never-closed.md). Scaling *down* needs no route of

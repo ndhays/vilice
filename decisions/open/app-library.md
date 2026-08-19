@@ -30,12 +30,14 @@ is the real ceiling today — a key-holder can `steward deploy <any-image>` dire
 
 ## Open
 
-- **Env value-half (#14-B).** The declaration half is built (`App.env` as `{ key, secret }`,
-  `App.secret_files`). Still open: the install/redeploy form collects the **values** (env
-  recorded; secret + file values off-record on stdin) and `Install#deploy_envelope` carries
-  `secrets`/`secret_files`/`secret_values`. The env schema sits on the **App** (stable across
-  versions); per-version overrides and the dropped `default`/`required?` fields are a later
-  option. See [`console-open-questions.md`](console-open-questions.md).
+- **Env value-half (#14-B) — built 2026-08-19.** `Install#secret_values` is encrypted at
+  rest and resent on every deploy, `deploy_envelope` carries
+  `secrets`/`secret_files`/`secret_values`, and the values are supplied on the install's
+  own page (`installs#configure`) rather than in the create form — a value is not part of
+  an intention, and the declared names depend on the app chosen a step earlier. The env
+  schema sits on the **App**, as planned. *Still open here:* per-version overrides, and
+  the dropped `default` / `required?` fields. See
+  [`console-open-questions.md`](console-open-questions.md).
 - **Image granularity** — repo-level (any digest from `ghcr.io/acme/web`) vs. digest-level.
   Lean repo-level + digest-pinned deploys for v1.
 - **Global vs. per-project** library — lean global v1; per-project later (multi-tenant).

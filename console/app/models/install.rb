@@ -88,6 +88,21 @@ class Install < ApplicationRecord
   # deploy. argv, so it reaches the box as a list and never as a shell string.
   def release = Array(config["release"])
 
+  # ── Secret values ──────────────────────────────────────────────────────────
+  # The values behind the names the App declares. **Encrypted at rest**, the same
+  # protection a Machine's private key gets, and **resent on every deploy** so a deploy
+  # is self-contained — no set-once ordering, no dangling secret waiting for an app
+  # (decisions/declarative-deploy.md).
+  #
+  # They ride the envelope on **stdin**, never argv, so they are never recorded: the
+  # chain commits to the spec digest, which covers secret *names* and never their values.
+  # Nothing here is ever rendered back to a page — a value goes in, and only ever comes
+  # out on its way to a box.
+  serialize :secret_values, coder: JSON
+  encrypts :secret_values
+
+  def secret_values = self[:secret_values] || {}
+
   # The containers this install brings with it — a database, a cache — copied from the
   # App at create like the release command, and for the same reason: a later library
   # edit must not silently change what an already-placed app runs.
@@ -234,8 +249,47 @@ class Install < ApplicationRecord
     # Copied through as-is: the console's stored shape is the box's spec shape, so this
     # is a hand-off rather than a translation, and there is no second definition to drift.
     app[:accessories] = accessories if accessories.any?
-    { app: app.compact }
+    app[:secrets]      = secret_env_names if secret_env_names.any?
+    app[:secret_files] = secret_file_paths if secret_file_paths.any?
+
+    # Values in the *other half* of the envelope — bound to the spec, never part of it,
+    # and never recorded. Only names this spec actually declares are sent: a value left
+    # over from a name the library has since dropped is not something to hand a box.
+    envelope = { app: app.compact }
+    envelope[:secret_values] = secret_values.slice(*declared_secret_names) if declared_secret_names.any?
+    envelope
   end
+
+  # ── What the box will ask for ───────────────────────────────────────────────
+  # Declared on the App (and on its accessories), never here: the library carries the
+  # shape, the install carries the values. One reading of that shape, used by the form,
+  # by the envelope, and by the check that runs before the ceremony.
+
+  def secret_env_names = app ? app.secret_keys : []
+
+  # Secret files, as the box wants them: `{ name => container path }`.
+  def secret_file_paths
+    return {} unless app
+
+    app.secret_files.to_h { |f| [ f["name"], f["path"] ] }
+  end
+
+  # Plain env var names — recorded in the clear, so their values are part of the spec
+  # rather than of the values half.
+  def plain_env_names = app ? app.env_recorded : []
+
+  # Every name that needs a value, an accessory's included: a database password is the
+  # install's to supply even though the database is the thing that reads it.
+  def declared_secret_names
+    return [] unless app
+
+    (secret_env_names + secret_file_paths.keys +
+      accessories.flat_map { |a| Array(a["secrets"]) }).uniq
+  end
+
+  # Declared, and we hold nothing for it. The box refuses a deploy carrying one of these,
+  # so the console says so first rather than letting the ceremony fail at the far end.
+  def missing_secrets = declared_secret_names.reject { |n| secret_values[n].to_s.present? }
 
   private
 

@@ -135,7 +135,14 @@ fleet-wide placement and nothing asks you to invent a client first. The flow lea
 4. **Hostname** — the always-custom required field.
 5. **Confirm** — name (the app name), Port/Health labelled **"App Default"** (app-owned,
    rarely touched; override under Advanced), optional env.
-6. **Deploy** — the existing witnessed ceremony, and only when a box was named.
+6. **Configuration** — the values behind the names the app declares, supplied on the
+   install's own page rather than in this form. Two reasons: the form states an
+   *intention* and a value is not part of one, and the declared names depend on the app
+   chosen a step earlier. Split by consequence — plain env is written to the record,
+   secrets ride stdin and never are — and a stored secret is never rendered back.
+7. **Deploy** — the existing witnessed ceremony, and only when a box was named. A deploy
+   whose app declares a secret with no value is **refused before anything is recorded**:
+   the box refuses it every time, so this is a certainty rather than a guess.
 
 **Two decisions, two records.** One transaction writes the `Install` and an `added install`
 act, which names no machine and reaches nothing; if a box was chosen it *also* writes the

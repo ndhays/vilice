@@ -113,7 +113,44 @@ class InstallsController < ApplicationController
     end
   end
 
+  # Supply the values behind the names the app declares. Separate from `update` on
+  # purpose: that one restates the intention and reaches nothing deployable, while this
+  # is the app's configuration and the one door a secret value comes through.
+  #
+  # **Nothing here is recorded.** A plain env value is part of the spec and will be
+  # recorded when it is deployed; a secret rides stdin and never is. Saving them is not
+  # itself an act on a box — nothing is deployed until the witnessed ceremony runs — so
+  # it writes no chain entry, the same reasoning as `a-sample-is-not-an-act.md`: this
+  # reports that something was configured, not that anything happened.
+  def configure
+    @install = Install.find(params[:id])
+
+    # Blank means "leave it alone", never "clear it". A password field renders empty by
+    # design — the stored value is never sent back to the page — so treating an empty
+    # box as a deletion would wipe every secret you did not retype.
+    supplied = params.fetch(:install, {}).fetch(:secret_values, {}).to_unsafe_h
+                     .select { |_, v| v.to_s.present? }
+    @install.secret_values = @install.secret_values.merge(supplied)
+
+    env = params.fetch(:install, {}).fetch(:env, {}).to_unsafe_h
+    @install.config = @install.config.merge("env" => env.compact_blank) if env.any?
+
+    if @install.save
+      redirect_to @install, notice: configure_notice(supplied)
+    else
+      render :show, status: :unprocessable_entity
+    end
+  end
+
   private
+
+  def configure_notice(supplied)
+    left = @install.missing_secrets
+    saved = "Saved#{" #{supplied.size} #{'value'.pluralize(supplied.size)}" if supplied.any?}."
+    return "#{saved} Nothing was deployed — that is still an act." if left.empty?
+
+    "#{saved} Still needed: #{left.join(', ')}."
+  end
 
   # Optional context, never a form field: the project is in the URL or it isn't
   # (blueprint/console/journeys.md). Nothing here asks you to invent one.

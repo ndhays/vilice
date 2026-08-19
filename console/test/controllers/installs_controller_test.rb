@@ -546,4 +546,114 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".spec dd", /db · postgres@sha256/
     assert_select ".ceremony .note", /network only #{install.name} joins/
   end
+
+  # ── Secret values ──────────────────────────────────────────────────────────
+  # The console holds them encrypted and resends them every deploy, so a deploy is
+  # self-contained (decisions/declarative-deploy.md). They ride stdin, never argv, and
+  # are never recorded.
+  def configured_install
+    @app.update!(env: [ { "key" => "RAILS_ENV", "secret" => false },
+                        { "key" => "SECRET_KEY_BASE", "secret" => true } ],
+                 secret_files: [ { "name" => "creds", "path" => "/etc/app/creds.json" } ],
+                 accessories: [ { "name" => "db", "image" => "p@sha256:#{'b' * 64}",
+                                  "secrets" => [ "POSTGRES_PASSWORD" ] } ])
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    Install.last
+  end
+
+  test "every declared name is asked for, the accessory's included" do
+    sign_in_as @user
+    install = configured_install
+
+    assert_equal %w[SECRET_KEY_BASE creds POSTGRES_PASSWORD].sort,
+                 install.declared_secret_names.sort
+    assert_equal %w[SECRET_KEY_BASE creds POSTGRES_PASSWORD].sort,
+                 install.missing_secrets.sort
+  end
+
+  test "configuring stores values encrypted and never records them" do
+    sign_in_as @user
+    install = configured_install
+
+    assert_no_difference -> { Event.count } do
+      patch configure_install_path(install), params: { install: {
+        env: { "RAILS_ENV" => "production" },
+        secret_values: { "SECRET_KEY_BASE" => "s3cret", "creds" => "{}",
+                         "POSTGRES_PASSWORD" => "pgpass" }
+      } }
+    end
+    install.reload
+
+    assert_empty install.missing_secrets
+    assert_equal "production", install.config.dig("env", "RAILS_ENV")
+    # At rest it is ciphertext — the same protection a machine's private key gets.
+    raw = Install.connection.select_value("select secret_values from installs where id=#{install.id}")
+    assert_no_match(/s3cret/, raw)
+  end
+
+  test "the envelope carries the values, bound to the names the spec declares" do
+    sign_in_as @user
+    install = configured_install
+    install.update!(secret_values: { "SECRET_KEY_BASE" => "s", "creds" => "{}",
+                                     "POSTGRES_PASSWORD" => "p", "GONE" => "stale" })
+
+    envelope = install.deploy_envelope(image: "img@sha256:#{'a' * 64}")
+
+    assert_equal [ "SECRET_KEY_BASE" ], envelope[:app][:secrets]
+    assert_equal({ "creds" => "/etc/app/creds.json" }, envelope[:app][:secret_files])
+    assert_equal %w[SECRET_KEY_BASE creds POSTGRES_PASSWORD].sort,
+                 envelope[:secret_values].keys.sort
+    # A value left over from a name the library has dropped is not handed to a box.
+    assert_not envelope[:secret_values].key?("GONE")
+  end
+
+  # A password field renders empty by design, so an empty box means "leave it alone".
+  # Treating it as a deletion would wipe every secret you did not retype.
+  test "a blank field leaves the stored value alone" do
+    sign_in_as @user
+    install = configured_install
+    install.update!(secret_values: { "SECRET_KEY_BASE" => "keep", "creds" => "{}",
+                                     "POSTGRES_PASSWORD" => "p" })
+
+    patch configure_install_path(install), params: { install: {
+      secret_values: { "SECRET_KEY_BASE" => "", "creds" => "", "POSTGRES_PASSWORD" => "rotated" }
+    } }
+
+    assert_equal "keep", install.reload.secret_values["SECRET_KEY_BASE"]
+    assert_equal "rotated", install.secret_values["POSTGRES_PASSWORD"]
+  end
+
+  # A stored secret is never sent back to a page. The panel says whether one is held.
+  test "the install page never renders a stored secret" do
+    sign_in_as @user
+    install = configured_install
+    install.update!(secret_values: { "SECRET_KEY_BASE" => "topsecretvalue" })
+
+    get install_path(install)
+
+    assert_response :success
+    assert_no_match(/topsecretvalue/, response.body)
+    # The field says a value is held and offers to replace it — that is the whole of
+    # what a read of this page ever learns about a stored secret.
+    assert_select "input[type=password][name=?][placeholder=?]",
+                  "install[secret_values][SECRET_KEY_BASE]", "A value is held — type to replace it"
+    # And the one with nothing behind it says so instead.
+    assert_select ".panel.config", /No value yet/
+  end
+
+  # The box refuses a declared name with no value, every time — so this is a certainty,
+  # not a stale reading, and the console refuses before writing an Event at all.
+  test "a deploy missing a secret is refused before anything is recorded" do
+    sign_in_as @user
+    install = configured_install
+
+    assert_no_difference -> { Event.count } do
+      post machine_mutation_path(@operator, act: "deploy", install_id: install.id,
+                                 image: install.image, hostname: install.hostname)
+    end
+    assert_match(/SECRET_KEY_BASE/, flash[:alert])
+    assert_match(/Configuration/, flash[:alert])
+  end
 end

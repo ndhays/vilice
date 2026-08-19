@@ -23,6 +23,17 @@ class MutationsController < ApplicationController
       return redirect_to @return_path,
         alert: "#{@machine.name} holds only an observe key — mutation needs operate."
     end
+    # A declared secret with no value is refused by the box, every time — so this is a
+    # certainty rather than a guess, and refusing here costs nothing. Unlike the
+    # authorize gap (a *reading* that can be stale, so it only warns), we either hold a
+    # value or we do not. Refused before the Event is written, the same shape as the
+    # observe-scope refusal above: nothing was attempted, so nothing is recorded.
+    if @mutation.act.verb == "deploy" && (missing = @mutation.install&.missing_secrets).present?
+      return redirect_to @return_path,
+        alert: "#{@mutation.install.name} needs #{'a value'.pluralize(missing.size)} for " \
+               "#{missing.join(', ')} — the box refuses a deploy without one. " \
+               "Set them under Configuration."
+    end
     # A compose act reaching create without its input is a malformed request.
     return redirect_to(new_machine_mutation_path(@machine, act: @mutation.act.verb,
       install_id: @mutation.install&.id, from: @from)) unless @mutation.composed?

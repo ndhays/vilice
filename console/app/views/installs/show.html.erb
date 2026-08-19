@@ -149,6 +149,34 @@
     of the exact record line, then Confirm writes & runs it. %>
 <%= turbo_frame_tag "ceremony" %>
 
+<%# ── Configuration ─────────────────────────────────────────────────────────
+    The values behind the names the app declares. Present only when it declares
+    something — a section that could only ever say "None" is absent instead.
+
+    A read of this page never shows a stored secret. The panel says whether a value is
+    held and nothing more; the value goes out on stdin to a box and comes back nowhere. %>
+<% if @install.plain_env_names.any? || @install.declared_secret_names.any? %>
+  <div class="panel config">
+    <div class="panel-head">
+      <div class="kicker">Configuration · values behind the declared names</div>
+      <% if (missing = @install.missing_secrets).any? %>
+        <span class="panel-action note muted"><%= icon "triangle-alert", size: 13 %>
+          <%= pluralize(missing.size, "value") %> still needed</span>
+      <% end %>
+    </div>
+    <%= form_with url: configure_install_path(@install), method: :patch, scope: :install,
+          class: "stack-form" do |f| %>
+      <%= render "installs/env_fields", install: @install, f: f %>
+      <div class="form-actions">
+        <%= button_tag class: "btn" do %>
+          <%= safe_join([ icon("save", size: 14), "Save Configuration" ]) %>
+        <% end %>
+        <span class="note muted">Nothing is deployed by saving — that is still an act.</span>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
 <%# Logs land in their own frame, kept apart from the ceremony's: one is the amber
     "this will be recorded" zone and the other is a plain read, and a reader should
     never have to work out which of the two they are looking at. Empty until asked —

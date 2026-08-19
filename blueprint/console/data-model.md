@@ -171,6 +171,26 @@ open heartbeat question.
   digest — not a field to put a password in.
 
 ### `Install` — a deployed app
+- `secret_values` — **encrypted at rest** (Active Record Encryption, the same protection
+  `Machine#ssh_private_key` gets) and **resent on every deploy**, so a deploy is
+  self-contained: no set-once ordering and no dangling secret waiting for an app
+  ([`declarative-deploy.md`](../../decisions/declarative-deploy.md)). Per *Install*, not
+  per App — staging and production are two placements of one app and do not share a
+  database password. The App declares the names; the Install holds what they are worth.
+  - They ride the envelope on **stdin**, never argv, so they are never recorded: the
+    chain commits to the spec digest, which covers secret *names* and never values.
+  - **Never rendered back.** A value goes in and only ever comes out on its way to a box;
+    the form says whether one is held and typing replaces it. A blank field therefore
+    means *leave it alone*, never *clear it* — a password input renders empty by design,
+    so treating blank as a deletion would wipe every secret not retyped.
+  - `Install#declared_secret_names` reads the shape off the App **and its accessories** —
+    a database password is the install's to supply even though the database reads it —
+    and `missing_secrets` is what the console checks before the ceremony. That check is a
+    **refusal, not a warning**, and the difference from the authorize gap is the point:
+    reachability is a reading that can be stale, whereas we either hold a value or we do
+    not. Refused before the `Event` is written, because nothing was attempted.
+  - Only names the current spec declares are sent. A value left over from a name the
+    library has since dropped is not something to hand a box.
 - `project_id` — **nullable.** An install is a *placement*: this app, on these boxes. A
   Project says whose work it is, which is a separate and outer question
   ([`../../decisions/console-layers.md`](../../decisions/console-layers.md)), so an

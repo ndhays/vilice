@@ -1,0 +1,59 @@
+<%# The values behind the names the app declares. Shared by the install form and the
+    install's own Configuration panel, so there is one place that states the rules.
+
+    **Split by consequence, not by the word "secret."** A plain value is written to the
+    spec and into an append-only record; a secret value rides stdin and is never
+    recorded. That is the difference that matters, and it is the same reason the App page
+    reads its declaration back in two columns — the failure is not knowing what the flag
+    does. Here the split is structural: the two groups cannot be confused for each other.
+
+    A secret's stored value is **never rendered back**. It goes in and only ever comes
+    out on its way to a box; the field says whether one is held, and typing replaces it.
+    Locals: install, f. %>
+<% plain    = install.plain_env_names %>
+<% secrets  = install.declared_secret_names %>
+<% files    = install.secret_file_paths %>
+<% held     = install.secret_values %>
+
+<% if plain.any? %>
+  <fieldset class="step">
+    <legend>Environment <%= hint "Plain configuration. These values are part of the spec and are written to the record in the clear." %></legend>
+    <p class="form-note muted"><%= icon "file-text", size: 13 %>
+      Written to the record. Don't put a password here — the entry can't be taken back.</p>
+    <% plain.each do |key| %>
+      <label class="field"><span class="mono"><%= key %></span>
+        <%= text_field_tag "install[env][#{key}]", install.config.dig("env", key),
+              class: "mono", autocomplete: "off", spellcheck: false %>
+      </label>
+    <% end %>
+  </fieldset>
+<% end %>
+
+<% if secrets.any? %>
+  <fieldset class="step">
+    <legend>Secrets <%= hint "Supplied to the box on stdin, never on the command line, and never written to the record. Held encrypted here and resent on every deploy." %></legend>
+    <p class="form-note muted"><%= icon "lock", size: 13 %>
+      Never recorded. Held encrypted and resent on every deploy, so a deploy never waits
+      on a secret set separately.</p>
+    <% secrets.each do |name| %>
+      <label class="field">
+        <span class="mono"><%= name %><%
+          %><% if files.key?(name) %> <span class="muted">mounted at <%= files[name] %></span><% end %></span>
+        <% if files.key?(name) %>
+          <%# A file's contents, not a value on a line. %>
+          <%= text_area_tag "install[secret_values][#{name}]", nil, rows: 3, class: "mono",
+                autocomplete: "off", spellcheck: false,
+                placeholder: held[name].present? ? "A value is held — type to replace it" : "Contents of the file" %>
+        <% else %>
+          <%= password_field_tag "install[secret_values][#{name}]", nil, class: "mono",
+                autocomplete: "new-password",
+                placeholder: held[name].present? ? "A value is held — type to replace it" : "Required" %>
+        <% end %>
+        <% unless held[name].present? %>
+          <small class="muted">No value yet. The box refuses a deploy that declares this
+            name without one.</small>
+        <% end %>
+      </label>
+    <% end %>
+  </fieldset>
+<% end %>
