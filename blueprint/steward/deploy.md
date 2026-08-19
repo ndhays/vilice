@@ -5,7 +5,7 @@ machine whose failures are loud and recoverable. The deep parts are borrowed —
 routes traffic and handles TLS, Podman runs the container. Everything here runs under
 `operate` scope ([auth.md](auth.md)) and writes its record first ([record.md](record.md)).
 
-**Status:** Canonical. Last touched 2026-08-02.
+**Status:** Canonical. Last touched 2026-08-19.
 
 ---
 

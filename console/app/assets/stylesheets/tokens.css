@@ -71,17 +71,32 @@
    * graphic only: a bar, a rule, the switch, a focus halo. Never text. */
   --brand-yellow: #f2c200;
 
-  /* Vertical rhythm. Three gaps, and what matters is the order they come in:
+  /* Space — the 4px scale from blueprint/design/tokens.md. Use it; do not invent
+   * values between its steps. The console had no scale at all and picked its spacing
+   * per rule, which is how the install form ended up with seven gaps that meant
+   * nothing to each other. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Vertical rhythm — three *names* on the scale above, not three new values. What
+   * matters is the order they come in:
    *   --tight  a label to the thing it labels, a note to its neighbour
    *   --gap    two things inside one step
    *   --step   one step to the next
-   * Not themed, and deliberately only three. A form's clarity is entirely in that
-   * ordering: when a within-step gap drifts up to the size of a between-step gap,
-   * the steps stop reading as steps and the page becomes one long column of fields.
-   * At :root because a note or a card outside a form owes the same rhythm. */
-  --tight: 0.45rem;
-  --gap: 0.85rem;
-  --step: 1.75rem;
+   * Deliberately only three, and deliberately named for their job rather than their
+   * size: a form's clarity is entirely in that ordering, and when a within-step gap
+   * drifts up to the size of a between-step gap the steps stop reading as steps and
+   * the page becomes one long column of fields. At :root because a note or a card
+   * outside a form owes the same rhythm. */
+  --tight: var(--space-2);
+  --gap: var(--space-3);
+  --step: var(--space-6);
 }
 
 /*

@@ -10,7 +10,7 @@ and the self-hosted Balancer. **Settled but pending:** MachineSpec + ProviderAda
 (provisioning), the managed-LB realization, rollout orchestration, and the private-network
 jump. The *why* and roads not taken are
 in [`one-primitive-composed.md`](../../decisions/one-primitive-composed.md) and
-[`provider-boundary.md`](../../decisions/provider-boundary.md). Last touched 2026-06-24.
+[`provider-boundary.md`](../../decisions/provider-boundary.md). Last touched 2026-08-19.
 
 ---
 
@@ -50,7 +50,9 @@ MachineSpec ─┐  ├──► Install ──► InstallTarget(s) ──► Ma
 
 ### AppConfig — what an app *is* when running
 The desired runtime state of **one app instance**: hostnames, env (non-secret), secrets
-(names here, values off-record), volume *declaration*, port, health. Separated from the
+(names here, values off-record), volume *declaration*, port, health, and the **release
+step** — an argv the box runs once from the new image before the new container starts
+(migrations), covered by the same digest as everything else here. Separated from the
 **code** (the image digest) so "update the code" and "change the config" stay distinct,
 separately-witnessed acts. It is Twelve-Factor's *Config*. Steward converges one box to it
 (`appState` on the box; `Install#deploy_envelope` builds it). See

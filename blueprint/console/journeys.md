@@ -6,11 +6,14 @@
 > [`decisions/machine-onboarding.md`](../../decisions/machine-onboarding.md) and
 > [`decisions/open/install-journeys.md`](../../decisions/open/install-journeys.md).
 
-**Status:** Canonical (front-of-funnel built). The progressive-reveal install page, the
-async "Create Machine" path, and replicas are still being built — see
-[`decisions/open/install-journeys.md`](../../decisions/open/install-journeys.md) and
-[`decisions/open/create-machine.md`](../../decisions/open/create-machine.md). Last
-touched 2026-08-03.
+**Status:** Canonical. The install page and **replicas** are built — an install is an
+intention that needs no box, count and exposure are real, and a placement gap is closed one
+recorded act at a time. What is still open is the async **Create Machine** path, and
+whether it should ever be a branch of this form at all
+([`decisions/open/create-machine.md`](../../decisions/open/create-machine.md)); the
+remaining install-side threads are in
+[`decisions/open/install-journeys.md`](../../decisions/open/install-journeys.md). Last
+touched 2026-08-19.
 
 ---
 
@@ -83,10 +86,10 @@ is optional context and arrives in the URL** (`installs/new?project_id=`, the sa
 `machines/new` already uses), never as a dropdown: with one, the machine list narrows to
 that project's boxes and the trail runs through the client; with none, this is plain
 fleet-wide placement and nothing asks you to invent a client first. The flow leads with
-**placement** (the Install is intent; the box is chosen or created here —
-[`one-primitive-composed.md`](../../decisions/one-primitive-composed.md)):
+**scale** — the Install is intent, and how much of it comes before where it lands
+([`one-primitive-composed.md`](../../decisions/one-primitive-composed.md)).
 
-1. **Machine Configuration** — the first step (where it runs).
+1. **Scale** — one box or several, and how it is reached.
    - **Single machine** vs **Fleet** — not a mode, a **count** (1 vs N). There is no Fleet
      object, and scaling later is just the number. The count is **real**: it is the
      intention, and stating 3 opens a gap the moment fewer than 3 boxes are serving. You

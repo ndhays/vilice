@@ -283,7 +283,7 @@ details.menu > summary::-webkit-details-marker { display: none; }
 /* A line about the section as a whole rather than any row in it — a fix that lives
    somewhere other than this page. Sits --tight under the heading, then a full --gap
    before the rows, so it reads as belonging to the heading and not to the first row. */
-.section-note { margin: calc(0.75rem * -1 + var(--tight)) 0 var(--gap); font-size: 0.85rem; }
+.section-note { margin: calc(var(--tight) - var(--space-3)) 0 var(--gap); font-size: 0.85rem; }
 
 /* ── Theme toggle ───────────────────────────────────────────────────────── */
 .theme-toggle {

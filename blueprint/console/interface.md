@@ -6,7 +6,7 @@
 
 **Status:** Canonical (the shape is settled and largely built — Waves 1–3). The build
 roadmap and the screens still ahead live in
-[`decisions/open/ui-roadmap.md`](../../decisions/open/ui-roadmap.md). Last touched 2026-08-12.
+[`decisions/open/ui-roadmap.md`](../../decisions/open/ui-roadmap.md). Last touched 2026-08-19.
 
 ---
 

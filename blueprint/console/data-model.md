@@ -4,7 +4,7 @@
 > custody, read strategy). **Steward is always the source of truth for observe data** —
 > these tables are the control plane's own state plus a re-derivable lens over the record.
 
-**Status:** Built (first cut) + the `Label` table. Last touched 2026-08-03.
+**Status:** Built (first cut) + the `Label` table. Last touched 2026-08-19.
 
 ## What's wired
 

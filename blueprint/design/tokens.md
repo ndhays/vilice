@@ -4,7 +4,7 @@
 > (`site/assets/tokens.css`, `console/app/assets/stylesheets/tokens.css`). A value
 > that differs between them is a bug in one of them.
 
-**Status:** Canonical. Last touched 2026-08-11.
+**Status:** Canonical. Last touched 2026-08-19.
 
 > **The console uses different *names* for the neutrals, with the same values.** The
 > table below is the site's vocabulary; the console's `tokens.css` says `--bg` where
@@ -142,6 +142,21 @@ A 4px base. Use the scale; do not invent values between its steps.
 | `--space-8` | `2rem` |
 | `--space-12` | `3rem` |
 | `--space-16` | `4rem` |
+
+**Three of those steps also carry a name**, because a form's clarity is in the *ordering*
+of its gaps rather than their sizes, and a rule reading `var(--space-3)` says nothing
+about which of the three jobs it is doing:
+
+| Token | Is | Job |
+|---|---|---|
+| `--tight` | `--space-2` | A label to the thing it labels; a note to its neighbour. |
+| `--gap` | `--space-3` | Two things inside one step. |
+| `--step` | `--space-6` | One step to the next. |
+
+They are **names on the scale, never new values** — the rule above still holds. The order
+is the whole point: when a within-step gap drifts up to the size of a between-step gap,
+steps stop reading as steps and the page becomes one long column of fields. See the form
+pattern in [`../console/interface.md`](../console/interface.md).
 
 ---
 

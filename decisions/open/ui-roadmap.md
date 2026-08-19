@@ -104,6 +104,24 @@ attach-existing-machine. *Still ahead here:* **detach** a machine from a project
 row-context UI), and the **migrate/re-target** verb (move an install to another box) — see
 [`console-open-questions.md`](console-open-questions.md).
 
+Graduated 2026-08-19, all canonical in the blueprints now:
+
+- **The form pattern** — `machines/new` is the reference shape and `installs/new` follows
+  it ([`interface.md`](../../blueprint/console/interface.md)). Pinned in tests, because a
+  vocabulary nothing checks drifts apart again.
+- **An install needs no box.** It is an intention; the gap it opens is a first-class
+  state, and creating and placing are two acts
+  ([`journeys.md`](../../blueprint/console/journeys.md)).
+- **Whether a gap is closable** — `candidate_machines` / `ready_machines`, surfaced on the
+  install and called out once on Status
+  ([`data-model.md`](../../blueprint/console/data-model.md)).
+- **Logs** — `steward logs` read on request, uncached, offered even where the key cannot
+  act.
+- **Look up digest** ([`a-tag-is-not-a-release.md`](../a-tag-is-not-a-release.md)) and the
+  **release command** ([`release-command.md`](release-command.md), still open in parts).
+- **One glyph, one meaning** across nouns, and the vertical rhythm named on the canonical
+  space scale ([`tokens.md`](../../blueprint/design/tokens.md)).
+
 ---
 
 ## Still-open sub-questions
