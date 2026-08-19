@@ -7,6 +7,12 @@
 
 ---
 
+> **One of them is audited.** Kamal is the nearest neighbour and now overlaps enough to
+> compare properly — see [`kamal-audit.md`](kamal-audit.md). It does not answer the
+> question below (Kamal is not the same shape: it deploys *your* app and keeps a
+> convenience log, where this keeps a record). It does find two things worth taking and
+> one place Steward may have chosen wrong.
+
 ## The question
 
 Three things need **disconfirming** evidence, and the honest answer to any of them may be
