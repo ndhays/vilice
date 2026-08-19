@@ -62,6 +62,30 @@ it's healthy:
    unit's `TimeoutStopSec`), then its unit is removed. Save the outgoing image as
    **last-good**.
 
+**The unit carries the container's own ceiling.** Rootless already maps container-root
+to the `steward` user rather than the host's, so an escape lands in an unprivileged
+account; two directives narrow what is left of it, and both are chosen to cost a
+well-behaved image nothing — a hardening default that breaks ordinary apps is one that
+gets turned off.
+
+- `NoNewPrivileges=true` blocks the one way a process inside gains a privilege it did
+  not start with: a setuid binary or a file capability, at `execve`. Dropping *to* an
+  unprivileged user — the `gosu`/`su-exec` entrypoint pattern — is a syscall and not an
+  execve gain, so that still works. What stops working is `sudo`.
+- `DropCapability=CAP_NET_BIND_SERVICE CAP_SETFCAP CAP_SETPCAP CAP_SYS_CHROOT`.
+  **`NET_BIND_SERVICE` is dropped because `deploy` already refuses a port below 1024** —
+  the capability is *provably* unused here, so this is a ceiling matching a rule we
+  enforce rather than a guess about what apps need. The two are one decision, and
+  `TestPortFloorIsWhatJustifiesDroppingNetBindService` fails first if the port floor
+  ever moves. `SETFCAP`/`SETPCAP` hand out capabilities and `SYS_CHROOT` is a
+  sandbox-escape primitive; none is reachable from serving HTTP. What an ordinary
+  entrypoint needs is untouched — `CHOWN` for a data directory, `SETUID`/`SETGID` to
+  drop privileges, `KILL` to signal a child.
+
+Both are constants in the renderer — no declared value reaches either — so they join the
+directive allowlist `FuzzQuadletUnitShape` asserts, which is what proves a smuggled
+`AddCapability` cannot arrive the way `PodmanArgs=--privileged` would.
+
 If the health check fails, the new color is torn down and the old one stays up and
 routed — a failed deploy changes nothing. The full desired state (image, hostnames,
 port, health, env, secret *names*, volumes, the active color + per-color ports, and the

@@ -219,4 +219,8 @@ var quadletDirectives = map[string]bool{
 	"Description": true, "Image": true, "ContainerName": true, "PublishPort": true,
 	"Environment": true, "Secret": true, "Volume": true, "TimeoutStopSec": true,
 	"Restart": true, "OOMScoreAdjust": true, "WantedBy": true,
+	// The container's own ceiling. Both are constants in the renderer — no declared
+	// value reaches them — so they can only appear with the text below, and the
+	// allowlist is what proves a smuggled `AddCapability` never could.
+	"NoNewPrivileges": true, "DropCapability": true,
 }

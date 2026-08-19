@@ -167,6 +167,30 @@ func renderQuadletUnit(st appState, color string, hostPort int, enabled bool) st
 	for _, v := range st.Volumes {
 		fmt.Fprintf(&b, "Volume=%s\n", v)
 	}
+
+	// ── The ceiling on what the app may do ────────────────────────────────────
+	// Rootless already means container-root maps to the `steward` user and not the
+	// host's, so an escape lands in an unprivileged account. These two lines narrow
+	// what is left, and both are chosen to cost a well-behaved image nothing — a
+	// hardening default that breaks ordinary apps is one that gets turned off.
+	//
+	// NoNewPrivileges blocks the single way a process inside gains a privilege it was
+	// not started with: a setuid binary or a file capability, at execve. Dropping
+	// *to* an unprivileged user — the gosu/su-exec entrypoint pattern — is a syscall
+	// and not an execve gain, so that still works. What stops working is `sudo`,
+	// which an app server has no business calling.
+	//
+	// The dropped capabilities are the ones an app cannot justify. NET_BIND_SERVICE
+	// is the clearest: `deploy` already refuses a port below 1024, so the capability
+	// to bind one is *provably* unnecessary here — a ceiling that matches a rule we
+	// already enforce, rather than a guess about what apps need. SETFCAP and SETPCAP
+	// hand out capabilities and SYS_CHROOT is a sandbox-escape primitive; none is
+	// reachable from serving HTTP. What an ordinary entrypoint does need is left
+	// alone: CHOWN for a data directory, SETUID/SETGID to drop privileges, KILL to
+	// signal a child.
+	b.WriteString("NoNewPrivileges=true\n")
+	b.WriteString("DropCapability=CAP_NET_BIND_SERVICE CAP_SETFCAP CAP_SETPCAP CAP_SYS_CHROOT\n")
+
 	b.WriteString("\n[Service]\n")
 	// SIGTERM (Podman's default stop signal) starts the app's drain; TimeoutStopSec
 	// bounds it before SIGKILL. Restart=on-failure brings a crashed app back.

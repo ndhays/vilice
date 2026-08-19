@@ -62,6 +62,37 @@ func TestLivePort(t *testing.T) {
 	}
 }
 
+// The dropped capabilities are not a taste. NET_BIND_SERVICE is droppable *because*
+// validateState refuses a port below 1024 — the two are one decision, and if the port
+// floor ever moves, dropping the capability silently stops being justified and starts
+// breaking apps. This is the test that would fail first.
+func TestPortFloorIsWhatJustifiesDroppingNetBindService(t *testing.T) {
+	base := appState{
+		Name:      "web",
+		Image:     "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000",
+		Health:    "/",
+		Hostnames: []string{"app.example.com"},
+	}
+
+	for _, port := range []int{1, 80, 443, 1023} {
+		st := base
+		st.Port = port
+		if err := validateState(st); err == nil {
+			t.Fatalf("port %d was accepted — a privileged port is reachable, so the unit "+
+				"must stop dropping CAP_NET_BIND_SERVICE", port)
+		}
+	}
+
+	st := base
+	st.Port = 1024
+	if err := validateState(st); err != nil {
+		t.Fatalf("port 1024 should be the floor, not refused: %v", err)
+	}
+	if !strings.Contains(renderQuadletUnit(st, "a", 8800, true), "CAP_NET_BIND_SERVICE") {
+		t.Error("the unit no longer drops CAP_NET_BIND_SERVICE")
+	}
+}
+
 func TestRenderQuadletUnit(t *testing.T) {
 	st := appState{
 		Name:        "web",
@@ -86,6 +117,10 @@ func TestRenderQuadletUnit(t *testing.T) {
 		"Secret=web__RAILS_MASTER_KEY,type=env,target=RAILS_MASTER_KEY",
 		"Secret=web__config,type=mount,target=/etc/zot/config.json", // file secret → mount
 		"Volume=web-data:/rails/storage",
+		// The container's own ceiling. NET_BIND_SERVICE is dropped because `deploy`
+		// already refuses a port below 1024 — the capability is provably unused here.
+		"NoNewPrivileges=true",
+		"DropCapability=CAP_NET_BIND_SERVICE CAP_SETFCAP CAP_SETPCAP CAP_SYS_CHROOT",
 		"[Service]",
 		"TimeoutStopSec=30",
 		"Restart=on-failure",
