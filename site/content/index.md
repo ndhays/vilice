@@ -39,6 +39,11 @@ the machine — *before* it is executed, so nothing happens off the books. Secur
 locking down a fresh Ubuntu box with standard commands and tooling, and then preparing that
 machine for its purpose as an app host or a load balancer.
 
+That holds because **no key gets a shell**. Steward is the accountable control plane, not
+your admin access — you still reach the box as yourself, and it sits alongside the tools
+you already use rather than replacing them. See
+[Not Your Admin Access](/overview.html#not-your-admin-access).
+
 ### Dependencies
 
 <p class="tagline">Tools Steward Builds On</p>

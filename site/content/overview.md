@@ -4,11 +4,34 @@ title: Overview
 ---
 # Overview
 
-**Contents:** [Roles](#roles) &middot; [Apps](#apps) &middot; [AppConfig](#appconfig) &middot; [Spec](#spec) &middot; [Secrets](#secrets) &middot; [Examples](#examples)
+**Contents:** [Not Your Admin Access](#not-your-admin-access) &middot; [Roles](#roles) &middot; [Apps](#apps) &middot; [AppConfig](#appconfig) &middot; [Spec](#spec) &middot; [Secrets](#secrets) &middot; [Examples](#examples)
 
 Steward hosts web applications on a Linux server. It is one Go binary — a gate and a
 scribe, not a runtime. Every action is a named actor, a declared scope, and a record
 written before it runs, and there is no path to the box's power that skips that.
+
+## Not Your Admin Access
+
+**Steward is the accountable control plane. It is not how you administer the box.**
+
+No key gets a shell, at any scope — an empty command is refused at every rung. That is
+not a missing feature, it is the mechanism. A shell as the `steward` user could run
+containers directly, hand-write a unit, or rewrite Caddy's config, and none of it would
+reach the record: the log would show that a session opened at 14:32 and nothing about
+what it did. One unrecorded door is enough to end the claim, so there isn't one.
+
+So Steward offers no route to a database console, a one-off script, or a look around the
+filesystem. You reach those the way you always have — SSH to the box as **yourself**, with
+your own account and your own key, separate from the scoped keys Steward holds.
+
+Which means Steward **sits alongside the tools you already use** rather than replacing
+them. Keep your shell, Cockpit, Ansible, your provider's web console. Steward is not
+competing for that job and does not want it. What it adds is that the operations that
+matter — deploy, roll back, start, stop, remove, grant a key — leave a trail naming who
+did them and when.
+
+Reading is different, and is offered: `steward status`, `steward logs`, and
+`steward record` are `observe` scope, because looking changes nothing.
 
 ## Roles
 
