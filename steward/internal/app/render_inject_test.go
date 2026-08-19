@@ -131,6 +131,33 @@ func FuzzQuadletUnitShape(f *testing.F) {
 	})
 }
 
+// The accessory unit is a second line-oriented file built from declared values, so it
+// owes the same guarantee: no value may end its own line and write the next directive.
+// Without this, `PublishPort=…` smuggled through an env value would quietly undo the one
+// thing that keeps an accessory reachable only by its app.
+func FuzzAccessoryUnitShape(f *testing.F) {
+	for _, s := range hostileStrings {
+		f.Add(s, "v")
+	}
+	f.Add("/srv/data:/data", "value")
+	f.Fuzz(func(t *testing.T, volume, envValue string) {
+		st := appState{
+			Name: "web", Image: "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000",
+			Port: 8080, Health: "/", Hostnames: []string{"app.example.com"},
+			Accessories: []Accessory{{
+				Name:    "db",
+				Image:   "img@sha256:def0000000000000000000000000000000000000000000000000000000000000",
+				Volumes: []string{volume},
+				Env:     map[string]string{"KEY": envValue},
+			}},
+		}
+		if validateState(st) != nil {
+			return
+		}
+		assertQuadletShape(t, renderAccessoryUnit(st.Name, st.Accessories[0]))
+	})
+}
+
 // hostileStrings is the shared corpus: things that end a line, open a block, or
 // terminate a string, plus the escapes people reach for to smuggle them.
 var hostileStrings = []string{
@@ -219,6 +246,10 @@ var quadletDirectives = map[string]bool{
 	"Description": true, "Image": true, "ContainerName": true, "PublishPort": true,
 	"Environment": true, "Secret": true, "Volume": true, "TimeoutStopSec": true,
 	"Restart": true, "OOMScoreAdjust": true, "WantedBy": true,
+	// The accessory unit's own two, both constants in its renderer. `Network` is what
+	// scopes an accessory to one app, and `NetworkAlias` is the name that app resolves
+	// it by — neither may ever arrive from a declared value.
+	"Network": true, "NetworkAlias": true,
 	// The container's own ceiling. Both are constants in the renderer — no declared
 	// value reaches them — so they can only appear with the text below, and the
 	// allowlist is what proves a smuggled `AddCapability` never could.

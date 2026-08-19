@@ -41,11 +41,15 @@ type appState struct {
 	// Release runs once from the new image before the new color starts — migrations are
 	// the case it exists for. **argv, not a shell string**, so a multi-step release lives
 	// in a script inside the image where the digest covers it. See release.go.
-	Release   []string `json:"release,omitempty"`
-	Backup    string   `json:"backup,omitempty"` // in-container pre-snapshot consistency hook (see backup.go)
-	Digest    string   `json:"digest,omitempty"` // sha256 of the canonical spec (sans secret values)
-	HostPort  int      `json:"host_port"`        // legacy single-container port (pre-Quadlet); see livePort
-	PrevImage string   `json:"prev_image"`       // last-good before this one, for rollback
+	Release []string `json:"release,omitempty"`
+	// Accessories are the containers this app needs and nothing else may reach — a
+	// database, a cache. Subordinate: no hostname, never routed, on a network only this
+	// app joins, created and destroyed with it. See accessory.go.
+	Accessories []Accessory `json:"accessories,omitempty"`
+	Backup      string      `json:"backup,omitempty"` // in-container pre-snapshot consistency hook (see backup.go)
+	Digest      string      `json:"digest,omitempty"` // sha256 of the canonical spec (sans secret values)
+	HostPort    int         `json:"host_port"`        // legacy single-container port (pre-Quadlet); see livePort
+	PrevImage   string      `json:"prev_image"`       // last-good before this one, for rollback
 
 	// Blue/green (Quadlet): the live color Caddy points at, and each color's fixed
 	// loopback port. A deploy writes the inactive color, then flips ActiveColor.
@@ -79,6 +83,9 @@ type appSpec struct {
 	// starts — migrations are the case it exists for. Declared here rather than passed
 	// as a flag, so the same digest always runs the same step. See release.go.
 	Release []string `json:"release,omitempty"`
+	// Accessories the app needs on the same box — a database, a cache. Reachable by this
+	// app alone, over a network only it joins. See accessory.go.
+	Accessories []Accessory `json:"accessories,omitempty"`
 	// Backup is an optional command run inside the container before a snapshot, so a
 	// stateful app makes itself consistent (e.g. pg_dump into a declared volume). Keeps
 	// Steward database-agnostic — the app owns its own consistency. See backup.go.
@@ -215,7 +222,7 @@ func stateFromSpec(name string, s appSpec) (appState, error) {
 		Name: name, Image: s.Image, Hostnames: s.Hostnames,
 		Port: s.Port, Health: s.Health,
 		Env: s.Env, Secrets: s.Secrets, SecretFiles: s.SecretFiles, Volumes: s.Volumes,
-		Release: s.Release, Backup: s.Backup,
+		Release: s.Release, Accessories: s.Accessories, Backup: s.Backup,
 	}
 	if st.Port == 0 {
 		st.Port = 8080
@@ -277,6 +284,9 @@ func validateRenderable(st appState) error {
 		return fmt.Errorf("backup hook contains a control character")
 	}
 	if err := validRelease(st.Release); err != nil {
+		return err
+	}
+	if err := validAccessories(st); err != nil {
 		return err
 	}
 	if err := validDigestPin(st.Image); err != nil {
@@ -447,8 +457,12 @@ func appDigest(st appState) string {
 		// deploy, and the release container is named after this digest, so leaving it
 		// out would let two different commands share one identity.
 		Release []string `json:"release"`
-		Backup  string   `json:"backup"`
-	}{st.Image, host, st.Port, st.Health, st.Env, sec, st.SecretFiles, vol, st.Release, st.Backup}
+		// An accessory's image and env are part of what this app *is*: changing the
+		// database's version is a change to the deploy, not a detail beside it.
+		Accessories []Accessory `json:"accessories"`
+		Backup      string      `json:"backup"`
+	}{st.Image, host, st.Port, st.Health, st.Env, sec, st.SecretFiles, vol, st.Release,
+		st.Accessories, st.Backup}
 	b, _ := json.Marshal(canonical) // map keys marshal sorted → deterministic
 	sum := sha256.Sum256(b)
 	return "sha256:" + hex.EncodeToString(sum[:])
@@ -476,6 +490,13 @@ func declaredSecretNames(st appState) []string {
 	for n := range st.SecretFiles {
 		names = append(names, n)
 	}
+	// An accessory's secrets ride the same envelope — one sweep carries everything this
+	// app needs, the database password included. They are namespaced *in the store* by
+	// the accessory's container (accessorySecretRef) but declared by their plain name
+	// here, because that is the name the value arrives under.
+	for _, a := range st.Accessories {
+		names = append(names, a.Secrets...)
+	}
 	return names
 }
 
@@ -493,12 +514,27 @@ func putSecrets(st appState, values map[string]string) error {
 			return fmt.Errorf("secret_values has %q, not declared in app.secrets or app.secret_files", name)
 		}
 	}
+	// Where each declared name is stored. An accessory's secret lands under its own
+	// container's namespace, so the app's POSTGRES_PASSWORD and the database's cannot
+	// collide in a store whose names are global.
+	ref := map[string]string{}
+	for _, n := range st.Secrets {
+		ref[n] = secretRef(st.Name, n)
+	}
+	for n := range st.SecretFiles {
+		ref[n] = secretRef(st.Name, n)
+	}
+	for _, a := range st.Accessories {
+		for _, n := range a.Secrets {
+			ref[n] = accessorySecretRef(st.Name, a.Name, n)
+		}
+	}
 	for name := range declared {
 		val, ok := values[name]
 		if !ok {
 			return fmt.Errorf("no value provided for declared secret %q", name)
 		}
-		if err := putSecret(secretRef(st.Name, name), val); err != nil {
+		if err := putSecret(ref[name], val); err != nil {
 			return fmt.Errorf("store secret %q: %w", name, err)
 		}
 	}
@@ -542,6 +578,13 @@ func runDeploy(st *appState) error {
 		if err := pullImage(st.Image); err != nil {
 			return err
 		}
+	}
+	// Accessories first: the database has to be up and reachable before a migration can
+	// run against it, let alone before the app boots. Idempotent — an accessory whose
+	// unit is unchanged is left running, because restarting a database nobody asked to
+	// change is an outage nobody asked for. They persist across the color flip below.
+	if err := ensureAccessories(*st); err != nil {
+		return err
 	}
 	// The declared release step, from the new image, before anything is written or
 	// started. Here because a failure at this point changes nothing — no unit, no color,
@@ -705,15 +748,28 @@ func removeCmd(args []string) core.Result {
 		return core.Result{Code: "bad_args", Message: "missing <app>"}
 	}
 	st, found := loadApp(app)
-	// Stop and remove both colors' units, then the secrets, then the state.
+	// Stop and remove both colors' units, then the accessories, then the secrets, then
+	// the state.
 	for _, color := range []string{colorA, colorB} {
 		_ = userctl("stop", serviceName(app, color))
 		_ = removeUnit(app, color)
 	}
+	// The accessories go with the app that owned them — they were never anything else's
+	// to reach. Their **volumes stay**: undeclaring a database must not be how its data
+	// disappears, and `remove` has its own opt-in for that.
+	teardownAccessories(app)
 	_ = daemonReload()
 	if found {
-		for _, name := range declaredSecretNames(st) {
+		for _, name := range st.Secrets {
 			_ = userExec("podman", "secret", "rm", secretRef(app, name)).Run()
+		}
+		for n := range st.SecretFiles {
+			_ = userExec("podman", "secret", "rm", secretRef(app, n)).Run()
+		}
+		for _, a := range st.Accessories {
+			for _, n := range a.Secrets {
+				_ = userExec("podman", "secret", "rm", accessorySecretRef(app, a.Name, n)).Run()
+			}
 		}
 	}
 	if err := removeApp(app); err != nil {

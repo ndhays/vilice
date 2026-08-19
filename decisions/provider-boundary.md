@@ -69,10 +69,13 @@ backend. The self-hosted balancer is the jump box. A backend Machine gains an op
 `via:`; the jump box carries a narrow forwarding-only key (`permitopen` to the backend
 subnet), distinct from its Steward gate.
 
-This covers the **operator**. It does not cover **app-to-app** traffic, which has no path at
-all today and does not need one while an app is a single container plus volumes. When an
-accessory lands on its own box, that gap becomes real — and the answer is a private network
-carrying data only, never the operator:
+This covers the **operator**. It does not cover **app-to-app** traffic in general, which
+still has no path. One case is closed: an app may declare **accessories** — a database, a
+cache — on a network only that app joins, so `web → db` never becomes `anything → db`
+([`accessories-belong-to-one-app.md`](accessories-belong-to-one-app.md)). That is
+deliberately the narrow case, one app reaching what belongs to it. Two apps talking to each
+other, a shared cache, or an accessory on its own box are all still unaddressed — and when
+one lands, the answer is a private network carrying data only, never the operator:
 [`the-vpn-is-not-a-control-path.md`](the-vpn-is-not-a-control-path.md).
 
 ## Roads not taken

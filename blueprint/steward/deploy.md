@@ -28,7 +28,12 @@ touch the recorded command line (argv is recorded; stdin is not):
     "env":     { "RAILS_ENV": "production" },  // config — recorded
     "secrets": ["RAILS_MASTER_KEY"],           // names only — recorded
     "volumes": ["app-data:/rails/storage"],
-    "release": ["bin/rails", "db:migrate"]     // argv — run once before the new color
+    "release": ["bin/rails", "db:migrate"],    // argv — run once before the new color
+    "accessories": [                           // reachable by this app and nothing else
+      { "name": "db", "image": "…postgres@sha256:…",
+        "volumes": ["app-db:/var/lib/postgresql/data"],
+        "secrets": ["POSTGRES_PASSWORD"] }
+    ]
   },
   "secret_values": { "RAILS_MASTER_KEY": "…" } // bound, never recorded
 }
@@ -54,9 +59,12 @@ it's healthy:
    (`sha256` of the canonical spec, sans secret values) *before* acting.
 2. Materialize declared secrets into the Podman secret store (values arrive with the
    deploy, never recorded). See [The app contract](#the-app-contract).
-3. Pull the image.
+3. Pull the image, and bring up any declared **accessories** — see
+   [Accessories](#accessories). They persist across the flip below, so this is a no-op
+   whenever their units are unchanged.
 4. Run the declared **`release`** command, if any, from the new image — see
-   [The release step](#the-release-step).
+   [The release step](#the-release-step). Accessories are up first, because a migration
+   with no database to reach is not a migration.
 5. Write the **inactive color's** unit on a fresh fixed loopback port (`PORT`, env,
    secret refs, volumes applied), `systemctl --user daemon-reload`, and start it —
    alongside the live color.
@@ -89,6 +97,38 @@ gets turned off.
 Both are constants in the renderer — no declared value reaches either — so they join the
 directive allowlist `FuzzQuadletUnitShape` asserts, which is what proves a smuggled
 `AddCapability` cannot arrive the way `PodmanArgs=--privileged` would.
+
+### Accessories
+
+An app may declare **accessories** — the containers it needs on the same box and that
+nothing else may reach. A database, a cache. The why and the roads not taken are in
+[`decisions/accessories-belong-to-one-app.md`](../../decisions/accessories-belong-to-one-app.md).
+
+Each app with accessories gets a network, `steward-<app>`. The accessory runs on it as
+`<app>-<name>` with the alias `<name>`, and **both of the app's colors join the same
+network**, so the app dials `db:5432` and a flip does not disturb what the database sees.
+Nothing else ever joins — which is the point: declaring that `web` needs a database buys
+`web → db` and never `anything → db`. On one box the alternative was the shared host
+loopback, which grants both in the same stroke and cannot be narrowed afterwards.
+
+Subordinate by construction:
+
+- **No hostname and no published port.** Caddy does not know it exists, and it is
+  reachable on that network and nowhere else — not from another app, not from the host.
+  That absence *is* the isolation, so `FuzzAccessoryUnitShape` holds this renderer to the
+  same directive allowlist the app's unit obeys.
+- **No blue/green.** It holds data on a disk, and two containers over one data directory
+  is not a deploy strategy. A single container persists across the app's flips while the
+  colors come and go around it — the same rule `replicable?` applies one layer up.
+- **Inside the spec digest**, so changing the database's image is a change to the deploy.
+- **Its secrets ride the one envelope**, namespaced in the store by container so the app's
+  `POSTGRES_PASSWORD` and the database's cannot collide.
+- **Its name may not be `a` or `b`** — those are the app's own color suffixes, and a unit
+  file would collide.
+- **Idempotent.** An accessory whose unit is byte-identical is left running; restarting a
+  database nobody asked to change is an outage nobody asked for.
+- **`remove` takes them with the app, and never their volumes.** Undeclaring a database
+  must not be how its data disappears.
 
 ### The Release Step
 

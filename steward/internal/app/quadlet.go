@@ -154,6 +154,13 @@ func renderQuadletUnit(st appState, color string, hostPort int, enabled bool) st
 	fmt.Fprintf(&b, "Image=%s\n", st.Image)
 	fmt.Fprintf(&b, "ContainerName=%s\n", containerName(st.Name, color))
 	fmt.Fprintf(&b, "PublishPort=127.0.0.1:%d:%d\n", hostPort, st.Port)
+	// Only when this app declares accessories, because only then does the network exist.
+	// Both colors join the same one, so a flip does not disturb what the database sees —
+	// and nothing else on the box ever joins it, which is what makes "web can reach db"
+	// stop short of "anything can reach db". See accessory.go.
+	if len(st.Accessories) > 0 {
+		fmt.Fprintf(&b, "Network=%s\n", accessoryNetwork(st.Name))
+	}
 	fmt.Fprintf(&b, "Environment=%s\n", quoteEnv("PORT", strconv.Itoa(st.Port)))
 	for _, k := range sortedKeys(st.Env) {
 		fmt.Fprintf(&b, "Environment=%s\n", quoteEnv(k, st.Env[k]))
