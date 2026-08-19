@@ -27,7 +27,8 @@ touch the recorded command line (argv is recorded; stdin is not):
     "port": 8080, "health": "/up",
     "env":     { "RAILS_ENV": "production" },  // config — recorded
     "secrets": ["RAILS_MASTER_KEY"],           // names only — recorded
-    "volumes": ["app-data:/rails/storage"]
+    "volumes": ["app-data:/rails/storage"],
+    "release": ["bin/rails", "db:migrate"]     // argv — run once before the new color
   },
   "secret_values": { "RAILS_MASTER_KEY": "…" } // bound, never recorded
 }
@@ -53,12 +54,15 @@ it's healthy:
    (`sha256` of the canonical spec, sans secret values) *before* acting.
 2. Materialize declared secrets into the Podman secret store (values arrive with the
    deploy, never recorded). See [The app contract](#the-app-contract).
-3. Pull the image; write the **inactive color's** unit on a fresh fixed loopback port
-   (`PORT`, env, secret refs, volumes applied), `systemctl --user daemon-reload`, and
-   start it — alongside the live color.
-4. Health-check the new color on its port **before** any traffic reaches it.
-5. Flip Caddy to the new color (write the routing fragment, reload via the admin API).
-6. Retire the old color: `systemctl --user stop` drains it (SIGTERM, bounded by the
+3. Pull the image.
+4. Run the declared **`release`** command, if any, from the new image — see
+   [The release step](#the-release-step).
+5. Write the **inactive color's** unit on a fresh fixed loopback port (`PORT`, env,
+   secret refs, volumes applied), `systemctl --user daemon-reload`, and start it —
+   alongside the live color.
+6. Health-check the new color on its port **before** any traffic reaches it.
+7. Flip Caddy to the new color (write the routing fragment, reload via the admin API).
+8. Retire the old color: `systemctl --user stop` drains it (SIGTERM, bounded by the
    unit's `TimeoutStopSec`), then its unit is removed. Save the outgoing image as
    **last-good**.
 
@@ -85,6 +89,45 @@ gets turned off.
 Both are constants in the renderer — no declared value reaches either — so they join the
 directive allowlist `FuzzQuadletUnitShape` asserts, which is what proves a smuggled
 `AddCapability` cannot arrive the way `PodmanArgs=--privileged` would.
+
+### The Release Step
+
+An app may declare **`release`** — a command run once from the new image before the new
+color starts. Migrations are the case it exists for: blue/green means both colors share
+the app's volumes and talk to one database, so a schema change has to happen at exactly
+one point, with the new code's migrations, and until this there was no such point. The
+full reasoning and the roads not taken are in
+[`decisions/open/release-command.md`](../../decisions/open/release-command.md); the rules
+it holds to:
+
+- **Declared, never passed.** It is a spec field, covered by the spec digest, so the same
+  digest always runs the same step. There is no `--release` flag and no `steward exec` —
+  a per-invocation command would break what the digest pin guarantees, and a standing exec
+  verb would be a shell by another name.
+- **argv, never a shell.** `["bin/rails", "db:migrate"]`, exec'd directly. This is
+  [`no-key-gets-a-shell.md`](../../decisions/no-key-gets-a-shell.md) one level down: the
+  recorded line is unambiguous, and a multi-step release has to live in a script inside
+  the image where the digest covers it.
+- **Before the new color starts**, which is what makes a failure change nothing — no unit
+  written, no color started, the old one still serving. The cost is that the old code
+  briefly meets the new schema, so **migrations must be backward-compatible for one
+  release**: the expand/contract discipline blue/green requires, not something Steward
+  invents.
+- **Detached, and not `--rm`.** This is the one step where interruption is worse than
+  failure — a dropped SSH connection must not leave a half-applied schema — so the run is
+  detached from the connection and polled. It is named after the spec digest, so a retry
+  can tell *already running* from *already succeeded* from *failed* instead of running a
+  migration twice. Reaped on success; **kept on failure**, because the stopped container
+  is the evidence.
+- **The app's world, and the app's ceiling.** It runs with the same env, secrets and
+  volumes — a migration that cannot reach the database is not a migration — and with the
+  same `no-new-privileges` and dropped capabilities the unit carries. A release step is
+  not a chance to run with more than the app has, and **Steward builds every flag**; none
+  is ever passed through.
+
+It grants no reach the deploy did not already grant: the image's own entrypoint is
+arbitrary code by the same author, with the same env and the same volumes. What is new is
+a place to write the command down.
 
 If the health check fails, the new color is torn down and the old one stays up and
 routed — a failed deploy changes nothing. The full desired state (image, hostnames,

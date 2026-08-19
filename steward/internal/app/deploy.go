@@ -38,10 +38,14 @@ type appState struct {
 	// recorded) is mounted there as a file rather than injected as an env var.
 	SecretFiles map[string]string `json:"secret_files,omitempty"`
 	Volumes     []string          `json:"volumes,omitempty"`
-	Backup      string            `json:"backup,omitempty"` // in-container pre-snapshot consistency hook (see backup.go)
-	Digest      string            `json:"digest,omitempty"` // sha256 of the canonical spec (sans secret values)
-	HostPort    int               `json:"host_port"`        // legacy single-container port (pre-Quadlet); see livePort
-	PrevImage   string            `json:"prev_image"`       // last-good before this one, for rollback
+	// Release runs once from the new image before the new color starts — migrations are
+	// the case it exists for. **argv, not a shell string**, so a multi-step release lives
+	// in a script inside the image where the digest covers it. See release.go.
+	Release   []string `json:"release,omitempty"`
+	Backup    string   `json:"backup,omitempty"` // in-container pre-snapshot consistency hook (see backup.go)
+	Digest    string   `json:"digest,omitempty"` // sha256 of the canonical spec (sans secret values)
+	HostPort  int      `json:"host_port"`        // legacy single-container port (pre-Quadlet); see livePort
+	PrevImage string   `json:"prev_image"`       // last-good before this one, for rollback
 
 	// Blue/green (Quadlet): the live color Caddy points at, and each color's fixed
 	// loopback port. A deploy writes the inactive color, then flips ActiveColor.
@@ -71,6 +75,10 @@ type appSpec struct {
 	Secrets     []string          `json:"secrets,omitempty"`
 	SecretFiles map[string]string `json:"secret_files,omitempty"`
 	Volumes     []string          `json:"volumes,omitempty"`
+	// Release is an optional argv run once from the new image before the new color
+	// starts — migrations are the case it exists for. Declared here rather than passed
+	// as a flag, so the same digest always runs the same step. See release.go.
+	Release []string `json:"release,omitempty"`
 	// Backup is an optional command run inside the container before a snapshot, so a
 	// stateful app makes itself consistent (e.g. pg_dump into a declared volume). Keeps
 	// Steward database-agnostic — the app owns its own consistency. See backup.go.
@@ -207,7 +215,7 @@ func stateFromSpec(name string, s appSpec) (appState, error) {
 		Name: name, Image: s.Image, Hostnames: s.Hostnames,
 		Port: s.Port, Health: s.Health,
 		Env: s.Env, Secrets: s.Secrets, SecretFiles: s.SecretFiles, Volumes: s.Volumes,
-		Backup: s.Backup,
+		Release: s.Release, Backup: s.Backup,
 	}
 	if st.Port == 0 {
 		st.Port = 8080
@@ -267,6 +275,9 @@ func validateRenderable(st appState) error {
 		return fmt.Errorf("port %d is out of range — use 1024–65535 (the container runs unprivileged and can't bind a port below 1024)", st.Port)
 	case core.HasControlChar(st.Backup):
 		return fmt.Errorf("backup hook contains a control character")
+	}
+	if err := validRelease(st.Release); err != nil {
+		return err
 	}
 	if err := validDigestPin(st.Image); err != nil {
 		return err
@@ -432,8 +443,12 @@ func appDigest(st appState) string {
 		Secrets     []string          `json:"secrets"`
 		SecretFiles map[string]string `json:"secret_files"`
 		Volumes     []string          `json:"volumes"`
-		Backup      string            `json:"backup"`
-	}{st.Image, host, st.Port, st.Health, st.Env, sec, st.SecretFiles, vol, st.Backup}
+		// Release is part of what the spec *is*: changing the command changes the
+		// deploy, and the release container is named after this digest, so leaving it
+		// out would let two different commands share one identity.
+		Release []string `json:"release"`
+		Backup  string   `json:"backup"`
+	}{st.Image, host, st.Port, st.Health, st.Env, sec, st.SecretFiles, vol, st.Release, st.Backup}
 	b, _ := json.Marshal(canonical) // map keys marshal sorted → deterministic
 	sum := sha256.Sum256(b)
 	return "sha256:" + hex.EncodeToString(sum[:])
@@ -527,6 +542,15 @@ func runDeploy(st *appState) error {
 		if err := pullImage(st.Image); err != nil {
 			return err
 		}
+	}
+	// The declared release step, from the new image, before anything is written or
+	// started. Here because a failure at this point changes nothing — no unit, no color,
+	// the old one still serving — which is the same fail-safe the health gate gives one
+	// step later. The cost is that the old code briefly meets the new schema, so
+	// migrations must be backward-compatible for one release; that is the expand/contract
+	// discipline blue/green requires, not something this invents. See release.go.
+	if err := runRelease(*st); err != nil {
+		return err
 	}
 	// Bring up the target color alongside the live one (boot-enabled).
 	if err := writeUnit(*st, target, port, true); err != nil {
