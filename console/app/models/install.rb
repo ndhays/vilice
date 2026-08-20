@@ -108,6 +108,11 @@ class Install < ApplicationRecord
   # edit must not silently change what an already-placed app runs.
   def accessories = Array(config["accessories"])
 
+  # The app's other containers — a worker, a clock — copied from the App at create like
+  # everything else here. They deploy and roll back with the app, so a worker can never
+  # end up running different code from the web process.
+  def processes = Array(config["processes"])
+
   # An accessory keeps data on *that box's* disk, exactly like a volume, so an install
   # that brings one is single-placement for the same reason. Folded into `replicable?`
   # rather than bolted beside it, because it is the same fact: a thing that keeps data
@@ -249,6 +254,7 @@ class Install < ApplicationRecord
     # Copied through as-is: the console's stored shape is the box's spec shape, so this
     # is a hand-off rather than a translation, and there is no second definition to drift.
     app[:accessories] = accessories if accessories.any?
+    app[:processes]   = processes if processes.any?
     app[:secrets]      = secret_env_names if secret_env_names.any?
     app[:secret_files] = secret_file_paths if secret_file_paths.any?
 

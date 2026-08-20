@@ -656,4 +656,51 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_match(/SECRET_KEY_BASE/, flash[:alert])
     assert_match(/Configuration/, flash[:alert])
   end
+
+  # ── Processes reach the box ────────────────────────────────────────────────
+  test "an install copies the app's processes and carries them in the envelope" do
+    sign_in_as @user
+    worker = { "name" => "worker", "command" => [ "bin/jobs" ] }
+    @app.update!(processes: [ worker ])
+
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    install = Install.last
+
+    assert_equal [ worker ], install.processes
+    assert_equal [ worker ], install.deploy_envelope(image: "img@sha256:#{'a' * 64}")[:app][:processes]
+
+    # Copied, not followed — the whole point is that a placed app's worker cannot change
+    # under it.
+    @app.update!(processes: [])
+    assert_equal [ worker ], install.reload.processes
+  end
+
+  # A process runs the app's own image, so it does not make the install stateful the way
+  # an accessory with a volume does — nothing new is kept on that box's disk.
+  test "a process leaves the install replicable" do
+    sign_in_as @user
+    @app.update!(processes: [ { "name" => "worker", "command" => [ "bin/jobs" ] } ])
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+
+    assert Install.last.replicable?
+  end
+
+  test "the ceremony shows the processes it will start" do
+    sign_in_as @user
+    @app.update!(processes: [ { "name" => "worker", "command" => [ "bin/jobs" ] } ])
+    post installs_path(project_id: @project), params: { install: {
+      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    install = Install.last
+
+    get new_machine_mutation_path(@operator, act: "deploy", install_id: install.id,
+                                  image: install.image, hostname: install.hostname)
+
+    assert_select ".spec", /process/
+    assert_select ".spec dd", "worker · bin/jobs"
+  end
 end

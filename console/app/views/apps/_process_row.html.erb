@@ -1,0 +1,14 @@
+<%# One process: a name and the command it runs. Everything else — image, env, secrets,
+    volumes — is the app's own, which is the whole point: only the command may differ,
+    so a worker can never be at a different version from the web process. %>
+<div class="kv-row" data-env-editor-target="row">
+  <input type="text" name="app[process_rows][<%= i %>][name]" value="<%= name %>"
+         placeholder="worker" class="mono kv-key" autocomplete="off" spellcheck="false"
+         aria-label="Process name">
+  <input type="text" name="app[process_rows][<%= i %>][command]" value="<%= command %>"
+         placeholder="bin/jobs" class="mono kv-path" autocomplete="off" spellcheck="false"
+         aria-label="Process command">
+  <button type="button" class="kv-del" data-action="env-editor#removeRow" aria-label="Remove">
+    <%= icon "trash-2", size: 14 %>
+  </button>
+</div>

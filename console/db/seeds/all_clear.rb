@@ -41,6 +41,7 @@ event!(actor: "operator@console.test", action: "restarted", machine: web1, insta
 library!
 library_app!("console", image: demo_pin("ghcr.io/console/console"), tag: "v0.1",
              release: [ "bin/rails", "db:migrate" ],
+             processes: [ { "name" => "worker", "command" => [ "bin/jobs" ] } ],
              accessories: [ { "name" => "db",
                               "image" => demo_pin("docker.io/library/postgres"),
                               "env" => { "POSTGRES_DB" => "console" },

@@ -66,6 +66,7 @@ module Library
       # Round-trips as-is: the stored shape is the box's spec shape, so a manifest that
       # reshaped it would be inventing a second definition to keep in step.
       "accessories"  => app.accessories.presence,
+      "processes"    => app.processes.presence,
       "versions"     => app.versions.newest_first.map { |v|
         { "tag" => v.tag, "image" => v.image, "latest" => v.latest }.compact
       }.presence,
@@ -83,6 +84,7 @@ module Library
       attrs["secret_files"] = Array(row["secret_files"]) if row["secret_files"].present?
       attrs["release"] = Array(row["release"]) if row["release"].present?
       attrs["accessories"] = Array(row["accessories"]) if row["accessories"].present?
+      attrs["processes"] = Array(row["processes"]) if row["processes"].present?
       app.update!(attrs)
 
       versions = Array(row["versions"])

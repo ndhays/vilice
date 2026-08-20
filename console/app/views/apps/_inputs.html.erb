@@ -125,10 +125,32 @@
       <%= icon "plus", size: 13 %> Add Accessory
     </button>
 
+    <%# ── Processes ────────────────────────────────────────────────────────────
+        The worker, the clock. Same image, same env, same secrets, same volumes — only
+        the command differs, which is what keeps a worker from ever running different
+        code from the web process (steward/internal/app/process.go). %>
+    <div class="kicker sub">Processes</div>
+    <p class="muted form-note">
+      Other containers this app runs. Each is the app's own image with a different
+      command, and they deploy and roll back <em>with</em> the app — so a worker can never
+      end up on a different version from the web process. <strong>No shell</strong>: one
+      command and its arguments.
+    </p>
+    <div class="kv-list" data-env-editor-target="processList">
+      <% app.processes.each_with_index do |pr, i| %>
+        <%= render "apps/process_row", i: i, name: pr["name"],
+              command: Array(pr["command"]).join(" ") %>
+      <% end %>
+    </div>
+    <button type="button" class="btn-quiet kv-add" data-action="env-editor#addProcess">
+      <%= icon "plus", size: 13 %> Add Process
+    </button>
+
     <div class="form-actions"><%= submit_tag "Save Inputs", class: "btn mutate" %></div>
   <% end %>
 
   <template data-env-editor-target="envTemplate"><%= render "apps/env_chip", i: "NEW", key: "KEYNAME", secret: false %></template>
   <template data-env-editor-target="fileTemplate"><%= render "apps/file_row", i: "NEW", name: nil, path: nil %></template>
+  <template data-env-editor-target="processTemplate"><%= render "apps/process_row", i: "NEW", name: nil, command: nil %></template>
   <template data-env-editor-target="accessoryTemplate"><%= render "apps/accessory_row", i: "NEW", name: nil, image: nil, volumes: nil, env: nil, secrets: nil %></template>
 </div>

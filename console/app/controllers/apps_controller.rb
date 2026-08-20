@@ -159,6 +159,12 @@ class AppsController < ApplicationController
       attrs["accessories"] = Array(params.dig(:app, :accessory_rows)&.values).filter_map { |r|
         accessory_from(r)
       }
+      attrs["processes"] = Array(params.dig(:app, :process_rows)&.values).filter_map { |r|
+        name = r[:name].to_s.strip
+        # Typed as a line, stored as argv — the box execs it and never sees a shell, the
+        # same translation the release command gets and for the same reason.
+        { "name" => name, "command" => r[:command].to_s.split } if name.present?
+      }
     end
     attrs
   end

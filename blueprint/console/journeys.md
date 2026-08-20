@@ -69,6 +69,10 @@ image allowlist is a separate Steward-side concern (see
 export) is specified in [`data-model.md`](data-model.md).
 
 - The library is a **pure directory** — it has no install action.
+- An app may declare **processes** — a worker, a clock — each the app's own image running
+  a different command. They ride the app's deploy and rollback, so a worker can never be
+  at a different version from the web process
+  ([`blueprint/steward/deploy.md`](../steward/deploy.md), *Processes*).
 - An app may declare **accessories** — the database or cache it needs beside it, on a
   network only that app joins
   ([`accessories-belong-to-one-app.md`](../../decisions/accessories-belong-to-one-app.md)).

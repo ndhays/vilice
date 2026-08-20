@@ -30,6 +30,15 @@
       <%# Accessories come up before anything else, hold data, and are reachable by this
           app alone. Worth seeing before the press for the same reason the release command
           is: they are containers this act starts on the box. %>
+      <%# The app's other containers — the same image, a different command. They come up
+          and go down with the colour, so they are part of what this act starts. %>
+      <% if (procs = @mutation.install&.processes).present? %>
+        <dl class="spec">
+          <% procs.each do |pr| %>
+            <div><dt>process</dt><dd class="mono"><%= pr["name"] %> · <%= Array(pr["command"]).join(" ") %></dd></div>
+          <% end %>
+        </dl>
+      <% end %>
       <% if (accessories = @mutation.install&.accessories).present? %>
         <dl class="spec">
           <% accessories.each do |a| %>

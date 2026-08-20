@@ -151,4 +151,17 @@ class LibraryTest < ActiveSupport::TestCase
 
     assert_equal [ db ], App.find_by(name: "web").accessories
   end
+
+  test "processes survive an export/import round trip as argv" do
+    worker = { "name" => "worker", "command" => [ "bin/jobs" ] }
+    app = App.create!(name: "web", processes: [ worker ])
+    app.versions.create!(tag: "v1", image: "img@sha256:#{'a' * 64}")
+
+    manifest = Library.export
+    Version.delete_all
+    App.delete_all
+    Library.import(manifest)
+
+    assert_equal [ worker ], App.find_by(name: "web").processes
+  end
 end

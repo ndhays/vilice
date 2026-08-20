@@ -101,7 +101,18 @@ open heartbeat question.
 
 ### `App` — an App Library entry
 - `name` (unique), `port`, `health`, `description`, `env` + `secret_files` + `release` +
-  `accessories` (jsonb). **Image lives on its versions, not here.**
+  `accessories` + `processes` (jsonb). **Image lives on its versions, not here.**
+- **`processes`** are the app's other containers — a worker, a clock. Each is
+  `{ name, command }` and inherits the app's **image, env, secrets and volumes**; only the
+  command differs, stored as argv because the box execs it and never meets a shell. They
+  deploy and roll back *with* the app, which is the point: a worker deployed separately
+  could land on a different digest, and a worker running yesterday's code against today's
+  enqueued jobs is a failure the record cannot describe. Copied onto the Install at create
+  like everything else here.
+- **One collision check covers all three.** Colours, processes and accessories all mint
+  container names from the app's, so `App#container_names_are_distinct` enumerates every
+  container the app will ever create and refuses a duplicate — the same set the box
+  checks, so a name that would clobber a unit file fails where it is typed.
 - **`accessories`** are the containers this app needs on the same box and that nothing
   else may reach — a database, a cache
   ([`accessories-belong-to-one-app.md`](../../decisions/accessories-belong-to-one-app.md)).

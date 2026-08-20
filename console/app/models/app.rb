@@ -42,6 +42,7 @@ class App < ApplicationRecord
   validate :secret_files_well_formed
   validate :release_well_formed
   validate :accessories_well_formed
+  validate :processes_well_formed
 
   # env / secret_files / release default to [] (DB default), guard against a stray nil.
   def env = self[:env] || []
@@ -66,6 +67,17 @@ class App < ApplicationRecord
   def accessories = self[:accessories] || []
 
   def accessory_names = accessories.filter_map { |a| a["name"] }
+
+  # The app's other containers — a worker, a clock. **The same image, env, secrets and
+  # volumes**, running a different command; only the command differs, and that is the
+  # point. A worker deployed separately could land on a different digest from the web
+  # process, and a worker running yesterday's code against today's enqueued jobs is a
+  # failure the record cannot describe (steward/internal/app/process.go).
+  #
+  # `command` is argv — the box execs it, so it never meets a shell.
+  def processes = self[:processes] || []
+
+  def process_names = processes.filter_map { |p| p["name"] }
 
   # The env var names this app declares (both plain and secret).
   def env_keys = env.filter_map { |e| e["key"] }
@@ -125,6 +137,51 @@ class App < ApplicationRecord
     if release.any? { |a| a.match?(/[\u0000-\u001f\u007f]/) }
       errors.add(:release, "contains a control character")
     end
+  end
+
+  # Mirrors the box's `validProcesses`, including the collision check: colours, processes
+  # and accessories all mint container names from the app's, and two landing on one name
+  # would have each silently overwrite the other's unit file.
+  def processes_well_formed
+    return errors.add(:processes, "must be a list") unless processes.is_a?(Array)
+
+    seen = []
+    processes.each do |p|
+      unless p.is_a?(Hash) && p["name"].is_a?(String)
+        return errors.add(:processes, "each process needs a name")
+      end
+      n = p["name"]
+      errors.add(:processes, "#{n.inspect} may use letters, digits, dashes, and underscores") unless n.match?(NAME_FORMAT)
+      errors.add(:processes, "#{n} can't share the app's own name") if n == name
+      errors.add(:processes, "#{n} is listed twice") if seen.include?(n)
+      seen << n
+
+      command = Array(p["command"])
+      if command.empty?
+        errors.add(:processes, "#{n} has no command — that is the only thing that makes it one")
+      elsif command.any? { |a| !a.is_a?(String) || a.match?(/[\u0000-\u001f\u007f]/) }
+        errors.add(:processes, "#{n}: the command must be a list of plain strings")
+      end
+    end
+    container_names_are_distinct
+  end
+
+  # Every container this app will ever create on a box, checked for duplicates in one
+  # place — the same shape the box checks, and for the same reason.
+  def container_names_are_distinct
+    claimed = {}
+    claim = lambda do |container, what|
+      if (prev = claimed[container])
+        errors.add(:processes, "#{prev} and #{what} would both be container #{container.inspect}")
+      end
+      claimed[container] = what
+    end
+
+    %w[a b].each do |color|
+      claim.call("#{name}-#{color}", "the #{color} colour")
+      process_names.each { |n| claim.call("#{name}-#{n}-#{color}", "process #{n}") }
+    end
+    accessory_names.each { |n| claim.call("#{name}-#{n}", "accessory #{n}") }
   end
 
   # Mirrors the box's `validAccessories`, so a bad declaration fails where it is typed

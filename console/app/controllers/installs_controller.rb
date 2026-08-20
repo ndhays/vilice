@@ -223,6 +223,7 @@ class InstallsController < ApplicationController
     if (app = App.find_by(id: p[:app_id]))
       config["release"]     = app.release if app.release.present?
       config["accessories"] = app.accessories if app.accessories.present?
+      config["processes"]   = app.processes if app.processes.present?
     end
     config
   end

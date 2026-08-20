@@ -353,4 +353,46 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
       assert_empty app.reload.accessories
     end
   end
+
+  # ── Processes ──────────────────────────────────────────────────────────────
+  # The app's other containers — a worker, a clock. Typed as a line, stored as argv,
+  # because the box execs it and never sees a shell.
+  test "a process row is stored as name and argv" do
+    sign_in_as @user
+    app = App.create!(name: "web")
+
+    patch app_path(app), params: { app: { name: "web", inputs_form: "1", process_rows: {
+      "0" => { name: "worker", command: "bin/jobs --queue default" }
+    } } }
+
+    assert_equal [ { "name" => "worker", "command" => %w[bin/jobs --queue default] } ],
+                 app.reload.processes
+  end
+
+  test "a process the box would refuse is refused where it is typed" do
+    sign_in_as @user
+    app = App.create!(name: "web")
+
+    [ { name: "worker", command: "" },       # nothing to run is not a process
+      { name: "web",    command: "bin/jobs" } ].each do |row|
+      patch app_path(app), params: { app: { name: "web", inputs_form: "1",
+                                            process_rows: { "0" => row } } }
+      assert_response :unprocessable_entity, "accepted #{row.inspect}"
+      assert_empty app.reload.processes
+    end
+  end
+
+  # Colours, processes and accessories all mint container names from the app's, and the
+  # console checks the same set the box does — so this fails here, not at deploy.
+  test "a process and an accessory cannot claim one container name" do
+    sign_in_as @user
+    app = App.create!(name: "web")
+
+    patch app_path(app), params: { app: { name: "web", inputs_form: "1",
+      process_rows:   { "0" => { name: "worker", command: "bin/jobs" } },
+      accessory_rows: { "0" => { name: "worker-a", image: "p@sha256:#{'b' * 64}" } } } }
+
+    assert_response :unprocessable_entity
+    assert_match(/would both be container/, response.body)
+  end
 end
