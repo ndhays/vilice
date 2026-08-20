@@ -235,6 +235,17 @@ func backupApp(cfg backupConfig, st appState) core.Result {
 // declared volumes — and nothing else in the snapshot is extracted.
 // See decisions/rendered-config-is-a-boundary.md.
 func restoreApp(cfg backupConfig, app, snapshot string) core.Result {
+	// A restore rewrites the app's volumes and then redeploys it, so it is as much a
+	// lifecycle act as `deploy` and takes the same lock (lock.go). Racing one against a
+	// deploy would put a snapshot's data under a different spec's containers.
+	var res core.Result
+	if err := withAppLock(app, func() error { res = restoreAppLocked(cfg, app, snapshot); return nil }); err != nil {
+		return resultFromErr(err, "restore_failed")
+	}
+	return res
+}
+
+func restoreAppLocked(cfg backupConfig, app, snapshot string) core.Result {
 	// The spec drives what may be written, so it has to be in hand first. Prefer the
 	// one on the box; otherwise take *only* the spec file out of the snapshot.
 	st, found := loadApp(app)

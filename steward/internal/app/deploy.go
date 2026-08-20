@@ -162,22 +162,37 @@ func deployCmd(args []string) core.Result {
 		return core.Result{Code: "bad_args", Message: err.Error()}
 	}
 
+	// One act on an app at a time. Taken *before* the record: a refusal here means
+	// nothing was attempted, so nothing is written (lock.go).
+	return resultOrErr(withAppLock(st.Name, func() error {
+		return deployLocked(&st, env)
+	}), "deploy_failed", fmt.Sprintf("deployed %q (%s) → %s",
+		st.Name, shortDigest(st.Image), strings.Join(st.Hostnames, ", ")))
+}
+
+// deployLocked is `deploy` with the app's lock already held.
+func deployLocked(st *appState, env deployEnvelope) error {
 	// Record the resolved spec — by digest — *before* acting. The digest commits to
 	// the exact spec (verifiable against app-state); secret values are never recorded.
 	if err := core.Record(core.ActorName(), string(core.ScopeOperate), "deploy-spec", []string{st.Name, st.Digest}); err != nil {
-		return core.Result{Code: "record_failed", Retryable: true, Message: err.Error()}
+		return &codedError{code: "record_failed", retryable: true, msg: err.Error()}
 	}
 	// Materialize declared secrets into the store (self-contained: values arrive now).
-	if err := putSecrets(st, env.SecretValues); err != nil {
-		return core.Result{Code: "secret_failed", Retryable: true, Message: err.Error()}
+	if err := putSecrets(*st, env.SecretValues); err != nil {
+		return &codedError{code: "secret_failed", retryable: true, msg: err.Error()}
 	}
 	if err := os.MkdirAll(appsDir(), 0o750); err != nil {
-		return core.Result{Code: "io_error", Message: err.Error()}
+		return &codedError{code: "io_error", msg: err.Error()}
 	}
-	if err := runDeploy(&st); err != nil {
-		return resultFromErr(err, "deploy_failed")
+	return runDeploy(st)
+}
+
+// resultOrErr turns the error side of a locked act into a Result, or reports success.
+func resultOrErr(err error, code, ok string) core.Result {
+	if err != nil {
+		return resultFromErr(err, code)
 	}
-	return core.OK(fmt.Sprintf("deployed %q (%s) → %s", st.Name, shortDigest(st.Image), strings.Join(st.Hostnames, ", ")))
+	return core.OK(ok)
 }
 
 // parseDeployArgs builds a validated appState from flags (the simple, no-secret path).
@@ -680,10 +695,8 @@ func rollbackCmd(args []string) core.Result {
 		return core.Result{Code: "no_previous", Message: "no last-good image to roll back to"}
 	}
 	st.Image = st.PrevImage
-	if err := runDeploy(&st); err != nil {
-		return resultFromErr(err, "rollback_failed")
-	}
-	return core.OK(fmt.Sprintf("rolled %q back to %s", name, shortDigest(st.Image)))
+	return resultOrErr(withAppLock(name, func() error { return runDeploy(&st) }),
+		"rollback_failed", fmt.Sprintf("rolled %q back to %s", name, shortDigest(st.Image)))
 }
 
 // --- lifecycle ---
@@ -702,6 +715,16 @@ func lifecycle(verb string, args []string) core.Result {
 	if app == "" {
 		return core.Result{Code: "bad_args", Message: "missing <app>"}
 	}
+	// start/stop rewrite the unit and restart drives the service — all three race a
+	// deploy that is mid-flip, so they take the same lock it does.
+	var res core.Result
+	if err := withAppLock(app, func() error { res = lifecycleLocked(verb, app); return nil }); err != nil {
+		return resultFromErr(err, verb+"_failed")
+	}
+	return res
+}
+
+func lifecycleLocked(verb, app string) core.Result {
 	st, found := loadApp(app)
 	if !found || st.ActiveColor == "" {
 		return core.Result{Code: "not_found", Message: fmt.Sprintf("no running app %q", app)}
@@ -747,6 +770,14 @@ func removeCmd(args []string) core.Result {
 	if app == "" {
 		return core.Result{Code: "bad_args", Message: "missing <app>"}
 	}
+	var res core.Result
+	if err := withAppLock(app, func() error { res = removeLocked(app); return nil }); err != nil {
+		return resultFromErr(err, "remove_failed")
+	}
+	return res
+}
+
+func removeLocked(app string) core.Result {
 	st, found := loadApp(app)
 	// Stop and remove both colors' units, then the accessories, then the secrets, then
 	// the state.

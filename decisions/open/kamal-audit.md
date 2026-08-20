@@ -156,8 +156,14 @@ audit:
 
 ## What to take
 
-1. **A deploy lock.** The clearest borrow. `N acts, not one` makes concurrent deploys more
-   likely, not less, and there is nothing stopping them today.
+1. ~~**A deploy lock.**~~ **Taken 2026-08-20.** Every verb that writes an app's state now
+   holds an exclusive flock on `apps/<name>.lock` first
+   ([`blueprint/steward/deploy.md`](../../blueprint/steward/deploy.md), *One Act on an App
+   at a Time*). Per app rather than per box, so a slow release step blocks only its own
+   app; refused rather than queued, and refused before the record, because nothing was
+   attempted. One thing fell out in our favour: flock dies with the process, so unlike
+   `kamal lock` there is no `unlock` verb to ship and no stale marker for anyone to
+   adjudicate.
 2. **Reconsider accessory lifecycle** — see below.
 3. **Roles / a worker process.** Kamal shows the shape. Whether Steward's answer is a role
    on the spec or a second install of the same image is an open design question, and the

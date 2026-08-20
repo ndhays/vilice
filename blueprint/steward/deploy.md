@@ -98,6 +98,35 @@ Both are constants in the renderer — no declared value reaches either — so t
 directive allowlist `FuzzQuadletUnitShape` asserts, which is what proves a smuggled
 `AddCapability` cannot arrive the way `PodmanArgs=--privileged` would.
 
+### One Act on an App at a Time
+
+Every verb that writes an app's state — `deploy`, `rollback`, `start`, `stop`, `restart`,
+`remove`, `restore` — takes an exclusive **flock** on `apps/<name>.lock` first. Two
+concurrent deploys otherwise read the same active colour, compute the same target, write
+the same unit and both flip Caddy, and whichever loses has already torn down the colour the
+winner is serving from. The console driving a box while an operator types is the ordinary
+case, not the exotic one — the Record makes the same argument for its own flock.
+
+- **Per app, not per box.** Two apps share no state, units or colours, and a release step
+  may legitimately run for minutes; a box-wide lock would let one slow migration block
+  every other app on the machine.
+- **Refused, never queued.** A second act gets `app_busy` (retryable) immediately. Waiting
+  would hold an SSH connection open for the length of someone else's deploy.
+- **Refused *before* the record**, because nothing was attempted — the same shape as the
+  balancer-role refusal beside it. A chain entry for an act that never ran would be the
+  record describing something that did not happen.
+- **It cannot go stale.** The lock lives on a file descriptor, so the kernel drops it when
+  the process exits, including on a kill or a severed connection. There is nothing to
+  clean up and **no `unlock` verb to ship** — a lock implemented as a marker file needs
+  both, and someone eventually has to judge whether the marker they are looking at is
+  real.
+
+The residual race is **port allocation**: two *different* apps deploying at the same
+instant can pick the same loopback port, since `pickPort` reads the state of every app and
+neither has saved yet. It fails loudly — the second unit will not start, the health check
+fails, and the old colour is left running — and it predates the lock. Named here rather
+than fixed, because fixing it means a second, box-wide critical section around allocation.
+
 ### Accessories
 
 An app may declare **accessories** — the containers it needs on the same box and that
