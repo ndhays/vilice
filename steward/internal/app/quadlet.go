@@ -249,8 +249,19 @@ func writeUnit(st appState, color string, port int, enabled bool) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, unitFileName(st.Name, color)),
-		[]byte(renderQuadletUnit(st, color, port, enabled)), 0o644)
+	if err := os.WriteFile(filepath.Join(dir, unitFileName(st.Name, color)),
+		[]byte(renderQuadletUnit(st, color, port, enabled)), 0o644); err != nil {
+		return err
+	}
+	// A colour is the whole app: the web container plus every declared process, written
+	// together so they can only ever come up at one digest (process.go).
+	for _, proc := range st.Processes {
+		if err := os.WriteFile(filepath.Join(dir, processUnitFile(st.Name, proc.Name, color)),
+			[]byte(renderProcessUnit(st, proc, color, enabled)), 0o644); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // removeUnit deletes a color's .container file (no error if already gone).
@@ -272,12 +283,38 @@ func removeUnit(app, color string) error {
 // its unit, then reloads. Best-effort — used to retire the old color after a flip and to
 // clean up a new color whose deploy failed.
 func teardownColor(app, color string) {
+	teardownColorWith(app, color, nil)
+}
+
+// teardownColorWith retires a colour and the processes that belong to it. `procs` is
+// nil where the caller has no spec in hand — `remove` sweeps by filename instead, so a
+// process whose declaration has already gone is still cleaned up.
+func teardownColorWith(app, color string, procs []Process) {
 	// Make the doomed color the first OOM victim during its drain, so memory pressure in
 	// the overlap can't take the live color instead. Best-effort, runtime-only.
 	_ = userctl("set-property", serviceName(app, color), fmt.Sprintf("OOMScoreAdjust=%d", drainingOOMScoreAdjust))
 	_ = userctl("stop", serviceName(app, color))
 	_ = removeUnit(app, color)
+	for _, p := range procs {
+		_ = userctl("stop", processService(app, p.Name, color))
+		_ = removeProcessUnit(app, p.Name, color)
+	}
 	_ = daemonReload()
+}
+
+// removeProcessUnit deletes one process colour's .container file (no error if gone).
+func removeProcessUnit(app, name, color string) error {
+	if !core.ValidAppName(app) || !core.ValidAppName(name) {
+		return fmt.Errorf("refusing to remove a unit for invalid names %q/%q", app, name)
+	}
+	dir, err := quadletDir()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(filepath.Join(dir, processUnitFile(app, name, color))); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
 
 // cloneColors copies a color->port map (nil-safe, always returns a usable map).

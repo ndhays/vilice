@@ -33,6 +33,9 @@ touch the recorded command line (argv is recorded; stdin is not):
       { "name": "db", "image": "…postgres@sha256:…",
         "volumes": ["app-db:/var/lib/postgresql/data"],
         "secrets": ["POSTGRES_PASSWORD"] }
+    ],
+    "processes": [                             // the same image, a different command
+      { "name": "worker", "command": ["bin/jobs"] }
     ]
   },
   "secret_values": { "RAILS_MASTER_KEY": "…" } // bound, never recorded
@@ -126,6 +129,47 @@ instant can pick the same loopback port, since `pickPort` reads the state of eve
 neither has saved yet. It fails loudly — the second unit will not start, the health check
 fails, and the old colour is left running — and it predates the lock. Named here rather
 than fixed, because fixing it means a second, box-wide critical section around allocation.
+
+### Processes — the worker, and why it is not a second app
+
+An app may declare **processes**: the worker, the clock, anything it runs that the world
+does not reach. Each is the app's **own image, env, secrets and volumes** running a
+different command.
+
+That inheritance is the entire point. A worker is not a second app, and if it could be
+deployed separately nothing would stop web and worker landing on different digests — a
+worker running yesterday's code against today's enqueued jobs, which is a failure the
+record could not even describe. One spec, one digest, one deploy: **they cannot skew.**
+
+**A colour is the whole app.** It used to be one container; it is now the web container
+plus every declared process, written together, started together and retired together. The
+flip is unchanged — one set of containers replaces another — and during the overlap you
+have old-web with old-worker and new-web with new-worker, never a mixture. That is also
+why a process is blue/green rather than replaced in place: one mechanism, not two.
+
+- **argv, never a shell**, the same rule the release step follows. `Exec=` is quoted per
+  element, because systemd splits it on whitespace and an argument containing a space
+  would otherwise become two.
+- **No published port and no health path.** Nothing reaches a worker and Caddy is never
+  told it exists.
+- **Verified up, not health-checked.** Nothing can probe a process, but a worker that dies
+  on boot would otherwise deploy "successfully" and simply never run — and `Restart=on-failure`
+  would hide it as a crash loop. So once the web side is healthy each process unit is asked
+  the weakest honest question, *is it still active*; a no tears the colour down and leaves
+  the old app serving.
+- **It joins the app's network** when there are accessories, for the same reason the web
+  container does: a worker that cannot reach the database is not a worker.
+- **Lifecycle verbs drive all of it.** `stop web` stops the worker too — stopping an app
+  and leaving its worker running would be the same drift arriving by another road.
+- **Names cannot collide.** Colours, processes and accessories all mint container names
+  from the app's, so `validateState` enumerates every container the app will ever create
+  and refuses a duplicate — checking the names rather than the rules that generate them,
+  so a new kind of container is covered the day it is added.
+
+**A caveat worth stating:** during the flip both colours' processes run. For a queue
+worker that is simply two workers, which is fine. For a **singleton** — a clock or a
+recurring scheduler — it briefly is not, and the app is responsible for tolerating that,
+the way it already has to tolerate two web containers.
 
 ### Accessories
 

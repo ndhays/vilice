@@ -158,6 +158,28 @@ func FuzzAccessoryUnitShape(f *testing.F) {
 	})
 }
 
+// The third line-oriented file built from declared values, and the one with a command in
+// it — so it owes the same guarantee twice over: neither a volume nor an argv element may
+// end its own line and write the next directive.
+func FuzzProcessUnitShape(f *testing.F) {
+	for _, s := range hostileStrings {
+		f.Add(s, "v")
+	}
+	f.Add("/srv/data:/data", "bin/jobs")
+	f.Fuzz(func(t *testing.T, volume, arg string) {
+		st := appState{
+			Name: "web", Image: "img@sha256:abc0000000000000000000000000000000000000000000000000000000000000",
+			Port: 8080, Health: "/", Hostnames: []string{"app.example.com"},
+			Volumes:   []string{volume},
+			Processes: []Process{{Name: "worker", Command: []string{"bin/jobs", arg}}},
+		}
+		if validateState(st) != nil {
+			return
+		}
+		assertQuadletShape(t, renderProcessUnit(st, st.Processes[0], "a", true))
+	})
+}
+
 // hostileStrings is the shared corpus: things that end a line, open a block, or
 // terminate a string, plus the escapes people reach for to smuggle them.
 var hostileStrings = []string{
@@ -250,6 +272,8 @@ var quadletDirectives = map[string]bool{
 	// scopes an accessory to one app, and `NetworkAlias` is the name that app resolves
 	// it by — neither may ever arrive from a declared value.
 	"Network": true, "NetworkAlias": true,
+	// A process unit's command. A constant key; the value is argv, quoted per element.
+	"Exec": true,
 	// The container's own ceiling. Both are constants in the renderer — no declared
 	// value reaches them — so they can only appear with the text below, and the
 	// allowlist is what proves a smuggled `AddCapability` never could.

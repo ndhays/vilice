@@ -117,6 +117,7 @@ holds.
 | `env` | object | no | Non-secret environment, as key/value pairs. Recorded in the clear. |
 | `secrets` | string[] | no | **Names** of secrets the box injects as env. Values are supplied at deploy and **never recorded** — see [Secrets](#secrets). |
 | `volumes` | string[] | no | Volume mounts, `name:/path/in/container`. The **declaration**, not the data; volumes survive redeploys. A host path instead of a name is a bind mount, and must live under `/srv`. |
+| `processes` | object[] | no | Other containers this app runs — a worker, a clock. Each is `{ "name", "command" }` and inherits the app's **image, env, secrets and volumes**; only the command differs. They deploy and roll back with the app, so a worker can never end up running different code from the web process. `command` is **argv** (`["bin/jobs"]`), never a shell string. |
 | `release` | string[] | no | A command run **once from the new image, before the new container starts** — migrations are what it is for. Given as **argv** (`["bin/rails", "db:migrate"]`), never a shell string: for more than one step, put a script in the image, where the digest covers what it does. If it fails, nothing is deployed and the running app is untouched. |
 
 ## Secrets

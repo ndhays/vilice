@@ -46,10 +46,14 @@ type appState struct {
 	// database, a cache. Subordinate: no hostname, never routed, on a network only this
 	// app joins, created and destroyed with it. See accessory.go.
 	Accessories []Accessory `json:"accessories,omitempty"`
-	Backup      string      `json:"backup,omitempty"` // in-container pre-snapshot consistency hook (see backup.go)
-	Digest      string      `json:"digest,omitempty"` // sha256 of the canonical spec (sans secret values)
-	HostPort    int         `json:"host_port"`        // legacy single-container port (pre-Quadlet); see livePort
-	PrevImage   string      `json:"prev_image"`       // last-good before this one, for rollback
+	// Processes are the app's other containers — a worker, a clock. Same image, same env,
+	// same secrets, same volumes, a different command; they flip with the app's colours
+	// so web and worker can never drift onto different digests. See process.go.
+	Processes []Process `json:"processes,omitempty"`
+	Backup    string    `json:"backup,omitempty"` // in-container pre-snapshot consistency hook (see backup.go)
+	Digest    string    `json:"digest,omitempty"` // sha256 of the canonical spec (sans secret values)
+	HostPort  int       `json:"host_port"`        // legacy single-container port (pre-Quadlet); see livePort
+	PrevImage string    `json:"prev_image"`       // last-good before this one, for rollback
 
 	// Blue/green (Quadlet): the live color Caddy points at, and each color's fixed
 	// loopback port. A deploy writes the inactive color, then flips ActiveColor.
@@ -86,6 +90,9 @@ type appSpec struct {
 	// Accessories the app needs on the same box — a database, a cache. Reachable by this
 	// app alone, over a network only it joins. See accessory.go.
 	Accessories []Accessory `json:"accessories,omitempty"`
+	// Processes the app runs besides the web one — a worker, a clock. Argv only; they
+	// inherit everything else from the app, which is what keeps them from drifting.
+	Processes []Process `json:"processes,omitempty"`
 	// Backup is an optional command run inside the container before a snapshot, so a
 	// stateful app makes itself consistent (e.g. pg_dump into a declared volume). Keeps
 	// Steward database-agnostic — the app owns its own consistency. See backup.go.
@@ -237,7 +244,8 @@ func stateFromSpec(name string, s appSpec) (appState, error) {
 		Name: name, Image: s.Image, Hostnames: s.Hostnames,
 		Port: s.Port, Health: s.Health,
 		Env: s.Env, Secrets: s.Secrets, SecretFiles: s.SecretFiles, Volumes: s.Volumes,
-		Release: s.Release, Accessories: s.Accessories, Backup: s.Backup,
+		Release: s.Release, Accessories: s.Accessories, Processes: s.Processes,
+		Backup: s.Backup,
 	}
 	if st.Port == 0 {
 		st.Port = 8080
@@ -302,6 +310,9 @@ func validateRenderable(st appState) error {
 		return err
 	}
 	if err := validAccessories(st); err != nil {
+		return err
+	}
+	if err := validProcesses(st); err != nil {
 		return err
 	}
 	if err := validDigestPin(st.Image); err != nil {
@@ -475,9 +486,12 @@ func appDigest(st appState) string {
 		// An accessory's image and env are part of what this app *is*: changing the
 		// database's version is a change to the deploy, not a detail beside it.
 		Accessories []Accessory `json:"accessories"`
-		Backup      string      `json:"backup"`
+		// A process is part of what the app *is*, so changing a worker's command is a
+		// change to the deploy — and the digest has to say so.
+		Processes []Process `json:"processes"`
+		Backup    string    `json:"backup"`
 	}{st.Image, host, st.Port, st.Health, st.Env, sec, st.SecretFiles, vol, st.Release,
-		st.Accessories, st.Backup}
+		st.Accessories, st.Processes, st.Backup}
 	b, _ := json.Marshal(canonical) // map keys marshal sorted → deterministic
 	sum := sha256.Sum256(b)
 	return "sha256:" + hex.EncodeToString(sum[:])
@@ -614,18 +628,37 @@ func runDeploy(st *appState) error {
 	if err := writeUnit(*st, target, port, true); err != nil {
 		return err
 	}
+	// A colour is the whole app, so the teardown on every failure below takes the
+	// processes with it — a half-started colour is not a state anything should be left in.
+	fail := func(format string, args ...any) error {
+		teardownColorWith(st.Name, target, st.Processes)
+		return fmt.Errorf(format, args...)
+	}
 	if err := daemonReload(); err != nil {
-		teardownColor(st.Name, target)
-		return fmt.Errorf("daemon-reload: %w", err)
+		return fail("daemon-reload: %w", err)
 	}
 	if err := userctl("start", serviceName(st.Name, target)); err != nil {
-		teardownColor(st.Name, target)
-		return fmt.Errorf("start %s: %w", containerName(st.Name, target), err)
+		return fail("start %s: %w", containerName(st.Name, target), err)
+	}
+	for _, p := range st.Processes {
+		if err := userctl("start", processService(st.Name, p.Name, target)); err != nil {
+			return fail("start %s: %w", processContainer(st.Name, p.Name, target), err)
+		}
 	}
 	if err := waitHealthy(port, st.Health); err != nil {
 		out, _ := podmanOutput("logs", "--tail", "20", containerName(st.Name, target))
-		teardownColor(st.Name, target)
-		return fmt.Errorf("health check failed, old app left running: %w\n%s", err, out)
+		return fail("health check failed, old app left running: %w\n%s", err, out)
+	}
+	// A process has no port, so nothing can probe it — but a worker that dies on boot
+	// would otherwise deploy "successfully" and simply never run, which is the failure
+	// this whole design is meant not to have. `Restart=on-failure` would hide it as a
+	// crash loop, so the unit is asked whether it is still up once the web side is
+	// healthy. Not a health check: the weakest honest question, which is *is it running*.
+	for _, p := range st.Processes {
+		if err := userctl("is-active", "--quiet", processService(st.Name, p.Name, target)); err != nil {
+			out, _ := podmanOutput("logs", "--tail", "20", processContainer(st.Name, p.Name, target))
+			return fail("process %q did not stay up, old app left running:\n%s", p.Name, out)
+		}
 	}
 
 	// Healthy — flip. Remember the outgoing image, set the live color, persist, route.
@@ -634,16 +667,17 @@ func runDeploy(st *appState) error {
 	}
 	st.ActiveColor = target
 	if err := saveApp(*st); err != nil {
-		teardownColor(st.Name, target)
-		return err
+		return fail("%w", err)
 	}
 	if err := refreshCaddy(); err != nil {
 		return fmt.Errorf("route: %w", err)
 	}
 
 	// Retire the previous color, draining via TimeoutStopSec. The new one already serves.
+	// Retired with *its own* processes, read off the spec that colour was deployed from —
+	// a process dropped in this deploy still has a container to stop.
 	if hadOld && old.ActiveColor != "" && old.ActiveColor != target {
-		teardownColor(st.Name, old.ActiveColor)
+		teardownColorWith(st.Name, old.ActiveColor, old.Processes)
 		delete(st.Ports, old.ActiveColor)
 		_ = saveApp(*st)
 	}
@@ -730,8 +764,16 @@ func lifecycleLocked(verb, app string) core.Result {
 		return core.Result{Code: "not_found", Message: fmt.Sprintf("no running app %q", app)}
 	}
 	color := st.ActiveColor
-	svc := serviceName(app, color)
 	fail := func(err error) core.Result { return core.Result{Code: verb + "_failed", Message: err.Error()} }
+
+	// A colour is the whole app, so a lifecycle verb drives all of it. Stopping an app
+	// and leaving its worker running would be the drift these exist to prevent, arriving
+	// by a different road. `writeUnit` already rewrites every process's unit with the
+	// same [Install] section, so only the services need naming here.
+	services := []string{serviceName(app, color)}
+	for _, p := range st.Processes {
+		services = append(services, processService(app, p.Name, color))
+	}
 
 	switch verb {
 	case "start":
@@ -741,22 +783,17 @@ func lifecycleLocked(verb, app string) core.Result {
 		if err := daemonReload(); err != nil {
 			return fail(err)
 		}
-		if err := userctl("start", svc); err != nil {
-			return fail(err)
-		}
 	case "stop":
-		// Rewrite without [Install] so the unit isn't wanted at boot, then stop.
+		// Rewrite without [Install] so the units aren't wanted at boot, then stop.
 		if err := writeUnit(st, color, st.Ports[color], false); err != nil {
 			return fail(err)
 		}
 		if err := daemonReload(); err != nil {
 			return fail(err)
 		}
-		if err := userctl("stop", svc); err != nil {
-			return fail(err)
-		}
-	default: // restart
-		if err := userctl("restart", svc); err != nil {
+	}
+	for _, svc := range services {
+		if err := userctl(verb, svc); err != nil {
 			return fail(err)
 		}
 	}
@@ -782,8 +819,8 @@ func removeLocked(app string) core.Result {
 	// Stop and remove both colors' units, then the accessories, then the secrets, then
 	// the state.
 	for _, color := range []string{colorA, colorB} {
-		_ = userctl("stop", serviceName(app, color))
-		_ = removeUnit(app, color)
+		// Processes go with the colour they belong to — the whole app, not the web half.
+		teardownColorWith(app, color, st.Processes)
 	}
 	// The accessories go with the app that owned them — they were never anything else's
 	// to reach. Their **volumes stay**: undeclaring a database must not be how its data

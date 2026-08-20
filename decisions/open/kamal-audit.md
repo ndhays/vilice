@@ -142,10 +142,13 @@ hand. The constraint produced the better feature.
 Stated without hedging, because an audit that only finds the other tool wanting is not an
 audit:
 
-- **Multi-server roles.** `servers:` with `web:` / `job:` roles is how you run a worker
-  alongside a web process. **Steward has no worker story at all** — an app is one container,
-  and the accessory path deliberately does not cover it. This is the biggest functional gap
-  the audit finds.
+- **Multi-server roles.** `servers:` with `web:` / `job:` roles does two things at once:
+  it runs a worker, and it puts that worker on different hosts. The **worker half is now
+  answered** (`processes`, above); the **hosts half is not** — a Steward process runs
+  wherever its app is placed, and there is no way to say *this worker, on that box*.
+  Whether that matters depends on whether anyone wants a worker fleet separate from a web
+  fleet, which the placement layer could express as two installs but the process field
+  cannot.
 - **A deploy lock.** `kamal lock` prevents two people deploying at once. Steward's only lock
   is a flock on the Record for sequence integrity — two concurrent deploys of one app would
   both proceed and race on colours and unit files. **A real hazard, cheap to fix.**
@@ -165,9 +168,16 @@ audit:
    `kamal lock` there is no `unlock` verb to ship and no stale marker for anyone to
    adjudicate.
 2. **Reconsider accessory lifecycle** — see below.
-3. **Roles / a worker process.** Kamal shows the shape. Whether Steward's answer is a role
-   on the spec or a second install of the same image is an open design question, and the
-   accessory work does not settle it.
+3. ~~**Roles / a worker process.**~~ **Taken 2026-08-20**, and the open question settled
+   the other way from Kamal's. Kamal's roles are *(hosts, cmd)* and each is deployed on its
+   own; Steward's `processes` are a field on one spec, inheriting image, env, secrets and
+   volumes, flipping with the app's colours. The deciding argument was skew: a worker that
+   can be deployed separately can land on a different digest from the web process, and a
+   worker running yesterday's code against today's enqueued jobs is a failure the record
+   could not describe. One spec, one digest, one deploy. See
+   [`blueprint/steward/deploy.md`](../../blueprint/steward/deploy.md), *Processes*.
+   **Multi-server roles remain out** — placement across boxes is still N recorded acts, and
+   nothing here changes that.
 4. **Nothing on hooks.** Kamal's hooks run on the deploying machine (*inferred from
    `.kamal/hooks/` living in the repo; the docs do not say so outright*), which is harmless.
    A hook **on the box** is the ambient-authority shape Steward already refused.
