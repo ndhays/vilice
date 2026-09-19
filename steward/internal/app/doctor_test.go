@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -98,6 +99,33 @@ func TestBinaryPathCheck(t *testing.T) {
 			t.Errorf("an unpinned key says nothing about the binary path; got %+v", c)
 		}
 	})
+}
+
+// The old port answering is the failure that matters even when the socket works: two
+// ways in is one more than the design allows, and the open one is open to everyone.
+func TestCaddyAdminCheck(t *testing.T) {
+	refused := errors.New("connection refused")
+	cases := []struct {
+		name    string
+		sockErr error
+		tcpOpen bool
+		ok      bool
+		note    string
+	}{
+		{"socket only", nil, false, true, caddyAdminSocket},
+		{"socket and the old port", nil, true, false, "localhost:2019"},
+		{"old port only", refused, true, false, "localhost:2019"},
+		{"neither", refused, false, false, "is Caddy running"},
+	}
+	for _, c := range cases {
+		got := caddyAdminCheck(c.sockErr, c.tcpOpen)
+		if got.OK != c.ok {
+			t.Errorf("%s: OK = %v, want %v (note %q)", c.name, got.OK, c.ok, got.Note)
+		}
+		if !strings.Contains(got.Note, c.note) {
+			t.Errorf("%s: note %q missing %q", c.name, got.Note, c.note)
+		}
+	}
 }
 
 func TestGhostContainerCheck(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 	"steward/internal/core"
 
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 )
 
 // quadletMin is the lowest Podman that ships Quadlet (the .container generator), which
@@ -57,6 +59,9 @@ func doctorCmd(args []string) core.Result {
 	// would be the one thing this design refuses.
 	unref, totalImages := unreferencedImageCount()
 	checks = append(checks, diskCheck(diskUsedPercent(), unref, totalImages))
+	if _, err := exec.LookPath("caddy"); err == nil {
+		checks = append(checks, caddyAdminCheck(dialCaddyAdmin()))
+	}
 
 	failed := 0
 	for _, c := range checks {
@@ -216,6 +221,38 @@ func ghostContainerCheck(psOut string, selfUID int) check {
 	sort.Strings(parts)
 	return check{Name: name, OK: false,
 		Note: "ghost containers (" + strings.Join(parts, ", ") + ") — was steward run as the wrong user?"}
+}
+
+// caddyAdminCheck says whether Caddy's admin API is where prepare put it: on the socket,
+// which only the caddy user and the steward group may open, and not on localhost:2019,
+// where anyone on the box may replace the config. sockErr is this user's attempt to
+// connect to the socket; tcpOpen is whether anything answers on the old port.
+func caddyAdminCheck(sockErr error, tcpOpen bool) check {
+	const name = "caddy admin on its socket only"
+	switch {
+	case tcpOpen:
+		return check{Name: name, OK: false,
+			Note: "something answers on localhost:2019, where any local user can rewrite Caddy's config — re-run 'sudo steward prepare'"}
+	case sockErr != nil:
+		return check{Name: name, OK: false,
+			Note: "cannot open " + caddyAdminSocket + " (" + sockErr.Error() + ") — is Caddy running? re-run 'sudo steward prepare' if it is"}
+	}
+	return check{Name: name, OK: true, Note: caddyAdminSocket}
+}
+
+// dialCaddyAdmin connects to both admin addresses and hangs up without sending anything:
+// the question is only who could talk to Caddy, so no request is ever made.
+func dialCaddyAdmin() (sockErr error, tcpOpen bool) {
+	if c, err := net.DialTimeout("unix", caddyAdminSocket, time.Second); err == nil {
+		_ = c.Close()
+	} else {
+		sockErr = err
+	}
+	if c, err := net.DialTimeout("tcp", "127.0.0.1:2019", time.Second); err == nil {
+		_ = c.Close()
+		tcpOpen = true
+	}
+	return sockErr, tcpOpen
 }
 
 // binaryPathCheck reports whether the paths baked into the box still point at this

@@ -873,15 +873,18 @@ func refreshCaddy() error {
 	if err := os.WriteFile(caddyFragmentPath(), []byte(renderCaddyfile(apps)), 0o644); err != nil {
 		return err
 	}
-	// Reload via the local admin API (no root): adapt the base Caddyfile, which imports
-	// our fragment, and push it to the running Caddy on localhost:2019.
+	// Reload via the admin socket (no root): adapt the base Caddyfile, which imports our
+	// fragment, and push it to the running Caddy.
 	return caddyReload()
 }
 
-// caddyReload applies the current config through Caddy's local admin API. It needs no
-// root — any local user can reach localhost:2019 — so the steward user can do it.
+// caddyReload applies the current config through Caddy's admin socket. It needs no root —
+// the steward group may write to the socket — so the steward user can do it. The address
+// is named rather than read from the config, so a box whose Caddyfile has lost the admin
+// line fails the reload instead of quietly going back to localhost:2019.
 func caddyReload() error {
-	c := userExec("caddy", "reload", "--config", caddyfilePath(), "--adapter", "caddyfile")
+	c := userExec("caddy", "reload", "--config", caddyfilePath(), "--adapter", "caddyfile",
+		"--address", "unix/"+caddyAdminSocket)
 	c.Stdout, c.Stderr = os.Stdout, os.Stderr
 	return c.Run()
 }

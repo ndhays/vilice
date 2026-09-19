@@ -4,7 +4,7 @@
 > decided. When one settles, move the answer into the relevant spec and record the
 > reasoning in `decisions/`.
 
-**Last touched:** 2026-08-10.
+**Last touched:** 2026-09-19.
 
 ---
 
@@ -264,6 +264,24 @@ Same "separate, simple, maybe later" shape as the allowlist, and **dedicated-by-
 makes it rarely necessary** — pick it up only when genuine multi-tenant shared boxes with
 mutually-distrusting projects are real. Mechanism would ride the existing `_exec` gate +
 a target argument, exactly like self-update.
+
+## What a container can reach on its own host
+
+Raised 2026-09-19, while moving Caddy's admin API onto a socket
+([`../caddy-admin-socket.md`](../caddy-admin-socket.md)). That closed the worst thing on
+the host's loopback, but not the question. **Unverified:** whether a rootless app
+container can open the host's `127.0.0.1` at all. The answer depends on Podman's rootless
+network defaults (pasta), which have changed between versions, and nothing in the repo
+sets them. If it can, one app can reach another app's published loopback port, which
+skips Caddy and the accessory isolation both.
+
+Also open: **outbound traffic.** `harden` allows all outbound traffic, so a container can
+reach the cloud metadata service (`169.254.169.254`) and any private network the box is
+on.
+
+Next step: test from inside an app container on a real box (`host.containers.internal`,
+the gateway address, the metadata address). Then either pin the network options in the
+unit renderer or record why the defaults are enough, and add the result to `doctor`.
 
 ## Remote reach — NAT'd boxes
 

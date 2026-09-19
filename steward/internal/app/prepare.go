@@ -12,6 +12,7 @@ package app
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"steward/internal/core"
 )
@@ -111,11 +112,24 @@ apt-get install -y caddy
 `)
 }
 
-// configureCaddy points the system Caddy at a steward-owned routing fragment. Caddy
-// stays a root service on :80/:443; the steward user writes only its app routes (under
-// /etc/caddy/steward/, where the caddy user can still read them) and reloads via the
-// local admin API — so no root is needed in the deploy loop. Routing config carries no
-// secrets, so the fragment is world-readable. See decisions/open/quadlet-units.md.
+// caddyAdminSocket is where Caddy's admin API listens. Not the default localhost:2019,
+// which any local user — or any container that can reach the host's loopback — may use
+// to replace the whole config. A socket is governed by ownership instead: its directory
+// is caddy:steward 2750, so only the caddy user and the steward group can reach it at all.
+// See decisions/caddy-admin-socket.md.
+const caddyAdminSocket = "/run/caddy-admin/admin.sock"
+
+// configureCaddy points the system Caddy at a steward-owned routing fragment. Caddy runs
+// as its own `caddy` user on :80/:443 (the package grants it the right to bind them);
+// the steward user writes only its app routes (under /etc/caddy/steward/, where the caddy
+// user can still read them) and reloads via the admin socket — so no root is needed in
+// the deploy loop. Routing config carries no secrets, so the fragment is world-readable.
+// See decisions/open/quadlet-units.md.
+//
+// The socket's directory lives in /run, which is empty after every boot, so a tmpfiles.d
+// entry recreates it before Caddy starts. The directory is setgid: a socket created in it
+// takes the steward group, and `|0220` lets that group write to it — connecting to a
+// socket needs write permission, so that is the whole grant.
 func configureCaddy() error {
 	return core.Sh(fmt.Sprintf(`
 set -euo pipefail
@@ -128,10 +142,24 @@ if [ ! -e "$frag/apps.caddy" ]; then
   chown %[1]s:%[1]s "$frag/apps.caddy"
   chmod 0644 "$frag/apps.caddy"
 fi
+cat > /etc/tmpfiles.d/caddy-admin.conf <<'TMPFILES'
+# Managed by steward — the directory holding Caddy's admin socket.
+d %[3]s 2750 caddy %[1]s -
+TMPFILES
+systemd-tmpfiles --create /etc/tmpfiles.d/caddy-admin.conf
 cat > /etc/caddy/Caddyfile <<'CADDY'
 # Managed by steward — base config. App routes live in /etc/caddy/steward/*.caddy
+{
+	admin unix/%[2]s|0220
+}
 import /etc/caddy/steward/*.caddy
 CADDY
-systemctl reload caddy
-`, core.StewardUser))
+# A reload reads the admin address from the new config, so while Caddy still listens on
+# localhost:2019 it would dial a socket that does not exist yet. The first time, restart.
+if [ -S %[2]s ]; then
+  systemctl reload caddy
+else
+  systemctl restart caddy
+fi
+`, core.StewardUser, caddyAdminSocket, filepath.Dir(caddyAdminSocket)))
 }

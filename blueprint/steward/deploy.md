@@ -72,7 +72,7 @@ it's healthy:
    secret refs, volumes applied), `systemctl --user daemon-reload`, and start it —
    alongside the live color.
 6. Health-check the new color on its port **before** any traffic reaches it.
-7. Flip Caddy to the new color (write the routing fragment, reload via the admin API).
+7. Flip Caddy to the new color (write the routing fragment, reload via the admin socket).
 8. Retire the old color: `systemctl --user stop` drains it (SIGTERM, bounded by the
    unit's `TimeoutStopSec`), then its unit is removed. Save the outgoing image as
    **last-good**.
@@ -260,17 +260,18 @@ outlives it. Per-app resource limits (`MemoryMax`) await a later spec field.
 
 ## Routing and HTTPS
 
-Caddy is the box's edge (a root service on :80/:443); a deploy only writes a
-steward-owned routing fragment and reloads Caddy through its local admin API (step 5
-above). **Automatic HTTPS comes for free:** for any hostname whose DNS A/AAAA points at
+Caddy is the box's edge (a service on :80/:443, running as its own `caddy` user); a
+deploy only writes a steward-owned routing fragment and reloads Caddy through its admin
+socket (step 7 above), which only the caddy user and the steward group can open — see
+[provision.md](provision.md). **Automatic HTTPS comes for free:** for any hostname whose DNS A/AAAA points at
 the box and whose :80/:443 are reachable, Caddy obtains and serves a genuine **Let's
 Encrypt** certificate over ACME — no cert config in the deploy. The certificate is tied
 to the hostname, not the color, so it survives a blue/green flip (reused, not
 re-requested). A box with no real domain deploys against an `http://` hostname instead.
 
-This holds under the rootless model: the certs are Caddy's (root), the routing fragment
-is the `steward` user's, and the two meet only through the admin-API reload — no root in
-the deploy loop. *Behind a TLS-terminating CDN/proxy* (e.g. Cloudflare orange cloud) the
+This holds under the rootless model: the certs are Caddy's (the `caddy` user's), the
+routing fragment is the `steward` user's, and the two meet only through the admin-socket
+reload — no root in the deploy loop. *Behind a TLS-terminating CDN/proxy* (e.g. Cloudflare orange cloud) the
 edge serves its own cert and intercepts the ACME challenge; that topology needs DNS-01
 and stays open (see [Open](#open)).
 
@@ -329,7 +330,7 @@ steward route < table.json
   which the base config already picks up — `prepare` writes `import
   /etc/caddy/steward/*.caddy`, a glob, so the extension point predates the verb. Apps own
   `apps.caddy` and routes own `routes.caddy`; neither can clobber the other, and both
-  reload through the same admin API with no root.
+  reload through the same admin socket with no root.
 - **Declarative and wholly replaced**, like `deploy`: you send the table the box should
   serve, and that becomes what it serves. There is no add-a-route or drop-a-route, because
   a partial edit needs caller and box to agree about a starting state neither can see.

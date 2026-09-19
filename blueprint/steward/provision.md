@@ -100,10 +100,17 @@ exactly two things a box does here; a third arrives when a third is real, not fo
   its rootless containers and `systemctl --user` units run at boot without a login. Apps
   deploy as this user, not root — see [auth.md](auth.md) and
   [`ceiling-is-the-machine.md`](../../decisions/ceiling-is-the-machine.md).
-- **Caddy routing:** the system Caddy (root, on :80/:443) is pointed at a steward-owned
-  fragment directory (`/etc/caddy/steward/*.caddy`); deploys write `apps.caddy` and
-  `route` writes `routes.caddy`, both reloading via Caddy's local admin API, so no root is
-  needed in either loop. Both roles get this — it is what a balancer *is*.
+- **Caddy routing:** the system Caddy (its own `caddy` user, on :80/:443) is pointed at a
+  steward-owned fragment directory (`/etc/caddy/steward/*.caddy`); deploys write
+  `apps.caddy` and `route` writes `routes.caddy`, both reloading via Caddy's admin socket,
+  so no root is needed in either loop. Both roles get this — it is what a balancer *is*.
+- **Caddy's admin socket:** the admin API listens on `/run/caddy-admin/admin.sock`, never
+  on `localhost:2019`, where any local user could replace Caddy's config. The directory
+  is `caddy:steward 2750` (recreated each boot by `/etc/tmpfiles.d/caddy-admin.conf`), and
+  the socket is `0220` in the steward group — so the caddy user and the steward user can
+  reach it, and nobody else can. `doctor` checks both halves: the socket opens, and
+  nothing answers on 2019. See
+  [`caddy-admin-socket.md`](../../decisions/caddy-admin-socket.md).
 - **The role's ports:** `prepare` opens 80/443 for both current roles. It does this only
   when UFW is present and active — **`prepare` never installs or enables a firewall**,
   because that is `harden`'s job and `harden` is optional. A box prepared without hardening

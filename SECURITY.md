@@ -34,10 +34,13 @@ Steward refuses to run them as root. Consequences:
 - **Apps are rootless containers.** They run as rootless Podman under `steward` (systemd
   Quadlet user units), so a container escape lands as an unprivileged user, not root —
   defense in depth, not just policy.
-- **The web edge needs no root in the loop.** Caddy stays a root service on :80/:443, but
-  Steward writes only its own routing fragment (`/etc/caddy/steward/`) and reloads via
-  Caddy's **local admin API** (`localhost:2019`). That admin endpoint is loopback-only and
-  never exposed off the box; it is the one local trust surface this introduces.
+- **The web edge needs no root in the loop.** Caddy runs on :80/:443 as its own `caddy`
+  user; Steward writes only its own routing fragment (`/etc/caddy/steward/`) and reloads
+  via Caddy's **admin socket** (`/run/caddy-admin/admin.sock`). Caddy's default admin
+  endpoint, `localhost:2019`, has no authentication — any local user could replace the
+  config — so it is moved to a socket that only the caddy user and the `steward` group can
+  open, and `doctor` flags the old port if anything answers on it. See
+  [`decisions/caddy-admin-socket.md`](decisions/caddy-admin-socket.md).
 - **App secrets stay off the record and off argv.** Declared by name, delivered on stdin
   into Steward's Podman secret store, and injected as container env — never on the command
   line, never in `podman inspect`, never in the audit record. See
