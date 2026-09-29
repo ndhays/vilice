@@ -5,12 +5,13 @@ require "test_helper"
 class InstallTest < ActiveSupport::TestCase
   setup { @project = Project.create!(name: "Acme") }
 
-  test "name must be box-safe — [A-Za-z0-9_-], the charset Steward accepts" do
+  test "name must be box-safe — [A-Za-z0-9_-], first character alphanumeric" do
     assert Install.new(project: @project, name: "web-1").valid?
     bad = Install.new(project: @project, name: "My App")
     assert_not bad.valid?
-    assert_includes bad.errors[:name], "may use letters, digits, dashes, and underscores"
+    assert_includes bad.errors[:name], "must start with a letter or digit, then letters, digits, dashes, and underscores"
     assert_not Install.new(project: @project, name: "web/edge").valid?   # no slashes — it's a filename
+    assert_not Install.new(project: @project, name: "-web").valid?       # a leading dash reads as a flag
   end
 
   test "port and health mirror the box's bounds, or are blank" do

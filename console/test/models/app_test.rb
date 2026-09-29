@@ -9,12 +9,14 @@ class AppTest < ActiveSupport::TestCase
     assert_includes dup.errors[:name], "has already been taken"
   end
 
-  test "name must be box-safe — [A-Za-z0-9_-], the charset Steward accepts" do
+  test "name must be box-safe — [A-Za-z0-9_-], first character alphanumeric" do
     assert App.new(name: "my-cool_app1").valid?
     bad = App.new(name: "My Cool App")
     assert_not bad.valid?
-    assert_includes bad.errors[:name], "may use letters, digits, dashes, and underscores"
+    assert_includes bad.errors[:name], "must start with a letter or digit, then letters, digits, dashes, and underscores"
     assert_not App.new(name: "web/edge").valid?               # no slashes (it's a filename on the box)
+    assert_not App.new(name: "-web").valid?                   # a leading dash reads as a flag on the box
+    assert_not App.new(name: "_web").valid?                   # same rule, one charset
   end
 
   test "port must be in the box's 1024–65535 range, or blank" do

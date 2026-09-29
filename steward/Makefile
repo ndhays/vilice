@@ -16,7 +16,7 @@ ARCHES       ?= amd64 arm64
 # Keep these current with the Go toolchain — an old pin can fail to build under a
 # newer Go (its own deps lag). Bump when `make audit` errors before scanning.
 GOVULN_VER   ?= v1.3.0
-GOSEC_VER    ?= v2.22.9
+GOSEC_VER    ?= v2.29.0
 
 .PHONY: build build-linux man test fuzz vet fmt audit sign release keygen clean
 

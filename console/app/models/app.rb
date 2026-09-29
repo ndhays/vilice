@@ -13,16 +13,18 @@ class App < ApplicationRecord
   has_many :labels, as: :labelable, dependent: :destroy
 
   # The name seeds the install name, which the box uses for its files, volumes, and
-  # unit (`apps/<name>.json`). Steward rejects anything outside [A-Za-z0-9_-]
-  # (auth.go `validClient`) and does not dash-case for you — so enforce it here,
-  # box-safe end to end, rather than failing cryptically at deploy.
-  NAME_FORMAT = /\A[A-Za-z0-9_-]+\z/
+  # unit (`apps/<name>.json`). Steward rejects anything outside [A-Za-z0-9_-], and
+  # refuses a leading dash besides — a name is handed to systemctl and podman as an
+  # argument, and one starting with a dash reads as a flag. It does not dash-case for
+  # you either, so enforce both here, box-safe end to end, rather than failing
+  # cryptically at deploy.
+  NAME_FORMAT = /\A[A-Za-z0-9][A-Za-z0-9_-]*\z/
   # Env var / secret / secret-file names follow shell rules — the box uses them verbatim
   # (steward validEnvName). Validate here so a bad name fails in the library, not at deploy.
   ENV_NAME = /\A[A-Za-z_][A-Za-z0-9_]*\z/
 
   validates :name, presence: true, uniqueness: true,
-                   format: { with: NAME_FORMAT, message: "may use letters, digits, dashes, and underscores" }
+                   format: { with: NAME_FORMAT, message: "must start with a letter or digit, then letters, digits, dashes, and underscores" }
 
   # Port and health are the app's defaults, carried into the install form. Mirror
   # what the box enforces (steward validateState) so a bad value fails here — with a
@@ -151,7 +153,7 @@ class App < ApplicationRecord
         return errors.add(:processes, "each process needs a name")
       end
       n = p["name"]
-      errors.add(:processes, "#{n.inspect} may use letters, digits, dashes, and underscores") unless n.match?(NAME_FORMAT)
+      errors.add(:processes, "#{n.inspect} must start with a letter or digit, then letters, digits, dashes, and underscores") unless n.match?(NAME_FORMAT)
       errors.add(:processes, "#{n} can't share the app's own name") if n == name
       errors.add(:processes, "#{n} is listed twice") if seen.include?(n)
       seen << n
@@ -196,7 +198,7 @@ class App < ApplicationRecord
         return errors.add(:accessories, "each accessory needs a name")
       end
       n = a["name"]
-      errors.add(:accessories, "#{n.inspect} may use letters, digits, dashes, and underscores") unless n.match?(NAME_FORMAT)
+      errors.add(:accessories, "#{n.inspect} must start with a letter or digit, then letters, digits, dashes, and underscores") unless n.match?(NAME_FORMAT)
       # `a` and `b` are the app's deploy colors on the box, so an accessory by either
       # name would render a unit file that collides with a color's.
       errors.add(:accessories, "#{n} is a deploy color — pick another name") if %w[a b].include?(n)

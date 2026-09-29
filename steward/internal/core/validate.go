@@ -13,6 +13,14 @@ func ValidAppName(s string) bool {
 	if s == "" {
 		return false
 	}
+	// The first character is narrower than the rest, and for a different reason. A name
+	// becomes an *argument*: `systemctl --user stop <app>-a.service`, `podman rm <name>`.
+	// A leading dash makes it look like a flag instead, which is argv injection without a
+	// shell anywhere in it — an app called `-H` would have systemctl read a host. Dashes
+	// and underscores inside a name carry no such risk.
+	if first := rune(s[0]); !(first >= 'a' && first <= 'z' || first >= 'A' && first <= 'Z' || first >= '0' && first <= '9') {
+		return false
+	}
 	for _, r := range s {
 		ok := r == '-' || r == '_' ||
 			(r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')

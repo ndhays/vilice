@@ -36,7 +36,9 @@ write the next directive.
   letters/digits/dots/hyphens, optional port (`validHostname`).
 - A public key must be one line: known type, base64 blob, at most a comment
   (`looksLikePubkey`).
-- An app name is `[A-Za-z0-9_-]`, checked at the door for every command whose synopsis
+- An app name is `[A-Za-z0-9_-]` and may not begin with a dash (it is handed to
+  `podman` and `systemctl` as an argument, where a leading dash reads as a flag —
+  argv injection with no shell in it), checked at the door for every command whose synopsis
   says `<app>` — not per command, which is how five lifecycle verbs missed it.
 
 **Allow-list, not block-list.** This is the part worth remembering. The first fix here

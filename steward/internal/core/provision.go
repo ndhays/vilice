@@ -340,6 +340,8 @@ func osPretty() string {
 }
 
 func CmdFirstLine(name string, args ...string) string {
+	// #nosec G204 -- name and args are the tool table's own literals ("podman --version"),
+	// never caller input: prepare calls this to print what it just installed.
 	out, err := exec.Command(name, args...).Output()
 	if err != nil {
 		return "?"
@@ -358,8 +360,13 @@ func Have(tool string) bool {
 	return err == nil
 }
 
-// Sh runs a bash script, streaming output, with non-interactive apt.
+// Sh runs a bash script, streaming output, with non-interactive apt. Root-only setup
+// (prepare/harden/uninstall) lives here; nothing an operate key can reach calls it.
 func Sh(script string) error {
+	// #nosec G204 -- every caller passes a script this binary composed from literals and
+	// its own constants (StewardUser, a role's port number, steward's own paths). A value
+	// that arrived over SSH has never reached this function, which is the property to keep
+	// when adding a caller: interpolate constants, never arguments.
 	c := exec.Command("bash", "-c", script)
 	c.Stdout, c.Stderr = os.Stdout, os.Stderr
 	c.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")

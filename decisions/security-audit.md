@@ -61,6 +61,18 @@ configured path, never user input. Those four are excluded by policy (documented
 annotated per call site with the reason each input is trusted — the annotation is the
 audit.
 
+**The pins move with the toolchain, and a bump is an audit of its own.** Go 1.27 broke
+gosec v2.22.9 (its `x/tools` could not load the new standard library), so the pin went to
+v2.29.0 on 2026-09-29 — and the newer analysis reached three exec helpers that had never
+been annotated: `core.Sh`, `core.CmdFirstLine`, `app.userExec`. Writing the annotations is
+what found the real gap. Two of the three are trivially safe (their arguments are this
+binary's own literals). The third takes app names, and `ValidAppName` allowed a **leading
+dash** — so an app called `-H` would have been handed to `systemctl` as a flag: argv
+injection with no shell in it. The name rule now requires an alphanumeric first character,
+the hostile-name corpus carries the argv shapes, and the console's `NAME_FORMAT` moved with
+it. The lesson is the one the third leg exists for: the finding came from having to state
+the claim out loud.
+
 ## The on-box check: native, not the scanners
 
 `ssh-audit` is the obvious tool to "bake in" — and the wrong one to. It's a large Python

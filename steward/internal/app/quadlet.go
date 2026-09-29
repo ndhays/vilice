@@ -40,6 +40,11 @@ func userHome() string {
 // userExec builds a command wired to the steward user's session: XDG_RUNTIME_DIR + HOME
 // set from the effective uid, and cwd at the user's home.
 func userExec(name string, args ...string) *exec.Cmd {
+	// #nosec G204 -- no shell is involved, so argv cannot be split or chained; the risk
+	// this leaves is an argument that a tool reads as a *flag*, and that is closed at the
+	// door: ValidAppName refuses a leading dash (and everything but [A-Za-z0-9_-]), image
+	// refs are digest-pinned, and a process/accessory name obeys the same rule. The tool
+	// name itself is always a literal at the call site.
 	c := exec.Command(name, args...)
 	home := userHome()
 	env := setEnv(os.Environ(), "XDG_RUNTIME_DIR", fmt.Sprintf("/run/user/%d", os.Geteuid()))

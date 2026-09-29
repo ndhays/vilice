@@ -29,6 +29,13 @@ var hostileAppNames = []string{
 	"$(whoami)",
 	"quote\"quote",
 	"null\x00byte",
+	// Argv shapes: a name that a tool would read as a flag rather than a name, which is
+	// injection with no shell in it (`systemctl --user stop -H…`). A `--`-prefixed word is
+	// not here because ParseArgs takes it for a flag, so it never reaches the app slot at
+	// all — the command answers "missing <app>" instead.
+	"-v",
+	"-H",
+	"-",
 }
 
 // Every command that takes an <app> refuses a hostile name at the door, before it is

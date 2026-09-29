@@ -46,10 +46,12 @@ A **flag form** is kept for the simple, no-secret path:
 `steward deploy <app> --image <ref@sha256> --hostname <host> [--port <port>] [--health <path>]`.
 
 Every field is validated before anything is written. The app **name** is
-`[A-Za-z0-9_-]` (it becomes a filename and a systemd unit name), a **hostname** must be
-a site address (`app.example.com`, `http://app.example.com`, `*.example.com`,
-`host:port`), and no value may carry a control character. These are not style rules:
-the spec is rendered into a Caddy site block and a Quadlet unit, both line-oriented, so
+`[A-Za-z0-9_-]` starting with a letter or digit (it becomes a filename, a systemd unit
+name, and an argument to `podman`/`systemctl` — a leading dash would read as a flag), a
+**hostname** must be a site address (`app.example.com`, `http://app.example.com`,
+`*.example.com`, `host:port`), and no value may carry a control character. These are not
+style rules: the spec is rendered into a Caddy site block and a Quadlet unit, both
+line-oriented, so
 a value that can end its own line writes the next directive. See
 [`rendered-config-is-a-boundary.md`](../../decisions/rendered-config-is-a-boundary.md).
 

@@ -16,14 +16,14 @@ class Install < ApplicationRecord
   # Steward rejects anything outside [A-Za-z0-9_-] (auth.go `validClient`) and won't
   # dash-case it, so validate here (matching App's rule) to fail before the act. Port
   # and health are deployed verbatim too, so they mirror the box's bounds like App's.
-  NAME_FORMAT = /\A[A-Za-z0-9_-]+\z/
+  NAME_FORMAT = /\A[A-Za-z0-9][A-Za-z0-9_-]*\z/
 
   # No uniqueness here on purpose. The name has to be free *on the box* — that's the
   # namespace it lands in — and `InstallTarget#install_name_free_on_machine` already
   # enforces exactly that, independent of any project. Scoping it per project instead
   # would both miss the collision that matters and require a project to exist.
   validates :name, presence: true,
-                   format: { with: NAME_FORMAT, message: "may use letters, digits, dashes, and underscores" }
+                   format: { with: NAME_FORMAT, message: "must start with a letter or digit, then letters, digits, dashes, and underscores" }
   validates :port, numericality: { only_integer: true, greater_than_or_equal_to: 1024,
                                    less_than_or_equal_to: 65535 }, allow_nil: true
   validates :health, format: { with: %r{\A/}, message: "must start with /" }, allow_blank: true

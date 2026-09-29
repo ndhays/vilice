@@ -140,7 +140,8 @@ open heartbeat question.
   can't be both an env var and a file. Edited on the App page; carried in the manifest.
 - **Validations mirror the box** (`steward` `validateState`/`validClient`), so a bad
   value fails in Steward Console — before the act — not cryptically at deploy: `name` is
-  box-safe `[A-Za-z0-9_-]` (it seeds the install name, which becomes `apps/<name>.json`
+  box-safe `[A-Za-z0-9_-]` starting with a letter or digit (it seeds the install name,
+  which becomes `apps/<name>.json`
   + volumes + unit on the box; **not** dash-cased for you); `port` is 1024–65535 or blank
   (unprivileged containers can't bind below 1024); `health` starts with `/` or is blank.
   Blank port/health mean "no app default" — the box falls back (8080, `/`).
@@ -272,7 +273,8 @@ open heartbeat question.
     spec means the gate can never disagree with the spec the way a flag could. A stateful
     install is refused a count above 1 at validation, not merely discouraged in the form.
 - **Validated against the box, since these deploy verbatim** (same as `App`, mirroring
-  `steward` `validateState`): `name` is box-safe `[A-Za-z0-9_-]` — it's the box's own
+  `steward` `validateState`): `name` is box-safe `[A-Za-z0-9_-]`, first character
+  alphanumeric — it's the box's own
   identifier (`apps/<name>.json`, volumes, unit), prefilled from the app name and not
   dash-cased; `port` 1024–65535 or blank; `health` starts with `/` or blank. Each `volumes`
   entry mirrors the box's `Volume=` line (`steward/internal/app/quadlet.go`): `source:/container-path[:opts]`
