@@ -198,7 +198,30 @@ Subordinate by construction:
   `POSTGRES_PASSWORD` and the database's cannot collide.
 - **Its name may not be `a` or `b`** — those are the app's own color suffixes, and a unit
   file would collide.
-.
+
+### What an app container can reach
+
+The isolation above rests on a claim about the network, so the claim is measured rather
+than assumed. Verified on a live box 2026-09-29 (Ubuntu 26.04.1, rootless Podman 5.7.0
+with pasta), from inside a container running as the `steward` user:
+
+- **Another app's published port: no.** A port published to `127.0.0.1` on the host is
+  refused from inside a container, through Podman's `host.containers.internal` and through
+  the address it maps (`169.254.1.2`) alike, while the same port serves normally on the
+  host. So a compromised app cannot reach another app behind Caddy, and cannot reach
+  another app's accessory network.
+- **Caddy's admin socket: no.** It is a Unix socket with no TCP listener at all — see
+  [provision.md](provision.md).
+- **The cloud metadata service (`169.254.169.254`): yes.** A container can read the box's
+  instance id, hostname, region and network config. Hetzner's metadata carries no
+  credentials, but `user-data` rides the same endpoint — so **never put a secret in
+  cloud-init user-data** on a box that runs apps. App secrets have their own path (the
+  deploy envelope, into Podman's secret store).
+- **Outbound traffic: unrestricted.** `harden` allows all egress, so a container reaches
+  the internet and any private network the box sits on.
+
+The why, the test, and the road not taken are in
+[`decisions/what-a-container-can-reach.md`](../../decisions/what-a-container-can-reach.md).
 - **Idempotent.** An accessory whose unit is byte-identical is left running; restarting a
   database nobody asked to change is an outage nobody asked for.
 - **`remove` takes them with the app, and never their volumes.** Undeclaring a database

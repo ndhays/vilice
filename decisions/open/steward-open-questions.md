@@ -265,23 +265,20 @@ makes it rarely necessary** — pick it up only when genuine multi-tenant shared
 mutually-distrusting projects are real. Mechanism would ride the existing `_exec` gate +
 a target argument, exactly like self-update.
 
-## What a container can reach on its own host
+## Blocking container egress to the metadata service
 
-Raised 2026-09-19, while moving Caddy's admin API onto a socket
-([`../caddy-admin-socket.md`](../caddy-admin-socket.md)). That closed the worst thing on
-the host's loopback, but not the question. **Unverified:** whether a rootless app
-container can open the host's `127.0.0.1` at all. The answer depends on Podman's rootless
-network defaults (pasta), which have changed between versions, and nothing in the repo
-sets them. If it can, one app can reach another app's published loopback port, which
-skips Caddy and the accessory isolation both.
+The rest of this thread is **settled** — see
+[`../what-a-container-can-reach.md`](../what-a-container-can-reach.md) and the spec section
+it points at. A container cannot reach another app's published port; it *can* reach
+`169.254.169.254`, which on Hetzner carries no credentials but does carry cloud-init
+user-data.
 
-Also open: **outbound traffic.** `harden` allows all outbound traffic, so a container can
-reach the cloud metadata service (`169.254.169.254`) and any private network the box is
-on.
-
-Next step: test from inside an app container on a real box (`host.containers.internal`,
-the gateway address, the metadata address). Then either pin the network options in the
-unit renderer or record why the defaults are enough, and add the result to `doctor`.
+What stays open is whether to block it. The rule would have to reject only the `steward`
+user's traffic to that address: box-wide, it risks cloud-init's network setup on the next
+boot, which is a worse failure than the disclosure. Against building it: no credentials are
+exposed, and "never put a secret in user-data" is a cheaper rule that holds everywhere.
+Revisit if Steward ever runs somewhere whose metadata service hands out credentials (AWS
+IMDS being the obvious one), where this stops being information and becomes a key.
 
 ## Remote reach — NAT'd boxes
 
