@@ -75,9 +75,14 @@ const drainTimeoutSecs = 30
 // (e.g. a protective negative value for Steward Console when it runs on the managed box).
 const appOOMScoreAdjust = 100
 
-// drainingOOMScoreAdjust makes a retiring color the first OOM victim during the brief
-// blue/green overlap — it's being torn down anyway, so the live color must outlive it.
-const drainingOOMScoreAdjust = 1000
+// There is deliberately no *draining* score above this one. Making the retiring color
+// the first OOM victim for its 30 seconds looks obvious and cannot be done: OOMScoreAdjust
+// belongs to a unit's exec context, so systemd applies it when a process starts and
+// accepts a runtime change only on a transient unit — a Quadlet unit is not one. The call
+// that used to try it always failed ("Cannot set property OOMScoreAdjust"), and would have
+// been a no-op on a running process even if it had been accepted. Both colors sit at 100
+// and the control plane stays at 0, which is the property that actually matters. See
+// ../../../decisions/quadlet-deploy.md.
 
 // portBase is the low end of the loopback port range steward manages for app colors.
 const portBase = 8800
@@ -290,9 +295,6 @@ func teardownColor(app, color string) {
 // nil where the caller has no spec in hand — `remove` sweeps by filename instead, so a
 // process whose declaration has already gone is still cleaned up.
 func teardownColorWith(app, color string, procs []Process) {
-	// Make the doomed color the first OOM victim during its drain, so memory pressure in
-	// the overlap can't take the live color instead. Best-effort, runtime-only.
-	_ = userctl("set-property", serviceName(app, color), fmt.Sprintf("OOMScoreAdjust=%d", drainingOOMScoreAdjust))
 	_ = userctl("stop", serviceName(app, color))
 	_ = removeUnit(app, color)
 	for _, p := range procs {

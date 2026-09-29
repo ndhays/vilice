@@ -198,6 +198,7 @@ Subordinate by construction:
   `POSTGRES_PASSWORD` and the database's cannot collide.
 - **Its name may not be `a` or `b`** — those are the app's own color suffixes, and a unit
   file would collide.
+.
 - **Idempotent.** An accessory whose unit is byte-identical is left running; restarting a
   database nobody asked to change is an outage nobody asked for.
 - **`remove` takes them with the app, and never their volumes.** Undeclaring a database
@@ -255,8 +256,10 @@ effectively **gapless** for apps that honor the shutdown contract below. Units c
 `Restart=on-failure` and `WantedBy=default.target` (with the `steward` user lingering),
 so an app survives crashes and reboots. They also carry `OOMScoreAdjust=100`, so under
 memory pressure the kernel sacrifices an app before the control plane (Caddy, sshd, the
-record); a retiring color is bumped higher still for its drain, so the live color
-outlives it. Per-app resource limits (`MemoryMax`) await a later spec field.
+record). Both colors carry the same 100 — a retiring color is **not** bumped higher for
+its drain, because `OOMScoreAdjust` is applied when a process starts and systemd accepts a
+runtime change only on a transient unit, which a Quadlet unit is not. Per-app resource
+limits (`MemoryMax`) await a later spec field.
 
 ## Routing and HTTPS
 

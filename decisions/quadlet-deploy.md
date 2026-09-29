@@ -140,9 +140,15 @@ typical** — the app exits as soon as it's drained, so real overlap is usually 
 the full window only bites for slow/ws-heavy drains. It's resource overlap, not downtime
 (the new color is already serving). The one real risk is a **deploy-time memory spike** on
 a tight box — but deploys are serial, so it's +1 app's RSS transiently, not a doubling of
-everything. Mitigations: size host headroom ≥ the largest single app's RSS; and in Slice B,
-raise the **draining** old color's `OOMScoreAdjust` at SIGTERM so the kernel kills the
-doomed-anyway color first under pressure. (Per-color `MemoryMax` is fine; the host must
+everything. Mitigation: size host headroom ≥ the largest single app's RSS.
+An earlier draft added a second one — raise the **draining** old color's `OOMScoreAdjust`
+at SIGTERM so the kernel kills the doomed-anyway color first. It was built, and a live test
+on 2026-09-29 showed it had never worked: `OOMScoreAdjust` is a unit's exec-context
+property, so systemd applies it at process start and accepts a runtime change only on a
+transient unit. `systemctl --user set-property` on a Quadlet unit answers "Cannot set
+property OOMScoreAdjust", and the value would not have reached a running process anyway.
+The call is **removed**; both colors sit at 100, the control plane at 0. Headroom is the
+lever. (Per-color `MemoryMax` is fine; the host must
 just hold both colors during overlap — headroom is the lever, not the per-color cap.)
 
 ## Supersedes / answers
