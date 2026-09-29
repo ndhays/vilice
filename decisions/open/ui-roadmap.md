@@ -6,7 +6,7 @@
 > [`decisions/ui-shape.md`](../ui-shape.md). What remains here is the **build roadmap** —
 > what's done, what's next — plus a handful of still-open sub-questions.
 
-**Last touched:** 2026-06-16.
+**Last touched:** 2026-09-29.
 
 ---
 
@@ -121,6 +121,21 @@ Graduated 2026-08-19, all canonical in the blueprints now:
   **release command** ([`release-command.md`](release-command.md), still open in parts).
 - **One glyph, one meaning** across nouns, and the vertical rhythm named on the canonical
   space scale ([`tokens.md`](../../blueprint/design/tokens.md)).
+
+### Next — the overhaul
+What the console is for is settled in
+[`../what-the-console-is-for.md`](../what-the-console-is-for.md): watching, one shared
+record, bounded acts — and every act shows its command. In order:
+
+1. **Acts show their commands** — *open.* The ceremony preview and the record entry both
+   carry three layers: plain words, the `steward` command sent, and what it does on the box
+   (plus how to check it). The third layer is read from `steward _commands`; where that
+   lacks the detail (e.g. apply-updates' two apt commands, its verify commands), it grows
+   in the binary, not the console.
+2. **Badges by kind** — *open.* The machine header mixes role (`host`), live state
+   (`reachable`), our permission (`operate`) and a bookkeeping gap (`no owner`) in one
+   pill shape. Only live state earns a coloured pill; the rest read as a labelled line.
+3. **Visual pass** — *open.* Card alignment and density, after the two above.
 
 ---
 
