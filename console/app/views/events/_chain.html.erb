@@ -19,9 +19,20 @@
             <%# Verb first and in bold, then what it touched. Two columns of the record,
                 shown as two parts of one sentence — the glyph alone never said which
                 act this was. %>
-            <span class="chain-what"><span class="chain-act"><%= item.action %></span><%
+            <%# An act that ran a steward command leads with a stamp of that command — the
+                button that was pressed, drawn flat so it cannot be pressed again. How it
+                reached the box sets the stamp: filled when this console sent it, dashed and
+                loud when someone typed it at the box, outlined for any other key. An act
+                recorded here that sent nothing keeps its plain past-tense verb. %>
+            <span class="chain-what"><%
+              if item.via %><%= act_stamp(item) %><% else %><span class="chain-act"><%= item.action %></span><% end
               %><% if (detail = act_detail(item)).present? %> <%= detail %><% end %></span>
-            <% if item.witnessed? %><span class="tag witnessed" title="Seen in the box record — not issued by this console">witnessed</span><% end %>
+            <% case item.via %>
+            <% when :by_hand %>
+              <span class="tag by-hand" title="Typed at the box's own shell, not sent through a scoped key">run by hand on the box</span>
+            <% when :key %>
+              <span class="tag witnessed" title="Seen in the box record — sent by another key, not this console">witnessed</span>
+            <% end %>
             <%= outcome_tag(item) %>
           </div>
           <div class="chain-meta">

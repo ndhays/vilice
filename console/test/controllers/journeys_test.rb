@@ -148,7 +148,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     end
     assert_response :success
     assert_select ".ceremony"
-    assert_select ".chain-entry.is-pending .chain-what", /updated op/  # the would-be line
+    assert_select ".chain-entry.is-pending .chain-what", /apply-updates op/  # the would-be line
     assert_select "form[action=?]", machine_mutation_path(@operator)           # Confirm POSTs
   end
 
@@ -282,7 +282,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     get new_machine_mutation_path(@operator, act: "deploy", install_id: app.id,
           image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e")
     assert_select ".ceremony .spec"
-    assert_select ".chain-entry.is-pending .chain-what", /deployed web/
+    assert_select ".chain-entry.is-pending .chain-what", /deploy web on op/
   end
 
   test "deploy records pending, pipes the envelope, settles ok, and pins desired_image" do

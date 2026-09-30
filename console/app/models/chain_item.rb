@@ -42,6 +42,24 @@ ChainItem = Struct.new(:at, :actor, :action, :summary, :origin, :machine, :proje
 
   def witnessed? = origin == :witnessed
 
+  # The steward verb the command ran — `apply-updates` — which is what the button that
+  # sent it said. Nil for an act recorded here that sent nothing to a box.
+  def verb = command.to_s.split[1]
+
+  # How the act reached the box, which is what the entry's stamp shows:
+  #   :console  — sent by this console (a button was pressed)
+  #   :by_hand  — typed at the box's own shell. Steward records a local invocation
+  #               under the name `operator` (core.ActorName); a scoped key records
+  #               under its client name instead.
+  #   :key      — another scoped key: CI, an agent, another console, the snapshot timer
+  #   nil       — recorded here only; nothing was sent
+  LOCAL_ACTOR = "operator"
+  def via
+    return nil if verb.nil?
+    return :console unless witnessed?
+    actor == LOCAL_ACTOR ? :by_hand : :key
+  end
+
   # Free-text search over an assembled chain. The machine page's record is the merge
   # of two sources — our events and the box's own entries — so it cannot be filtered
   # with a relation; it is filtered here, over what an entry actually says.

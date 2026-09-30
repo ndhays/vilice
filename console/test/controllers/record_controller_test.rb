@@ -87,6 +87,8 @@ class RecordControllerTest < ActionDispatch::IntegrationTest
     act.settle!("ok", output: { "ok" => true, "message" => "machine packages updated" })
     get record_path
     assert_select ".chain-raw summary .chain-cmd", "steward apply-updates --json"
+    # It leads with a stamp of the button that was pressed.
+    assert_select ".act-stamp.via-console .cmd-verb", "apply-updates"
     assert_select ".chain-raw .raw-label", "Output"
     assert_select ".chain-raw pre.raw", /machine packages updated/
     assert_select ".chain-raw .raw-label", "Raw record entry"

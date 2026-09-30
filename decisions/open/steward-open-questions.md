@@ -381,3 +381,15 @@ deciding the record's fate (archive off-box first?), and the **restic repo** dec
 into uninstall so the reversible act doesn't carry the irreversible one. Shape open:
 extend uninstall with a `--wipe` tier vs. a separate recorded checklist. Pairs with
 the Access (#16) grant-scope work already flagged in journeys.
+
+## Is "run by hand" provable from the record?
+
+**Raised 2026-09-30**, building the record's stamps. The console marks a box entry *run
+by hand on the box* when its actor is `operator` — the name `core.ActorName` gives a
+local shell invocation. But `authorize` accepts `operator` as a client name, so a scoped
+key could be named that and its acts would read as typed at the box. Two boring fixes:
+reserve `operator` in `validClient` (a key can never take the local name), or record the
+door on the entry itself (`via: shell|ssh`), which is a record-format change
+([`../record-format.md`](../record-format.md)). Reserving the name is smaller; recording
+the door is the stronger claim. Undecided.
+

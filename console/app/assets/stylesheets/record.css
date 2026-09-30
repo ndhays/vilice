@@ -430,3 +430,22 @@ h1 .health-line.crit { font-size: 1rem; }
 .chain-cmd { font-family: var(--font-mono); font-weight: 700; font-size: 0.8rem; color: var(--ink); background: none; padding: 0; }
 .chain-raw[open] > summary { margin-bottom: 0.4rem; }
 .raw-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0.5rem 0 0.2rem; }
+
+/* The stamp an entry leads with: the command's verb, drawn like the button that sent
+   it but flat — square-cornered, smaller, no hover, no pointer — so it reads as the
+   record of a press and never as something to press. The door it came through sets
+   its look: filled for this console, outlined for another key, dashed and loud for a
+   command typed at the box itself. */
+.act-stamp {
+  display: inline-flex; align-items: center; gap: 0.3rem; vertical-align: -0.15em;
+  font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600; line-height: 1;
+  padding: 0.15rem 0.4rem 0.15rem 0.25rem; border-radius: 3px; border: 1px solid transparent;
+  cursor: default; user-select: text;
+}
+.act-stamp svg { flex: none; transform: translateY(1px); }
+.act-stamp.via-console { background: var(--mutate); color: var(--card); }
+.act-stamp.via-key { border-color: var(--line); color: var(--ink); }
+.act-stamp.via-by-hand { border: 1px dashed var(--accent-text); color: var(--accent-text); background: var(--accent-soft); padding-left: 0.35rem; }
+.chain-entry.is-failed .act-stamp.via-console { background: var(--bad); }
+.tag.by-hand { color: var(--accent-text); margin-left: 0.4rem; }
+.chain-what:has(> .act-stamp)::first-letter { text-transform: none; }

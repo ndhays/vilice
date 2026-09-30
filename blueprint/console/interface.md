@@ -538,7 +538,15 @@ silently (`updated` had fallen out of it, so apply-updates drew as an observe). 
 are gone; nothing replaced them.
 
 **An entry reads at three levels.** The plain line — what happened, by whom, where,
-when — is the reading. Beneath it, the **command that ran**, in bold mono: `steward
+when — is the reading. An act that ran a steward command leads it with a **stamp** of
+that command's verb — the button that was pressed, drawn flat (square corners, no hover,
+no pointer) so it reads as a record of a press and never as a thing to press. The door
+the act came through sets the stamp (`ChainItem#via`): **filled** amber with the mark
+when this console sent it; **dashed yellow with a terminal glyph**, tagged *run by hand
+on the box*, when it was typed at the box's own shell (Steward records a local run under
+the actor `operator`); **outlined**, tagged *witnessed*, for any other key — CI, an
+agent, the snapshot timer. An act recorded here that sent nothing keeps its plain
+past-tense verb. Beneath it, the **command that ran**, in bold mono: `steward
 apply-updates --json` for an act the console sent (from `Event.raw["command"]`), `steward
 deploy app1` for a box entry (its verb and arguments, read straight off the entry). An act
 recorded here that sent nothing to a box says *recorded here · no command sent to a box*

@@ -66,4 +66,22 @@ class ChainItemTest < ActiveSupport::TestCase
     assert_equal "steward deploy app1", i.command
     assert_equal entry, i.entry
   end
+
+  # The stamp shows the door an act came through.
+  test "an act's door: this console, the box's own shell, or another key" do
+    sent = Event.new(at: Time.current, actor: "alice@x", action: "updated", raw: { command: "apply-updates --json" })
+    assert_equal :console, ChainItem.from_event(sent).via
+    assert_equal "apply-updates", ChainItem.from_event(sent).verb
+
+    typed = { "time" => "2026-06-10T00:00:00Z", "actor" => "operator", "action" => "restart", "args" => [ "web" ] }
+    assert_equal :by_hand, ChainItem.from_record_entry(typed, client: "console").via
+
+    ci = typed.merge("actor" => "ci-deployer")
+    assert_equal :key, ChainItem.from_record_entry(ci, client: "console").via
+
+    ours = typed.merge("actor" => "console")
+    assert_equal :console, ChainItem.from_record_entry(ours, client: "console").via
+
+    assert_nil ChainItem.from_event(Event.new(at: Time.current, actor: "alice@x", action: "labelled")).via
+  end
 end
