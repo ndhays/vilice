@@ -173,6 +173,9 @@
     </div>
   <% end %>
 
+  <%= render "machines/backups", status: @status %>
+  <%= render "machines/certs", status: @status %>
+
   <%# ── The edge, when this box is a balancer ───────────────────────────────
       Two halves, kept visibly apart: the table this box *should* serve, derived from
       the installs that select it, and the addresses it *reports* fronting. Nothing
@@ -203,6 +206,8 @@
       </p>
     </div>
   <% end %>
+  <%= render "machines/record_card", record: @record %>
+  <%= render "machines/keyholders", machine: @machine, actors: @actors %>
 <% end %>
 </section>
 
@@ -217,7 +222,9 @@
 
 <%# ── Record — this box's half of the two records, newest first ─────────────── %>
 <h2 class="section-kicker"><%= icon "disc", size: 15 %> Record</h2>
-<%= record_integrity(@record) %>
+<%# Online, the Record card above says whether the chain is intact. Offline there is no
+    card, so the warning that these entries end at the last read belongs with them. %>
+<%= record_integrity(@record) unless @status.online? %>
 <%# The chain is assembled from two sources — our own events and the box's — so the
     search filters the assembled list rather than a relation. A plain GET, so a
     narrowed record stays a link you can send. %>

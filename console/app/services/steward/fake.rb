@@ -126,6 +126,42 @@ module Steward
       }.tap do |d|
         (m = maintenance_for(machine, health)) and d["maintenance"] = m
         (u = updates_for(machine, health)) and d["updates"] = u
+        d["backups"] = backups_for(machine, d["apps"], health)
+        (c = certs_for(machine, health)) and d["certs"] = c
+      end
+    end
+
+    # When each app and the record last backed up, by band: calm boxes backed up
+    # overnight, a warn box has an app never backed up, a crit box's last attempt
+    # failed. A `fake-backups=off` label reports no repo configured.
+    def backups_for(machine, apps, health)
+      return { "configured" => false, "targets" => {} } if label_value(machine, "fake-backups") == "off"
+      now = Time.current
+      targets = { "machine" => { "last_ok" => (now - 5.hours).iso8601 } }
+      apps.each_with_index do |app, i|
+        targets[app["name"]] =
+          if health == "crit" && i.zero?
+            { "last_ok" => (now - 3.days).iso8601, "last_failed" => (now - 2.hours).iso8601,
+              "error" => "Fatal: unable to open repository: connection refused" }
+          elsif health == "warn" && i.zero?
+            {} # never backed up
+          else
+            { "last_ok" => (now - (5 + i).hours).iso8601 }
+          end
+      end
+      { "configured" => true, "targets" => targets.reject { |_, v| v.empty? } }
+    end
+
+    # The certificate each hostname placed on this box hands out, by band: calm boxes
+    # hold valid certs months out, a warn box has one close to expiry, a crit box one
+    # expired. Nil when no placement here names a hostname.
+    def certs_for(machine, health)
+      hosts = machine.installs.filter_map(&:hostname).reject(&:blank?).uniq.sort
+      return nil if hosts.empty?
+      hosts.each_with_index.map do |host, i|
+        days = i.zero? ? { "warn" => 9, "crit" => -2 }.fetch(health, 61) : 61
+        cert = { "host" => host, "not_after" => days.days.from_now.iso8601, "issuer" => "R11" }
+        days.negative? ? cert.merge("valid" => false, "error" => "x509: certificate has expired or is not yet valid") : cert.merge("valid" => true)
       end
     end
 

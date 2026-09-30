@@ -450,6 +450,55 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
 
   private
 
+  # ── The status cards: backups, certificates, the record, and who can reach it ──
+  test "a box under pressure shows an app never backed up and a cert close to expiry" do
+    with_fake_observe do
+      sign_in_as @user
+      box = Machine.create!(name: "cards-box", ssh_host: "x", scope: "operate")
+      box.labels.create!(key: "fake-health", value: "warn")
+      install = Install.create!(name: "shop", hostname: "shop.example")
+      install.install_targets.create!(machine: box, status: "running")
+      get machine_path(box)
+      assert_response :success
+
+      assert_select ".zone-observe .panel", /Backups/ do
+        assert_select ".fact-rows li.warn", /shop.*Never backed up/m
+        assert_select ".fact-rows li.ok", /The record.*Backed up/m
+      end
+      assert_select ".zone-observe .panel", /Certificates/ do
+        assert_select ".fact-rows li.warn", /shop\.example.*Expires in \d+ days/m
+      end
+      assert_select ".zone-observe .panel .kicker", "Record"
+      # The fake answers no `actors` read, and an unread ledger is never shown empty.
+      assert_select ".keyholders", /Could not read the ledger/
+      assert_select ".keyholders .access-rows", count: 0
+    end
+  end
+
+  test "a failing backup and an expired cert read as failures, with the reason" do
+    with_fake_observe do
+      sign_in_as @user
+      box = Machine.create!(name: "crit-cards", ssh_host: "x", scope: "operate")
+      box.labels.create!(key: "fake-health", value: "crit")
+      install = Install.create!(name: "shop2", hostname: "shop2.example")
+      install.install_targets.create!(machine: box, status: "running")
+      get machine_path(box)
+      assert_select ".fact-rows li.bad", /Last attempt failed/
+      assert_select ".fact-rows li.bad .fact-detail", /connection refused/
+      assert_select ".fact-rows li.bad", /Not trusted · expired/
+    end
+  end
+
+  test "a box with no backup repo says nothing on it is backed up" do
+    with_fake_observe do
+      sign_in_as @user
+      box = Machine.create!(name: "no-repo", ssh_host: "x", scope: "operate")
+      box.labels.create!(key: "fake-backups", value: "off")
+      get machine_path(box)
+      assert_select ".card-verdict.bad", /Nothing on this box is backed up/
+    end
+  end
+
   def with_fake_observe
     ENV["STEWARD_FAKE_OBSERVE"] = "1"
     yield

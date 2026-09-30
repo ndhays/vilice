@@ -1,0 +1,9 @@
+<%# The box's record, as a card: is the chain intact, how long is it, and when was the
+    last act. The entries themselves are the Record section below. Locals: record. %>
+<div class="panel observe">
+  <div class="kicker">Record</div>
+  <%= record_integrity(record) %>
+  <% if record && record[:ok] && (last = Array(record.dig(:data, "data", "entries")).map { |e| e["time"] }.compact.max) %>
+    <p class="muted card-note">Last entry <%= time_ago_in_words(Time.zone.parse(last)) %> ago.</p>
+  <% end %>
+</div>

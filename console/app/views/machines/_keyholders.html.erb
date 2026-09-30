@@ -1,0 +1,20 @@
+<%# Who can reach this box — its rights ledger, read live through `steward actors`, the
+    same read the Access page makes across the fleet. A list, not a card: it is a set of
+    keys, one per line. A ledger that cannot be read says so; it is never shown empty,
+    because an empty list would read as "nobody has access". Locals: machine, actors. %>
+<section class="keyholders">
+  <h3 class="list-head"><%= icon "key-round", size: 15 %> Who can reach this box</h3>
+  <% if actors.is_a?(Hash) && actors[:ok] %>
+    <% lines = Array(actors.dig(:data, "data", "actors")).map { |a| AccessLine.from(machine, a) } %>
+    <% if lines.any? %>
+      <ul class="rows access-rows">
+        <%= render partial: "access/line", collection: lines, as: :line, locals: { group: "box" } %>
+      </ul>
+    <% else %>
+      <p class="muted">No keys in the ledger.</p>
+    <% end %>
+  <% else %>
+    <p class="muted"><%= icon "circle-cut", size: 13 %> Could not read the ledger<%
+      %><% if actors.is_a?(Hash) && actors[:error].present? %>: <%= actors[:error] %><% end %>.</p>
+  <% end %>
+</section>

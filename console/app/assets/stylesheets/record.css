@@ -449,3 +449,33 @@ h1 .health-line.crit { font-size: 1rem; }
 .chain-entry.is-failed .act-stamp.via-console { background: var(--bad); }
 .tag.by-hand { color: var(--accent-text); margin-left: 0.4rem; }
 .chain-what:has(> .act-stamp)::first-letter { text-transform: none; }
+
+/* A card of named facts, one per line: the thing on the left, what is true of it on
+   the right, and — only when something is wrong — why, beneath. The line's colour is
+   its verdict, carried by an icon as well so it survives without colour. */
+.fact-rows { list-style: none; margin: 0.3rem 0 0; padding: 0; }
+.fact-rows li {
+  display: grid; grid-template-columns: minmax(7rem, max-content) minmax(0, 1fr);
+  gap: 0.15rem 1rem; padding: 0.4rem 0; border-top: 1px solid var(--line); font-size: 0.9rem;
+}
+.fact-rows li:first-child { border-top: 0; }
+.fact-rows .fact-name { font-weight: 600; overflow-wrap: anywhere; }
+.fact-rows .fact-value .icon { vertical-align: -0.15em; }
+.fact-rows li.ok .fact-value .icon { color: var(--ok); }
+.fact-rows li.warn .fact-value { color: var(--warn); }
+.fact-rows li.bad .fact-value { color: var(--bad); }
+.fact-rows .fact-detail {
+  grid-column: 2; font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.card-verdict { margin: 0.2rem 0; }
+.card-verdict.bad { color: var(--bad); }
+.card-verdict .icon { vertical-align: -0.15em; }
+.card-note { font-size: 0.85rem; margin: 0.2rem 0 0; }
+
+/* Who can reach this box: a list under the cards, not one of them. */
+.keyholders { margin: 1.5rem 0 1rem; }
+.list-head {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.95rem; margin: 0 0 0.6rem;
+}

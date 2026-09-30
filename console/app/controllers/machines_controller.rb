@@ -70,6 +70,7 @@ class MachinesController < ApplicationController
     @q        = params[:q].to_s.strip
     @status   = MachineStatus.from(Steward::Observe.status(@machine))
     @record   = Steward::Observe.record(@machine)
+    @actors   = Steward::Observe.actors(@machine) if @status.online? # who can reach it
     @chain    = chain_for(@machine, @record).select { |i| i.matches?(@q) }
     @installs = @machine.installs.includes(:project).order(:name) # placements on this box (project optional)
     @projects = Project.order(:name) # for the ownership / sharing controls

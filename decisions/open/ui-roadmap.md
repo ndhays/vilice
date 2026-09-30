@@ -140,8 +140,8 @@ mark and the verb.
    hostnames, env names, volumes; accessories and processes nested under the app), with
    the literal deploy envelope behind a *Raw spec* disclosure (secret names only).
    Observe = where it runs, running vs. asked for. Operate = the command buttons, per box.
-**Queued next, in this order** (agreed 2026-09-30): the new status cards (#7), the
-code rename (#2a), then a better deploy UI (#2b).
+**Queued next, in this order** (agreed 2026-09-30): the code rename (#2a), then a
+better deploy UI (#2b). (The status cards, #7, are built.)
 
 2b. **Deploy without pasting** — *open.* The machine page's `deploy` takes a pasted JSON
    spec today. Wanted: a form that builds the spec — from an App Template, or field by
@@ -167,10 +167,8 @@ code rename (#2a), then a better deploy UI (#2b).
    output is not shown as it arrives. Wants a running state in the ceremony (the entry
    already exists as *pending*, so the record can show it) and, later, streamed output —
    which is #15's Steward sub-step contract.
-7. **More observe cards** — *open, agreed 2026-09-30.* Last backup (restic), TLS
-   certificates and when they expire (Caddy), record integrity — each a card, and each
-   only once `steward status` reports it. Who holds keys on this box (`steward actors`,
-   already read for Access) is a **list**, not a card.
+7. **More observe cards** — BUILT: Backups and Certificates (from new `status` fields),
+   the Record card, and *Who can reach this box* as a list.
 8. **Visual pass** — *open.* Card alignment and density, after the above.
 
 ---

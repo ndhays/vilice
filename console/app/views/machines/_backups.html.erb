@@ -1,0 +1,34 @@
+<%# Backups — when each app on this box, and the record itself, last backed up, as the
+    box's own `backup` noted it. Never a live query of the repo. Absent when the box's
+    steward predates the fact: unknown is not "never". Locals: status. %>
+<% if status.backups_known? %>
+  <div class="panel observe">
+    <div class="kicker">Backups</div>
+    <% if !status.backup_configured? %>
+      <p class="card-verdict bad"><%= icon "triangle-alert", size: 15 %>
+        <strong>Nothing on this box is backed up.</strong></p>
+      <p class="muted card-note">No backup repo is set up for it.</p>
+    <% else %>
+      <ul class="fact-rows">
+        <% status.backup_rows.each do |row| %>
+          <li class="<%= row.failing? ? 'bad' : (row.never? ? 'warn' : 'ok') %>">
+            <span class="fact-name<%= ' mono' unless row.record? %>"><%= row.record? ? "The record" : row.target %></span>
+            <span class="fact-value">
+              <% if row.failing? %>
+                <%= icon "circle-x", size: 14 %> Last attempt failed <%= time_ago_in_words(row.last_failed) %> ago<%
+                  %><% if row.last_ok %> · last good <%= time_ago_in_words(row.last_ok) %> ago<% end %>
+              <% elsif row.never? %>
+                <%= icon "triangle-alert", size: 14 %> Never backed up
+              <% else %>
+                <%= icon "circle-check", size: 14 %> Backed up <%= time_ago_in_words(row.last_ok) %> ago
+              <% end %>
+            </span>
+            <% if row.failing? && row.error.present? %>
+              <span class="fact-detail"><%= row.error %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+<% end %>

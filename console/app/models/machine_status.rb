@@ -49,6 +49,54 @@ class MachineStatus
     # `steward route` wrote. This is the reality half of the balancer's plan-vs-reality
     # loop; the plan is Machine#routing_table.
     @routes = (result.dig(:data, "data", "routes") if @ok) || []
+    # When each target last backed up, as the box's own `backup` noted it:
+    # { configured, targets: { name => { last_ok, last_failed, error } } }. Absent when
+    # the box's steward predates the fact — unknown, so no card, rather than "never".
+    @backups = (result.dig(:data, "data", "backups") if @ok)
+    # The certificate each served hostname hands out: [{ host, not_after, issuer,
+    # valid, error }]. Absent when the box serves no hostname (or predates the check).
+    @certs = (result.dig(:data, "data", "certs") if @ok) || []
+  end
+
+  # ── Backups ────────────────────────────────────────────────────────────────
+  def backups_known? = @backups.is_a?(Hash)
+  def backup_configured? = backups_known? && @backups["configured"] == true
+
+  # One row per thing that should be backed up: each app the box runs, then the record
+  # itself. A target with no history reads as never backed up — which, on a box with
+  # a repo configured, is exactly the thing to notice.
+  BackupRow = Data.define(:target, :last_ok, :last_failed, :error) do
+    def record? = target == "machine"
+    def never? = last_ok.nil? && last_failed.nil?
+    # The most recent attempt failed: a failure newer than the last success.
+    def failing? = last_failed.present? && (last_ok.nil? || last_failed > last_ok)
+  end
+  def backup_rows
+    return [] unless backups_known?
+    targets = @backups["targets"] || {}
+    names = @apps.map { |a| a["name"] } + [ "machine" ]
+    names.uniq.map do |name|
+      run = targets[name] || {}
+      BackupRow.new(target: name, last_ok: time_or_nil(run["last_ok"]),
+                    last_failed: time_or_nil(run["last_failed"]), error: run["error"])
+    end
+  end
+
+  # ── Certificates ───────────────────────────────────────────────────────────
+  CERT_WARN_DAYS = 14
+  Cert = Data.define(:host, :not_after, :issuer, :valid, :error) do
+    def days_left = not_after && ((not_after - Time.current) / 1.day).floor
+    # bad: not served, or does not verify; warn: valid but close to expiry.
+    def level
+      return :bad unless valid
+      days_left && days_left < CERT_WARN_DAYS ? :warn : :ok
+    end
+  end
+  def certs
+    @certs.map do |c|
+      Cert.new(host: c["host"], not_after: time_or_nil(c["not_after"]), issuer: c["issuer"],
+               valid: c["valid"] == true, error: c["error"])
+    end
   end
 
   def online? = @ok
@@ -154,6 +202,8 @@ class MachineStatus
   end
 
   private
+
+  def time_or_nil(value) = value.present? ? (Time.zone.parse(value.to_s) rescue nil) : nil
 
   def problem
     return "disk #{disk_percent}% — critically low"       if over?(disk_percent, DISK[:crit])

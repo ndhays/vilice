@@ -319,8 +319,15 @@ enough to make a group read as a group.
   - **Observe holds no act.** Live status, with when it was read beneath its title
     (*Read 2 minutes ago · cached*), a `status` button to read again, and **Raw status
     output** at its foot — the command in bold, then the JSON it returned; maintenance (the window,
-    and the updates waiting, by name); the apps the box reports; and the edge table on a
-    balancer.
+    and the updates waiting, by name); the apps the box reports; **Backups** — each app
+    and the record, last backed up when, or *never*, or *last attempt failed* with the
+    reason, and *Nothing on this box is backed up* when no repo is set (from `status`'s
+    `backups`; absent when the box's steward predates it); **Certificates** — each served
+    hostname, valid and days to expiry, amber inside 14 days, red when not served or not
+    trusted (from `status`'s `certs`); the edge table on a balancer; the **Record** card
+    (chain intact, entry count, last entry); and beneath the cards, as a list rather than
+    a card, **Who can reach this box** — its ledger via `steward actors`, the Access
+    page's rows, and *Could not read the ledger* rather than an empty list when unread.
   - **Operate lists every act the box can take**, each a sentence and a button:
     `apply-updates`, `route` on a balancer, `deploy` from a pasted spec, and `remove`
     per app the box reports. An act with nothing to do (no updates waiting) **keeps its
