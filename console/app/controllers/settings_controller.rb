@@ -15,7 +15,7 @@ class SettingsController < ApplicationController
       setting.update!(settings_params)
       restricted = setting.installs_library_only
       Event.record!(actor: Current.user.email_address, action: restricted ? "restricted" : "opened",
-                    summary: "installs #{restricted ? 'to' : 'beyond'} the App Library")
+                    summary: "apps #{restricted ? 'to' : 'beyond'} App Library templates")
     end
     redirect_to settings_path, notice: "Settings updated."
   end

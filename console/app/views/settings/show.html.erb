@@ -11,11 +11,11 @@
 <%# Fleet policy. Its Save lives in the card, like every other card here — it used to
     sit loose beneath, from when one form spanned several cards. %>
 <div class="card setting">
-  <div class="title">Installs</div>
+  <div class="title">Apps</div>
   <%= form_with model: @setting, url: settings_path, method: :patch do |f| %>
     <label class="toggle">
       <%= f.check_box :installs_library_only %>
-      <span>Only allow installs from the App Library (no custom images)</span>
+      <span>Only allow apps from App Library templates (no custom images)</span>
     </label>
     <div class="card-actions">
       <%= button_tag class: "btn" do %>

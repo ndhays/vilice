@@ -18,15 +18,15 @@
     is something to deal with or there is not, and the page says which before it says
     anything else. The counts sit underneath as the proof it was looked at. %>
 <% trouble = [] %>
-<% trouble << "#{pluralize(@needs_look, 'install')} #{@needs_look == 1 ? 'needs' : 'need'} a look" if @needs_look.positive? %>
+<% trouble << "#{pluralize(@needs_look, 'app')} #{@needs_look == 1 ? 'needs' : 'need'} a look" if @needs_look.positive? %>
 <% trouble << "#{pluralize(@down_boxes, 'box', plural: 'boxes')} unreachable" if @down_boxes.positive? %>
-<% trouble << "#{pluralize(@short, 'install')} short of the ask" if @short.positive? %>
+<% trouble << "#{pluralize(@short, 'app')} short of the ask" if @short.positive? %>
 <div class="verdict <%= trouble.any? ? 'bad' : 'ok' %>">
   <%= icon(trouble.any? ? "triangle-alert" : "circle-check", size: 26) %>
   <div>
     <p class="verdict-head"><%= trouble.any? ? trouble.join(" · ") : "Nothing to report" %></p>
     <p class="verdict-sub">
-      <%= pluralize(@installs.size, "install") %> ·
+      <%= pluralize(@installs.size, "app") %> ·
       <%= pluralize(@owned_machines.size + @shared_machines.size, "machine") %><%
         %><%= " · all running as asked" if trouble.empty? && @installs.any? %>
     </p>
@@ -48,15 +48,15 @@
     (the project's ledger — bounded to a head + a link to the full filtered view).
     The record is the spine globally (Home/`/record`); here it's the footer ledger. %>
 <div class="section-head">
-  <h2>Installs</h2>
-  <%= button_link_to "Add Install", new_install_path(project_id: @project), icon: "plus", class: "btn" %>
+  <h2>Apps</h2>
+  <%= button_link_to "Add App", new_install_path(project_id: @project), icon: "plus", class: "btn" %>
 </div>
 <% if @installs.any? %>
   <ul class="rows install-rows">
     <%= render partial: "installs/row", collection: @installs, as: :install %>
   </ul>
 <% else %>
-  <p class="empty">No installs yet.</p>
+  <p class="empty">No apps yet.</p>
 <% end %>
 
 <%# Owned — this project's own hardware. Owner is implied by the section, so the
@@ -140,11 +140,11 @@
     <p class="note muted">The client's name and who to contact about their work.</p>
   </div>
 
-  <%# Deleting is guarded server-side: a project that still has live installs or owns
+  <%# Deleting is guarded server-side: a project that still has live apps or owns
       machines is refused, naming them. The confirm is the second gate, not the first. %>
   <div class="panel danger-remove">
     <h3 class="danger-head"><%= icon "trash-2", size: 15 %> Delete this Project</h3>
-    <p class="note">Removing the client. Refused while it still has live installs or owns
+    <p class="note">Removing the client. Refused while it still has live apps or owns
       machines — take those off or transfer them first.</p>
     <%= button_to project_path(@project), method: :delete, class: "btn danger",
           form: { data: { turbo_confirm: "Delete #{@project.name}? This can't be undone." } } do %>

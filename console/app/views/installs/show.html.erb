@@ -6,7 +6,7 @@
 <% if @project %>
   <%= breadcrumb [["Projects", projects_path], [@project.name, project_path(@project)], [@install.name, nil]] %>
 <% else %>
-  <%= breadcrumb [["Installs", installs_path], [@install.name, nil]] %>
+  <%= breadcrumb [["Apps", installs_path], [@install.name, nil]] %>
 <% end %>
 
 <h1 class="machine-head">

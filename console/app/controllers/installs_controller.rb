@@ -170,7 +170,7 @@ class InstallsController < ApplicationController
   # Only ever shown for a box that was named and refused — never for a blank one, which
   # is now a legitimate answer. So it says why that box, and what the ways out are.
   def no_machine_message
-    lead = @project ? "That box isn't on this project" : "That box isn't one this install can use"
+    lead = @project ? "That box isn't on this project" : "That box isn't one this app can use"
     "#{lead} — pick another, or leave it blank and place it later."
   end
 

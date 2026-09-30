@@ -1,7 +1,7 @@
 <% content_for :title, "App Library — Steward" %>
 
 <%= page_header "App Library", icon: "library-big" do %>
-  <%= button_link_to "Add App", new_app_path, icon: "plus", class: "btn sm" %>
+  <%= button_link_to "Add Template", new_app_path, icon: "plus", class: "btn sm" %>
 
   <span class="head-divider" aria-hidden="true"></span>
 
@@ -41,16 +41,16 @@
 
     <% if @apps.any? %>
       <%= form_with url: remove_selected_apps_path, method: :delete, id: "apps-bulk",
-            data: { turbo_confirm: "Remove the selected apps from the App Library?" } do %>
+            data: { turbo_confirm: "Remove the selected templates from the App Library?" } do %>
         <ul class="rows app-rows">
           <%= render partial: "apps/row", collection: @apps, as: :app %>
         </ul>
       <% end %>
     <% else %>
-      <p class="empty">No apps match this search.</p>
+      <p class="empty">No templates match this search.</p>
     <% end %>
   </div>
 <% else %>
-  <p class="empty">No apps yet. <%= link_to "Add one", new_app_path %>, or import from
+  <p class="empty">No templates yet. <%= link_to "Add one", new_app_path %>, or import from
     <a href="https://applibrary.agoraforge.org">a shared library</a>.</p>
 <% end %>

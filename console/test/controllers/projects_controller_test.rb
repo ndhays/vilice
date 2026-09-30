@@ -77,7 +77,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to project_path(@project)
     follow_redirect!
-    assert_select "div", /still has live installs/
+    assert_select "div", /still has live apps/
   end
 
   test "destroy succeeds once the app is retired" do

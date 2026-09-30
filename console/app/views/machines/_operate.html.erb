@@ -28,7 +28,7 @@
 
     <% if machine.balancer? %>
       <%= render "machines/act", verb: "route",
-            state: table.any? ? "Send the edge table: #{pluralize(table.size, 'install')} behind it" : "Send the edge table (no install selects this box yet)",
+            state: table.any? ? "Send the edge table: #{pluralize(table.size, 'app')} behind it" : "Send the edge table (no app selects this box yet)",
             button: link_to(steward_verb("route"), new_machine_mutation_path(machine, act: "route"),
                       class: "btn mutate cmd sm", data: { turbo_frame: "ceremony" }) %>
     <% end %>

@@ -179,7 +179,7 @@
       reconciles them — applying is an act, across in Operate. %>
   <% if @machine.balancer? %>
     <div class="panel observe">
-      <div class="kicker">Edge · derived from the installs behind it</div>
+      <div class="kicker">Edge · derived from the apps behind it</div>
       <% if @table.any? %>
         <ul class="route-table">
           <% @table.each do |r| %>
@@ -192,7 +192,7 @@
           <% end %>
         </ul>
       <% else %>
-        <p class="note muted">No install selects this balancer yet, so the table is empty.</p>
+        <p class="note muted">No app selects this balancer yet, so the table is empty.</p>
       <% end %>
       <p class="note muted">
         <% if @status.routes.any? %>

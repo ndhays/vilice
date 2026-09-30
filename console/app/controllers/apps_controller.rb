@@ -24,7 +24,7 @@ class AppsController < ApplicationController
   def create
     @app = App.new(app_params)
     if save_recording(@app, "added", "#{@app.name} to the App Library")
-      redirect_to @app, notice: "Added #{@app.name}. Add a version to install it."
+      redirect_to @app, notice: "Added #{@app.name}. Add a version so apps can be made from it."
     else
       render :new, status: :unprocessable_entity
     end
@@ -72,7 +72,7 @@ class AppsController < ApplicationController
     count = apps.size
     record("imported", "#{count} #{'app'.pluralize(count)} from #{source}",
            detail: apps.map(&:name).sort.join(", ")) if count.positive?
-    redirect_to apps_path, notice: "Imported #{count} #{'app'.pluralize(count)}."
+    redirect_to apps_path, notice: "Imported #{count} #{'template'.pluralize(count)}."
   rescue Library::UnsupportedFormat => e
     redirect_to apps_path, alert: "Unsupported library (#{e.message})."
   rescue Psych::Exception, KeyError, ActionController::ParameterMissing,
@@ -91,9 +91,9 @@ class AppsController < ApplicationController
         record("removed", "#{names.size} #{'app'.pluralize(names.size)} from the App Library",
                detail: names.join(", "))
       end
-      redirect_to apps_path, notice: "Removed #{names.size} #{'app'.pluralize(names.size)}."
+      redirect_to apps_path, notice: "Removed #{names.size} #{'template'.pluralize(names.size)}."
     else
-      redirect_to apps_path, alert: "No apps selected."
+      redirect_to apps_path, alert: "No templates selected."
     end
   end
 

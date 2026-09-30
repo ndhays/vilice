@@ -18,7 +18,7 @@
           discovered one install at a time. %>
       <% if @stuck_installs.any? %>
         <p class="section-note muted">
-          <%= @stuck_installs.size == 1 ? "One install asks" : "#{@stuck_installs.size} installs ask" %>
+          <%= @stuck_installs.size == 1 ? "One app asks" : "#{@stuck_installs.size} apps ask" %>
           for more boxes than are free to take
           <%= @stuck_installs.one? ? "it" : "them" %> —
           <%= safe_join(@stuck_installs.map { |i| link_to i.name, i }, ", ") %>.
@@ -50,7 +50,7 @@
     <%= icon "circle-check", size: 60, css_class: "all-clear-mark" %>
     <p class="all-clear-head">Nothing to report</p>
     <p class="all-clear-sub">
-      <%= pluralize(@install_count, "install") %> ·
+      <%= pluralize(@install_count, "app") %> ·
       <%= pluralize(@machine_count, "machine") %> · all healthy
     </p>
   </div>

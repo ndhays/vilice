@@ -35,7 +35,7 @@
       their own edge (Cloudflare, a cloud LB) and only wants the count unlocked. Picking
       one here is what puts this install into that box's derived routing table. %>
   <label class="field balanced-only"><span>Balancer
-    <%= hint "The box that fronts this app. Its routing table is derived from the installs that select it — you apply that table as a witnessed act on the balancer's own page." %></span>
+    <%= hint "The box that fronts this app. Its routing table is derived from the apps that select it — you apply that table as a witnessed act on the balancer's own page." %></span>
     <% balancers = Machine.balancers.operate.order(:name) %>
     <% if balancers.any? %>
       <%= f.collection_select :balancer_id, balancers, :id, :name,

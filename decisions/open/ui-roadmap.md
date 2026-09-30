@@ -140,11 +140,10 @@ mark and the verb.
    hostnames, env names, volumes; accessories and processes nested under the app), with
    the literal deploy envelope behind a *Raw spec* disclosure (secret names only).
    Observe = where it runs, running vs. asked for. Operate = the command buttons, per box.
-2a. **Rename: Installs → Apps, App → App Template** — *open, agreed 2026-09-30.* What an
-   operator calls "the app" is the Install; the Library entry is its template. UI copy
-   first; whether the models, tables and routes follow (`Install` → `App`, `App` →
-   `AppTemplate`) is its own decision, since the code names should not drift from the
-   words on the page for long.
+2a. **Rename: Installs → Apps, App → App Template** — the words on the page are BUILT.
+   *Open:* the code follows — `App` → `AppTemplate` first (to free the name), then
+   `Install` → `App`, with tables, routes, params and the blueprint. No backward
+   compatibility needed; nothing depends on the old names yet.
 3. **What a command does on the box** — *open.* Belongs in the record entry, not on the
    page: what apply-updates ran (its two apt commands) and how to check it. Read from `steward _commands`; where that
    lacks the detail it grows in the binary, not the console. Open: how the console gets

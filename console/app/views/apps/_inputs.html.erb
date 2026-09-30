@@ -57,7 +57,7 @@
       </div>
     </div>
     <p class="declared-note">
-      Values are supplied at install. All keys are stored in the record, but only the
+      Values are supplied on each app made from it. All keys are stored in the record, but only the
       values on the left. Values for everything on the right do not appear in the record.
     </p>
   </div>
@@ -91,7 +91,7 @@
     <div class="kicker sub">Secret Files</div>
     <p class="muted form-note">
       Files the app needs mounted — a config, an htpasswd. Name and absolute path;
-      the contents are supplied at install, off-record.
+      the contents are supplied on each app, off-record.
     </p>
     <div class="kv-list" data-env-editor-target="fileList">
       <% app.secret_files.each_with_index do |f, i| %>

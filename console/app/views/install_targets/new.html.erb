@@ -3,7 +3,7 @@
 <% placed = @install.live_targets.any? %>
 <% content_for :title, "Place #{@install.name} on #{placed ? 'another' : 'a'} box — Steward" %>
 
-<%= breadcrumb [ [ "Installs", installs_path ], [ @install.name, install_path(@install) ],
+<%= breadcrumb [ [ "Apps", installs_path ], [ @install.name, install_path(@install) ],
                  [ "Place on a box", nil ] ] %>
 
 <h1><%= icon "box", size: 20 %> Place <%= @install.name %> on <%= placed ? "another" : "a" %> box</h1>

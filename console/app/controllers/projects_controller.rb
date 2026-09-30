@@ -67,7 +67,7 @@ class ProjectsController < ApplicationController
 
     if runs_live_apps?(project)
       return redirect_to project,
-        alert: "#{project.name} still has live installs — remove them first."
+        alert: "#{project.name} still has live apps — remove them first."
     end
 
     # A box can't be orphaned: deleting an owner is blocked until its boxes are

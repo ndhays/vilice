@@ -6,14 +6,14 @@
     read **Add Install**, and the act is `added install` — it had four names between them.
     The project rides the crumb, not the heading, the same way Add Machine leaves its owner
     to the Owner step instead of restating it up top. %>
-<% content_for :title, [ "Add Install", @project&.name, "Steward" ].compact.join(" — ") %>
+<% content_for :title, [ "Add App", @project&.name, "Steward" ].compact.join(" — ") %>
 
 <% if @project %>
-  <%= breadcrumb [ [ "Projects", projects_path ], [ @project.name, project_path(@project) ], [ "Add Install", nil ] ] %>
+  <%= breadcrumb [ [ "Projects", projects_path ], [ @project.name, project_path(@project) ], [ "Add App", nil ] ] %>
 <% else %>
-  <%= breadcrumb [ [ "Installs", installs_path ], [ "Add Install", nil ] ] %>
+  <%= breadcrumb [ [ "Apps", installs_path ], [ "Add App", nil ] ] %>
 <% end %>
-<h1>Add Install</h1>
+<h1>Add App</h1>
 
 <p class="addr">What should run, and how much of it. <strong>Nothing is deployed by
   filling this in</strong> — a box is optional here, and putting the app on one is a
@@ -79,20 +79,20 @@
     <% elsif @project %>
       <p class="muted">No machines on this project yet —
         <%= link_to "add one", new_machine_path(project_id: @project.id) %>, or leave this
-        install unplaced for now.</p>
+        app unplaced for now.</p>
     <% else %>
       <p class="muted">No boxes carry an operate key yet —
-        <%= link_to "add a machine", new_machine_path %>, or leave this install unplaced
+        <%= link_to "add a machine", new_machine_path %>, or leave this app unplaced
         for now.</p>
     <% end %>
   </fieldset>
 
   <fieldset class="step">
-    <legend>App</legend>
+    <legend>Template</legend>
     <% if @apps.any? %>
       <div class="pick-card">
-        <input type="search" class="pick-search" placeholder="Search apps…" autocomplete="off"
-               aria-label="Search apps"
+        <input type="search" class="pick-search" placeholder="Search templates…" autocomplete="off"
+               aria-label="Search templates"
                data-install-form-target="search" data-action="input->install-form#filter">
         <div class="pick-list">
           <% @apps.each do |app| %>
@@ -153,9 +153,9 @@
     <%# "Details" said nothing. These three are the app's own facts, arriving prefilled and
         overridable for this one install — so the legend says whose they are. %>
     <fieldset class="step">
-      <legend>App defaults</legend>
-      <p class="form-note muted">Prefilled from the app — change any to override them for this install.</p>
-      <label class="field"><span>Name on the box <%= hint "What this install is called on the machine — its unit, its volumes, its apps/<name>.json. Letters, digits, dashes and underscores." %></span>
+      <legend>Template defaults</legend>
+      <p class="form-note muted">Prefilled from the template — change any to override them for this app.</p>
+      <label class="field"><span>Name on the box <%= hint "What this app is called on the machine — its unit, its volumes, its apps/<name>.json. Letters, digits, dashes and underscores." %></span>
         <%= f.text_field :name, value: @install.name, data: { install_form_target: "name" },
               autocomplete: "off", pattern: "[A-Za-z0-9_-]+",
               title: "Letters, digits, dashes, and underscores — the app's name on the box" %></label>
@@ -190,7 +190,7 @@
           deploy is a witnessed ceremony of its own. Pick a box and that ceremony is the
           next screen; it still asks. `added` draws a plus, so the button does too. %>
       <%= button_tag class: "btn mutate" do %>
-        <%= safe_join([ icon("plus", size: 14), "Add Install" ]) %>
+        <%= safe_join([ icon("plus", size: 14), "Add App" ]) %>
       <% end %>
       <%= button_link_to "Cancel", @project ? project_path(@project) : installs_path, class: "btn-quiet" %>
     </div>

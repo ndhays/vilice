@@ -25,7 +25,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     get new_install_path(project_id: @project)
     assert_response :success
     # One name for one thing — the crumb carries the project, the heading does not.
-    assert_select "h1", /\AAdd Install\z/
+    assert_select "h1", /\AAdd App\z/
     assert_select ".breadcrumb", /Acme/
     assert_select "input[type=radio][name=?]", "install[app_id]"  # the catalog picker
     assert_select "input[name='install[app_id]'][checked]", false # nothing pre-selected
@@ -45,7 +45,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
     get new_install_path
     assert_response :success
-    assert_select "h1", /\AAdd Install\z/
+    assert_select "h1", /\AAdd App\z/
     assert_select "select[name=?]", "install[project_id]", false
     # The unowned box and the project's box are both offered; the observe-only one isn't.
     # Neither has ever answered us, so both carry the authorize gap on the option itself
@@ -159,7 +159,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_select "select[name=?]", "install[machine_id]"
     # So the submit no longer disappears on the Fleet branch, and no longer promises a
     # deploy it only sometimes does. It wears the act's name and the act's glyph.
-    assert_select ".form-actions button", /Add Install\z/
+    assert_select ".form-actions button", /Add App\z/
     assert_select ".form-actions button svg.icon", 1
     assert_select ".stub-note", 0
     # Fleet: exposure is a real choice and the count it gates is the real intention, and
@@ -179,7 +179,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     legends = css_select("form.stack-form fieldset.step > legend").map { |l| l.text.strip[/\A[\w ]+/].strip }
-    assert_equal [ "Scale", "First box", "App", "Hostname", "App defaults", "Storage" ], legends
+    assert_equal [ "Scale", "First box", "Template", "Hostname", "Template defaults", "Storage" ], legends
     # Nothing outside a step, including inside the progressive-reveal wrapper.
     assert_select "form.stack-form > .field", 0
     assert_select "form.stack-form > [data-install-form-target=rest] > .field", 0

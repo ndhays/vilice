@@ -47,7 +47,7 @@ class InstallsSearchTest < ActionDispatch::IntegrationTest
   test "a search that matches nothing says so and offers a way back" do
     get installs_path(q: "nothing-like-this")
     assert_response :success
-    assert_select ".empty", /No installs match/
+    assert_select ".empty", /No apps match/
     assert_select ".empty a[href=?]", installs_path
   end
 
@@ -77,7 +77,7 @@ class InstallsSearchTest < ActionDispatch::IntegrationTest
 
   test "the headline counts placements and what needs a person" do
     get installs_path
-    assert_select ".headline", /2 installs/
+    assert_select ".headline", /2 apps/
     assert_select ".headline .ok", /all running as asked/
 
     @api.install_targets.first.update!(status: "failed")

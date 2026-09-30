@@ -396,6 +396,10 @@
   padding: 0.2rem 0.65rem 0.2rem 0.4rem;
 }
 .btn.cmd svg { flex: none; }
+/* A lowercase verb has no capitals, so its optical centre sits below the box centre
+   the flex row aligns on. Drop the mark to meet the x-height, not the line box. */
+.btn.cmd svg { transform: translateY(1.5px); }
+.btn.cmd .cmd-verb { line-height: 1; }
 .btn.cmd.mutate { background: var(--mutate); border-color: var(--mutate); color: var(--card); }
 .btn.cmd.observe { background: var(--observe); border-color: var(--observe); color: var(--card); }
 .btn.cmd.danger { background: var(--bad); border-color: var(--bad); color: var(--card); }

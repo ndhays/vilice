@@ -1,11 +1,11 @@
-<% content_for :title, "Installs — Steward" %>
+<% content_for :title, "Apps — Steward" %>
 
 <%# Placement, fleet-wide: what should run where. One ring above the machine view
     (which reads a single box) and one below Projects (which is a lens on tenancy,
     not a container) — decisions/console-layers.md. An install here may have no
     project at all; that column is simply blank. %>
-<%= page_header "Installs" do %>
-  <%= button_link_to "Add Install", new_install_path, icon: "plus", class: "btn" %>
+<%= page_header "Apps" do %>
+  <%= button_link_to "Add App", new_install_path, icon: "plus", class: "btn" %>
 <% end %>
 
 <%# The headline — this layer's story in one line, and only this ring's facts. It
@@ -13,7 +13,7 @@
     mentions boxes or clients it has stepped out of its ring. %>
 <% if @total.positive? %>
   <p class="headline">
-    <%= pluralize(@total, "install") %><%
+    <%= pluralize(@total, "app") %><%
       %><% if @needs_look.positive? %> · <span class="bad"><%= @needs_look %> need a look</span><% end %><%
       %><% if @short.positive? %> · <span class="muted"><%= @short %> short of their intention</span><% end %><%
       %><% if @needs_look.zero? && @short.zero? %> · <span class="ok">all running as asked</span><% end %>
@@ -21,12 +21,12 @@
 <% end %>
 
 <%= render layout: "shared/list_toolbar",
-      locals: { search_url: installs_path, q: @q, placeholder: "install, host, app, or box",
+      locals: { search_url: installs_path, q: @q, placeholder: "app, host, template, or box",
                 selectable: false, hidden: { group: @group } } do %><% end %>
 
 <%# Group by — the same primitive the fleet list is built on. Each choice is a link,
     so the grouped view has its own URL and can be shared or bookmarked. %>
-<div class="action-chips filter-row" role="group" aria-label="Group the installs by">
+<div class="action-chips filter-row" role="group" aria-label="Group the apps by">
   <span class="chip-label muted">Group by</span>
   <% InstallGroups::ALL.each do |grouping| %>
     <%= link_to installs_path(group: grouping.key, q: @q),
@@ -53,7 +53,7 @@
     <% end %>
   </div>
 <% elsif @q.present? %>
-  <p class="empty">No installs match this search. <%= link_to "Clear it", installs_path %>.</p>
+  <p class="empty">No apps match this search. <%= link_to "Clear it", installs_path %>.</p>
 <% else %>
-  <p class="empty">No installs yet — place an app on a box to start.</p>
+  <p class="empty">No apps yet — add one from a template, then place it on a box.</p>
 <% end %>

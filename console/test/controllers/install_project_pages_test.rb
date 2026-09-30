@@ -72,9 +72,9 @@ class InstallProjectPagesTest < ActionDispatch::IntegrationTest
     @install.install_targets.create!(machine: @down, status: "running")
     get project_path(@project)
     assert_response :success
-    assert_select ".verdict.bad .verdict-head", /1 install needs a look/
+    assert_select ".verdict.bad .verdict-head", /1 app needs a look/
     assert_select ".verdict.bad .verdict-head", /1 box unreachable/
-    assert_select ".verdict-sub", /1 install/
+    assert_select ".verdict-sub", /1 app/
     assert_select ".verdict-sub", /2 machines/
   end
 
@@ -82,7 +82,7 @@ class InstallProjectPagesTest < ActionDispatch::IntegrationTest
     other = @project.installs.create!(name: "second", image: "img@sha256:8888888888888888888888888888888888888888888888888888888888888888")
     [ @install, other ].each { |i| i.install_targets.create!(machine: @down, status: "running") }
     get project_path(@project)
-    assert_select ".verdict-head", /2 installs need a look/
+    assert_select ".verdict-head", /2 apps need a look/
   end
 
   test "a healthy project reads as Nothing to report, like Status" do

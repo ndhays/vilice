@@ -49,7 +49,7 @@
       <% end %>
     </ul>
   <% else %>
-    <p class="empty">No versions yet. Add one to make this app installable.</p>
+    <p class="empty">No versions yet. Add one so apps can be made from this template.</p>
   <% end %>
 
   <%= form_with model: [ @app, @version ], scope: :version, class: "version-add" do |f| %>
