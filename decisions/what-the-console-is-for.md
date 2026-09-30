@@ -28,24 +28,43 @@ way to check it had worked was a list of commands (`apt list --upgradable`,
    thing to hand a non-expert. An agent holding the same key is not bounded the same way.
 
 **Running commands is not on the list.** An agent will always be more flexible at that,
-and the console should not compete. So a write is a *shortcut*, and it never hides what
-it does. Every act shows three layers, in the preview and again on the record entry:
+and the console should not compete. So a write is a *shortcut* — and it never hides what
+it does, but it does not make you read it either.
 
-```
-Apply updates                                    ← plain words
-steward apply-updates                            ← what the console sends
-  → apt-get update -y; apt-get upgrade -y        ← what that does on the box
-Check it:  apt list --upgradable · tail /var/log/apt/history.log
-```
+**Plain on the surface, exact underneath.** The page interprets: a dot and "Online", "3
+OS updates waiting", memory as a card. It is a GUI and uses being one; an operator who
+knows the CLI still wants the easy read. The exact form — the command, and what it
+returned — is always one step down, never on the surface:
 
-The plain line serves the non-expert, the command lines serve the expert, and both read
-the same entry. That is the bridge: one funnel, two readers. Someone who presses the
-button a few times has seen the commands and can run them — or ask an agent to.
+- **The record is the technical view.** An entry carries the command that ran and, where
+  there is one, its raw output. The preview before Confirm is the entry-to-be, so it shows
+  the full command too.
+- **Every interpretation discloses its source.** A card read from the box can open to the
+  command it came from and the raw reply (*Raw status output*: `steward status --json`,
+  then the JSON).
 
-**The third layer comes from the binary, not the console.** `steward _commands` already
-describes every verb ([`help-is-the-documentation.md`](help-is-the-documentation.md)). A
-hand-written copy of "what apply-updates does" in the console would be a second
-description of the CLI, free to drift. Where `_commands` lacks the detail, it grows there.
+**The one bridge on the surface is the button.** Every act is a steward command, so its
+button carries the Steward mark and the verb — `apply-updates`, mono, lowercase, filled —
+and a plain sentence beside it says why you would press it. The mark says *this calls
+into Steward* before you read the word; the word is the one you would type. Nothing that
+does not call Steward looks like that. (Road not taken: plain-word buttons — "Apply now" —
+which hid the one word that would let you run it yourself.) Someone who presses the
+button a few times knows the command and can run it, or ask an agent to.
+
+**What a command does on the box comes from the binary, not the console.** `steward
+_commands` already describes every verb
+([`help-is-the-documentation.md`](help-is-the-documentation.md)). A hand-written copy of
+"what apply-updates does" in the console would be a second description of the CLI, free to
+drift. Where `_commands` lacks the detail, it grows there — and it belongs in the record
+entry, not on the page.
+
+## Where acts sit
+
+Every entity page splits into two zones, side by side: **Observe** holds what the box
+reports and no act at all; **Operate** holds every act, and the ceremony opens there.
+Which kind of control you are looking at is answered by where it sits, not by reading it.
+The header is the name and one live signal — a dot and plain words — and what a thing
+*is* reads as a short labelled list in a fixed order.
 
 ## How this sits with Shape B
 
@@ -55,7 +74,11 @@ bring the text box back. It changes what a button *says*, not whether there is o
 
 ## Roads not taken
 
-- **Keep hiding the command** (the console as built). A button that says "Apply now" and
+- **Commands on the surface.** Briefly built: each act listed its full `steward …` line
+  on the page. Honest, but it made the page read like a terminal and left the GUI doing
+  none of the interpreting it is for. The command moved down, into the preview and the
+  record; the button kept the verb.
+- **Keep hiding the command** (the console as first built). A button that says "Apply now" and
   nothing more asks the operator to trust the wrapper. It also leaves them with no path to
   verify, and teaches nothing — every press keeps them dependent on the page.
 - **Drop writes; make the console a cheat sheet.** Show the commands to copy and let the
@@ -65,3 +88,7 @@ bring the text box back. It changes what a button *says*, not whether there is o
   on the ground where an agent at a shell is already better, and a free-text path to acts
   is exactly what Shape B rejected. If an agent needs Steward, it gets its own scoped key
   ([`open/steward-mcp.md`](open/steward-mcp.md)).
+- **A separate actions page.** Every act in one place, apart from what it acts on. Clean
+  to draw, but you act on the thing you are looking at: a separate page makes you carry
+  the box and the app across in your head, and loses the observed state that decided the
+  act. A zone on the same page keeps both.

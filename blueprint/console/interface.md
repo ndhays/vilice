@@ -6,7 +6,7 @@
 
 **Status:** Canonical (the shape is settled and largely built — Waves 1–3). The build
 roadmap and the screens still ahead live in
-[`decisions/open/ui-roadmap.md`](../../decisions/open/ui-roadmap.md). Last touched 2026-08-19.
+[`decisions/open/ui-roadmap.md`](../../decisions/open/ui-roadmap.md). Last touched 2026-09-29.
 
 ---
 
@@ -284,16 +284,45 @@ enough to make a group read as a group.
   there is a command to fix that); we could not ask (**unknown**, falling back to the
   last read).
 
-  **Identity is two lines, and the room goes to what is running.** Name and badges —
-  role first, then reachability, scope, sharing, owner — then one line of facts: the
-  hostname the box reports for itself, the address we dial, the clients it serves.
-  It was five stacked blocks before the page said anything about the box.
+  **Identity: the name and one live signal, then a short labelled list.** Beside the
+  name sits the health line — a dot and plain words: *Online*, or what is wrong (*disk
+  91% — running low*), or *Unreachable*. No pills in the header; on the box the console
+  runs on, the leading glyph is a location pin that says *you are here* on hover. What
+  the box *is* sits beneath as a two-column list, labels left, values right, always in
+  the same order: **Address · Role · Owner · Sharing**. Two more rows appear only when
+  they are news: **Box says** when the hostname the box reports differs from the name
+  (the name mirrors the box, so usually it does not), and **Also serves** for clients
+  beyond the owner. Access is not listed; the Operate zone says it. A missing owner or an
+  unprepared role reads in red.
 
-  **Each card does one thing, and carries at most one action, beside its title.**
-  Live status (with **Read now**), apps, maintenance, edge. The old page had a
-  general-purpose "Mutate · witnessed" card whose prose explained the scope that is
-  now a badge in the header, and which held maintenance as a sub-section; maintenance
-  is its own card, and the scope sentence is gone because the badge says it.
+  **Two zones, side by side: Observe, then Operate.** Under the header the page splits
+  into two columns (stacked on a narrow screen), each headed in its own colour — blue
+  **Observe**, amber **Operate**. *Where a control sits says what kind it is*
+  ([`what-the-console-is-for.md`](../../decisions/what-the-console-is-for.md)).
+
+  **Plain on the surface, exact underneath.** The zones interpret; the command and its
+  raw reply are one step down — in the preview, the record, and a card's raw disclosure.
+  The one bridge on the surface is the button: **a command button carries the Steward
+  mark and the verb** — `status`, `apply-updates`, `route`, `deploy`, `remove` (and on
+  the Install, `deploy` `rollback` `start` `stop` `restart` `remove`) — mono, lowercase,
+  **filled**: amber for an act, blue for a read, red for one that takes something away.
+  Nothing that does not call Steward looks like it. A plain sentence beside it says why
+  you would press it. The full command, flags and all, is shown in the preview, copyable,
+  before anything runs.
+
+  - **Observe holds no act.** Live status, with when it was read beneath its title
+    (*Read 2 minutes ago · cached*), a `status` button to read again, and **Raw status
+    output** at its foot — the command in bold, then the JSON it returned; maintenance (the window,
+    and the updates waiting, by name); the apps the box reports; and the edge table on a
+    balancer.
+  - **Operate lists every act the box can take**, each a sentence and a button:
+    `apply-updates`, `route` on a balancer, `deploy` from a pasted spec, and `remove`
+    per app the box reports. An act with nothing to do (no updates waiting) **keeps its
+    button, inert** — the zone reads the same whatever the box's state. Commands come
+    from `Mutation.command`, the same builder that sends them. App lifecycle is not here —
+    it lives on the Install. The ceremony opens **inside this zone**.
+  - On an observe key, Operate is one large statement — **No operate access** — and on
+    an offline box, **Nothing can be sent**.
 
   **The Apps card is what the box reports, with our record attached.** One list, not
   two: the box's apps are the rows, each linking to its `Install` where we hold one,

@@ -215,7 +215,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_select ".digest-chip[data-clipboard-text-value=?]", apps.first["image"]
     assert_select ".digest-chip .digest-text", "@abcdef012345"
     assert_select ".acts-app-verbs", count: 0          # acting on an app happens from its project
-    assert_select "a", text: "Re-deploy", count: 0
+    assert_select "a[href*=?]", "act=deploy", count: 0  # no install redeploy here
   end
 
   # Plan and reality are kept apart: an install we placed here that the box does not

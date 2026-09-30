@@ -50,7 +50,10 @@
       <% end %>
     <% end %>
 
-    <p class="note">Issues <code><%= @mutation.command %></code> over scoped SSH<%= " (spec on stdin)" if @mutation.stdin %>.</p>
+    <%# The full command, flags and all — the button said only its name. Copyable, so
+        the same act can be run by hand, or handed to anyone else holding a key. %>
+    <p class="ceremony-runs">Runs over scoped SSH<%= ", with the spec on stdin" if @mutation.stdin %>:</p>
+    <%= command_block("steward #{@mutation.command}") %>
 
     <%# Said before the press, not after the failure — and a warning, never a block. A box
         authorized a minute ago has not been observed yet and would read exactly like this,

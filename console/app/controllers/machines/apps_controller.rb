@@ -29,7 +29,7 @@ class Machines::AppsController < ApplicationController
     end
 
     outcome = Steward::Mutate.run(
-      @machine, "deploy #{name} --json",
+      @machine, Mutation.command("deploy", @machine, app: name),
       actor: Current.user&.email_address || "console",
       action: "deployed",
       summary: "#{name} on #{@machine.name}",
@@ -47,7 +47,7 @@ class Machines::AppsController < ApplicationController
   def destroy
     name = params[:id].to_s
     outcome = Steward::Mutate.run(
-      @machine, "remove #{name} --json",
+      @machine, Mutation.command("remove", @machine, app: name),
       actor: Current.user&.email_address || "console",
       action: "removed",
       summary: "#{name} from #{@machine.name}"

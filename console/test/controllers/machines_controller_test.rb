@@ -159,17 +159,25 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "an operate box shows its maintenance window and, when updates pend, Apply Now" do
+  test "an operate box shows its maintenance window, and Operate offers Apply updates with its command" do
     with_fake_observe do
       sign_in_as @user
       box = Machine.create!(name: "upd-box", ssh_host: "x", scope: "operate")
       box.labels.create!(key: "fake-updates", value: "3")
       get machine_path(box)
       assert_response :success
-      assert_select ".panel.mutate .kicker", "Maintenance"
+      # Observe reports; it holds no act.
+      assert_select ".zone-observe .kicker", "Maintenance"
       assert_select ".maint-line", /Daily at 04:00/
       assert_select ".maint-pending", /3 updates waiting/
-      assert_select ".panel.mutate a", /Apply now/
+      assert_select ".zone-observe .act", count: 0
+      assert_select ".zone-observe a[href*=?]", "act=apply-updates", count: 0
+      # Operate offers it, on a button named for the command it sends.
+      assert_select ".zone-operate .act", /3 OS updates waiting/ do
+        assert_select "a.btn.cmd[href=?]", new_machine_mutation_path(box, act: "apply-updates"), text: "apply-updates"
+      end
+      # The ceremony opens inside the zone that writes.
+      assert_select ".zone-operate turbo-frame#ceremony"
     end
   end
 
@@ -182,7 +190,11 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_select ".maint-line", /Daily at/
       assert_select ".updates-current"
-      assert_select ".panel.mutate a", { text: /Apply now/, count: 0 }
+      # The act still shows its command — the page is a reference too — but offers no button.
+      assert_select ".zone-operate .act", /up to date/ do
+        assert_select ".btn.cmd[aria-disabled=true]", "apply-updates"
+        assert_select "a", count: 0
+      end
     end
   end
 
@@ -477,7 +489,8 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     machine = Machine.create!(name: "fresh-box", ssh_host: "10.0.0.10", scope: "observe")
     stub_observe(status: status_reply("")) { get machine_path(machine) }
     assert_response :success
-    assert_select "h1 .badge.role-unprepared", "not prepared"
+    assert_select ".facts dd", "not prepared"
+    assert_select "h1 .health-line", /Online/
     assert_select ".kicker", "Apps on this box"
   end
 
@@ -497,8 +510,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".metrics", count: 0
     assert_select ".hardening-line", count: 0
     # Every act travels the same connection that just failed, so none is offered.
-    assert_select "a", { text: /Deploy an app/, count: 0 }
-    assert_select "a", { text: /Apply now/, count: 0 }
+    assert_select ".zone-operate .act", count: 0
     # …but re-reading is exactly what you want to do next.
     assert_select ".panel.unreachable form[action=?]", refresh_machine_path(machine)
   end

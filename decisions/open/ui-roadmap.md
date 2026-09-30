@@ -127,15 +127,46 @@ What the console is for is settled in
 [`../what-the-console-is-for.md`](../what-the-console-is-for.md): watching, one shared
 record, bounded acts — and every act shows its command. In order:
 
-1. **Acts show their commands** — *open.* The ceremony preview and the record entry both
-   carry three layers: plain words, the `steward` command sent, and what it does on the box
-   (plus how to check it). The third layer is read from `steward _commands`; where that
-   lacks the detail (e.g. apply-updates' two apt commands, its verify commands), it grows
-   in the binary, not the console.
-2. **Badges by kind** — *open.* The machine header mixes role (`host`), live state
-   (`reachable`), our permission (`operate`) and a bookkeeping gap (`no owner`) in one
-   pill shape. Only live state earns a coloured pill; the rest read as a labelled line.
-3. **Visual pass** — *open.* Card alignment and density, after the two above.
+Every entity page takes the same shape: the name and one live signal, **what it is** as a
+short labelled list, then **Observe** (holds no act) beside **Operate** (every act, the
+ceremony inside it), with the record beneath. **Plain on the surface, exact underneath**:
+the zones interpret; the command and its raw reply live in the preview, the record, and a
+card's raw disclosure. The one bridge on the surface is the command button — the Steward
+mark and the verb.
+
+1. **The machine page in zones** — BUILT. Online pill, a short facts list, Observe |
+   Operate side by side, buttons named for their command, full command in the preview.
+2. **The install page in zones** — *open.* What it is = the spec, interpreted (image,
+   hostnames, env names, volumes; accessories and processes nested under the app), with
+   the literal deploy envelope behind a *Raw spec* disclosure (secret names only).
+   Observe = where it runs, running vs. asked for. Operate = the command buttons, per box.
+2a. **Rename: Installs → Apps, App → App Template** — *open, agreed 2026-09-30.* What an
+   operator calls "the app" is the Install; the Library entry is its template. UI copy
+   first; whether the models, tables and routes follow (`Install` → `App`, `App` →
+   `AppTemplate`) is its own decision, since the code names should not drift from the
+   words on the page for long.
+3. **What a command does on the box** — *open.* Belongs in the record entry, not on the
+   page: what apply-updates ran (its two apt commands) and how to check it. Read from `steward _commands`; where that
+   lacks the detail it grows in the binary, not the console. Open: how the console gets
+   the table — `_commands` is not reachable through `_exec`, so either a build-time copy
+   (as the docs site does) or a new observe verb.
+4. **The record entry shows the command and its output** — *open.* The preview shows the
+   command (built). A console-written entry already stores it (`Event.raw["command"]`)
+   but does not display it, and keeps the output only on failure (`detail`). The entry
+   opens to: the command in bold, then the raw output.
+5. **Machines list as the board** — *open.* Status stays the inbox; the Machines list
+   becomes the glanceable board — every box's memory, disk and reachability at once.
+   Blocked on the per-row read that ingestion (#6) brings.
+6. **An act in flight** — *open, and a bug today.* Confirm blocks the request until the
+   SSH call returns, with nothing on screen saying it is running, and the command's
+   output is not shown as it arrives. Wants a running state in the ceremony (the entry
+   already exists as *pending*, so the record can show it) and, later, streamed output —
+   which is #15's Steward sub-step contract.
+7. **More observe cards** — *open, agreed 2026-09-30.* Last backup (restic), TLS
+   certificates and when they expire (Caddy), record integrity — each a card, and each
+   only once `steward status` reports it. Who holds keys on this box (`steward actors`,
+   already read for Access) is a **list**, not a card.
+8. **Visual pass** — *open.* Card alignment and density, after the above.
 
 ---
 

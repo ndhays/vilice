@@ -32,7 +32,7 @@ class InstallProjectPagesTest < ActionDispatch::IntegrationTest
   test "acts are offered for a target whose box answers" do
     @install.install_targets.create!(machine: @up, status: "running")
     get install_path(@install)
-    assert_select ".acts-app-verbs a", { text: "Re-deploy", count: 1 }
+    assert_select ".acts-app-verbs a", { text: "deploy", count: 1 }
     assert_select ".acts-app-verbs", { text: /no act can be issued/, count: 0 }
   end
 

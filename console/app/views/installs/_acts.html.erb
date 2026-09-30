@@ -12,23 +12,23 @@
     targets across boxes of mixed reachability, so the gate lives here. %>
 <% unless machine.seen_unreachable? %>
 <span class="acts-app-verbs">
-  <%# Already running here, so deploy reads "Re-deploy"; first-install from the
-      Library reads "Install". %>
-  <%= link_to "Re-deploy",
+  <%# Each verb is named for the steward command it sends — mono, lowercase, the same
+      word you would type. The full command is in the preview. %>
+  <%= link_to steward_verb("deploy"),
         new_machine_mutation_path(machine, act: "deploy", install_id: install.id, from: from),
-        class: "btn-quiet mutate deploy-verb", data: { turbo_frame: "ceremony" } %>
-  <%= link_to "Roll back",
+        class: "btn mutate cmd sm deploy-verb", data: { turbo_frame: "ceremony" } %>
+  <%= link_to steward_verb("rollback"),
         new_machine_mutation_path(machine, act: "rollback", install_id: install.id, from: from),
-        class: "btn-quiet mutate deploy-verb", data: { turbo_frame: "ceremony" } %>
+        class: "btn mutate cmd sm deploy-verb", data: { turbo_frame: "ceremony" } %>
   <span class="verb-sep"></span>
   <% Mutation::LIFECYCLE.each do |verb| %>
-    <%= link_to verb.capitalize,
+    <%= link_to steward_verb(verb),
           new_machine_mutation_path(machine, act: verb, install_id: install.id, from: from),
-          class: "btn-quiet mutate", data: { turbo_frame: "ceremony" } %>
+          class: "btn mutate cmd sm", data: { turbo_frame: "ceremony" } %>
   <% end %>
-  <%= link_to "Remove",
+  <%= link_to steward_verb("remove"),
         new_machine_mutation_path(machine, act: "remove", install_id: install.id, from: from),
-        class: "btn-quiet danger", data: { turbo_frame: "ceremony" } %>
+        class: "btn danger cmd sm", data: { turbo_frame: "ceremony" } %>
 </span>
 <% else %>
   <span class="acts-app-verbs note muted">

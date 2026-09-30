@@ -284,7 +284,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", /web/
     assert_select ".badge.state-running"
     assert_select ".acts-app-name a", /op/                     # the box it runs on
-    assert_select ".acts-app-verbs a", text: "Re-deploy"       # verbs live here too
+    assert_select ".acts-app-verbs a", text: "deploy"       # verbs live here too
     # the verb returns to the install page, not the machine
     assert_select "a[href=?]",
       new_machine_mutation_path(@operator, act: "deploy", install_id: install.id, from: "install")

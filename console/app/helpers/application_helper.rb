@@ -108,6 +108,34 @@ module ApplicationHelper
              class: "badge role-#{role}", title: "#{ROLE_BADGE.dig(role, :word)}#{stale}")
   end
 
+  # A button's label when it sends a steward command: the mark, then the verb. The
+  # mark says "this is a call into Steward" before you read the word; the word is the
+  # one you would type. Filled (inverse) by `.btn.cmd` so it cannot pass for a link.
+  def steward_verb(verb)
+    safe_join([ render("shared/mark", size: 18), tag.span(verb, class: "cmd-verb") ])
+  end
+
+  # When the status on screen was read — reads are cached, so "live" needs its age.
+  def read_age(status)
+    return "Cached" if status.read_at.blank?
+    at = status.read_at
+    tag.time("Read #{time_ago_in_words(at)} ago · cached", datetime: at.iso8601, title: l(at, format: :long))
+  end
+
+  # The role as a plain fact for the machine page's facts line — the same three
+  # states as the badge, in words: the role, *not prepared*, or *unknown*.
+  def machine_role_word(machine, status = nil)
+    role = machine_role(machine, status)
+    if role
+      stale = status&.online? ? "" : " (last known)"
+      tag.span("#{role}#{stale}", title: ROLE_BADGE.dig(role, :word))
+    elsif status&.online?
+      tag.span("not prepared", class: "fact-gap", title: "This box has no role — run `steward prepare <role>` on it")
+    else
+      tag.span("unknown", class: "muted", title: "Not read yet, so what this box was prepared as is unknown")
+    end
+  end
+
   # A long image reference, shown short and copyable. The digest is the thing you
   # actually compare, and the full ref is 80+ characters that shouldered the columns
   # either side of it out of the row. Click copies the **whole** reference, not the
@@ -391,7 +419,7 @@ module ApplicationHelper
     when :warn then " warn"
     else ""
     end
-    tag.div(class: "health-line#{mod}") do
+    tag.span(class: "health-line#{mod}") do
       safe_join([ tag.span("", class: "dot dot-#{status.dot}"), status.narrative ], " ")
     end
   end

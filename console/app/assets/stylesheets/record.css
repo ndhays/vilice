@@ -345,3 +345,76 @@
 .route-table .route-arrow { color: var(--muted); }
 .route-table .route-ups { color: var(--muted); font-size: 0.85rem; }
 .route-table .route-install { margin-left: auto; font-size: 0.85rem; }
+
+/* ── The machine page: facts, then two zones ──────────────────────────────
+   What the box *is* reads as a labelled line; only live state is a pill. Below,
+   Observe and Operate sit side by side, so which kind of control you are looking
+   at is answered by where it sits (decisions/what-the-console-is-for.md). */
+.facts {
+  display: grid; grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.15rem 1rem; margin: 0.3rem 0 0.8rem; font-size: 0.88rem;
+}
+.facts dt {
+  color: var(--muted); font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; align-self: center;
+}
+.facts dd { margin: 0; }
+.fact-gap { color: var(--bad); }
+
+.zones {
+  display: grid; gap: 1.5rem; align-items: start;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+@media (max-width: 60rem) { .zones { grid-template-columns: minmax(0, 1fr); } }
+.zone-head {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  margin: 0 0 0.6rem; padding-bottom: 0.4rem; border-bottom: 2px solid currentColor;
+}
+.zone-observe .zone-head { color: var(--observe); }
+.zone-operate .zone-head { color: var(--mutate); }
+.zone .panel { margin-bottom: 1rem; }
+
+/* One act: plain words and the command it sends on the left, the button (only
+   when there is something to do) on the right. */
+.acts-lede { font-size: 0.85rem; color: var(--muted); margin: 0 0 0.4rem; }
+.act {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding: 0.6rem 0; border-top: 1px solid var(--mutate-line);
+}
+.act-state { font-size: 0.9rem; min-width: 0; }
+.act-button { flex: none; }
+.act-button form { margin: 0; }
+
+/* A button that sends a steward command: the mark and the verb, filled (inverse) so
+   it cannot pass for a link or a plain button. Amber for acts, blue for a read, red
+   for one that takes something away. An inert one (nothing to do) keeps its place. */
+.btn.cmd {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; letter-spacing: 0;
+  background: var(--ink); border-color: var(--ink); color: var(--card);
+  padding: 0.2rem 0.65rem 0.2rem 0.4rem;
+}
+.btn.cmd svg { flex: none; }
+.btn.cmd.mutate { background: var(--mutate); border-color: var(--mutate); color: var(--card); }
+.btn.cmd.observe { background: var(--observe); border-color: var(--observe); color: var(--card); }
+.btn.cmd.danger { background: var(--bad); border-color: var(--bad); color: var(--card); }
+.btn.cmd:hover { filter: brightness(1.12); background: var(--ink); color: var(--card); }
+.btn.cmd.mutate:hover { background: var(--mutate); }
+.btn.cmd.observe:hover { background: var(--observe); }
+.btn.cmd.danger:hover { background: var(--bad); }
+.btn.cmd[aria-disabled="true"] { opacity: 0.35; cursor: default; pointer-events: none; }
+
+/* No access, or nothing can be sent: one large statement, not a paragraph. */
+.no-access { text-align: center; padding: 1.4rem 1.2rem; }
+.no-access > .icon { color: var(--muted); }
+.no-access-head { font-weight: 700; font-size: 1.05rem; margin: 0.4rem 0 0.2rem; }
+.maint-pending .icon { vertical-align: -0.2em; }
+.ceremony-runs { font-size: 0.85rem; margin: 0.8rem 0 0.3rem; }
+
+/* Health beside the name: a dot and plain words, at body weight — not a headline. */
+h1 .health-line { margin: 0 0 0 0.3rem; font-size: 0.95rem; font-weight: 500; letter-spacing: 0; }
+h1 .health-line.crit { font-size: 1rem; }
+.read-age { font-size: 0.8rem; color: var(--muted); margin: 0.15rem 0 0; }
+.raw-output summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
+.raw-cmd { font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; margin: 0.6rem 0 0.3rem; }

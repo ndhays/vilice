@@ -56,6 +56,15 @@ class Mutation
 
   attr_reader :act, :machine, :install, :actor, :params
 
+  # The command an act sends, from its name alone — for places that show or send it
+  # without a stored Install to bind: the machine page's Operate zone, and the box-app
+  # deploy/remove that keeps no Install row. One builder, so the command a page
+  # shows is the command that is sent.
+  AppRef = Data.define(:name)
+  def self.command(verb, machine, app: nil)
+    ACTS.fetch(verb.to_s).build.call(machine, app && AppRef.new(name: app))
+  end
+
   # Resolve a verb to a bound Mutation — or nil if the verb is unknown or an
   # app-scoped act names no (valid) install on this machine. `params` carries the
   # compose inputs (image/hostname/port/health) for deploy.

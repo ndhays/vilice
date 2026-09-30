@@ -1,0 +1,12 @@
+<%# One act in the Operate zone: a plain sentence saying why you would (or would not)
+    run it, and a button named for the command it sends — mono and lowercase, because
+    it *is* the command. The full line, flags and all, is in the preview and on the
+    record entry. With nothing to do the button still shows, inert, so the zone reads
+    the same whatever the box's state. Locals: verb, state, button (nil when there is
+    nothing to do), danger (optional). %>
+<div class="act<%= ' act-danger' if local_assigns[:danger] %>">
+  <span class="act-state"><%= state %></span>
+  <div class="act-button">
+    <%= button || tag.span(steward_verb(verb), class: "btn cmd sm", "aria-disabled": "true", title: "Nothing to do right now") %>
+  </div>
+</div>

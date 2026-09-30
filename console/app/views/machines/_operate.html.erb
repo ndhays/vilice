@@ -1,0 +1,51 @@
+<%# The Operate zone: every act this box can take (decisions/what-the-console-is-for.md).
+    Each button is named for the steward command it sends; the full command is shown in
+    the preview before anything runs. App lifecycle (restart, rollback, …) lives on the
+    Install (decisions/install-the-app-actions-home.md). Locals: machine, status, table. %>
+<% if !machine.operate? %>
+  <div class="panel readonly no-access">
+    <%= icon "lock", size: 28 %>
+    <p class="no-access-head">No operate access</p>
+    <p class="note">This box holds an <strong>observe</strong> key: Steward can read it,
+      not act on it. Grant <strong>operate</strong> to act here.</p>
+  </div>
+<% elsif !status.online? %>
+  <%# Every act travels the same SSH connection as the read that just failed, so they
+      are absent rather than offered and refused. %>
+  <div class="panel readonly no-access">
+    <%= icon "circle-cut", size: 28 %>
+    <p class="no-access-head">Nothing can be sent</p>
+    <p class="note">The box is offline, and every act travels the same connection.</p>
+  </div>
+<% else %>
+  <div class="panel mutate acts">
+    <p class="acts-lede">Each is previewed, written to the record, then run over scoped SSH.</p>
+
+    <%= render "machines/act", verb: "apply-updates",
+          state: status.updates_available? ? "#{pluralize(status.update_count, 'OS update')} waiting" : "OS packages are up to date",
+          button: (link_to(steward_verb("apply-updates"), new_machine_mutation_path(machine, act: "apply-updates"),
+                     class: "btn mutate cmd sm", data: { turbo_frame: "ceremony" }) if status.updates_available?) %>
+
+    <% if machine.balancer? %>
+      <%= render "machines/act", verb: "route",
+            state: table.any? ? "Send the edge table: #{pluralize(table.size, 'install')} behind it" : "Send the edge table (no install selects this box yet)",
+            button: link_to(steward_verb("route"), new_machine_mutation_path(machine, act: "route"),
+                      class: "btn mutate cmd sm", data: { turbo_frame: "ceremony" }) %>
+    <% end %>
+
+    <% unless status.balancer? %>
+      <%= render "machines/act", verb: "deploy",
+            state: "Deploy an app from a pasted spec",
+            button: link_to(steward_verb("deploy"), new_machine_box_app_path(machine), class: "btn mutate cmd sm") %>
+
+      <% status.apps.each do |app| %>
+        <%= render "machines/act", verb: "remove",
+              state: safe_join([ "Take ", tag.strong(app["name"]), " off the box" ]),
+              danger: true,
+              button: button_to(steward_verb("remove"), machine_box_app_path(machine, app["name"]),
+                        method: :delete, class: "btn danger cmd sm",
+                        form: { data: { turbo_confirm: "Remove #{app['name']} from #{machine.name}?\n\nRuns: steward #{Mutation.command('remove', machine, app: app['name'])}\n\nThis is a recorded act on the box." } }) %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>
