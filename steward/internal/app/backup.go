@@ -15,6 +15,7 @@ import (
 	"steward/internal/core"
 
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -196,7 +197,24 @@ func backupAll(cfg backupConfig) core.Result {
 	return core.OK(fmt.Sprintf("backed up %d app(s)", len(apps)))
 }
 
+// backupApp snapshots one app and notes the outcome in the backup fact.
 func backupApp(cfg backupConfig, st appState) core.Result {
+	return noted(st.Name, snapshotApp(cfg, st))
+}
+
+// noted writes a backup's outcome to the fact `status` reads, and passes it through.
+func noted(target string, r core.Result) core.Result {
+	var err error
+	if r.Code != "ok" {
+		err = errBackup
+	}
+	noteBackup(target, err, r.Message)
+	return r
+}
+
+var errBackup = errors.New("backup failed")
+
+func snapshotApp(cfg backupConfig, st appState) core.Result {
 	// Let a stateful app make itself consistent first (e.g. dump a DB into a volume).
 	// Steward stays database-agnostic — the app owns this; we just run it in-container.
 	if st.Backup != "" && st.ActiveColor != "" {
@@ -297,6 +315,10 @@ func restoreAppLocked(cfg backupConfig, app, snapshot string) core.Result {
 // --- machine (record) backup / restore ---
 
 func backupMachine(cfg backupConfig) core.Result {
+	return noted(machineTarget, snapshotMachine(cfg))
+}
+
+func snapshotMachine(cfg backupConfig) core.Result {
 	// Snapshot Steward's own state (record, status, hardening, app specs) off-box.
 	// NEVER the secrets dir — don't back the restic password into the repo it unlocks,
 	// and don't ship operational secrets.

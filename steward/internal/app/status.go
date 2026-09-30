@@ -72,6 +72,13 @@ func statusCmd(args []string) core.Result {
 	if u := collectUpdates(); u != nil {
 		data["updates"] = u
 	}
+	// When each app and the record last backed up, as `backup` noted it — never a live
+	// query of the repo (see backups.go).
+	data["backups"] = collectBackups()
+	// The certificate each served hostname actually hands out (see certs.go).
+	if certs := collectCerts(); certs != nil {
+		data["certs"] = certs
+	}
 	// Make the box's standing registry credentials legible — host + username, never the
 	// secret. A credential nothing surfaces is ambient authority. See registry.go.
 	if regs := loggedInRegistries(); len(regs) > 0 {
