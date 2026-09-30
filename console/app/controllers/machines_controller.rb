@@ -1,5 +1,5 @@
 class MachinesController < ApplicationController
-  before_action :set_machine, only: %i[ show refresh destroy sharing transfer ]
+  before_action :set_machine, only: %i[ show live refresh destroy sharing transfer ]
 
   # All Machines — the fleet, and the floor of the three rings. This page is about
   # the *shape* of the fleet, so grouping is the primitive rather than filtering: a
@@ -63,20 +63,30 @@ class MachinesController < ApplicationController
     end
   end
 
-  # The per-machine deep dive. Observe reads are cached (Decision 3): the live
-  # status, and the box's own record. The chain merges the two records — this
-  # machine's Steward Console events (authored) with the box record (witnessed).
+  # The per-machine deep dive, in two requests so the page never waits on the box. `show`
+  # is the shell — what we hold ourselves, rendered at once. `live` is everything that
+  # needs the box (both zones and the record), loaded into a frame right after, from
+  # reads cached for 30s (Decision 3).
   def show
     @q        = params[:q].to_s.strip
-    @status   = MachineStatus.from(Steward::Observe.status(@machine))
-    @record   = Steward::Observe.record(@machine)
-    @actors   = Steward::Observe.actors(@machine) if @status.online? # who can reach it
-    @chain    = chain_for(@machine, @record).select { |i| i.matches?(@q) }
-    @apps = @machine.apps.includes(:project).order(:name) # placements on this box (project optional)
+    @apps     = @machine.apps.includes(:project).order(:name) # placements on this box (project optional)
     @projects = Project.order(:name) # for the ownership / sharing controls
+  end
+
+  # The chain merges the two records — this machine's Steward Console events (authored)
+  # with the box record (witnessed). A box that did not answer the status read is not
+  # asked twice more: the record and the ledger would wait out the same timeout.
+  def live
+    @q      = params[:q].to_s.strip
+    @status = MachineStatus.from(Steward::Observe.status(@machine))
+    @record = @status.online? ? Steward::Observe.record(@machine) : { ok: false, error: @status.error }
+    @actors = Steward::Observe.actors(@machine) if @status.online? # who can reach it
+    @chain  = chain_for(@machine, @record).select { |i| i.matches?(@q) }
+    @apps   = @machine.apps.includes(:project).order(:name)
     # The edge table this box should serve, derived rather than stored. Empty for a box
     # that isn't a balancer, so the panel simply doesn't render.
-    @table    = @machine.balancer? ? @machine.routing_table : []
+    @table  = @machine.balancer? ? @machine.routing_table : []
+    render layout: false
   end
 
   # ── Observe ──────────────────────────────────────────────────────────────

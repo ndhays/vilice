@@ -344,6 +344,18 @@ enough to make a group read as a group.
   keeps none, by design, above). A placement we hold that the box does not report is
   named as a gap beneath the list — stated, never closed on its own.
 
+  **The page never waits on the box.** It is two requests. `show` is the shell — the
+  name, the facts, labels and settings, everything we hold ourselves — rendered at once,
+  with the header saying *Reading…* rather than a last-known state that could read as
+  current. Where the zones and record go, a frame loads `live`, and until it answers it
+  shows what it is waiting on in the words it is waiting on: `$ steward status --json`
+  and a cursor. When `live` arrives it fills both zones and the record, and replaces the
+  header and facts with the live ones. A box that does not answer the status read is not
+  asked for its record and ledger too, so an unreachable box costs one timeout, not
+  three. The frame sends its links and forms to the whole page; only the ceremony opens
+  in place, and its act button and Cancel leave it for the whole page, so the notice and
+  the settled record land where they belong.
+
   **Deploying straight to a box is a form, then a preview.** Operate's `deploy` opens
   *Deploy an app to this box* — stateless, like everything the machine view does: the
   spec goes to the box and is not kept (`BoxDeploy`, `Machines::AppsController`). An

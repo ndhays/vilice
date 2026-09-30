@@ -141,7 +141,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       sign_in_as @user
       crit = Machine.create!(name: "crit-box", ssh_host: "x", scope: "observe")
       crit.labels.create!(key: "fake-health", value: "crit")
-      get machine_path(crit)
+      get live_machine_path(crit)
       assert_response :success
       assert_select ".health-line.crit"     # loud health line
       assert_select ".integrity.ok"         # box record reads back intact
@@ -153,7 +153,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       sign_in_as @user
       gone = Machine.create!(name: "gone-box", ssh_host: "x", scope: "observe")
       gone.labels.create!(key: "fake-health", value: "offline")
-      get machine_path(gone)
+      get live_machine_path(gone)
       assert_response :success
       assert_select ".integrity.bad", /Box record unavailable/   # red: old news, not absent
     end
@@ -164,7 +164,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       sign_in_as @user
       box = Machine.create!(name: "upd-box", ssh_host: "x", scope: "operate")
       box.labels.create!(key: "fake-updates", value: "3")
-      get machine_path(box)
+      get live_machine_path(box)
       assert_response :success
       # Observe reports; it holds no act.
       assert_select ".zone-observe .kicker", "Maintenance"
@@ -186,7 +186,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       sign_in_as @user
       box = Machine.create!(name: "current-box", ssh_host: "x", scope: "operate")
       box.labels.create!(key: "fake-health", value: "ok") # ok band → 0 updates
-      get machine_path(box)
+      get live_machine_path(box)
       assert_response :success
       assert_select ".maint-line", /Daily at/
       assert_select ".updates-current"
@@ -458,7 +458,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       box.labels.create!(key: "fake-health", value: "warn")
       app = App.create!(name: "shop", hostname: "shop.example")
       app.placements.create!(machine: box, status: "running")
-      get machine_path(box)
+      get live_machine_path(box)
       assert_response :success
 
       assert_select ".zone-observe .panel", /Backups/ do
@@ -482,7 +482,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       box.labels.create!(key: "fake-health", value: "crit")
       app = App.create!(name: "shop2", hostname: "shop2.example")
       app.placements.create!(machine: box, status: "running")
-      get machine_path(box)
+      get live_machine_path(box)
       assert_select ".fact-rows li.bad", /Last attempt failed/
       assert_select ".fact-rows li.bad .fact-detail", /connection refused/
       assert_select ".fact-rows li.bad", /Not trusted · expired/
@@ -494,9 +494,36 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       sign_in_as @user
       box = Machine.create!(name: "no-repo", ssh_host: "x", scope: "operate")
       box.labels.create!(key: "fake-backups", value: "off")
-      get machine_path(box)
+      get live_machine_path(box)
       assert_select ".card-verdict.bad", /Nothing on this box is backed up/
     end
+  end
+
+  # ── The page never waits on the box ───────────────────────────────────────
+  test "the machine page renders without reading the box, and loads the live half after" do
+    sign_in_as @user
+    box = Machine.create!(name: "slow-box", ssh_host: "x", scope: "operate")
+    stub_returning(Steward, :read, nil) do
+      Steward.define_singleton_method(:read) { |*| raise "the shell must not read the box" }
+      get machine_path(box)
+    end
+    assert_response :success
+    assert_select "h1 .health-line.reading", /Reading/
+    assert_select "turbo-frame#machine-live[src=?][target=_top]", live_machine_path(box)
+    assert_select "turbo-frame#machine-live .reading-line", /steward status --json/
+  end
+
+  test "an unreachable box is asked once, not three times" do
+    sign_in_as @user
+    box = Machine.create!(name: "gone-box3", ssh_host: "x", scope: "operate")
+    reads = []
+    stub_returning(Steward, :read, nil) do
+      Steward.define_singleton_method(:read) { |_m, cmd, **| reads << cmd; { ok: false, error: "timed out", at: Time.current } }
+      get live_machine_path(box)
+    end
+    assert_response :success
+    assert_equal [ "status --json" ], reads
+    assert_select ".panel.unreachable", /could not reach/
   end
 
   def with_fake_observe
@@ -516,7 +543,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
   test "a box reports what it was prepared as" do
     sign_in_as @user
     machine = Machine.create!(name: "app-box", ssh_host: "10.0.0.9", scope: "observe")
-    stub_observe(status: status_reply("host")) { get machine_path(machine) }
+    stub_observe(status: status_reply("host")) { get live_machine_path(machine) }
     assert_response :success
     assert_select ".panel.observe", /host/
   end
@@ -536,7 +563,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
   test "an unprepared box reads as not prepared, not as running nothing" do
     sign_in_as @user
     machine = Machine.create!(name: "fresh-box", ssh_host: "10.0.0.10", scope: "observe")
-    stub_observe(status: status_reply("")) { get machine_path(machine) }
+    stub_observe(status: status_reply("")) { get live_machine_path(machine) }
     assert_response :success
     assert_select ".facts dd", "not prepared"
     assert_select "h1 .health-line", /Online/
@@ -549,7 +576,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
   test "an unreachable box shows no live-read card at all, so none can read as empty" do
     sign_in_as @user
     machine = Machine.create!(name: "gone-box2", ssh_host: "10.0.0.12", scope: "observe")
-    stub_observe(status: { ok: false, error: "connection refused" }) { get machine_path(machine) }
+    stub_observe(status: { ok: false, error: "connection refused" }) { get live_machine_path(machine) }
     assert_response :success
     # One card owns the message.
     assert_select ".panel.unreachable", /could not reach/

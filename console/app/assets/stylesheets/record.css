@@ -485,3 +485,19 @@ h1 .health-line.crit { font-size: 1rem; }
 .chain-entry.is-refused .chain-dot { color: var(--bad); }
 .tag.repeats { color: var(--muted); margin-left: 0.4rem; }
 .chain-steps { margin: 0.1rem 0 0.4rem; padding-left: 1.1rem; font-size: 0.82rem; }
+
+/* While the box is being read: the command being run, and a cursor — the page says what
+   it is waiting on, in the words it is waiting on. The cursor blinks only for those who
+   have not asked for less motion. */
+.reading-box { padding: 1.4rem 1.35rem; border: 1px dashed var(--line); border-radius: 10px; margin: 0.5rem 0 1.5rem; }
+.reading-line { font-family: var(--font-mono); font-size: 0.9rem; margin: 0 0 0.35rem; color: var(--ink); }
+.reading-prompt { color: var(--muted); margin-right: 0.5rem; }
+.reading-cursor {
+  display: inline-block; width: 0.55em; height: 1.05em; margin-left: 0.3rem;
+  vertical-align: -0.15em; background: var(--ink);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reading-cursor { animation: reading-blink 1s steps(1) infinite; }
+}
+@keyframes reading-blink { 50% { opacity: 0; } }
+.health-line.reading { color: var(--muted); font-weight: 400; }

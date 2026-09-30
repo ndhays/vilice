@@ -118,7 +118,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     canned = { ok: true, data: { "data" => { "machine" => { "hostname" => "obs.local", "load1" => "0.1" } } }, at: Time.current }
     record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
-    stub_observe(status: canned, record: record) { get machine_path(@observer) }
+    stub_observe(status: canned, record: record) { get live_machine_path(@observer) }
     assert_response :success
     assert_select ".panel.observe", /obs\.local/
     assert_select ".panel.readonly", /observe.*key/i  # observe machine: read-only, not amber
@@ -212,7 +212,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     canned = { ok: true, at: Time.current,
                data: { "data" => { "machine" => { "hostname" => "op.local" }, "apps" => apps } } }
     record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
-    stub_observe(status: canned, record: record) { get machine_path(@operator) }
+    stub_observe(status: canned, record: record) { get live_machine_path(@operator) }
     assert_response :success
     assert_select ".app-box-rows a[href=?]", app_path(app), text: "globex-api"
     assert_select ".app-box-rows a", text: "Globex"    # the project it serves
@@ -234,7 +234,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     canned = { ok: true, at: Time.current,
                data: { "data" => { "machine" => { "hostname" => "op.local" }, "apps" => [] } } }
     record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
-    stub_observe(status: canned, record: record) { get machine_path(@operator) }
+    stub_observe(status: canned, record: record) { get live_machine_path(@operator) }
     assert_response :success
     assert_select ".app-box-rows .row", count: 0
     assert_select ".panel", /Placed here but not reported running/
@@ -249,7 +249,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     canned = { ok: true, at: Time.current,
                data: { "data" => { "machine" => { "hostname" => "op.local" }, "apps" => apps } } }
     record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
-    stub_observe(status: canned, record: record) { get machine_path(@operator) }
+    stub_observe(status: canned, record: record) { get live_machine_path(@operator) }
     assert_response :success
     assert_select ".app-box-rows .row-name", "stray"
     assert_select ".app-box-rows .badge.unowned", "not in our record"

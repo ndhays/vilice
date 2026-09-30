@@ -72,10 +72,13 @@
     <% confirm = { act: @mutation.act.verb, app_id: @mutation.app&.id, from: @from } %>
     <% confirm.merge!(image: @mutation.image, hostname: @mutation.hostname, port: @mutation.port, health: @mutation.health) if @mutation.needs_compose? %>
     <div class="ceremony-actions">
-      <%= button_to safe_join([ icon("check", size: 14), "Confirm — write & run" ]),
-            machine_mutation_path(@machine), method: :post, class: "btn mutate", params: confirm %>
-      <%= link_to "Cancel", @return_path,
-            class: "btn-quiet", data: { turbo_frame: "ceremony" } %>
+      <%# The act itself: the command button, named for what it sends. It and Cancel
+          leave the ceremony for the whole page — the settled record and the notice
+          belong to the page, and on the machine page the ceremony sits inside a frame
+          the box's reply fills in, which the reply to this cannot land in. %>
+      <%= button_to steward_verb(@mutation.act.verb), machine_mutation_path(@machine), method: :post,
+            class: "btn mutate cmd", params: confirm, form: { data: { turbo_frame: "_top" } } %>
+      <%= link_to "Cancel", @return_path, class: "btn-quiet", data: { turbo_frame: "_top" } %>
     </div>
   </div>
 <% end %>

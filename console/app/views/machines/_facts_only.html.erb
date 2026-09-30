@@ -1,0 +1,15 @@
+<%# What the box *is*, as a labelled list. Locals: machine, status (nil until read). %>
+<dl class="facts" id="machine-facts">
+  <dt>Address</dt><dd class="mono"><%= ssh_address(machine) %></dd>
+  <dt>Role</dt><dd><%= machine_role_word(machine, status) %></dd>
+  <dt>Owner</dt><dd><%= machine.owner ? link_to(machine.owner.name, machine.owner) : tag.span("none", class: "fact-gap", title: "Transfer to an owner to use machine") %></dd>
+  <dt>Sharing</dt><dd><%= sharing_mode_label(machine.sharing) %></dd>
+  <%# The name mirrors the box (decisions/machine-name-mirrors-the-box.md), so the name
+      the box reports is only news when the two differ. %>
+  <% if status&.online? && status.hostname.present? && status.hostname != machine.name %>
+    <dt>Box says</dt><dd class="mono" title="The hostname the box reports; the name here has not caught up"><%= status.hostname %></dd>
+  <% end %>
+  <% if (clients = machine.projects.where.not(id: machine.owner_id)).any? %>
+    <dt>Also serves</dt><dd><%= safe_join(clients.map { |p| link_to(p.name, p) }, ", ") %></dd>
+  <% end %>
+</dl>

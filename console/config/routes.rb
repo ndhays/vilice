@@ -88,6 +88,9 @@ Rails.application.routes.draw do
       # and projects the result onto our own columns, so it is a POST: a GET must
       # be safe to repeat unasked, and Turbo prefetches links on hover.
       post :refresh
+      # The half of the machine page that needs the box, loaded into a frame after the
+      # rest of the page is on screen. A read, and the same cached reads as before.
+      get :live
       # Sharing & ownership (the Access panel) — set the sharing mode, transfer or
       # release the owner. machine-ownership.md.
       patch :sharing

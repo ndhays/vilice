@@ -1,0 +1,22 @@
+<%# The name and its one live signal. Locals: machine, status (nil until read). %>
+<h1 class="machine-head" id="machine-head">
+  <%# On the box Steward runs on, lead with a location pin — "you are here" at a
+      glance, said in words on hover. Otherwise the glyph is the role. %>
+  <% if you_are_here?(status) %>
+    <%# NOTE: acting on the self box is the OOM-sensitive path (Steward deploying its
+        own box) — the mutate ceremony will need self-aware handling here (warn/guard)
+        before #20 self-deploy. See decisions/open/ui-shape.md. %>
+    <%= icon_tip "map-pin", "You are here — the box Steward runs on", size: 22 %>
+  <% else %>
+    <%= icon machine_role_icon_name(machine, status), size: 22 %>
+  <% end %>
+  <span class="machine-name"><%= machine.name %></span>
+  <%# Health, beside the name: a dot and plain words — "Online", or what is wrong. Before
+      the box has answered, it says it is asking, never a last-known state that could
+      read as current. %>
+  <% if status %>
+    <%= health_line(status) %>
+  <% else %>
+    <span class="health-line reading"><span class="dot dot-gray"></span> Reading…</span>
+  <% end %>
+</h1>

@@ -166,7 +166,9 @@ pasting (#2b) — is built.
    SSH call returns, with nothing on screen saying it is running, and the command's
    output is not shown as it arrives. Wants a running state in the ceremony (the entry
    already exists as *pending*, so the record can show it) and, later, streamed output —
-   which is #15's Steward sub-step contract.
+   which is #15's Steward sub-step contract. *The page load half is built:* the machine
+   page renders at once and loads what needs the box into a frame. *Still slow:* the
+   Access page reads every box's ledger in turn before it renders — the same fix applies.
 7. **More observe cards** — BUILT: Backups and Certificates (from new `status` fields),
    the Record card, and *Who can reach this box* as a list.
 8. **Visual pass** — *open.* Card alignment and density, after the above.

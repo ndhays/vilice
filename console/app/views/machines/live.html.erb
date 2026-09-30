@@ -1,0 +1,218 @@
+<%# The half of the machine page that needs the box: both zones and the record. The
+    shell (show) renders at once and this frame fills in when the SSH reads return
+    (MachinesController#live), so a slow or unreachable box never holds the page blank.
+    The frame's links and forms go to the top by default (`target: "_top"` on the frame);
+    only the ceremony opens in place.
+
+    It also replaces the shell's header and facts with the live ones: a turbo-stream
+    inside a frame runs when the frame is inserted. %>
+<%= turbo_frame_tag "machine-live", target: "_top" do %>
+  <%= turbo_stream.replace "machine-head", partial: "machines/head_only", locals: { machine: @machine, status: @status } %>
+  <%= turbo_stream.replace "machine-facts", partial: "machines/facts_only", locals: { machine: @machine, status: @status } %>
+
+<%# ── Two zones, side by side ─────────────────────────────────────────────────
+    Observe on the left: what the box reports. Nothing in it writes — at most it
+    points across. Operate on the right: every act this box can take, each with
+    the exact command it sends, and the ceremony opens there too. So a reader never
+    has to work out which kind of control they are looking at: it is where it sits. %>
+<div class="zones">
+<section class="zone zone-observe" aria-label="Observe">
+  <h2 class="zone-head"><%= icon "eye", size: 15 %> Observe</h2>
+
+<%# When the box does not answer we know **nothing current** about it, so the zone
+    does not lay out empty cards that each apologise in their own words. One card
+    owns the message. Our own record stays at full strength further down. %>
+<% if !@status.online? %>
+  <div class="panel unreachable">
+    <div class="panel-head">
+      <div class="kicker">Unreachable</div>
+      <%= button_to refresh_machine_path(@machine), class: "btn cmd observe sm panel-action", title: "Read the box again" do %>
+        <%= steward_verb "status" %>
+      <% end %>
+    </div>
+    <p class="unreachable-line">
+      <%= icon "circle-cut", size: 18 %>
+      Steward could not reach <strong><%= @machine.name %></strong><%
+        %><% if @machine.last_seen_at %>, last heard from <%= time_ago_in_words(@machine.last_seen_at) %> ago<% end %>.
+    </p>
+    <pre class="raw"><%= @status.error %></pre>
+  </div>
+<% else %>
+  <div class="panel observe">
+    <div class="panel-head">
+      <div>
+        <div class="kicker">Live status</div>
+        <p class="read-age"><%= read_age(@status) %></p>
+      </div>
+      <%# A POST, not a link: it opens an SSH connection to the box, so it must not be
+          something a hover or a prefetch can fire. A read, so it lives on this side. %>
+      <%= button_to refresh_machine_path(@machine), class: "btn cmd observe sm panel-action", title: "Read the box again" do %>
+        <%= steward_verb "status" %>
+      <% end %>
+    </div>
+
+    <ul class="metrics">
+      <li><span class="k"><%= icon "cpu", size: 13 %> load</span><span class="v"><%= @status.load1 %></span></li>
+      <li><span class="k"><%= icon "memory-stick", size: 13 %> memory used</span><span class="v"><%= @status.mem_percent %>%</span></li>
+      <li><span class="k"><%= icon "container", size: 13 %> disk used</span><span class="v"><%= @status.disk_percent %>%</span></li>
+      <li><span class="k"><%= icon "clock", size: 13 %> uptime</span><span class="v"><%= distance_of_time_in_words(0, @status.uptime_sec) %></span></li>
+    </ul>
+    <%# Hardening posture, read from the fact the box published (not a live check). %>
+    <%= hardening_line(@status) %>
+    <%# What the cards above are read from: the command, then exactly what it returned. %>
+    <details class="raw-output">
+      <summary>Raw status output</summary>
+      <p class="raw-cmd">steward status --json</p>
+      <pre class="raw"><%= JSON.pretty_generate(@status.raw) %></pre>
+    </details>
+  </div>
+
+  <%# Maintenance — when the box patches itself, and whether anything is waiting.
+      Pure observe now: applying lives across in Operate. %>
+  <div class="panel observe">
+    <div class="kicker">Maintenance</div>
+    <% if @status.maintenance_known? %>
+      <p class="maint-line"><%= icon "stethoscope", size: 15 %>
+        <strong>Daily at <%= @status.maintenance_time %></strong></p>
+      <p class="muted maint-note">Security patches app themselves<%=
+        "; the box reboots then if the kernel needs it" if @status.auto_reboot? %>.</p>
+    <% else %>
+      <p class="maint-line muted"><%= icon "stethoscope", size: 15 %>
+        <strong>No maintenance window.</strong></p>
+      <p class="muted maint-note">Updates wait until someone applies them.</p>
+    <% end %>
+    <% if @status.updates_available? %>
+      <p class="maint-pending" title="<%= @status.update_packages.join("\n") %>">
+        <%= icon "circle-dot", size: 15 %>
+        <strong><%= pluralize(@status.update_count, "update") %> waiting</strong>
+      </p>
+      <% if @status.update_packages.any? %>
+        <p class="muted maint-note mono"><%= @status.update_packages.join(" ") %></p>
+      <% end %>
+    <% else %>
+      <p class="muted updates-current"><%= icon "circle-check", size: 15 %> <strong>Up to date.</strong></p>
+    <% end %>
+  </div>
+
+  <%# ── Apps ──────────────────────────────────────────────────────────────────
+      What the box says is running, which is the reason the box exists. Each row
+      carries the image digest it is actually running and links through to the
+      App where we have one. Absent only where the box says it is a balancer. %>
+  <% unless @status.balancer? %>
+    <div class="panel observe">
+      <div class="kicker">Apps on this box</div>
+      <% if @status.apps.empty? %>
+        <p class="muted">No apps on this box.</p>
+      <% else %>
+        <ul class="rows app-box-rows">
+          <% @status.apps.each do |box_app| %>
+            <% app = @apps.find { |i| i.name == box_app["name"] } %>
+            <li class="row">
+              <span class="cell-name">
+                <%= icon "box", size: 15, css_class: "icon row-icon" %>
+                <% if app %>
+                  <%= link_to box_app["name"], app, class: "row-name" %>
+                <% else %>
+                  <span class="row-name"><%= box_app["name"] %></span>
+                <% end %>
+              </span>
+              <span class="cell-project">
+                <% if app&.project %>
+                  <%= link_to app.project.name, app.project, class: "owner-link" %>
+                <% elsif app.nil? %>
+                  <%# The box runs it, our record doesn't know it — a machine-view deploy
+                      keeps no App, and so does anything deployed outside the console. %>
+                  <span class="badge unowned" title="Running on the box with no placement recorded here">not in our record</span>
+                <% end %>
+              </span>
+              <span class="cell-image"><%= digest_chip(box_app["image"]) %></span>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <%# Placements we hold that the box did not report back. The gap is stated, never
+          closed on its own (decisions/drift-is-surfaced-never-closed.md). %>
+      <% missing = @apps.reject { |i| @status.apps.any? { |a| a["name"] == i.name } } %>
+      <% if missing.any? %>
+        <p class="note muted">
+          <%= icon "triangle-alert", size: 13 %>
+          Placed here but not reported running:
+          <%= safe_join(missing.map { |i| link_to(i.name, i) }, ", ") %>.
+        </p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= render "machines/backups", status: @status %>
+  <%= render "machines/certs", status: @status %>
+
+  <%# ── The edge, when this box is a balancer ───────────────────────────────
+      Two halves, kept visibly apart: the table this box *should* serve, derived from
+      the apps that select it, and the addresses it *reports* fronting. Nothing
+      reconciles them — applying is an act, across in Operate. %>
+  <% if @machine.balancer? %>
+    <div class="panel observe">
+      <div class="kicker">Edge · derived from the apps behind it</div>
+      <% if @table.any? %>
+        <ul class="route-table">
+          <% @table.each do |r| %>
+            <li>
+              <span class="route-host mono"><%= r.hostnames.join(" ") %></span>
+              <span class="route-arrow">→</span>
+              <span class="route-ups mono"><%= r.upstreams.join(", ") %></span>
+              <%= link_to r.app.name, r.app, class: "route-app" %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="note muted">No app selects this balancer yet, so the table is empty.</p>
+      <% end %>
+      <p class="note muted">
+        <% if @status.routes.any? %>
+          Box reports fronting: <span class="mono"><%= @status.routes.join(", ") %></span>
+        <% else %>
+          Box reports fronting nothing yet.
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+  <%= render "machines/record_card", record: @record %>
+  <%= render "machines/keyholders", machine: @machine, actors: @actors %>
+<% end %>
+</section>
+
+<section class="zone zone-operate" aria-label="Operate">
+  <h2 class="zone-head"><%= icon "zap", size: 15 %> Operate</h2>
+  <%= render "machines/operate", machine: @machine, status: @status, table: @table %>
+  <%# The ceremony lands here, inside the zone that writes: pick an act → this frame
+      fills with the preview of the exact record line, then Confirm writes & runs it. %>
+  <%= turbo_frame_tag "ceremony" %>
+</section>
+</div>
+
+<%# ── Record — this box's half of the two records, newest first ─────────────── %>
+<h2 class="section-kicker"><%= icon "disc", size: 15 %> Record</h2>
+<%# Online, the Record card above says whether the chain is intact. Offline there is no
+    card, so the warning that these entries end at the last read belongs with them. %>
+<%= record_integrity(@record) unless @status.online? %>
+<%# The chain is assembled from two sources — our own events and the box's — so the
+    search filters the assembled list rather than a relation. A plain GET, so a
+    narrowed record stays a link you can send. %>
+<%= form_with url: machine_path(@machine), method: :get, class: "filter-bar" do |f| %>
+  <span class="filter-search">
+    <%= icon "search", size: 15 %>
+    <%= f.search_field :q, value: @q, autocomplete: "off", spellcheck: false,
+          placeholder: "Search this box's record" %>
+  </span>
+  <%= f.submit "Search", class: "btn sm" %>
+  <% if @q.present? %>
+    <%= link_to "Clear", machine_path(@machine), class: "filter-clear" %>
+  <% end %>
+<% end %>
+<% if @chain.empty? && @q.present? %>
+  <p class="empty">Nothing in this box's record matches. <%= link_to "Clear it", machine_path(@machine) %>.</p>
+<% else %>
+  <%= render "events/chain", items: @chain, within: @machine %>
+<% end %>
+<% end %>
