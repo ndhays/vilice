@@ -35,7 +35,7 @@
 
     <% unless status.balancer? %>
       <%= render "machines/act", verb: "deploy",
-            state: "Deploy an app from a pasted spec",
+            state: "Deploy an app to this box",
             button: link_to(steward_verb("deploy"), new_machine_box_app_path(machine), class: "btn mutate cmd sm") %>
 
       <% status.apps.each do |box_app| %>

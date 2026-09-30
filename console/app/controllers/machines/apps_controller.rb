@@ -14,32 +14,36 @@ class Machines::AppsController < ApplicationController
   before_action :require_operate
   before_action :require_host_role
 
+  # The form. `template_id` prefills it from an App Template; the choice is a plain GET,
+  # so picking one is a link, not a script.
   def new
-    @name = params[:name]
+    template = AppTemplate.find_by(id: params[:template_id])
+    @deploy = template ? BoxDeploy.from_template(template, name: params[:name]) : BoxDeploy.new(name: params[:name])
+    @templates = AppTemplate.where.associated(:latest_version).order(:name)
   end
 
+  # Two steps, one action. Without `confirm` it is the preview: the plain reading, the
+  # command, and the exact envelope, with nothing sent. With it, the act — recorded, then
+  # run. `edit` goes back to the form with everything still filled in.
   def create
-    name   = params[:name].to_s.strip
-    config = params[:config].to_s
-
-    spec, error = parse_config(name, config)
-    if error
-      @name, @config, @error = name, config, error
-      return render :new, status: :unprocessable_entity
-    end
+    @deploy = BoxDeploy.new(deploy_params)
+    @templates = AppTemplate.where.associated(:latest_version).order(:name)
+    return render :new if params[:edit].present?
+    return render :new, status: :unprocessable_entity unless @deploy.valid?
+    return render :preview unless params[:confirm].present?
 
     outcome = Steward::Mutate.run(
-      @machine, Mutation.command("deploy", @machine, name: name),
+      @machine, @deploy.command,
       actor: Current.user&.email_address || "console",
       action: "deployed",
-      summary: "#{name} on #{@machine.name}",
-      stdin: spec.to_json
+      summary: "#{@deploy.name} on #{@machine.name}",
+      stdin: @deploy.envelope.to_json
     )
 
     if outcome[:result][:ok]
-      redirect_to @machine, notice: "Deployed #{name}."
+      redirect_to @machine, notice: "Deployed #{@deploy.name}."
     else
-      @name, @config, @error = name, config, outcome[:result][:error]
+      @error = outcome[:result][:error]
       render :new, status: :unprocessable_entity
     end
   end
@@ -83,25 +87,8 @@ class Machines::AppsController < ApplicationController
     redirect_to @machine, alert: "This box is a balancer — it fronts other boxes and runs no apps."
   end
 
-  # Validate only what we must: that it is JSON, that it is an object, and that the
-  # name we are deploying under matches. Everything else is the box's to judge —
-  # it validates the spec at the render boundary and refuses what it cannot render,
-  # and duplicating those rules here would give two answers that drift apart.
-  def parse_config(name, config)
-    return [ nil, "Name is required." ] if name.blank?
-    return [ nil, "Paste the app's config." ] if config.blank?
-
-    spec = JSON.parse(config)
-    return [ nil, "The config must be a JSON object." ] unless spec.is_a?(Hash)
-
-    # The box keys state by the name it is given; a spec naming something else would
-    # deploy under one name and describe another.
-    if spec["name"].present? && spec["name"] != name
-      return [ nil, %(The config names "#{spec['name']}" but you are deploying "#{name}".) ]
-    end
-
-    [ spec.merge("name" => name), nil ]
-  rescue JSON::ParserError => e
-    [ nil, "That is not valid JSON: #{e.message.truncate(120)}" ]
+  def deploy_params
+    params.fetch(:box_deploy, {}).permit(:name, :image, :hostnames, :port, :health, :env,
+                                         :secrets, :volumes, :extras, :pasted, :template_id)
   end
 end

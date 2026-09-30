@@ -141,13 +141,14 @@ mark and the verb.
    hostnames, env names, volumes; accessories and processes nested under the app), with
    the literal deploy envelope behind a *Raw spec* disclosure (secret names only).
    Observe = where it runs, running vs. asked for. Operate = the command buttons, per box.
-**Queued next** (agreed 2026-09-30): a better deploy UI (#2b). (The status cards, #7,
-and the rename, #2a, are built.)
+The queue agreed 2026-09-30 — status cards (#7), the rename (#2a), a deploy without
+pasting (#2b) — is built.
 
-2b. **Deploy without pasting** — *open.* The machine page's `deploy` takes a pasted JSON
-   spec today. Wanted: a form that builds the spec — from an App Template, or field by
-   field — and shows the JSON it will send behind a *Raw spec* disclosure, the same
-   plain-then-exact shape as everywhere else.
+2b. **Deploy without pasting** — BUILT for the machine page: a form in three steps,
+   *start from a template*, a preview with the exact envelope under *Raw spec*, and
+   *Paste a spec instead* as the escape hatch. *Open:* the Apps flow's first deploy of a
+   brand-new app still goes add → place → ceremony; whether a template can go straight
+   to a running app in one screen is a question for that flow.
 2a. **Rename: Install → App, App → AppTemplate, InstallTarget → Placement** — BUILT,
    words and code alike (tables, routes, params, the blueprint).
 3. **What a command does on the box** — *open.* Belongs in the record entry, not on the

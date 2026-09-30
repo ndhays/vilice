@@ -105,3 +105,10 @@
 /* Outside the card, because it is not one of the catalog's rows. */
 .pick-custom { margin: 0 0 var(--gap); }
 
+
+/* Deploy to a box: the template picker sits above the form, a select and its button
+   on one line; the paste box is the escape hatch below it, closed by default. */
+.template-pick { margin: 0 0 1.25rem; }
+.template-pick-row { display: flex; gap: 0.5rem; align-items: center; }
+.paste-spec { margin: 0.5rem 0 1rem; }
+.paste-spec > summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }

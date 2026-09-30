@@ -1,0 +1,64 @@
+<%# The deploy, before it is sent: plain on the surface, exact underneath. The plain
+    reading of what will run; the record line it will write; the command; and, one step
+    down, the exact envelope the box will read — secret values masked, because a value
+    typed a moment ago is not something to print back. Confirm carries the fields again. %>
+<% content_for :title, "Deploy #{@deploy.name} — #{@machine.name}" %>
+<% spec = @deploy.spec %>
+
+<%= breadcrumb [["Machines", machines_path], [@machine.name, machine_path(@machine)], ["Deploy an app", nil]] %>
+<h1><%= icon "rocket", size: 20 %> Deploy <%= @deploy.name %> to <%= @machine.name %></h1>
+
+<div class="ceremony">
+  <div class="kicker">Confirm · this writes to the record</div>
+
+  <dl class="facts">
+    <dt>Image</dt><dd><%= digest_chip(spec["image"]) %></dd>
+    <dt>Answers at</dt><dd class="mono"><%= Array(spec["hostnames"]).join(", ").presence || "—" %></dd>
+    <dt>Port</dt><dd class="mono"><%= spec["port"] || "8080 (default)" %></dd>
+    <dt>Health</dt><dd class="mono"><%= spec["health"] || "/ (default)" %></dd>
+    <% if (env = spec["env"]).present? %>
+      <dt>Recorded</dt><dd class="mono"><%= env.keys.join(", ") %></dd>
+    <% end %>
+    <% if (secrets = spec["secrets"]).present? %>
+      <dt>Never recorded</dt><dd class="mono"><%= secrets.join(", ") %></dd>
+    <% end %>
+    <% if (volumes = spec["volumes"]).present? %>
+      <dt>Storage</dt><dd class="mono"><%= volumes.join(", ") %></dd>
+    <% end %>
+    <% if (release = spec["release"]).present? %>
+      <dt>Runs first</dt><dd class="mono"><%= Array(release).join(" ") %></dd>
+    <% end %>
+    <% Array(spec["accessories"]).each do |a| %>
+      <dt>Accessory</dt><dd class="mono"><%= a["name"] %> · <%= a["image"] %></dd>
+    <% end %>
+    <% Array(spec["processes"]).each do |pr| %>
+      <dt>Process</dt><dd class="mono"><%= pr["name"] %> · <%= Array(pr["command"]).join(" ") %></dd>
+    <% end %>
+  </dl>
+
+  <p class="ceremony-intro">It will be recorded, then run:</p>
+  <%= render "events/chain", items: [ ChainItem.new(at: Time.current, actor: Current.user&.email_address || "console",
+        action: "deployed", summary: "#{@deploy.name} on #{@machine.name}", origin: :authored,
+        machine: @machine, outcome: "pending", kind: :command, command: "steward #{@deploy.command}") ] %>
+
+  <p class="ceremony-runs">Runs over scoped SSH, with the spec on stdin:</p>
+  <%= command_block("steward #{@deploy.command}") %>
+
+  <details class="raw-output">
+    <summary>Raw spec</summary>
+    <p class="raw-cmd">stdin → steward <%= @deploy.command %></p>
+    <pre class="raw"><%= JSON.pretty_generate(@deploy.shown_envelope) %></pre>
+  </details>
+
+  <%= form_with model: @deploy, scope: :box_deploy, url: machine_box_apps_path(@machine), method: :post do |f| %>
+    <% %i[name image hostnames port health env secrets volumes extras pasted template_id].each do |attr| %>
+      <%= f.hidden_field attr %>
+    <% end %>
+    <div class="ceremony-actions">
+      <%= button_tag name: "confirm", value: "1", class: "btn mutate cmd" do %>
+        <%= steward_verb "deploy" %>
+      <% end %>
+      <%= button_tag "Edit", name: "edit", value: "1", class: "btn-quiet" %>
+    </div>
+  <% end %>
+</div>

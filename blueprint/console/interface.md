@@ -328,7 +328,7 @@ enough to make a group read as a group.
     a card, **Who can reach this box** — its ledger via `steward actors`, the Access
     page's rows, and *Could not read the ledger* rather than an empty list when unread.
   - **Operate lists every act the box can take**, each a sentence and a button:
-    `apply-updates`, `route` on a balancer, `deploy` from a pasted spec, and `remove`
+    `apply-updates`, `route` on a balancer, `deploy` (below), and `remove`
     per app the box reports. An act with nothing to do (no updates waiting) **keeps its
     button, inert** — the zone reads the same whatever the box's state. Commands come
     from `Mutation.command`, the same builder that sends them. App lifecycle is not here —
@@ -343,6 +343,24 @@ enough to make a group read as a group.
   that we hold no placement for says **not in our record** (a machine-view deploy
   keeps none, by design, above). A placement we hold that the box does not report is
   named as a gap beneath the list — stated, never closed on its own.
+
+  **Deploying straight to a box is a form, then a preview.** Operate's `deploy` opens
+  *Deploy an app to this box* — stateless, like everything the machine view does: the
+  spec goes to the box and is not kept (`BoxDeploy`, `Machines::AppsController`). An
+  app whose intention and drift should stay in view is added under Apps instead, and
+  the page says so. The form has the common fields in three steps — **What to run**
+  (name on the box, image), **Where it answers** (hostnames, port, health), **Settings**
+  (environment, written to the record; secrets, whose values are never recorded;
+  storage) — and can **start from a template**, a plain GET that fills every field from
+  an App Template and its latest version, carrying what the form has no field for
+  (release, accessories, processes) along untouched. *Paste a spec instead* is the
+  escape hatch, closed by default; a pasted spec or whole envelope replaces the fields.
+  The form checks only what it must — a box-safe name, an image, well-formed
+  `NAME=value` lines — and leaves the rest (the digest pin, port range, volume paths)
+  to the box, which refuses at its render boundary. **Preview** sends nothing: it shows
+  the plain reading, the record line it will write, the command, and under *Raw spec*
+  the exact envelope `steward deploy` reads — `{ "app": spec, "secret_values": … }` —
+  with every secret value masked. The `deploy` button there is the act.
 
   **An unreachable box does not lay out cards that apologise.** Live status, apps,
   maintenance and the edge card all exist only because we can read the box; when we

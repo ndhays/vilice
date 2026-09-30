@@ -1,42 +1,91 @@
+<%# Deploy an app straight to this box, from fields rather than a pasted spec. Stateless:
+    the spec goes to the box and is not kept (Machines::AppsController). The form follows
+    the reference shape (machines/new): numbered steps, a legend each, hints on hover.
+    Submitting previews; nothing is sent until the preview's Confirm. %>
 <% content_for :title, "Deploy an app — #{@machine.name}" %>
 
-<h1><%= icon "box", size: 20 %> Deploy an app to <%= link_to @machine.name, @machine %></h1>
-
-<p class="muted">
-  Paste the app's <a href="https://steward.agoraforge.org/overview.html#appconfig">AppConfig</a>. It is sent to the box
-  and <strong>not kept here</strong> — what happens next is read back from the machine,
-  whose record is the record. Nothing on this page becomes a stored plan.
-</p>
+<%= breadcrumb [["Machines", machines_path], [@machine.name, machine_path(@machine)], ["Deploy an app", nil]] %>
+<h1><%= icon "rocket", size: 20 %> Deploy an app to <%= @machine.name %></h1>
+<p class="subtitle">Sent to the box and <strong>not kept here</strong> — what runs is read back
+  from the box. To keep an app's intention, its placements and its drift in view, add it
+  under <%= link_to "Apps", new_app_path %> instead.</p>
 
 <% if @error.present? %>
-  <div class="panel mutate">
-    <h2><%= icon "triangle-alert", size: 16 %> Not deployed</h2>
-    <p><%= @error %></p>
-  </div>
+  <div class="flash alert"><strong>Not deployed.</strong> <%= @error %></div>
 <% end %>
 
-<%= form_with url: machine_box_apps_path(@machine), method: :post do |f| %>
-  <div class="field">
-    <%= f.label :name, "App name" %>
-    <%= f.text_field :name, value: @name, autocomplete: "off", spellcheck: false,
-          placeholder: "web", required: true %>
-    <p class="hint">Letters, digits, dashes, underscores. This is the name the box files it under.</p>
-  </div>
+<%# Start from a template: a plain GET, so choosing one is a link, not a script. %>
+<% if @templates.any? %>
+  <%= form_with url: new_machine_box_app_path(@machine), method: :get, class: "template-pick" do |f| %>
+    <label class="field">
+      <span>Start from a template <%= hint "Fills the form from an App Template and its latest version. Every field stays editable." %></span>
+      <span class="template-pick-row">
+        <%= f.select :template_id, options_from_collection_for_select(@templates, :id, :name, @deploy.template_id),
+              { include_blank: "— none —" } %>
+        <%= f.submit "Use", class: "btn sm", name: nil %>
+      </span>
+    </label>
+  <% end %>
+<% end %>
 
-  <div class="field">
-    <%= f.label :config, "AppConfig (JSON)" %>
-    <%= f.text_area :config, value: @config, rows: 16, spellcheck: false,
-          placeholder: '{ "image": "…@sha256:…", "hostnames": ["app.example.com"], "port": 8080 }' %>
-    <p class="hint">
-      Secret <em>values</em> in here ride stdin to the box — they never reach the
-      recorded command line, and they are not logged or stored by the console.
-    </p>
-  </div>
+<%= form_with model: @deploy, scope: :box_deploy, url: machine_box_apps_path(@machine), method: :post,
+      class: "stack-form" do |f| %>
+  <% if @deploy.errors.any? %>
+    <div class="flash alert"><%= @deploy.errors.full_messages.to_sentence %>.</div>
+  <% end %>
+  <%= f.hidden_field :template_id %>
+  <%= f.hidden_field :extras %>
 
-  <div class="panel mutate">
-    <div class="kicker">Mutate · witnessed</div>
-    <p>Deploying is a recorded act: an entry is written on the box before it runs.</p>
-    <%= f.submit "Deploy to #{@machine.name}", class: "btn" %>
-    <%= link_to "Cancel", @machine, class: "btn-quiet" %>
+  <fieldset class="step">
+    <legend>What to run</legend>
+    <label class="field"><span>Name on the box <%= hint "What the box files it under — its unit, its volumes, apps/<name>.json. Letters, digits, dashes and underscores." %></span>
+      <%= f.text_field :name, autocomplete: "off", spellcheck: false, placeholder: "web", class: "mono" %></label>
+    <label class="field"><span>Image <%= hint "Pinned by digest — ref@sha256:… The box refuses a tag, because a tag means something different tomorrow." %></span>
+      <%= f.text_field :image, autocomplete: "off", spellcheck: false, class: "mono",
+            placeholder: "ghcr.io/acme/web@sha256:…" %></label>
+  </fieldset>
+
+  <fieldset class="step">
+    <legend>Where it answers</legend>
+    <label class="field"><span>Hostnames <%= hint "One per line. Caddy routes each to the app and gets it a certificate." %></span>
+      <%= f.text_area :hostnames, rows: 2, class: "mono", spellcheck: false, placeholder: "app.example.com" %></label>
+    <div class="field-row">
+      <label class="field"><span>Port <%= hint "The port the app listens on inside its container. Blank means 8080." %></span>
+        <%= f.number_field :port, min: 1024, max: 65535, placeholder: "8080" %></label>
+      <label class="field"><span>Health <%= hint "A path that returns 200 when the app is healthy. The deploy waits for it before going live. Blank means /." %></span>
+        <%= f.text_field :health, class: "mono", placeholder: "/up" %></label>
+    </div>
+  </fieldset>
+
+  <fieldset class="step">
+    <legend>Settings</legend>
+    <label class="field"><span>Environment <%= hint "NAME=value, one per line. Written to the box's record with the spec — never put a secret here." %></span>
+      <%= f.text_area :env, rows: 3, class: "mono", spellcheck: false, placeholder: "RAILS_ENV=production" %>
+      <small class="muted">Written to the record.</small></label>
+    <label class="field"><span>Secrets <%= hint "NAME=value, one per line. The names go in the spec; the values ride beside it on stdin and are never recorded, stored or shown again." %></span>
+      <%= f.text_area :secrets, rows: 2, class: "mono", spellcheck: false, autocomplete: "off",
+            placeholder: "SECRET_KEY_BASE=…" %>
+      <small class="muted">Never recorded: only the names are written down.</small></label>
+    <label class="field"><span>Storage <%= hint "Named volumes that survive every redeploy. One name:/path/in/container per line." %></span>
+      <%= f.text_area :volumes, rows: 2, class: "mono", spellcheck: false, placeholder: "storage:/rails/storage" %></label>
+  </fieldset>
+
+  <%# The escape hatch, for what the form has no field for. A pasted spec replaces the
+      fields above entirely — spec or whole envelope, either reads. %>
+  <details class="paste-spec" <%= "open" if @deploy.pasted? %>>
+    <summary>Paste a spec instead</summary>
+    <label class="field">
+      <%= f.text_area :pasted, rows: 10, class: "mono", spellcheck: false,
+            placeholder: '{ "image": "…@sha256:…", "hostnames": ["app.example.com"], "port": 8080 }' %>
+      <small class="muted">Replaces every field above. Secret values do not belong here — use the Secrets field.</small>
+    </label>
+  </details>
+
+  <div class="form-actions">
+    <%= button_tag class: "btn" do %>
+      <%= safe_join([ icon("eye", size: 14), "Preview" ]) %>
+    <% end %>
+    <%= button_link_to "Cancel", machine_path(@machine), class: "btn-quiet" %>
+    <span class="note muted">Nothing is sent until you confirm.</span>
   </div>
 <% end %>
