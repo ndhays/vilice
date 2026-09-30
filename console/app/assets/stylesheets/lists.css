@@ -189,7 +189,7 @@
 }
 .inputs .kicker.sub { margin-top: 1.4rem; }
 
-/* Env vars as chips: click a chip to mark it secret (a lock shows + amber tint); type a
+/* Env vars as chips: click a chip to mark it secret (a lock shows + violet tint); type a
    name to add one. Files below stay as name+path rows (.kv-*). */
 .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
 .chips:empty { display: none; }

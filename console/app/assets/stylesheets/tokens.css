@@ -3,7 +3,7 @@
  *
  * The spine is observe vs mutate, and the UI is built to make that line visible:
  *   .observe  — neutral, calm. Reading the record changes nothing.
- *   .mutate   — bordered, amber, labelled "witnessed". Acting is accountable.
+ *   .mutate   — bordered, violet, labelled "witnessed". Acting is accountable.
  *
  * The shared foundation — the two typefaces, the mark, --brand-yellow — is
  * specified in blueprint/design/, and the docs site declares the same names in
@@ -55,7 +55,7 @@
  *   accent  — interactive identity: links, buttons, active nav, focus. This is
  *             what you click.
  *   observe — the read side of the spine (calm blue). Panels, kickers, badges.
- *   mutate  — the write side of the spine (witnessed amber). Panels, badges.
+ *   mutate  — the write side of the spine (witnessed violet). Panels, badges.
  * Plus neutrals so the accent reads intentional, and a fixed health scale.
  */
 
@@ -127,12 +127,13 @@
   /* observe — calm steel-blue, kept off the chrome (5.6:1 — AA) */
   --observe: #2f6396;
   --observe-soft: #eef3f8;
-  /* mutate — witnessed amber (5.2:1 — AA). Warmer and redder than the brand gold
-   * on purpose: "this will be recorded" must never be mistaken for decoration. */
-  --mutate: #b45309;
-  --mutate-bg: #fdf6ec;
-  --mutate-line: #ecca8e;
-  --mutate-soft: #f7ead0;
+  /* mutate — witnessed violet (7.1:1 — AAA). The one hue no status uses: observe is
+   * blue, ok green, warn gold, bad red. It was auburn, which sat close enough to the
+   * error red that a sent act and a failed one read alike in the record. */
+  --mutate: #6d28d9;
+  --mutate-bg: #f7f3fe;
+  --mutate-line: #d9c8f7;
+  --mutate-soft: #ede5fc;
 
   --ok: #146b34;           /* 6.3:1 — the site's value */
   --bad: #a81e14;          /* 7.0:1 */
@@ -185,10 +186,10 @@
 
   --observe: #7fb3ff;
   --observe-soft: #16233d;
-  --mutate: #ff9f45;       /* orange — apart from the yellow accent by hue, not just value */
-  --mutate-bg: #241a0e;
-  --mutate-line: #7c5312;
-  --mutate-soft: #2e2110;
+  --mutate: #b794f6;       /* violet — apart from every status hue, and from the yellow accent */
+  --mutate-bg: #1d1630;
+  --mutate-line: #4c3a7a;
+  --mutate-soft: #271d40;
 
   --ok: #3ddc84;
   --bad: #ff7a70;

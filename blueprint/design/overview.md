@@ -76,7 +76,7 @@ the neutral ramp, `--brand-yellow`, the terminal surface, radii, spacing, the fo
 ring.
 
 **The console's own** (specified in `blueprint/console/patterns.md`): the
-observe/mutate spine — the calm blue of a read, the witnessed amber of a write, the
+observe/mutate spine — the calm blue of a read, the witnessed violet of a write, the
 health dots, the sidebar rail. That vocabulary exists to make one thing visible on
 screen: that reading the record and acting on the box are different acts. The docs
 site has no acts to distinguish, so it does not carry it.

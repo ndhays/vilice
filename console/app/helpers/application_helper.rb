@@ -12,7 +12,7 @@ module ApplicationHelper
   end
 
   # The scope a machine's key carries. observe = read-only (blue); operate =
-  # can mutate (amber) — the same colour language as the panels.
+  # can mutate (violet) — the same colour language as the panels.
   def scope_badge(machine)
     tag.span(machine.scope, class: "badge scope-#{machine.scope}")
   end

@@ -64,7 +64,7 @@ is free; acting is witnessed. The UI should make the line visible.
 In code this is `Steward::Observe` vs `Steward::Mutate` (`app/services/steward.rb`):
 observe reads are cached and change nothing; mutate writes an `Event` *before* it issues
 the command, and is refused on a machine that holds only an observe key. The machine
-page shows the two as separate panels — calm/blue for observe, bordered/amber and
+page shows the two as separate panels — calm/blue for observe, bordered/violet and
 labelled "witnessed" for mutate.
 
 ## The shape (data model, in brief)

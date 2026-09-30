@@ -80,7 +80,7 @@
 .panel.danger-remove .note { font-size: 0.9rem; }
 .panel.danger-remove .btn { margin-top: 0.8rem; }
 
-/* Read-only (observe key): calm, not the amber witnessed treatment. */
+/* Read-only (observe key): calm, not the violet witnessed treatment. */
 .panel.readonly { background: var(--card); border: 1px dashed var(--line); }
 .panel.readonly .kicker { color: var(--muted); }
 .panel.readonly .note { font-size: 0.9rem; }
@@ -157,7 +157,7 @@
 .ceremony .note { color: var(--mutate); font-size: 0.85rem; }
 .ceremony-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.9rem; }
 /* A caution inside the ceremony: this act will probably fail to connect, and here is
-   the line that fixes it. Set apart from the ceremony's own amber note so it reads as
+   the line that fixes it. Set apart from the ceremony's own violet note so it reads as
    an aside about the box rather than another sentence about the act — and it does not
    disable Confirm, because the reading it is built on can be stale. */
 .ceremony-warn {
@@ -169,7 +169,7 @@
 .ceremony-warn .cmd-block { margin: 0; }
 
 /* ── Logs ─────────────────────────────────────────────────────────────────────
-   A read, so a plain panel and never the mutate one — the amber zone means "this
+   A read, so a plain panel and never the mutate one — the violet zone means "this
    will be recorded", and nothing here is. The body reuses `pre.raw`, the same
    terminal treatment every other piece of box output gets: box output looks like
    box output wherever it appears. */
@@ -224,7 +224,7 @@
 .acts-app-verbs.note { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; }
 
 /* Apps on a box — read-only list on the machine page: the app (→ its install) and
-   the project it serves. Neutral (not the amber act styling); acting is elsewhere. */
+   the project it serves. Neutral (not the violet act styling); acting is elsewhere. */
 .box-apps { list-style: none; margin: 0.3rem 0 1.5rem; padding: 0; }
 .box-apps li { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--line); }
 .box-apps li:first-child { border-top: none; }
@@ -387,7 +387,7 @@
 .act-button form { margin: 0; }
 
 /* A button that sends a steward command: the mark and the verb, filled (inverse) so
-   it cannot pass for a link or a plain button. Amber for acts, blue for a read, red
+   it cannot pass for a link or a plain button. Violet for acts, blue for a read, red
    for one that takes something away. An inert one (nothing to do) keeps its place. */
 .btn.cmd {
   display: inline-flex; align-items: center; gap: 0.4rem;

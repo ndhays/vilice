@@ -45,7 +45,7 @@ ladder surfaced in both the UI and the architecture (see
 
 - **Observe** — read the record Steward ships. Zero-privilege: holds no key on the read
   path, changes nothing. Calm, blue. **Most of the app is this.**
-- **Mutate** — issue a named, scoped, **recorded** command over SSH. Bordered, amber,
+- **Mutate** — issue a named, scoped, **recorded** command over SSH. Bordered, violet,
   labelled "witnessed." Every mutation writes its `Event` before it runs.
 
 **Viewing is free; acting is witnessed** — and the line is made physical in the layout.
@@ -168,7 +168,7 @@ enough to make a group read as a group.
   one of them: reading is `observe` and every verb there is `operate`. So the link is
   offered on a box whose key **cannot act** — the moment you most want to look is the
   moment you are least able to touch. It opens its own frame, kept apart from the
-  ceremony's: one is the amber *this will be recorded* zone and the other is a plain
+  ceremony's: one is the violet *this will be recorded* zone and the other is a plain
   read, and nobody should have to work out which they are looking at. The body wears
   the same `pre.raw` terminal treatment every other piece of box output does, scrolls
   inside its own frame both ways, and says out loud that nothing was cached and nothing
@@ -303,7 +303,7 @@ enough to make a group read as a group.
 
   **Two zones, side by side: Observe, then Operate.** Under the header the page splits
   into two columns (stacked on a narrow screen), each headed in its own colour — blue
-  **Observe**, amber **Operate**. *Where a control sits says what kind it is*
+  **Observe**, violet **Operate**. *Where a control sits says what kind it is*
   ([`what-the-console-is-for.md`](../../decisions/what-the-console-is-for.md)).
 
   **Plain on the surface, exact underneath.** The zones interpret; the command and its
@@ -311,7 +311,7 @@ enough to make a group read as a group.
   The one bridge on the surface is the button: **a command button carries the Steward
   mark and the verb** — `status`, `apply-updates`, `route`, `deploy`, `remove` (and on
   the Install, `deploy` `rollback` `start` `stop` `restart` `remove`) — mono, lowercase,
-  **filled**: amber for an act, blue for a read, red for one that takes something away.
+  **filled**: violet for an act, blue for a read, red for one that takes something away.
   Nothing that does not call Steward looks like it. A plain sentence beside it says why
   you would press it. The full command, flags and all, is shown in the preview, copyable,
   before anything runs.
@@ -474,7 +474,7 @@ Every entity — Machine, Install, Project — renders the same shape:
    digest + health for an Install).
 3. **Chain** — the record filtered to this entity, **as the body of the page, not a
    footer**. Acts plus status transitions, newest first.
-4. **Mutate zone** — witnessed actions, visually set apart (the amber "this will be
+4. **Mutate zone** — witnessed actions, visually set apart (the violet "this will be
    recorded" zone).
 
 The inversion: the timeline is not a tab or a bottom-of-page feed. It **is** the page,
@@ -548,7 +548,7 @@ are gone; nothing replaced them.
 when — is the reading. An act that ran a steward command leads it with a **stamp** of
 that command's verb — the button that was pressed, drawn flat (square corners, no hover,
 no pointer) so it reads as a record of a press and never as a thing to press. The door
-the act came through sets the stamp (`ChainItem#via`): **filled** amber with the mark
+the act came through sets the stamp (`ChainItem#via`): **filled** violet with the mark
 when this console sent it; **dashed yellow with a terminal glyph**, tagged *on the box
 itself*, when it ran there rather than through a scoped key (Steward records a local run
 under `operator`); **outlined**, tagged *witnessed*, for any other key. An act recorded
