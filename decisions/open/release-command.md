@@ -166,7 +166,7 @@ straight past the boundary.
 - **Success output.** Failure output must be captured onto the act. Whether a *successful*
   migration's output is worth keeping is unclear, and keeping it means every deploy carries
   a blob nobody reads.
-- **N boxes runs it N times.** An install on three boxes gets three release runs. Rails'
+- **N boxes runs it N times.** An app on three boxes gets three release runs. Rails'
   advisory lock makes that serialize rather than corrupt, which is luck rather than design.
   This is [`install-journeys.md`](install-journeys.md)'s rollout-orchestration gap wearing
   another hat, and the honest v1 answer is to document it and let it become an argument for

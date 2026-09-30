@@ -5,7 +5,7 @@
 > — and, just as importantly, what it deliberately is not.
 
 **Status:** Canonical **model**. The model is settled; implementation is staged. **Built:**
-AppConfig (the deploy spec), the Install binding incl. count and exposure, multi-placement,
+AppConfig (the deploy spec), the App binding incl. count and exposure, multi-placement,
 and the self-hosted Balancer. **Settled but pending:** MachineSpec + ProviderAdapter
 (provisioning), the managed-LB realization, rollout orchestration, and the private-network
 jump. The *why* and roads not taken are
@@ -37,7 +37,7 @@ Three scale-free, provider-free **units**, one thing that **binds** them, and tw
 ```
 AppConfig ──────┐                      "what runs" — one app instance
                 │
-MachineSpec ─┐  ├──► Install ──► InstallTarget(s) ──► Machine(s)
+MachineSpec ─┐  ├──► App ──► Placement(s) ──► Machine(s)
   (a box      │  │   the BINDING:        one per box        ▲
    request)   │  │   • count                                │ realized by:
             realizes│• exposure (edge | balancer)    ┌──────┴────────┐
@@ -55,11 +55,11 @@ step** — an argv the box runs once from the new image before the new container
 (migrations), covered by the same digest as everything else here. Separated from the
 **code** (the image digest) so "update the code" and "change the config" stay distinct,
 separately-witnessed acts. It is Twelve-Factor's *Config*. Steward converges one box to it
-(`appState` on the box; `Install#deploy_envelope` builds it). See
+(`appState` on the box; `App#deploy_envelope` builds it). See
 [`../../decisions/open/deploy-config-model.md`](../../decisions/open/deploy-config-model.md).
 
 **AppConfig is a first-class, self-versioned artifact** (decided 2026-06-24) — addressed by its
-own digest, where editing mints a new version and the slot (`Install` / `apps/<name>` on the box)
+own digest, where editing mints a new version and the slot (`App` / `apps/<name>` on the box)
 holds a *timeline* of them, one current. This is the grain rollback, restore, drift, and "adopt
 what the box runs" all compose from, and it is distinct from the App Library's `Version` (which
 versions *code*). The artifact is the unit; the box owns reality, Steward Console owns desire, drift is
@@ -68,9 +68,9 @@ digest ≠ digest. See [`../../decisions/app-config-is-the-artifact.md`](../../d
 
 **AppConfig is scale-free by construction.** Steward only ever converges *one* box to *one*
 AppConfig — it has no concept of "how many." So replicating an app is deploying the same
-AppConfig to N boxes; the count lives on the Install, never here. The single scale-related
+AppConfig to N boxes; the count lives on the App, never here. The single scale-related
 fact AppConfig carries is **replicable?** — effectively *stateless / no volume*. That's a
-property of the unit (it *gates* whether the Install may set count > 1), not a count.
+property of the unit (it *gates* whether the App may set count > 1), not a count.
 
 ### MachineSpec — what kind of box
 A **box request**: size (normalized t-shirt sizes), region, role (`app` | `balancer`).
@@ -86,23 +86,23 @@ deploy/observe/record runs over SSH and never touches it again, until birth/deat
 the Provider is a birth-death-resize concern, not an operation concern, and a hand-registered
 bare-SSH box (no Provider) works fully — that is the capture-resistance guarantee. *(Pending.)*
 
-### Install — the binding (where scale, exposure, and source live)
-Takes one AppConfig and lands it on substrate as **InstallTarget(s)** — one per box. It
+### App — the binding (where scale, exposure, and source live)
+Takes one AppConfig and lands it on substrate as **Placement(s)** — one per box. It
 carries the three things the units don't:
 - **count** — 1, or N (only when the AppConfig is replicable);
 - **exposure** — *On the Edge* (public, count 1) or *Behind a Balancer* (private, count 1…N);
 - **source** — *existing* boxes (pick) or *new* (MachineSpec → Provider).
 
-App lifecycle acts across *several* boxes happen here, per target — the Install is the
+App lifecycle acts across *several* boxes happen here, per target — the App is the
 app-actions home for placement
 ([`install-the-app-actions-home.md`](../../decisions/install-the-app-actions-home.md)).
 
-The **machine view** has the same verbs for *one* box, with no Install and no Project:
+The **machine view** has the same verbs for *one* box, with no App and no Project:
 the config is sent and discarded, and the box's record is the only record. They are two
 layers rather than two doors — see that decision's "What changed".
 
 ### Balancer — the (optional) shared public edge
-A routing entity: a **public endpoint** plus a **routing table reconciled from the installs
+A routing entity: a **public endpoint** plus a **routing table reconciled from the apps
 behind it**. It is a *role over Machine*, not a new primitive, realized two ways:
 
 | Realization | What it is | Reconciled via | Recorded in |
@@ -117,8 +117,8 @@ balancer is the provider-agnostic default and **doubles as the bastion** (next s
 managed LB is the opt-out for bought HA, and lives outside the SSH/record spine.
 
 **Self-hosted is built** (2026-08-03). `Machine#balancer` is the role, the table is derived
-by `RoutingTable` from the installs that select it, and applying it is the `route` act —
-`steward route` writing a second Caddy fragment on the box. "Reconciled from the installs
+by `RoutingTable` from the apps that select it, and applying it is the `route` act —
+`steward route` writing a second Caddy fragment on the box. "Reconciled from the apps
 behind it" means *derived on read*, not converged in the background: the table is computed
 when it is shown and when it is sent, and a person presses Apply
 ([`drift-is-surfaced-never-closed.md`](../../decisions/drift-is-surfaced-never-closed.md)).
@@ -163,19 +163,19 @@ witnessed *mutate*).
 | Piece | State |
 |---|---|
 | AppConfig (deploy spec, env/secret/volume/health) | **built** |
-| Install binding — single placement, **existing** box | **built** |
+| App binding — single placement, **existing** box | **built** |
 | Observe reconciliation (reality vs plan) | **built** |
-| Intention (`Install#count`) + placement gap, surfaced never closed | **built** |
-| Closing a gap as an act (`POST /installs/:id/targets`) | **built** |
+| Intention (`App#count`) + placement gap, surfaced never closed | **built** |
+| Closing a gap as an act (`POST /apps/:id/placements`) | **built** |
 | Restating the intention (`count`/`exposure`), touching no box | **built** |
 | `replicable?` gate — stateless-only replication, derived from volumes | **built** |
 | Exposure (On the Edge vs Behind a Balancer) as the gate on count | **built** |
-| Install UI placement step | Box × Exposure × scale, minus the managed balancer |
+| App UI placement step | Box × Exposure × scale, minus the managed balancer |
 | MachineSpec + ProviderAdapter (provisioning, "New Box") | settled, **pending** |
 | AppConfig as a versioned artifact (digest identity + slot timeline) | principle settled, **pending** |
 | Accessories (linked Redis/Postgres) — `accessories` block in the AppConfig | in scope, **pending** |
 | Balancer — role over Machine, derived table, applied as an act | **built** |
-| Rollout orchestration across a balanced install's targets | **pending** |
+| Rollout orchestration across a balanced app's targets | **pending** |
 | Private-network jump (`via` / ProxyJump) | settled, **pending** |
 | Managed cloud LB (out-of-spine) | settled, **pending** |
 

@@ -11,13 +11,13 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
                                ssh_private_key: "k", status: "reachable",
                                last_seen_at: Time.current, owner: @project)
     ProjectMachine.create!(project: @project, machine: @machine)
-    @install = @project.installs.create!(name: "web", hostname: "acme.example",
+    @app = @project.apps.create!(name: "web", hostname: "acme.example",
                                          image: "img@sha256:#{'a' * 64}")
-    @install.install_targets.create!(machine: @machine, status: "running")
+    @app.placements.create!(machine: @machine, status: "running")
   end
 
   test "logs are behind the login" do
-    get machine_logs_path(@machine, install_id: @install.id)
+    get machine_logs_path(@machine, app_id: @app.id)
     assert_redirected_to new_session_path
   end
 
@@ -29,8 +29,8 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
 
     with_fake_steward do |steward|
       steward.on(/logs/, data: { "ok" => true, "message" => "boot ok\nGET / 200" })
-      assert_no_difference [ -> { Event.count }, -> { Install.count } ] do
-        get machine_logs_path(@machine, install_id: @install.id)
+      assert_no_difference [ -> { Event.count }, -> { App.count } ] do
+        get machine_logs_path(@machine, app_id: @app.id)
       end
     end
 
@@ -44,7 +44,7 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
 
     with_fake_steward do |steward|
       steward.on(/logs/, data: { "ok" => true, "message" => "x" })
-      get machine_logs_path(@machine, install_id: @install.id, tail: 1000)
+      get machine_logs_path(@machine, app_id: @app.id, tail: 1000)
 
       assert steward.issued?("logs web --tail 1000 --json")
     end
@@ -58,7 +58,7 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
 
     with_fake_steward do |steward|
       steward.on(/logs/, data: { "ok" => true, "message" => "x" })
-      get machine_logs_path(@machine, install_id: @install.id, tail: "999999")
+      get machine_logs_path(@machine, app_id: @app.id, tail: "999999")
 
       assert steward.issued?("logs web --tail 200 --json")
     end
@@ -72,7 +72,7 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
     with_fake_steward do |steward|
       steward.on(/logs/, success: false,
                  stdout: { "code" => "not_found", "message" => 'no running app "web"' }.to_json)
-      get machine_logs_path(@machine, install_id: @install.id)
+      get machine_logs_path(@machine, app_id: @app.id)
     end
 
     assert_response :success
@@ -88,7 +88,7 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
 
     with_fake_steward do |steward|
       steward.on(/logs/, data: { "ok" => true, "message" => "still readable" })
-      get machine_logs_path(@machine, install_id: @install.id)
+      get machine_logs_path(@machine, app_id: @app.id)
     end
 
     assert_response :success
@@ -101,7 +101,7 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
                                 ssh_private_key: "k")
 
     with_fake_steward do |steward|
-      get machine_logs_path(elsewhere, install_id: @install.id)
+      get machine_logs_path(elsewhere, app_id: @app.id)
       assert_empty steward.commands, "nothing should be asked of a box it does not run on"
     end
 
@@ -109,7 +109,7 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".empty", /isn't placed on other/
   end
 
-  # A name that could carry a flag never reaches the command line. `Install` already
+  # A name that could carry a flag never reaches the command line. `App` already
   # enforces the charset; this is the seam's own guard, and it is the difference
   # between a bug and a flag injection.
   test "a name outside the box's charset is refused at the seam" do

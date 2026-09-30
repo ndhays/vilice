@@ -8,7 +8,7 @@ require "json"
 # records every command Steward Console issues and answers from a script, so a test can
 # assert *what Steward Console sent* and *how it handled the reply*, with no ssh and no box.
 #
-# Install it with `with_fake_steward` (see test_helper.rb).
+# App it with `with_fake_steward` (see test_helper.rb).
 module FakeSteward
   # Minimal Process::Status stand-in — `read` only asks `success?` / `exitstatus`.
   # The status matters beyond pass/fail: **255 is ssh's own**, meaning it never got

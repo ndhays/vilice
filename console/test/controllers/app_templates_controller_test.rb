@@ -18,10 +18,10 @@ class AppTemplatesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", /App Library/
     assert_select ".nav[href=?]", app_templates_path                 # sidebar entry
-    assert_select ".app-rows .row-name", /nginx/            # stacked list
+    assert_select ".template-rows .row-name", /nginx/            # stacked list
 
     get app_templates_path(q: "nginx")
-    assert_select ".app-rows .row-name", { count: 1, text: "nginx" }  # search filters
+    assert_select ".template-rows .row-name", { count: 1, text: "nginx" }  # search filters
   end
 
   test "index shows the manage toolbar — select-all, search, and a disabled bulk action" do
@@ -338,7 +338,7 @@ class AppTemplatesControllerTest < ActionDispatch::IntegrationTest
   end
 
   # The mistakes the box would refuse are refused here, with a sentence, rather than at
-  # deploy after someone has built an install on them.
+  # deploy after someone has built an app on them.
   test "an accessory the box would refuse is refused where it is typed" do
     sign_in_as @user
     app = AppTemplate.create!(name: "web")

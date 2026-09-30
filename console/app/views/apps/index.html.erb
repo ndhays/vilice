@@ -2,10 +2,10 @@
 
 <%# Placement, fleet-wide: what should run where. One ring above the machine view
     (which reads a single box) and one below Projects (which is a lens on tenancy,
-    not a container) — decisions/console-layers.md. An install here may have no
+    not a container) — decisions/console-layers.md. An app here may have no
     project at all; that column is simply blank. %>
 <%= page_header "Apps" do %>
-  <%= button_link_to "Add App", new_install_path, icon: "plus", class: "btn" %>
+  <%= button_link_to "Add App", new_app_path, icon: "plus", class: "btn" %>
 <% end %>
 
 <%# The headline — this layer's story in one line, and only this ring's facts. It
@@ -21,15 +21,15 @@
 <% end %>
 
 <%= render layout: "shared/list_toolbar",
-      locals: { search_url: installs_path, q: @q, placeholder: "app, host, template, or box",
+      locals: { search_url: apps_path, q: @q, placeholder: "app, host, template, or box",
                 selectable: false, hidden: { group: @group } } do %><% end %>
 
 <%# Group by — the same primitive the fleet list is built on. Each choice is a link,
     so the grouped view has its own URL and can be shared or bookmarked. %>
 <div class="action-chips filter-row" role="group" aria-label="Group the apps by">
   <span class="chip-label muted">Group by</span>
-  <% InstallGroups::ALL.each do |grouping| %>
-    <%= link_to installs_path(group: grouping.key, q: @q),
+  <% AppGroups::ALL.each do |grouping| %>
+    <%= link_to apps_path(group: grouping.key, q: @q),
           class: "chip #{'on' if @group == grouping.key}",
           "aria-pressed": (@group == grouping.key).to_s do %>
       <%= grouping.label %>
@@ -37,23 +37,23 @@
   <% end %>
 </div>
 
-<% if @installs.any? %>
+<% if @apps.any? %>
   <%# `key` changes whenever the grouping does, so Turbo replaces the list rather
       than morphing it — the 150ms fade in lists.css is the whole of the motion. %>
-  <div class="grouped-list" key="installs-<%= @group %>">
-    <% @groups.each do |heading, installs| %>
+  <div class="grouped-list" key="apps-<%= @group %>">
+    <% @groups.each do |heading, apps| %>
       <h2 class="group-head">
         <span class="group-name"><%= heading %></span>
-        <span class="group-count"><%= installs.size %></span>
+        <span class="group-count"><%= apps.size %></span>
       </h2>
-      <ul class="rows install-rows">
-        <%= render partial: "installs/row", collection: installs, as: :install,
+      <ul class="rows app-rows">
+        <%= render partial: "apps/row", collection: apps, as: :app,
               locals: { show_project: true } %>
       </ul>
     <% end %>
   </div>
 <% elsif @q.present? %>
-  <p class="empty">No apps match this search. <%= link_to "Clear it", installs_path %>.</p>
+  <p class="empty">No apps match this search. <%= link_to "Clear it", apps_path %>.</p>
 <% else %>
   <p class="empty">No apps yet — add one from a template, then place it on a box.</p>
 <% end %>

@@ -5,20 +5,20 @@ class MutationTest < ActiveSupport::TestCase
   setup do
     @machine = Machine.create!(name: "op", ssh_host: "10.0.0.9", scope: "operate")
     @project = Project.create!(name: "Acme")
-    @install = @project.installs.create!(name: "web", image: "ghcr.io/acme/web@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf",
+    @app = @project.apps.create!(name: "web", image: "ghcr.io/acme/web@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf",
                                          hostname: "acme.example", port: 8080, health: "/up")
-    InstallTarget.create!(install: @install, machine: @machine, status: "running")
+    Placement.create!(app: @app, machine: @machine, status: "running")
   end
 
   def build(verb, **params)
-    Mutation.build(verb, machine: @machine, actor: "alice", install_id: @install.id, params: params)
+    Mutation.build(verb, machine: @machine, actor: "alice", app_id: @app.id, params: params)
   end
 
   test "an unknown verb is refused" do
     assert_nil Mutation.build("rm-rf", machine: @machine, actor: "alice")
   end
 
-  test "lifecycle acts are ready immediately and target the install" do
+  test "lifecycle acts are ready immediately and target the app" do
     m = build("restart")
     refute m.needs_compose?
     assert m.composed?
@@ -33,21 +33,21 @@ class MutationTest < ActiveSupport::TestCase
     assert build("deploy", image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e").composed?
   end
 
-  test "deploy builds the command and the stdin envelope from the Install + chosen digest" do
+  test "deploy builds the command and the stdin envelope from the App + chosen digest" do
     digest = "sha256:abcdef1234567890"
     m = build("deploy", image: "ghcr.io/acme/web@#{digest}")
     assert_equal "deploy web --json", m.command
 
     env = JSON.parse(m.stdin)
     assert_equal "ghcr.io/acme/web@#{digest}", env.dig("app", "image")
-    assert_equal [ "acme.example" ], env.dig("app", "hostnames")  # prefilled from the Install
+    assert_equal [ "acme.example" ], env.dig("app", "hostnames")  # prefilled from the App
     assert_equal 8080, env.dig("app", "port")
     assert_equal "/up", env.dig("app", "health")
     assert_equal "abcdef123456", m.short_digest          # the sha, trimmed to 12
     assert_match "@abcdef123456", m.summary              # which drives the record line
   end
 
-  test "compose fields override the Install defaults" do
+  test "compose fields override the App defaults" do
     m = build("deploy", image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e", hostname: "staging.example", port: "9090")
     env = JSON.parse(m.stdin)
     assert_equal [ "staging.example" ], env.dig("app", "hostnames")

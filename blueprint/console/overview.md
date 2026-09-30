@@ -4,9 +4,9 @@
 > hundred. Reaches Steward over scoped SSH, so it runs anywhere.
 
 **Status:** Built and graduated — schema ([`data-model.md`](data-model.md)), the
-record-as-spine interface ([`interface.md`](interface.md)), and the onboarding + install
+record-as-spine interface ([`interface.md`](interface.md)), and the onboarding + app
 journeys ([`journeys.md`](journeys.md)) are canonical here. The **core patterns and
-boundaries** — AppConfig, MachineSpec, the Install binding, ProviderAdapter, Balancer — are
+boundaries** — AppConfig, MachineSpec, the App binding, ProviderAdapter, Balancer — are
 in [`patterns.md`](patterns.md) (start there for the *model*). The build roadmap for the
 screens still ahead lives in
 [`../../decisions/open/ui-roadmap.md`](../../decisions/open/ui-roadmap.md). Last touched
@@ -76,10 +76,10 @@ box, not at a per-box Steward Console.
 - **Machine** — a Steward box (ssh endpoint + scoped key, version, last-seen). Has an
   **owner** Project and an explicit **sharing** mode; **dedicated (owner only) by
   default**, shared across Projects only on purpose (`everyone`, or `list` + allowlist).
-- **Install** — a deployed app (digest-pinned image + config), deployed to Machines
-  (with replica/strategy choices held on `InstallTarget`).
-- **Project** — an entity/client. `name`, contact name/email. Groups Installs and shares
-  Machines. **Optional above both**: an install is placed on a box, not inside a client
+- **App** — a deployed app (digest-pinned image + config), deployed to Machines
+  (with replica/strategy choices held on `Placement`).
+- **Project** — an entity/client. `name`, contact name/email. Groups Apps and shares
+  Machines. **Optional above both**: an app is placed on a box, not inside a client
   (`decisions/console-layers.md`).
 - **Snapshot / Event** — the observe side: status over time, and the activity feed.
 
@@ -93,17 +93,17 @@ and the isolation rule in [`journeys.md`](journeys.md).
 ## Journeys (in brief)
 
 Every screen is a lens on the one record — the canonical interface (**Shape B, the record
-is the spine**) is in [`interface.md`](interface.md), and the onboarding + install flow in
+is the spine**) is in [`interface.md`](interface.md), and the onboarding + app flow in
 [`journeys.md`](journeys.md):
 
 - **Status / Now** — the fleet pulse: exceptions and pinned entities, plus the live head
   of the record.
 - **Projects → Project** — the client lens; observe-only, the shareable client status page.
 - **Machines → Machine** — the box lens.
-- **Installs → Install** — placement, fleet-wide: what should run where, with or without
+- **Apps → App** — placement, fleet-wide: what should run where, with or without
   a client behind it. The app-actions home.
 - **Record** — the full timeline, filterable by actor / action / target / time.
-- **App Library** — the curated app catalog (the install front-of-funnel).
+- **App Library** — the curated app catalog (the app front-of-funnel).
 - **Settings.**
 
 We have room to **reinvent UI patterns** here, not just inherit them.

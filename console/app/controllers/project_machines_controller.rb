@@ -1,5 +1,5 @@
 # The Project ↔ Machine edge. Attaching an existing fleet machine to a project is the
-# M:N link the install flow draws from — the project's machine pool is the staging
+# M:N link the app flow draws from — the project's machine pool is the staging
 # "queue". Creating a *brand-new* machine is machines#new; this is purely the join.
 # The ProjectMachine join enforces Decision 1 (a dedicated box serves one project).
 # The link is a recorded own-record act. (Detach is a planned follow-up.)

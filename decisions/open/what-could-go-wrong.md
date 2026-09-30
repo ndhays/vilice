@@ -47,16 +47,16 @@ box and 80/443 are reachable. No DNS (or a proxied "orange-cloud" Cloudflare rec
 the provider's **web console** (the out-of-band floor). `harden` refuses to disable
 passwords when root has no `authorized_keys`, specifically to prevent this.
 
-## Control-plane gotchas (the install flow)
+## Control-plane gotchas (the app flow)
 
-These are Steward Console-side, not box/network — they come with the install journeys
+These are Steward Console-side, not box/network — they come with the app journeys
 ([install-journeys.md](install-journeys.md)). The same value applies: **the failure
 should tell you the fix.**
 
 - **The authorize gap — handled 2026-08-18.** A newly-added machine is unreachable until
   the operator runs the surfaced `steward authorize …` line on the box, and "Permission
   denied (publickey)" reads as though the console did something wrong. It is now said at
-  all three points it can bite: the install form's box picker and the *place on a box*
+  all three points it can bite: the app form's box picker and the *place on a box*
   picker label such a machine **"not yet authorized"**; the mutate ceremony shows a caution
   and the copyable line before Confirm; and a failed act that never reached its box gets
   `Machine#connection_hint` appended, which distinguishes *never answered* (run the line)
@@ -66,15 +66,15 @@ should tell you the fix.**
   an authorize line. All warnings, no blocks: `last_seen_at` is a reading, and a box
   authorized a minute ago has not been observed yet.
 - **Provisioning failure** (automated dedicated). A bad/absent provider token, a quota,
-  or the cloud firewall above can stall a Create Machine. The install's `awaiting_machine`
+  or the cloud firewall above can stall a Create Machine. The app's `awaiting_machine`
   state must be able to surface **"provisioning failed"** and not hang forever.
-- **Orphans / resumability.** A multi-step install that dies mid-flow must leave a
+- **Orphans / resumability.** A multi-step app that dies mid-flow must leave a
   **resumable** row in an honest state, never a zombie — resume or discard, your choice.
-- **Version drift, said out loud.** An install pins its `Version` at install time; when
-  the App's *latest* moves, existing installs do **not** silently update. Surface it as an
+- **Version drift, said out loud.** An app pins its `Version` at app time; when
+  the App's *latest* moves, existing apps do **not** silently update. Surface it as an
   offer — *"v1.3 is now latest — re-deploy?"* — not a surprise.
 
-## "version mismatch" / install 404
+## "version mismatch" / app 404
 
 The site's `/releases/` must contain the current `VERSION`. Run
 `make -C steward release`, then build + deploy the site. The site build guard catches

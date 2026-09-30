@@ -18,9 +18,9 @@ db1  = machine!("db-1",  health: "ok", scope: "observe", labels: { env: "prod", 
 link!(globex, web2)
 link!(initech, db1)
 
-w = install!(acme, "acme-web",   machine: web1, image: "ghcr.io/acme/web@sha256:cceae01cceae01cceae01cceae01cceae01cceae01cceae01cceae01cceae01c", hostname: "acme.example", port: 8080, health: "/up")
-install!(acme,   "acme-worker",  machine: web2, image: "ghcr.io/acme/worker@sha256:cceae02cceae02cceae02cceae02cceae02cceae02cceae02cceae02cceae02c")
-install!(globex, "globex-site",  machine: web2, image: "ghcr.io/globex/site@sha256:cceae03cceae03cceae03cceae03cceae03cceae03cceae03cceae03cceae03c")
+w = app!(acme, "acme-web",   machine: web1, image: "ghcr.io/acme/web@sha256:cceae01cceae01cceae01cceae01cceae01cceae01cceae01cceae01cceae01c", hostname: "acme.example", port: 8080, health: "/up")
+app!(acme,   "acme-worker",  machine: web2, image: "ghcr.io/acme/worker@sha256:cceae02cceae02cceae02cceae02cceae02cceae02cceae02cceae02cceae02c")
+app!(globex, "globex-site",  machine: web2, image: "ghcr.io/globex/site@sha256:cceae03cceae03cceae03cceae03cceae03cceae03cceae03cceae03cceae03c")
 
 label!(acme, "tier", "gold")
 label!(acme, "env", "prod")
@@ -31,11 +31,11 @@ event!(actor: "operator@console.test", action: "linked", machine: web1, project:
        summary: "web-1 to Acme", at: 6.days.ago)
 event!(actor: "operator@console.test", action: "authorized", machine: web1, project: acme,
        summary: "ci-deployer at operate on web-1", at: 5.days.ago)
-event!(actor: "ci-deployer", action: "deployed", machine: web1, install: w, project: acme,
+event!(actor: "ci-deployer", action: "deployed", machine: web1, app: w, project: acme,
        summary: "acme-web @sha256:cceae01cceae01cceae01cceae01cceae01cceae01cceae01cceae01cceae01c", at: 2.days.ago, outcome: "ok")
 event!(actor: "ci-deployer", action: "updated", machine: web2, project: acme,
        summary: "web-2", at: 20.hours.ago, outcome: "ok")
-event!(actor: "operator@console.test", action: "restarted", machine: web1, install: w, project: acme,
+event!(actor: "operator@console.test", action: "restarted", machine: web1, app: w, project: acme,
        summary: "acme-web on web-1", at: 3.hours.ago, outcome: "ok")
 
 library!

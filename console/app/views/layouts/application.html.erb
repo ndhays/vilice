@@ -82,7 +82,7 @@
             <%= link_to machines_path, class: "nav #{'active' if controller_name == 'machines'}" do %>
               <%= icon "hard-drive", size: 16 %>Machines
             <% end %>
-            <%= link_to installs_path, class: "nav #{'active' if controller_name == 'installs'}" do %>
+            <%= link_to apps_path, class: "nav #{'active' if controller_path == 'apps'}" do %>
               <%= icon "box", size: 16 %>Apps
             <% end %>
             <%= link_to projects_path, class: "nav #{'active' if controller_name == 'projects'}" do %>
@@ -95,7 +95,7 @@
             <%= link_to access_path, class: "nav #{'active' if controller_name == 'access'}" do %>
               <%= icon "key-round", size: 16 %>Access
             <% end %>
-            <%= link_to app_templates_path, class: "nav #{'active' if controller_name == 'apps'}" do %>
+            <%= link_to app_templates_path, class: "nav #{'active' if controller_path == 'app_templates'}" do %>
               <%= icon "library-big", size: 16 %>App Library
             <% end %>
             <%= link_to settings_path, class: "nav #{'active' if controller_name == 'settings'}" do %>

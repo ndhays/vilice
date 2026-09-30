@@ -1,23 +1,23 @@
-<%# "Another" only once there is one — an install may have been created with no box at
+<%# "Another" only once there is one — an app may have been created with no box at
     all, in which case this page is closing the gap for the first time, not widening it. %>
-<% placed = @install.live_targets.any? %>
-<% content_for :title, "Place #{@install.name} on #{placed ? 'another' : 'a'} box — Steward" %>
+<% placed = @app.live_placements.any? %>
+<% content_for :title, "Place #{@app.name} on #{placed ? 'another' : 'a'} box — Steward" %>
 
-<%= breadcrumb [ [ "Apps", installs_path ], [ @install.name, install_path(@install) ],
+<%= breadcrumb [ [ "Apps", apps_path ], [ @app.name, app_path(@app) ],
                  [ "Place on a box", nil ] ] %>
 
-<h1><%= icon "box", size: 20 %> Place <%= @install.name %> on <%= placed ? "another" : "a" %> box</h1>
+<h1><%= icon "box", size: 20 %> Place <%= @app.name %> on <%= placed ? "another" : "a" %> box</h1>
 
 <%# The gap, stated plainly at the top of the thing that closes it. This page exists
     because nothing closes it automatically — see decisions/drift-is-surfaced-never-closed.md. %>
-<p class="addr"><%= placement_gap_line(@install, verbose: true) %></p>
+<p class="addr"><%= placement_gap_line(@app, verbose: true) %></p>
 
 <div class="panel mutate">
   <div class="kicker">Place · then witnessed</div>
   <% if @machines.any? %>
     <p class="note">Adding a box records the placement, then hands off to the deploy
       ceremony — the deploy itself is witnessed like any other act.</p>
-    <%= form_with url: install_targets_path(@install), method: :post, class: "stack-form" do %>
+    <%= form_with url: app_placements_path(@app), method: :post, class: "stack-form" do %>
       <%# The same option label the create form uses: a box we have never heard from
           carries the authorize gap on the option itself, because this door hands
           straight to a deploy that would not connect. %>
@@ -30,17 +30,17 @@
         <%= button_tag class: "btn mutate" do %>
           <%= safe_join([ icon("earth", size: 14), "Place and Deploy" ]) %>
         <% end %>
-        <%= button_link_to "Cancel", install_path(@install), class: "btn-quiet" %>
+        <%= button_link_to "Cancel", app_path(@app), class: "btn-quiet" %>
       </div>
     <% end %>
   <% else %>
     <%# Honest about which of the two reasons applies — "no boxes" and "already on every
         box" look the same from here and mean very different things. %>
     <p class="empty">
-      <% if @install.project %>
-        No box on <%= @install.project.name %> is free to take this — every operate-scoped
-        box it owns already runs <%= @install.name %>, or there are none.
-        <%= link_to "Add a machine", new_machine_path(project_id: @install.project) %>.
+      <% if @app.project %>
+        No box on <%= @app.project.name %> is free to take this — every operate-scoped
+        box it owns already runs <%= @app.name %>, or there are none.
+        <%= link_to "Add a machine", new_machine_path(project_id: @app.project) %>.
       <% else %>
         No operate-scoped box in the fleet is free to take this.
         <%= link_to "Add a machine", new_machine_path %>.

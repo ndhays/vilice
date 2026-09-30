@@ -7,7 +7,7 @@ class MachinesController < ApplicationController
   # (see MachineGroups). The old "unowned" toggle is gone — it was one grouping
   # wearing a filter's clothes, and `group=owner` says it better.
   #
-  # It states only what this layer owns. No install counts, no project health: a
+  # It states only what this layer owns. No app counts, no project health: a
   # box's page knows nothing about placement or tenancy except the one owner
   # grouping, which is offered rather than assumed (decisions/console-layers.md).
   def index
@@ -18,8 +18,8 @@ class MachinesController < ApplicationController
     # Everything the row and the groupings read, preloaded: a list must not ask the
     # database once per box any more than it may ask the *boxes* once per row.
     @machines = machines.order(:name)
-                        .includes(:owner, :labels, { installs: :balancer },
-                                  { fronted_installs: :install_targets })
+                        .includes(:owner, :labels, { apps: :balancer },
+                                  { fronted_apps: :placements })
     @groups   = MachineGroups.apply(@machines.to_a, @group)
 
     @label_keys  = MachineGroups.label_keys
@@ -32,7 +32,7 @@ class MachinesController < ApplicationController
   # Register an already-Steward-ready box: generate Steward Console's scoped keypair, then
   # surface the `steward authorize` line to run on it. See machine-onboarding.md.
   def new
-    @project  = Project.find_by(id: params[:project_id]) # when adding from a project's install flow
+    @project  = Project.find_by(id: params[:project_id]) # when adding from a project's app flow
     @projects = Project.order(:name) unless @project     # dropdown to pick an owner (optional)
     @machine  = Machine.new(ssh_user: "steward", ssh_port: 22, scope: "operate")
   end
@@ -50,13 +50,13 @@ class MachinesController < ApplicationController
     @machine.ssh_private_key = keys[:private]
     @machine.ssh_public_key  = keys[:public]
 
-    # Owner: the project in the URL (install flow), or the one picked from the dropdown
+    # Owner: the project in the URL (app flow), or the one picked from the dropdown
     # (optional — blank "Unassigned" leaves the box unowned).
     owner = @project || Project.find_by(id: params.dig(:machine, :owner_id).presence)
 
     if save_recording(@machine, link_to: owner)
       notice = "Added #{@machine.name}. Run the authorize line on the box to connect it."
-      redirect_to(@project ? new_install_path(project_id: @project) : @machine, notice: notice)
+      redirect_to(@project ? new_app_path(project_id: @project) : @machine, notice: notice)
     else
       @projects = Project.order(:name) unless @project
       render :new, status: :unprocessable_entity
@@ -72,7 +72,7 @@ class MachinesController < ApplicationController
     @record   = Steward::Observe.record(@machine)
     @actors   = Steward::Observe.actors(@machine) if @status.online? # who can reach it
     @chain    = chain_for(@machine, @record).select { |i| i.matches?(@q) }
-    @installs = @machine.installs.includes(:project).order(:name) # placements on this box (project optional)
+    @apps = @machine.apps.includes(:project).order(:name) # placements on this box (project optional)
     @projects = Project.order(:name) # for the ownership / sharing controls
     # The edge table this box should serve, derived rather than stored. Empty for a box
     # that isn't a balancer, so the panel simply doesn't render.
@@ -95,10 +95,10 @@ class MachinesController < ApplicationController
   def destroy
     # Don't let a box that's still serving apps be forgotten — the apps would keep
     # running with the control plane blind to them (decisions/open/status-signals.md).
-    # Remove the installs first (or migrate them away, once that verb exists).
-    live = @machine.install_targets.where.not(status: "retired").includes(:install)
+    # Remove the apps first (or migrate them away, once that verb exists).
+    live = @machine.placements.where.not(status: "retired").includes(:app)
     if live.any?
-      apps = live.map { |t| t.install.name }.uniq
+      apps = live.map { |t| t.app.name }.uniq
       return redirect_to @machine,
         alert: "#{@machine.name} still runs #{apps.to_sentence} — remove #{apps.one? ? "that app" : "those apps"} first."
     end
@@ -130,7 +130,7 @@ class MachinesController < ApplicationController
 
   # Transfer ownership to another project, or release to no one (unowned). Never a
   # silent change — always this explicit, recorded act. Releasing is what unblocks
-  # deleting the former owner. Existing installs are untouched.
+  # deleting the former owner. Existing apps are untouched.
   def transfer
     owner = Project.find_by(id: params.dig(:machine, :owner_id).presence)
     Machine.transaction do
@@ -158,7 +158,7 @@ class MachinesController < ApplicationController
 
   # Persist the new machine and record it atomically, optionally linking it to a
   # project — which then *owns* the box (the common case: you register a box for a
-  # client from their install flow). A fleet-registered box (no project) is born
+  # client from their app flow). A fleet-registered box (no project) is born
   # unowned, surfaced on the machines page. Report invalid on failure.
   def save_recording(machine, link_to: nil)
     Machine.transaction do
@@ -180,7 +180,7 @@ class MachinesController < ApplicationController
   # Steward Console events (authored) + the box's own record (witnessed, unless our
   # own client issued it). See Chain and decisions/two-records.md.
   def chain_for(machine, record)
-    events = machine.events.acts.latest.includes(:project, :install).limit(40)
+    events = machine.events.acts.latest.includes(:project, :app).limit(40)
     Chain.for_machine(events, record.dig(:data, "data", "entries") || [],
                       client: ENV.fetch("STEWARD_CLIENT_NAME", "console"))
   end

@@ -42,7 +42,7 @@
     <% if @app_templates.any? %>
       <%= form_with url: remove_selected_app_templates_path, method: :delete, id: "apps-bulk",
             data: { turbo_confirm: "Remove the selected templates from the App Library?" } do %>
-        <ul class="rows app-rows">
+        <ul class="rows template-rows">
           <%= render partial: "app_templates/row", collection: @app_templates, as: :app %>
         </ul>
       <% end %>

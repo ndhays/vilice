@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Drives the install form's progressive reveal. Choosing an app fills the version picker
+// Drives the app form's progressive reveal. Choosing an app fills the version picker
 // and the app's defaults, then reveals the rest of the form; "Custom image" hides the
 // version (custom is custom — no app/version tracking). Degrades gracefully: with no JS,
 // every section is simply visible from the start.
@@ -16,7 +16,7 @@ export default class extends Controller {
     this.versionFieldTarget.hidden = true
     if (this.hasImageFieldTarget) this.imageFieldTarget.hidden = true
 
-    const chosen = this.element.querySelector('input[name="install[app_template_id]"]:checked')
+    const chosen = this.element.querySelector('input[name="app[app_template_id]"]:checked')
     if (chosen) this.pick(chosen)
   }
 
@@ -48,7 +48,7 @@ export default class extends Controller {
   filter() {
     const q = this.searchTarget.value.trim().toLowerCase()
     this.element.querySelectorAll(".pick-list .pick-option").forEach((opt) => {
-      const name = (opt.querySelector('input[name="install[app_template_id]"]')?.dataset.name || "").toLowerCase()
+      const name = (opt.querySelector('input[name="app[app_template_id]"]')?.dataset.name || "").toLowerCase()
       opt.hidden = q.length > 0 && !name.includes(q)
     })
   }

@@ -19,26 +19,26 @@ Rails.application.routes.draw do
   # and Turbo prefetches links on hover. Same rule as machines#refresh.
   post "access/refresh", to: "access#refresh", as: :refresh_access
 
-  # Installs — placement: this app, on these boxes. Top-level, because a placement
+  # Apps — placement: this app, on these boxes. Top-level, because a placement
   # doesn't belong to a client (decisions/console-layers.md). A project is optional
   # context, passed as `?project_id=` the way machines#new already takes one.
   # `edit`/`update` reach the **intention only** (count + exposure), never the spec. State
   # a different number and the gap moves; nothing is deployed or removed by saying so
   # (decisions/drift-is-surfaced-never-closed.md — changing an intention must not touch a box).
-  resources :installs, only: %i[ index new create show edit update ] do
+  resources :apps, only: %i[ index new create show edit update ] do
     # The values behind the names the app declares. Its own action rather than part of
     # `update`, which is deliberately narrow — that one restates the *intention* and
     # touches nothing that gets deployed. This is configuration, and it is the one place
     # a secret value enters the console.
     member { patch :configure }
-    # Place this install on one more box — the act that closes a placement gap. Never
+    # Place this app on one more box — the act that closes a placement gap. Never
     # automatic: the console shows the gap and a person presses the button
     # (decisions/drift-is-surfaced-never-closed.md). Scaling *down* needs no route of
     # its own — that's the existing `remove` verb on a target.
-    resources :targets, only: %i[ new create ], controller: "install_targets"
+    resources :placements, only: %i[ new create ]
   end
 
-  # Projects → Project view (installs, machines, activity). The project lens over
+  # Projects → Project view (apps, machines, activity). The project lens over
   # placement, not its container.
   resources :projects, only: %i[ index show new create edit update destroy ] do
     member do
@@ -53,7 +53,7 @@ Rails.application.routes.draw do
     resources :labels, only: %i[ create destroy ], shallow: true
   end
 
-  # App Library — the curated directory of installable app definitions (no install
+  # App Library — the curated directory of installable app definitions (no app
   # action here; the library is a directory, not a launcher).
   resources :app_templates do
     # The library as a portable manifest, and bulk curation (the counterweight to
@@ -63,7 +63,7 @@ Rails.application.routes.draw do
       post   :import
       delete :remove_selected
     end
-    # Releases of the app; one is `latest` (the install default).
+    # Releases of the app; one is `latest` (the app default).
     resources :versions, only: %i[ create destroy ] do
       member { patch :latest }
       # Ask the registry what a tag points at, and hand the answer back to the form.
@@ -77,7 +77,7 @@ Rails.application.routes.draw do
   # All Machines — the fleet, the per-machine deep dive, and onboarding (new/create).
   resources :machines, only: %i[ index show new create destroy ] do
     # Apps on this box, as the box sees them. Machine-scoped on purpose: this is
-    # the machine view's own surface, and it works with no Project and no Install —
+    # the machine view's own surface, and it works with no Project and no App —
     # the AppConfig is sent to the box and discarded, and the box's record is the
     # only record. See blueprint/console/interface.md.
     resources :apps, only: %i[ new create destroy ], module: :machines, as: :box_apps

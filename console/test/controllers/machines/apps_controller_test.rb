@@ -1,6 +1,6 @@
 require "test_helper"
 
-# The machine view's deploy surface: deploy to one box with no Project, no Install, and
+# The machine view's deploy surface: deploy to one box with no Project, no App, and
 # nothing stored. The config is transit — it goes to the box and is discarded.
 class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
   setup do
@@ -22,7 +22,7 @@ class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # The acceptance test for the whole layer: a deploy that touches no Project and
-  # leaves no Install behind.
+  # leaves no App behind.
   test "deploys with no project and stores nothing" do
     sign_in_as @user
     called = stub_mutate do
@@ -31,8 +31,8 @@ class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to @machine
     assert_equal "deploy web --json", called[:command]
-    assert_nil called[:install], "a machine-view deploy must not create or reference an Install"
-    assert_equal 0, Install.count, "nothing may be stored on the console side"
+    assert_nil called[:app], "a machine-view deploy must not create or reference an App"
+    assert_equal 0, App.count, "nothing may be stored on the console side"
 
     # The spec rides stdin, never the command line — that is what keeps secret
     # values out of the box's recorded invocation.

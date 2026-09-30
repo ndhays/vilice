@@ -106,7 +106,7 @@ class MachineStatus
   def uptime_sec = @machine["uptime_sec"].to_i
   def app_count = @apps.size
 
-  # The apps the box itself reports running — not the installs we think it has.
+  # The apps the box itself reports running — not the apps we think it has.
   # The machine view renders these: it shows what is there, not what was intended.
   def apps = @apps
 

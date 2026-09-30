@@ -103,7 +103,7 @@
     <% if @status.maintenance_known? %>
       <p class="maint-line"><%= icon "stethoscope", size: 15 %>
         <strong>Daily at <%= @status.maintenance_time %></strong></p>
-      <p class="muted maint-note">Security patches install themselves<%=
+      <p class="muted maint-note">Security patches app themselves<%=
         "; the box reboots then if the kernel needs it" if @status.auto_reboot? %>.</p>
     <% else %>
       <p class="maint-line muted"><%= icon "stethoscope", size: 15 %>
@@ -126,7 +126,7 @@
   <%# ── Apps ──────────────────────────────────────────────────────────────────
       What the box says is running, which is the reason the box exists. Each row
       carries the image digest it is actually running and links through to the
-      Install where we have one. Absent only where the box says it is a balancer. %>
+      App where we have one. Absent only where the box says it is a balancer. %>
   <% unless @status.balancer? %>
     <div class="panel observe">
       <div class="kicker">Apps on this box</div>
@@ -134,27 +134,27 @@
         <p class="muted">No apps on this box.</p>
       <% else %>
         <ul class="rows app-box-rows">
-          <% @status.apps.each do |app| %>
-            <% install = @installs.find { |i| i.name == app["name"] } %>
+          <% @status.apps.each do |box_app| %>
+            <% app = @apps.find { |i| i.name == box_app["name"] } %>
             <li class="row">
               <span class="cell-name">
                 <%= icon "box", size: 15, css_class: "icon row-icon" %>
-                <% if install %>
-                  <%= link_to app["name"], install, class: "row-name" %>
+                <% if app %>
+                  <%= link_to box_app["name"], app, class: "row-name" %>
                 <% else %>
-                  <span class="row-name"><%= app["name"] %></span>
+                  <span class="row-name"><%= box_app["name"] %></span>
                 <% end %>
               </span>
               <span class="cell-project">
-                <% if install&.project %>
-                  <%= link_to install.project.name, install.project, class: "owner-link" %>
-                <% elsif install.nil? %>
+                <% if app&.project %>
+                  <%= link_to app.project.name, app.project, class: "owner-link" %>
+                <% elsif app.nil? %>
                   <%# The box runs it, our record doesn't know it — a machine-view deploy
-                      keeps no Install, and so does anything deployed outside the console. %>
+                      keeps no App, and so does anything deployed outside the console. %>
                   <span class="badge unowned" title="Running on the box with no placement recorded here">not in our record</span>
                 <% end %>
               </span>
-              <span class="cell-image"><%= digest_chip(app["image"]) %></span>
+              <span class="cell-image"><%= digest_chip(box_app["image"]) %></span>
             </li>
           <% end %>
         </ul>
@@ -162,7 +162,7 @@
 
       <%# Placements we hold that the box did not report back. The gap is stated, never
           closed on its own (decisions/drift-is-surfaced-never-closed.md). %>
-      <% missing = @installs.reject { |i| @status.apps.any? { |a| a["name"] == i.name } } %>
+      <% missing = @apps.reject { |i| @status.apps.any? { |a| a["name"] == i.name } } %>
       <% if missing.any? %>
         <p class="note muted">
           <%= icon "triangle-alert", size: 13 %>
@@ -178,7 +178,7 @@
 
   <%# ── The edge, when this box is a balancer ───────────────────────────────
       Two halves, kept visibly apart: the table this box *should* serve, derived from
-      the installs that select it, and the addresses it *reports* fronting. Nothing
+      the apps that select it, and the addresses it *reports* fronting. Nothing
       reconciles them — applying is an act, across in Operate. %>
   <% if @machine.balancer? %>
     <div class="panel observe">
@@ -190,7 +190,7 @@
               <span class="route-host mono"><%= r.hostnames.join(" ") %></span>
               <span class="route-arrow">→</span>
               <span class="route-ups mono"><%= r.upstreams.join(", ") %></span>
-              <%= link_to r.install.name, r.install, class: "route-install" %>
+              <%= link_to r.app.name, r.app, class: "route-app" %>
             </li>
           <% end %>
         </ul>
@@ -277,15 +277,15 @@
   <% remove_note = "Remove #{@machine.name} from Steward?\n\n" \
                    "The box keeps running — this only forgets it here, and Steward’s key " \
                    "stays authorized until you revoke it on the box." %>
-  <% remove_note += "\n\n#{pluralize(@installs.size, 'app')} deployed here will lose their deployment record." if @installs.any? %>
+  <% remove_note += "\n\n#{pluralize(@apps.size, 'app')} deployed here will lose their deployment record." if @apps.any? %>
   <div class="panel danger-remove">
     <h3 class="danger-head"><%= icon "trash-2", size: 15 %> Remove this Machine</h3>
     <p class="note">This only forgets <strong><%= @machine.name %></strong> in Steward — the box
       keeps running, and Steward’s key stays authorized until you revoke it on the box:</p>
     <%= command_block(@machine.revoke_command) %>
-    <% if @installs.any? %>
-      <p class="note muted"><%= pluralize(@installs.size, "app") %> deployed here
-        (<%= @installs.map(&:name).join(", ") %>) will lose their deployment record.</p>
+    <% if @apps.any? %>
+      <p class="note muted"><%= pluralize(@apps.size, "app") %> deployed here
+        (<%= @apps.map(&:name).join(", ") %>) will lose their deployment record.</p>
     <% end %>
     <%= button_to safe_join([ icon("trash-2", size: 14), %(Remove "#{@machine.name}") ]),
           machine_path(@machine), method: :delete, class: "btn danger",

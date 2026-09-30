@@ -1,11 +1,11 @@
-<% content_for :title, "Restate #{@install.name}'s intention — Steward" %>
+<% content_for :title, "Restate #{@app.name}'s intention — Steward" %>
 
-<%= breadcrumb [ [ "Apps", installs_path ], [ @install.name, install_path(@install) ],
+<%= breadcrumb [ [ "Apps", apps_path ], [ @app.name, app_path(@app) ],
                  [ "Intention", nil ] ] %>
 
-<h1><%= icon "box", size: 20 %> What <%= @install.name %> should be</h1>
+<h1><%= icon "box", size: 20 %> What <%= @app.name %> should be</h1>
 
-<p class="addr"><%= placement_gap_line(@install, verbose: true) %></p>
+<p class="addr"><%= placement_gap_line(@app, verbose: true) %></p>
 
 <%# Not the mutate treatment. Nothing here reaches a box: this edits the claim, and the
     claim is only ever closed by a separate, named act
@@ -13,13 +13,13 @@
 <div class="panel intent">
   <div class="kicker">Intention · nothing is deployed by saying this</div>
 
-  <%= form_with model: @install, url: install_path(@install), method: :patch,
+  <%= form_with model: @app, url: app_path(@app), method: :patch,
         class: "stack-form" do |f| %>
-    <% if @install.errors.any? %>
-      <div class="flash alert"><%= @install.errors.full_messages.to_sentence %></div>
+    <% if @app.errors.any? %>
+      <div class="flash alert"><%= @app.errors.full_messages.to_sentence %></div>
     <% end %>
 
-    <%= render "installs/exposure_fields", f: f, install: @install %>
+    <%= render "apps/exposure_fields", f: f, app: @app %>
 
     <p class="note muted">Asking for more boxes opens a gap you close one placement at a
       time. Asking for fewer <strong>does not remove anything</strong> — take an app off a
@@ -27,7 +27,7 @@
 
     <div class="form-actions">
       <%= button_tag "Save Intention", class: "btn" %>
-      <%= button_link_to "Cancel", install_path(@install), class: "btn-quiet" %>
+      <%= button_link_to "Cancel", app_path(@app), class: "btn-quiet" %>
     </div>
   <% end %>
 </div>

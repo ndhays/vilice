@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_190719) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_191229) do
   create_table "app_templates", force: :cascade do |t|
     t.json "accessories", default: [], null: false
     t.datetime "created_at", null: false
@@ -26,44 +26,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190719) do
     t.index ["name"], name: "index_app_templates_on_name", unique: true
   end
 
-  create_table "events", force: :cascade do |t|
-    t.string "action", null: false
-    t.string "actor", null: false
-    t.datetime "at", null: false
-    t.datetime "created_at", null: false
-    t.text "detail"
-    t.integer "exit_status"
-    t.datetime "finished_at"
-    t.integer "install_id"
-    t.integer "machine_id"
-    t.string "outcome"
-    t.json "output"
-    t.integer "project_id"
-    t.json "raw", default: {}, null: false
-    t.string "summary"
-    t.datetime "updated_at", null: false
-    t.index ["at"], name: "index_events_on_at"
-    t.index ["install_id"], name: "index_events_on_install_id"
-    t.index ["machine_id"], name: "index_events_on_machine_id"
-    t.index ["project_id"], name: "index_events_on_project_id"
-  end
-
-  create_table "install_targets", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "current_image"
-    t.string "desired_image"
-    t.integer "install_id", null: false
-    t.integer "machine_id", null: false
-    t.integer "position", default: 0, null: false
-    t.string "status", default: "pending", null: false
-    t.string "strategy", default: "single", null: false
-    t.datetime "updated_at", null: false
-    t.index ["install_id", "machine_id"], name: "index_install_targets_on_install_id_and_machine_id", unique: true
-    t.index ["install_id"], name: "index_install_targets_on_install_id"
-    t.index ["machine_id"], name: "index_install_targets_on_machine_id"
-  end
-
-  create_table "installs", force: :cascade do |t|
+  create_table "apps", force: :cascade do |t|
     t.integer "app_template_id"
     t.integer "balancer_id"
     t.json "config", default: {}, null: false
@@ -79,10 +42,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190719) do
     t.text "secret_values"
     t.datetime "updated_at", null: false
     t.integer "version_id"
-    t.index ["app_template_id"], name: "index_installs_on_app_template_id"
-    t.index ["balancer_id"], name: "index_installs_on_balancer_id"
-    t.index ["project_id"], name: "index_installs_on_project_id"
-    t.index ["version_id"], name: "index_installs_on_version_id"
+    t.index ["app_template_id"], name: "index_apps_on_app_template_id"
+    t.index ["balancer_id"], name: "index_apps_on_balancer_id"
+    t.index ["project_id"], name: "index_apps_on_project_id"
+    t.index ["version_id"], name: "index_apps_on_version_id"
+  end
+
+  create_table "events", force: :cascade do |t|
+    t.string "action", null: false
+    t.string "actor", null: false
+    t.integer "app_id"
+    t.datetime "at", null: false
+    t.datetime "created_at", null: false
+    t.text "detail"
+    t.integer "exit_status"
+    t.datetime "finished_at"
+    t.integer "machine_id"
+    t.string "outcome"
+    t.json "output"
+    t.integer "project_id"
+    t.json "raw", default: {}, null: false
+    t.string "summary"
+    t.datetime "updated_at", null: false
+    t.index ["app_id"], name: "index_events_on_app_id"
+    t.index ["at"], name: "index_events_on_at"
+    t.index ["machine_id"], name: "index_events_on_machine_id"
+    t.index ["project_id"], name: "index_events_on_project_id"
   end
 
   create_table "labels", force: :cascade do |t|
@@ -127,6 +112,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190719) do
     t.index ["owner_id"], name: "index_machines_on_owner_id"
   end
 
+  create_table "placements", force: :cascade do |t|
+    t.integer "app_id", null: false
+    t.datetime "created_at", null: false
+    t.string "current_image"
+    t.string "desired_image"
+    t.integer "machine_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "status", default: "pending", null: false
+    t.string "strategy", default: "single", null: false
+    t.datetime "updated_at", null: false
+    t.index ["app_id", "machine_id"], name: "index_placements_on_app_id_and_machine_id", unique: true
+    t.index ["app_id"], name: "index_placements_on_app_id"
+    t.index ["machine_id"], name: "index_placements_on_machine_id"
+  end
+
   create_table "project_machines", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "machine_id", null: false
@@ -158,8 +158,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190719) do
   end
 
   create_table "settings", force: :cascade do |t|
+    t.boolean "apps_library_only", default: true, null: false
     t.datetime "created_at", null: false
-    t.boolean "installs_library_only", default: true, null: false
     t.datetime "updated_at", null: false
   end
 
@@ -208,18 +208,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190719) do
     t.index ["app_template_id"], name: "index_versions_one_latest_per_app", unique: true, where: "latest"
   end
 
-  add_foreign_key "events", "installs"
+  add_foreign_key "apps", "app_templates"
+  add_foreign_key "apps", "machines", column: "balancer_id"
+  add_foreign_key "apps", "projects"
+  add_foreign_key "apps", "versions"
+  add_foreign_key "events", "apps"
   add_foreign_key "events", "machines"
   add_foreign_key "events", "projects"
-  add_foreign_key "install_targets", "installs"
-  add_foreign_key "install_targets", "machines"
-  add_foreign_key "installs", "app_templates"
-  add_foreign_key "installs", "machines", column: "balancer_id"
-  add_foreign_key "installs", "projects"
-  add_foreign_key "installs", "versions"
   add_foreign_key "machine_grants", "machines"
   add_foreign_key "machine_grants", "projects"
   add_foreign_key "machines", "projects", column: "owner_id"
+  add_foreign_key "placements", "apps"
+  add_foreign_key "placements", "machines"
   add_foreign_key "project_machines", "machines"
   add_foreign_key "project_machines", "projects"
   add_foreign_key "sessions", "users"

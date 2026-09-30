@@ -13,7 +13,7 @@ class SettingsController < ApplicationController
     setting = Setting.current
     Setting.transaction do
       setting.update!(settings_params)
-      restricted = setting.installs_library_only
+      restricted = setting.apps_library_only
       Event.record!(actor: Current.user.email_address, action: restricted ? "restricted" : "opened",
                     summary: "apps #{restricted ? 'to' : 'beyond'} App Library templates")
     end
@@ -60,7 +60,7 @@ class SettingsController < ApplicationController
     return redirect_to settings_path, alert: "Erase is disabled outside development." unless Rails.env.local?
 
     ActiveRecord::Base.transaction do
-      [ InstallTarget, Snapshot, Event, Label, Install, Version, ProjectMachine,
+      [ Placement, Snapshot, Event, Label, App, Version, ProjectMachine,
         AppTemplate, Machine, Project ].each(&:delete_all)
     end
     redirect_to settings_path, notice: "All fleet data erased."
@@ -69,6 +69,6 @@ class SettingsController < ApplicationController
   private
 
   def settings_params
-    params.require(:setting).permit(:installs_library_only)
+    params.require(:setting).permit(:apps_library_only)
   end
 end

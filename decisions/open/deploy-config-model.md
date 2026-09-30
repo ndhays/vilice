@@ -38,7 +38,7 @@ the record. The config pins code exactly and grips data/secrets by the handle.
 
 **A running app's identity is name + config, not code.** Because the image is just a field, a
 config can swap the whole app — so a deploy isn't "update the code," it's "make this name run
-this config." `Install` is the *slot*; the config is what fills it; history is the sequence of
+this config." `App` is the *slot*; the config is what fills it; history is the sequence of
 configs applied to that slot over time. (This also retires the self-update worry: there's no
 structural image-vs-config boundary to defend — authority is simply *which fields of the one
 document* a scope may edit.)
@@ -56,7 +56,7 @@ physically present in both layers, just unnamed:
 
 - **On the box:** the filename `/var/lib/steward/apps/<name>.json` is the slot; the contents are
   the current config. One file per slot.
-- **In Steward Console:** the `Install` row is the slot — it should *point at* a series of configs
+- **In Steward Console:** the `App` row is the slot — it should *point at* a series of configs
   (one marked current), not *be* the config.
 
 What this buys, and why it's the spine of the save/archive + Steward Console work:
@@ -74,7 +74,7 @@ What this buys, and why it's the spine of the save/archive + Steward Console wor
   files-on-the-box for the timeline; folding it into the record stays a possible *addition* for
   forensics, not the primary store.)
 
-("Slot" is a placeholder name — could be the app's *identity*, the *Install it fills*, etc.;
+("Slot" is a placeholder name — could be the app's *identity*, the *App it fills*, etc.;
 let the better word surface as it's built.)
 
 ## What's in App Config
@@ -90,9 +90,9 @@ What varies between apps / deploys — and where it stands today (`appState` in
 - **health** path — ✅ today (app-owned)
 - **resource limits** (OOM score, memory) — *not yet a field*; Quadlet has a default, the
   per-app override is the open Slice-B item ([quadlet-deploy.md](../quadlet-deploy.md))
-- **replicas / placement** (which machine, how many) — Steward Console's `InstallTarget` carries
+- **replicas / placement** (which machine, how many) — Steward Console's `Placement` carries
   strategy/position; **not in the box spec**. AppConfig is *scale-free by construction*
-  (Steward only ever converges one box to one config); scale + exposure live on the Install
+  (Steward only ever converges one box to one config); scale + exposure live on the App
   — see [`patterns.md`](../../blueprint/console/patterns.md)
 - **accessories / linked services** (a Redis or Postgres the app needs alongside it) — **in
   scope** (decided 2026-06-24); the missing axis is being built. A new `accessories` block *inside*
@@ -157,7 +157,7 @@ image-owned converge step, not a host script. The config holds at most a flag or
 ## Where the truth lives
 
 Two copies exist: the box's `/var/lib/steward/apps/<name>.json` and (eventually) Steward Console's
-`Install` row. Proposed split:
+`App` row. Proposed split:
 
 - **Steward Console DB = the source you *edit*** — operator-facing, multi-tenant, where a human
   changes the spec.

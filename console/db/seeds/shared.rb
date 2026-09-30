@@ -10,7 +10,7 @@ module Scenario
 
   # Children before parents, so delete_all is safe whether or not the DB enforces
   # foreign keys. Users/sessions are deliberately kept.
-  WIPE = [ Event, Label, InstallTarget, Install, Version, AppTemplate, ProjectMachine, Machine, Project, Setting ].freeze
+  WIPE = [ Event, Label, Placement, App, Version, AppTemplate, ProjectMachine, Machine, Project, Setting ].freeze
 
   # Start from a known-empty slate (every scenario but `realistic` calls this), so
   # contradictory worlds never overlap — and clear the observe cache so no stale
@@ -53,17 +53,17 @@ module Scenario
 
   # An app deployed onto a box. `drift: true` makes the running image lag the
   # desired one (the honest "not in sync" state); `status:` is the target's state.
-  def install!(project, name, machine:, image:, status: "running", drift: false, **attrs)
-    install = project.installs.find_or_create_by!(name: name) do |i|
+  def app!(project, name, machine:, image:, status: "running", drift: false, **attrs)
+    app = project.apps.find_or_create_by!(name: name) do |i|
       i.assign_attributes({ image: image, hostname: "#{name}.example" }.merge(attrs))
     end
-    install.install_targets.find_or_create_by!(machine: machine) do |t|
+    app.placements.find_or_create_by!(machine: machine) do |t|
       t.strategy      = "single"
       t.status        = status
       t.desired_image = image
       t.current_image = drift ? "#{image.split('@').first}@sha256:34ace00034ace00034ace00034ace00034ace00034ace00034ace00034ace000" : image
     end
-    install
+    app
   end
 
   # A recorded act. Pass `outcome:` ("ok"/"failed"/"pending") to make it a mutate
@@ -97,8 +97,8 @@ module Scenario
     app
   end
 
-  # A stocked App Library, so the install flow has something real to run through.
-  # Chosen to cover every shape the install form has to handle rather than to be a
+  # A stocked App Library, so the app flow has something real to run through.
+  # Chosen to cover every shape the app form has to handle rather than to be a
   # recommended list: no inputs at all, plain env, secret env, a mounted secret
   # file, and a service that is not HTTP (no health path — nothing for Caddy to
   # probe). Ports are all >= 1024: the box refuses anything lower, and the AppTemplate
@@ -165,7 +165,7 @@ module Scenario
   def report!
     name = ENV.fetch("SCENARIO", "empty")
     puts "Seeded [#{name}]: #{Project.count} projects, #{Machine.count} machines, " \
-         "#{Install.count} installs, #{AppTemplate.count} apps, #{Event.count} events."
+         "#{App.count} apps, #{AppTemplate.count} apps, #{Event.count} events."
     puts "Sign in: operator@console.test / password"
     puts "Boot with STEWARD_FAKE_OBSERVE=1 for live health (or use bin/scenario)."
   end

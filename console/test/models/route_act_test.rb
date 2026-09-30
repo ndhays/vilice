@@ -9,15 +9,15 @@ class RouteActTest < ActiveSupport::TestCase
                                ssh_private_key: "k", status: "reachable", balancer: true)
     @backend = Machine.create!(name: "b1", ssh_host: "10.0.0.1", scope: "operate",
                                ssh_private_key: "k", status: "reachable")
-    @install = Install.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca", hostname: "app.example.com",
+    @app = App.create!(name: "web", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca", hostname: "app.example.com",
                                exposure: "balanced", balancer: @edge)
-    @install.install_targets.create!(machine: @backend, status: "running")
+    @app.placements.create!(machine: @backend, status: "running")
   end
 
-  test "route is machine-scoped and needs no install" do
+  test "route is machine-scoped and needs no app" do
     m = Mutation.build("route", machine: @edge, actor: "nick@example.com")
-    assert m, "route must resolve without an install"
-    assert_nil m.install
+    assert m, "route must resolve without an app"
+    assert_nil m.app
     assert_equal "route --json", m.command
   end
 
@@ -30,7 +30,7 @@ class RouteActTest < ActiveSupport::TestCase
     # Another box starts serving; the same act now sends a wider table with no edit.
     other = Machine.create!(name: "b2", ssh_host: "10.0.0.2", scope: "operate",
                             ssh_private_key: "k", status: "reachable")
-    @install.install_targets.create!(machine: other, status: "running")
+    @app.placements.create!(machine: other, status: "running")
     m2 = Mutation.build("route", machine: @edge.reload, actor: "nick@example.com")
     assert_includes m2.stdin, "10.0.0.2:80"
   end
@@ -44,7 +44,7 @@ class RouteActTest < ActiveSupport::TestCase
   end
 
   test "a balancer fronting nothing says so rather than looking broken" do
-    @install.update!(balancer: nil)
+    @app.update!(balancer: nil)
     m = Mutation.build("route", machine: @edge.reload, actor: "nick@example.com")
     assert_equal "edge-1 — fronting nothing", m.summary
     assert_equal '{"routes":[]}', m.stdin

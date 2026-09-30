@@ -3,14 +3,14 @@
 <%= turbo_frame_tag "logs" do %>
   <div class="panel logs-panel">
     <div class="panel-head">
-      <div class="kicker">Logs · <%= @install.name %></div>
+      <div class="kicker">Logs · <%= @app.name %></div>
       <span class="panel-action">
-        <%= link_to "Close", install_path(@install),
+        <%= link_to "Close", app_path(@app),
               class: "btn-quiet sm", data: { turbo_frame: "logs" } %>
       </span>
     </div>
     <p class="empty"><%= icon "circle-x", size: 14 %>
-      <%= @install.name %> isn't placed on <%= @machine.name %>, so there is nothing
+      <%= @app.name %> isn't placed on <%= @machine.name %>, so there is nothing
       of its to read there.</p>
   </div>
 <% end %>

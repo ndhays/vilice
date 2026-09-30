@@ -90,38 +90,37 @@ Machines · Apps · Projects           the three rings, bottom-up
 Access · App Library · Settings      the surfaces that serve them
 ```
 
-**What the page calls things.** An `Install` reads as an **App** — it is what an
-operator means by "the app": a template configured and placed for a client. An `AppTemplate` (a
-Library entry) reads as an **App Template**, and the Library keeps its name, the **App
-Library**. The template's code name already matches; `Install` → `App` follows (roadmap), and
-until then the model is `Install` and the page says *App*.
+**What things are called.** The page and the code use the same words. An **App**
+(`App`) is what an operator means by "the app": a template configured for a client. One
+app on one box is a **Placement** (`Placement`). A Library entry is an **App Template**
+(`AppTemplate`), and the Library keeps its name, the **App Library**.
 
 **The rings read bottom-up, floor first.** The three rings of
 [`decisions/console-layers.md`](../../decisions/console-layers.md) — machine view,
 placement, tenancy — are each optional *above* the one below, so the nav puts the box
-first, placement next to it, and tenancy last as the most declinable. Installs sits
+first, placement next to it, and tenancy last as the most declinable. Apps sits
 between the box it lands on and the client it is for.
 
 The bands carry **no labels**. The rail has no words of its own beyond the destinations,
 and naming the bands would add vocabulary the rest of the docs don't use; a rule is
 enough to make a group read as a group.
 
-- **Status** (the "Now" page in this doc's older wording) — the fleet pulse. Calm by default ("12 installs, all healthy · last act 4m
+- **Status** (the "Now" page in this doc's older wording) — the fleet pulse. Calm by default ("12 apps, all healthy · last act 4m
   ago"); exceptions rise to the top, the healthy fold to a count. The unit of concern is
-  the **install** — installs in a bad-but-actionable state (failed / machine-unreachable /
+  the **app** — apps in a bad-but-actionable state (failed / machine-unreachable /
   drift), plus those **short of their intention**, lead the page, rendered through the same
   row as the project and fleet lists. A placement gap is a separate test rather than another
-  `Install#state` value, and the row shows it *beside* the health glyph, never inside it:
+  `App#state` value, and the row shows it *beside* the health glyph, never inside it:
   the glyph is the health of what is running, the gap is the distance from what was asked
   for. Serving *more* boxes than asked for is a gap too, but not an outage — it stays off
-  this page and shows on the install.
-  An install short of its intention **with no free box to close it** is called out once,
+  this page and shows on the app.
+  An app short of its intention **with no free box to close it** is called out once,
   above the rows: that is a different ask from the rest of the list — a click on the
-  install versus going and getting a box — and it is fixed somewhere else, which is the
+  app versus going and getting a box — and it is fixed somewhere else, which is the
   same reason unreachable machines get their own section. Computed against one preloaded
   pool, because a list must not ask the database once per row.
   Unreachable **machines** follow as the root cause: one down box explains many down
-  installs, and it's fixed there.
+  apps, and it's fixed there.
   **That is the whole page** — what needs you, or nothing. With nothing wrong it says
   *Nothing to report* under a green check, and the counts beneath are the proof it is
   empty because we looked. It used to carry a "Latest" feed of recent acts as well,
@@ -136,31 +135,31 @@ enough to make a group read as a group.
   nothing in the UI requires knowing it. The forensics surface; the thing nobody
   else ships.
 - **Projects → Project** — the client lens; observe-only, the shareable client status
-  page. A lens over placement, not a container for it: its Installs list is *this
+  page. A lens over placement, not a container for it: its Apps list is *this
   client's* placements, and the project column is dropped there because it would only
   repeat the page.
 
   **It leads with a verdict — Status's answer, scoped to one client.** Either there is
   something to deal with or there is not, and the page says which before it says
-  anything else: *Nothing to report* under a green check, or *1 install needs a look ·
+  anything else: *Nothing to report* under a green check, or *1 app needs a look ·
   1 box unreachable* under an alert. The counts sit underneath as the proof it was
   looked at, the same role they play on Status. Only this lens's facts.
 
   Unlike Status it keeps its lists below either way — a client page is also where you
-  go to find a specific install, not only to learn whether anything is wrong.
+  go to find a specific app, not only to learn whether anything is wrong.
 
   **Star stays in the title; Edit and Delete do not.** A destructive control does not
   belong in a page title — deletion moved into a **Project Settings** section at the
   foot, the same closed section the machine view uses. (It is guarded server-side
-  besides: a project with live installs or owned machines is refused, naming them.)
+  besides: a project with live apps or owned machines is refused, naming them.)
   The star is a focus lens rather than a setting, so it stays where you can reach it.
 
   A section that can only ever say "None" is absent instead — Shared Machines renders
   only when something is shared, the same rule the unreachable cards follow.
-- **Installs → Install** — placement, fleet-wide: what should run where. One ring above
+- **Apps → App** — placement, fleet-wide: what should run where. One ring above
   the machine view (which reads a single box) and below Projects. The list carries every
   placement, with the project shown where there is one and a plain dash where there isn't
-  — an install with no client is a legitimate state, not missing data. The Install page
+  — an app with no client is a legitimate state, not missing data. The App page
   is the app-actions home
   ([`decisions/install-the-app-actions-home.md`](../../decisions/install-the-app-actions-home.md)).
 
@@ -176,26 +175,26 @@ enough to make a group read as a group.
   there is nothing to filter here that `grep` would not do better on the far side.
 
   **Searched and grouped like the fleet list**, from the same mechanism (`Groupings`,
-  shared by `MachineGroups` and `InstallGroups`). One `?q=` over what *identifies* a
+  shared by `MachineGroups` and `AppGroups`). One `?q=` over what *identifies* a
   placement — its name, the host it serves, the app it came from, and the box it runs
   on — and `?group=` over the axes it *has*: **State** (the default), **App**,
-  **Exposure**, **Fleet**, **Project**. No selector grammar in the box: installs carry
+  **Exposure**, **Fleet**, **Project**. No selector grammar in the box: apps carry
   no labels, and every categorical axis is already a chip, so a selector would be a
   second way to ask what the chips answer. Both live in the query string, so a
   narrowed list is a link you can send.
 
-  Ring 2 is this page's floor — an Install *is* the placement ring — and `project` is
+  Ring 2 is this page's floor — an App *is* the placement ring — and `project` is
   the single chip that reaches out to tenancy, so with tenancy never mounted the list
   loses one chip and nothing else.
 
   **No act is offered on a box that cannot take one.** `operate` is the key's
   ceiling; reachability is the other half, and every verb travels the same scoped SSH
   connection — so on an unreachable box all six were certain to fail. The gate lives
-  in `installs/_acts`, because the rule is about the box rather than about which page
+  in `apps/_acts`, because the rule is about the box rather than about which page
   is asking; the row says why instead.
 
-  **One state word, defined on the target and folded by the install.**
-  `InstallTarget#state` is the ladder; `Install#state` is the worst of them. A target
+  **One state word, defined on the placement and folded by the app.**
+  `Placement#state` is the ladder; `App#state` is the worst of them. A target
   row used to badge its raw `status`, which knows nothing about the box being
   unreachable or the image having drifted, so a row could read *running* under a
   header that said *unreachable*.
@@ -232,12 +231,12 @@ enough to make a group read as a group.
   | Ring | Groupings | Why |
   |---|---|---|
   | 1 — machine view | reachability, scope, edge, label key | the box, or the operator on the box |
-  | 2 — placement | **fleet** | a machine's balancer is reached *through* its installs |
+  | 2 — placement | **fleet** | a machine's balancer is reached *through* its apps |
   | 3 — tenancy | **owner** | an owner is a `Project` |
 
   The two that reach out are *offered* rather than built into the row. That is the test
   the floor has to pass: **drop a ring and this page loses exactly its own menu items,
-  nothing else moves.** No install counts and no project health sit in the rows — the
+  nothing else moves.** No app counts and no project health sit in the rows — the
   floor states only what it owns.
 
   Above the list, a **headline** gives this layer's story in one line — `14 boxes · 2
@@ -283,7 +282,7 @@ enough to make a group read as a group.
   off, uninstall, and prepare again (`blueprint/steward/provision.md`). So the console
   reports it and offers no way to change it. It used to offer a "Make this a balancer"
   button, which wrote a column the box had never agreed to: a `host` so marked would
-  accept balanced installs and then be refused by its own box. The column survives as
+  accept balanced apps and then be refused by its own box. The column survives as
   our **mirror of the last read** — the fleet list cannot do a live read per row — and
   `Steward::Observe.reconcile` is what writes it. It reads in three states, which are
   not the same thing: the box said so; the box said nothing (**not prepared**, and
@@ -310,7 +309,7 @@ enough to make a group read as a group.
   raw reply are one step down — in the preview, the record, and a card's raw disclosure.
   The one bridge on the surface is the button: **a command button carries the Steward
   mark and the verb** — `status`, `apply-updates`, `route`, `deploy`, `remove` (and on
-  the Install, `deploy` `rollback` `start` `stop` `restart` `remove`) — mono, lowercase,
+  the App, `deploy` `rollback` `start` `stop` `restart` `remove`) — mono, lowercase,
   **filled**: violet for an act, blue for a read, red for one that takes something away.
   Nothing that does not call Steward looks like it. A plain sentence beside it says why
   you would press it. The full command, flags and all, is shown in the preview, copyable,
@@ -333,12 +332,12 @@ enough to make a group read as a group.
     per app the box reports. An act with nothing to do (no updates waiting) **keeps its
     button, inert** — the zone reads the same whatever the box's state. Commands come
     from `Mutation.command`, the same builder that sends them. App lifecycle is not here —
-    it lives on the Install. The ceremony opens **inside this zone**.
+    it lives on the App. The ceremony opens **inside this zone**.
   - On an observe key, Operate is one large statement — **No operate access** — and on
     an offline box, **Nothing can be sent**.
 
   **The Apps card is what the box reports, with our record attached.** One list, not
-  two: the box's apps are the rows, each linking to its `Install` where we hold one,
+  two: the box's apps are the rows, each linking to its `App` where we hold one,
   each showing the digest it is *actually* running — truncated, with click-to-copy
   that copies the whole reference rather than the abbreviation. An app the box runs
   that we hold no placement for says **not in our record** (a machine-view deploy
@@ -370,14 +369,14 @@ enough to make a group read as a group.
   reason — the section is already its gate, and the button carries its own confirm.
 
   **A machine-view deploy is stateless in the console.** Paste an AppConfig, it goes to
-  the box on stdin, and it is *discarded* — no `Install`, no `Project`, no stored spec.
+  the box on stdin, and it is *discarded* — no `App`, no `Project`, no stored spec.
   What is running afterwards is read back from the box, whose record is the only
   record. That is deliberate: a stored copy of the spec would be a second, quieter
   answer to "what is supposed to run here," which is the intention layer's job one ring
   out, where the gap against reality is visible rather than assumed away.
 
   **A balancer box grows an Edge panel.** It shows the routing table derived from the
-  installs that select it — hostname → upstreams — beside the addresses the box *reports*
+  apps that select it — hostname → upstreams — beside the addresses the box *reports*
   fronting, the same two-halves grammar as the intention layer. Applying is
   **Apply Routing**, a witnessed act; nothing reconciles on its own. An unreachable
   balancer reads as *unknown*, never as *fronting nothing*, which is the dangerous
@@ -427,7 +426,7 @@ enough to make a group read as a group.
   Observe only. Granting and revoking are acts, and they happen where acts happen.
   Re-reading is a **POST**: it opens an SSH connection to every box in the fleet, and
   a GET must be safe to repeat unasked.
-- **App Library** — the curated app catalog (the install front-of-funnel — see
+- **App Library** — the curated app catalog (the app front-of-funnel — see
   [`journeys.md`](journeys.md)).
 
   **A release must be digest-pinned.** The box refuses an unpinned image
@@ -467,11 +466,11 @@ enough to make a group read as a group.
 
 ## The one page pattern
 
-Every entity — Machine, Install, Project — renders the same shape:
+Every entity — Machine, App, Project — renders the same shape:
 
 1. **Header** — name · health dot · plain-language narrative · scope/rights badge.
 2. **Head** — current state as the latest projection (live status for a Machine; running
-   digest + health for an Install).
+   digest + health for an App).
 3. **Chain** — the record filtered to this entity, **as the body of the page, not a
    footer**. Acts plus status transitions, newest first.
 4. **Mutate zone** — witnessed actions, visually set apart (the violet "this will be
@@ -493,7 +492,7 @@ one put errors at the top and one put them after the first field.
 2. **A run of `fieldset.step`s** — one concern each, under a plain-language legend. No
    field hangs outside a step. A legend takes a `hint` when the concern has a
    consequence the label cannot carry.
-3. **The concrete thing leads; tenancy comes last.** `installs/new` never asks you to
+3. **The concrete thing leads; tenancy comes last.** `apps/new` never asks you to
    invent a client before you have said what you are placing, and `machines/new` asks
    for the box's address before its owner. Optional context does not get to go first.
 4. **Radio cards carry a hint only when the label cannot carry the choice.** *Operate*
@@ -517,7 +516,7 @@ that drifts apart again.
 
 Two shapes carry nearly every screen, so both are fixed here.
 
-**A list row is a link — all of it.** Every row in `.rows` (machines, installs,
+**A list row is a link — all of it.** Every row in `.rows` (machines, apps,
 projects, apps) leads somewhere, and the row already lights up on hover, so asking
 for the name specifically was a smaller target than the row looked. The name stays
 the real anchor — it keeps the `href`, the focus ring and the accessible name — and
@@ -588,7 +587,7 @@ together, in the docs site's shape (`blueprint/design/patterns.md`): a real
 rather than hidden until hover, copying the exact text shown.
 
 **A list is grouped, never filtered down to one answer.** Both list pages (Machines,
-Installs) open on the axis that answers "which of these needs a person" —
+Apps) open on the axis that answers "which of these needs a person" —
 reachability for boxes, state for placements — and a grouping shows every answer at
 once, with counts, where a filter shows one at a time. There is no ungrouped view: a
 flat list answers nothing the grouped one doesn't. The mechanism is one module
@@ -597,13 +596,13 @@ what a set of placements groups by are different questions. An unknown `group=`
 lands on the default, so a stale link degrades to the useful view rather than to a
 flat list or an error.
 
-**One rolled-up state word, defined once.** `Install#state` is the ladder — failed,
+**One rolled-up state word, defined once.** `App#state` is the ladder — failed,
 unreachable, drift, deploying, pending, running, unplaced — and the row's glyph, the
-Status page's exception list, the Installs grouping and the Install page's own badge
+Status page's exception list, the Apps grouping and the App page's own badge
 all read it, so they agree by construction instead of by four copies. (The badge did
 keep its own, shallower ladder for a while, which made the *deep-dive* page for an
-install the least accurate thing about it: a drifted install, or one whose box had
-gone unreachable, read there as plainly "running".) `Install::EXCEPTION_STATES` names the
+app the least accurate thing about it: a drifted app, or one whose box had
+gone unreachable, read there as plainly "running".) `App::EXCEPTION_STATES` names the
 three that need a person. A **placement gap** is never folded in: an intention is
 not a state (`decisions/drift-is-surfaced-never-closed.md`), so it renders beside
 the glyph, never inside it.
@@ -642,11 +641,11 @@ instead. That is pinned too, because `icon()` renders nothing at all for a name 
 does not know, so a typo would silently drop the glyph rather than fail.
 
 **One glyph, one meaning — nouns too.** The rule is not only about verbs. `earth` means
-*faces the public internet*: the go-live buttons, and an install exposed on the edge. It
+*faces the public internet*: the go-live buttons, and an app exposed on the edge. It
 used to also mark a box **prepared as a balancer**, so the same glyph stood for the edge
 in one place and for the thing in front of the edge in another. The balancer now draws
 `network` — one front, many backs — everywhere it is named: the role badge, the exposure
-picker, and the install's intention chip. Its opposite, `edge`, is drawn in the same
+picker, and the app's intention chip. Its opposite, `edge`, is drawn in the same
 grammar (the world above, one box below, nothing between) so the two read as one pair
 answering one question, and `earth` is left meaning only *reachable from the public
 internet*: the go-live buttons. In the same spirit a **Fleet** is drawn as

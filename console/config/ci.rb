@@ -15,7 +15,7 @@ CI.run do
   # step "Tests: System", "bin/rails test:system"
 
   # Optional: set a green GitHub commit status to unblock PR merge.
-  # Requires the `gh` CLI and `gh extension install basecamp/gh-signoff`.
+  # Requires the `gh` CLI and `gh extension app basecamp/gh-signoff`.
   # if success?
   #   step "Signoff: All systems go. Ready for merge and deploy.", "gh signoff"
   # else

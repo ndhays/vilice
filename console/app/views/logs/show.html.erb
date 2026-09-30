@@ -1,24 +1,24 @@
-<%# A log tail, as it came off the box. Rendered into the install page's `logs` frame.
+<%# A log tail, as it came off the box. Rendered into the app page's `logs` frame.
 
     Framed as a plain panel, never the mutate one: this is a read, and the violet zone
     means "this will be recorded". Nothing here is. %>
 <%= turbo_frame_tag "logs" do %>
   <div class="panel logs-panel">
     <div class="panel-head">
-      <div class="kicker">Logs · <%= @install.name %> on <%= @machine.name %></div>
+      <div class="kicker">Logs · <%= @app.name %> on <%= @machine.name %></div>
       <span class="panel-action logs-controls">
         <%# The tail is the whole control surface. `podman logs` is a passthrough, so
             these are the box's own lines and there is nothing to filter here that
             `grep` would not do better on the far side. %>
         <% Steward::Observe::TAILS.each do |n| %>
-          <%= link_to n, machine_logs_path(@machine, install_id: @install.id, tail: n),
+          <%= link_to n, machine_logs_path(@machine, app_id: @app.id, tail: n),
                 class: "logs-tail#{' on' if n == @tail}",
                 data: { turbo_frame: "logs" }, title: "Last #{n} lines" %>
         <% end %>
         <%= link_to safe_join([ icon("rotate-cw", size: 13), "Refresh" ]),
-              machine_logs_path(@machine, install_id: @install.id, tail: @tail),
+              machine_logs_path(@machine, app_id: @app.id, tail: @tail),
               class: "btn-quiet sm", data: { turbo_frame: "logs" } %>
-        <%= link_to "Close", install_path(@install),
+        <%= link_to "Close", app_path(@app),
               class: "btn-quiet sm", data: { turbo_frame: "logs" } %>
       </span>
     </div>

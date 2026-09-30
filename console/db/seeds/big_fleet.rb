@@ -49,7 +49,7 @@ PROJECTS.times do |p|
       # Where there's an edge box, the app sits behind it — which is what makes a
       # count above one honest (decisions/one-primitive-composed.md).
       behind = edge ? { exposure: "balanced", balancer: edge } : {}
-      install!(project, "app-#{p}-#{i}", machine: machine, image: img,
+      app!(project, "app-#{p}-#{i}", machine: machine, image: img,
                hostname: "app-#{p}-#{i}.example", drift: drift, status: status, **behind)
     end
   end
@@ -63,11 +63,11 @@ actors  = %w[operator@console.test ci-deployer alice@console.test]
 actions = %w[deployed restarted updated linked authorized]
 machines = Machine.order(:name).to_a
 projects = Project.order(:name).to_a
-installs = Install.order(:name).to_a
+apps = App.order(:name).to_a
 200.times do |k|
   outcome = %w[ok ok ok failed pending][k % 5] if k.even?
   box     = machines[k % machines.size]
-  install = installs[k % installs.size]
+  app = apps[k % apps.size]
   project = projects[k % projects.size]
   verb    = actions[k % actions.size]
   # The summary is the *object* — the verb lives in the action column beside it, and
@@ -77,7 +77,7 @@ installs = Install.order(:name).to_a
     when "authorized" then "ci-deployer at operate on #{box.name}"
     when "updated"    then box.name
     when "linked"     then "#{box.name} to #{project.name}"
-    else                   "#{install.name} on #{box.name}"
+    else                   "#{app.name} on #{box.name}"
     end
   event!(actor: actors[k % actors.size], action: verb,
          machine: box, project: project,

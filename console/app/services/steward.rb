@@ -65,7 +65,7 @@ module Steward
     # off, uninstall, and prepare again (blueprint/steward/provision.md). So the
     # console does not get an opinion about it. It used to: a button offered "Make
     # this a balancer", which wrote this column with nothing behind it, and a `host`
-    # so marked would accept balanced installs and then be refused by its own box.
+    # so marked would accept balanced apps and then be refused by its own box.
     #
     # A box we have not read reports no role, and that is *unknown*, not "host" — so
     # a blank leaves the column alone rather than quietly demoting it.
@@ -88,17 +88,17 @@ module Steward
     end
 
     # Set each live target's current_image from what the box reports it's running —
-    # the input drift detection needs (install_target.in_sync?). Retired targets and
+    # the input drift detection needs (placement.in_sync?). Retired targets and
     # apps we don't track are ignored; an app we expect but the box doesn't report is
     # left untouched (failed-state detection needs a box health field we don't get yet).
     def reconcile_running_images(machine, apps)
       return if apps.blank?
 
       running = apps.index_by { |a| a["name"] }
-      machine.install_targets.includes(:install).each do |target|
-        next if target.install_retired?
-        app = running[target.install.name]
-        target.update_columns(current_image: app["image"]) if app && app["image"].present?
+      machine.placements.includes(:app).each do |placement|
+        next if placement.retired?
+        box_app = running[placement.app.name]
+        placement.update_columns(current_image: box_app["image"]) if box_app && box_app["image"].present?
       end
     end
 
@@ -139,10 +139,10 @@ module Steward
     # cannot act on it — exactly when you most want to.
     def logs(machine, app, tail: DEFAULT_TAIL)
       # The name reaches a command line, so it is checked here rather than trusted from
-      # a caller. `Install` already enforces this charset; a second guard at the seam
+      # a caller. `App` already enforces this charset; a second guard at the seam
       # costs nothing and is the difference between a bug and a flag injection.
       return { ok: false, reached: true, error: "#{app.inspect} is not a valid app name." } unless
-        app.to_s.match?(Install::NAME_FORMAT)
+        app.to_s.match?(App::NAME_FORMAT)
 
       Steward.read(machine, "logs #{app} --tail #{Integer(tail)} --json")
     end
@@ -167,9 +167,9 @@ module Steward
     # ok/failed when the command returns. A crash between the two leaves a pending
     # row: honest evidence that we issued the act but never learned its result.
     # Returns the event and the transport result.
-    def run(machine, command, actor:, action:, install: nil, summary: nil, stdin: nil)
+    def run(machine, command, actor:, action:, app: nil, summary: nil, stdin: nil)
       event = Event.record!(
-        actor: actor, action: action, machine: machine, install: install,
+        actor: actor, action: action, machine: machine, app: app,
         summary: summary || machine.name,
         outcome: "pending", raw: { command: command }
       )

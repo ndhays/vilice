@@ -19,7 +19,7 @@
 # arrives with ingestion (#6 in decisions/open/ui-roadmap.md).
 class MachineGroups
   # The mechanism — the Grouping shape, `for`, and `apply` — is shared with the
-  # Installs list. Only the axes below are this page's own.
+  # Apps list. Only the axes below are this page's own.
   extend Groupings
   Grouping = Groupings::Grouping
 
@@ -42,12 +42,12 @@ class MachineGroups
                  of: ->(m) { m.balancer? ? [ 0, "Balancers" ] : [ 1, "Hosts" ] }),
 
     # A fleet is one balancer and the hosts it fronts. The relationship is *not*
-    # machine-to-machine — it runs through the installs a balancer fronts — so this
+    # machine-to-machine — it runs through the apps a balancer fronts — so this
     # reads the placement ring, and a box appears in the fleet its apps are served
     # through. A balancer heads its own fleet.
     Grouping.new(key: "fleet", label: "Fleet", ring: 2,
                  of: ->(m) {
-                   name = m.balancer? ? m.name : m.installs.filter_map { |i| i.balancer&.name }.min
+                   name = m.balancer? ? m.name : m.apps.filter_map { |i| i.balancer&.name }.min
                    name ? [ 0, name ] : [ 1, "No balancer" ]
                  },
                  # The balancer heads its own fleet, then the hosts it fronts — the

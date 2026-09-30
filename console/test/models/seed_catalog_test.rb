@@ -15,7 +15,7 @@ class SeedCatalogTest < ActiveSupport::TestCase
     assert_nothing_raised { Scenario.library! }
 
     versions = Version.all.to_a
-    assert_operator versions.size, :>, 5, "the catalog should cover the install form's shapes"
+    assert_operator versions.size, :>, 5, "the catalog should cover the app form's shapes"
     versions.each do |v|
       assert v.valid?, "#{v.tag}: #{v.errors.full_messages.to_sentence}"
       assert_includes v.image, "@sha256:", "#{v.tag} is not digest-pinned"

@@ -37,15 +37,15 @@ class StewardObserveTest < ActiveSupport::TestCase
   end
 
   test "current_image is reconciled from the box's reported apps (the drift input)" do
-    install = @project.installs.create!(name: "web", image: "ghcr.io/acme/web@sha256:de392edde392edde392edde392edde392edde392edde392edde392edde392edd")
-    target  = install.install_targets.create!(machine: @machine, status: "running",
+    app = @project.apps.create!(name: "web", image: "ghcr.io/acme/web@sha256:de392edde392edde392edde392edde392edde392edde392edde392edde392edd")
+    placement  = app.placements.create!(machine: @machine, status: "running",
                                               desired_image: "ghcr.io/acme/web@sha256:de392edde392edde392edde392edde392edde392edde392edde392edde392edd")
     apps = [ { "name" => "web", "image" => "ghcr.io/acme/web@sha256:f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e" } ]
     stub_returning(Steward, :read, status_result(apps: apps)) do
       Steward::Observe.status(@machine, refresh: true)
     end
-    assert_equal "ghcr.io/acme/web@sha256:f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e", target.reload.current_image
-    refute target.in_sync?, "running a different image than desired = drift"
+    assert_equal "ghcr.io/acme/web@sha256:f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e2f48e", placement.reload.current_image
+    refute placement.in_sync?, "running a different image than desired = drift"
   end
 
   test "the name mirrors the box's hostname on the first read (still-provisional name)" do
@@ -74,13 +74,13 @@ class StewardObserveTest < ActiveSupport::TestCase
     assert_equal "10.0.0.8", box.reload.name, "stays provisional — the collision is avoided"
   end
 
-  test "retired targets and apps we don't track are left alone" do
-    install = @project.installs.create!(name: "web")
-    retired = install.install_targets.create!(machine: @machine, status: "retired", current_image: "old")
+  test "retired placements and apps we don't track are left alone" do
+    app = @project.apps.create!(name: "web")
+    retired = app.placements.create!(machine: @machine, status: "retired", current_image: "old")
     apps = [ { "name" => "web", "image" => "new" }, { "name" => "ghost", "image" => "x" } ]
     stub_returning(Steward, :read, status_result(apps: apps)) do
       Steward::Observe.status(@machine, refresh: true)
     end
-    assert_equal "old", retired.reload.current_image, "a retired target isn't reconciled"
+    assert_equal "old", retired.reload.current_image, "a retired placement isn't reconciled"
   end
 end

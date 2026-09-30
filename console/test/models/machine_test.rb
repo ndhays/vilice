@@ -76,19 +76,19 @@ class MachineTest < ActiveSupport::TestCase
     refute_includes Machine.shared, ded
   end
 
-  # The edge a box sits behind is read through the installs it runs — the
+  # The edge a box sits behind is read through the apps it runs — the
   # relationship is placement, not machine-to-machine.
-  test "behind names the balancers fronting this box's installs, never itself" do
+  test "behind names the balancers fronting this box's apps, never itself" do
     project = Project.create!(name: "Edge-unit")
     edge    = Machine.create!(name: "edge-1", ssh_host: "x", scope: "operate", balancer: true)
     host    = Machine.create!(name: "host-1", ssh_host: "x")
     plain   = Machine.create!(name: "plain-1", ssh_host: "x")
 
-    fronted = project.installs.create!(name: "app-a", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    fronted = project.apps.create!(name: "app-a", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                                        exposure: "balanced", balancer: edge)
-    fronted.install_targets.create!(machine: host, status: "running")
+    fronted.placements.create!(machine: host, status: "running")
     # The balancer also runs the app it fronts: it is not behind itself.
-    fronted.install_targets.create!(machine: edge, status: "running")
+    fronted.placements.create!(machine: edge, status: "running")
 
     assert_equal [ edge ], host.reload.behind
     assert_equal [],       edge.reload.behind

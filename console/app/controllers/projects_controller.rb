@@ -6,7 +6,7 @@ class ProjectsController < ApplicationController
   def index
     @q = params[:q]
     projects = (@q.present? ? Project.search(@q) : Project.all)
-                 .order(:name).includes(:machines, :installs, :labels)
+                 .order(:name).includes(:machines, :apps, :labels)
     # While searching, show one flat list of matches; otherwise split starred out.
     @starred, @projects = @q.present? ? [ [], projects.to_a ] : projects.partition(&:starred?)
   end
@@ -57,9 +57,9 @@ class ProjectsController < ApplicationController
     render :edit, status: :unprocessable_entity
   end
 
-  # Delete a project — guarded. Destroying it cascades to its Install/InstallTarget
+  # Delete a project — guarded. Destroying it cascades to its App/Placement
   # rows, but those represent apps that may still be running on the boxes (Steward Console
-  # forgetting an install does NOT `steward remove` it). So refuse while any live app
+  # forgetting an app does NOT `steward remove` it). So refuse while any live app
   # remains — the operator removes them first. The project's events nullify, so the
   # record survives the deletion. Mirrors the detach-machine guard.
   def destroy
@@ -87,7 +87,7 @@ class ProjectsController < ApplicationController
 
   def show
     @project  = Project.find(params[:id])
-    @installs = @project.installs.includes(:app_template, :version, install_targets: :machine).order(:name)
+    @apps = @project.apps.includes(:app_template, :version, placements: :machine).order(:name)
     # Two clean groups: boxes this project OWNS (its hardware), and boxes it uses
     # but another project owns (shared in). machine-ownership.md.
     @owned_machines  = @project.owned_machines.includes(:labels, :owner).order(:name)
@@ -100,28 +100,28 @@ class ProjectsController < ApplicationController
     @attachable = Machine.where.not(id: @project.machine_ids).order(:name)
                          .select { |m| m.permits?(@project) }
     # Show only the head of the record here — the spine stays visible but bounded,
-    # leaving room for Installs and Machines. The full, filterable record
+    # leaving room for Apps and Machines. The full, filterable record
     # is one click away, scoped to this project (mirrors Home's "Latest").
     @q            = params[:q].to_s.strip
-    @chain        = @project.events.acts.search(@q).latest.includes(:machine, :install).limit(RECORD_HEAD)
+    @chain        = @project.events.acts.search(@q).latest.includes(:machine, :app).limit(RECORD_HEAD)
                             .map { |e| ChainItem.from_event(e) }
     @record_total = @project.events.count
 
     # The headline's figures — this client's work, in the words the rest of the app
     # uses. Counted off rows already loaded, and only this lens's facts: what is
     # placed for them, and what of it needs a person.
-    @needs_look   = @installs.count(&:needs_a_look?)
-    @short        = @installs.count { |i| i.placement_gap.negative? }
+    @needs_look   = @apps.count(&:needs_a_look?)
+    @short        = @apps.count { |i| i.placement_gap.negative? }
     @down_boxes   = (@owned_machines + @shared_machines).count(&:seen_unreachable?)
   end
 
   private
 
-  # Does this project still serve a (non-retired) install on any box? Deleting it
+  # Does this project still serve a (non-retired) app on any box? Deleting it
   # would orphan those running apps, so deletion is refused until they're removed.
   def runs_live_apps?(project)
-    InstallTarget.joins(:install)
-                 .where(installs: { project_id: project.id })
+    Placement.joins(:app)
+                 .where(apps: { project_id: project.id })
                  .where.not(status: "retired").exists?
   end
 

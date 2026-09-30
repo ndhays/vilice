@@ -138,8 +138,8 @@ module Steward
       return { "configured" => false, "targets" => {} } if label_value(machine, "fake-backups") == "off"
       now = Time.current
       targets = { "machine" => { "last_ok" => (now - 5.hours).iso8601 } }
-      apps.each_with_index do |app, i|
-        targets[app["name"]] =
+      apps.each_with_index do |box_app, i|
+        targets[box_app["name"]] =
           if health == "crit" && i.zero?
             { "last_ok" => (now - 3.days).iso8601, "last_failed" => (now - 2.hours).iso8601,
               "error" => "Fatal: unable to open repository: connection refused" }
@@ -156,7 +156,7 @@ module Steward
     # hold valid certs months out, a warn box has one close to expiry, a crit box one
     # expired. Nil when no placement here names a hostname.
     def certs_for(machine, health)
-      hosts = machine.installs.filter_map(&:hostname).reject(&:blank?).uniq.sort
+      hosts = machine.apps.filter_map(&:hostname).reject(&:blank?).uniq.sort
       return nil if hosts.empty?
       hosts.each_with_index.map do |host, i|
         days = i.zero? ? { "warn" => 9, "crit" => -2 }.fetch(health, 61) : 61
@@ -193,7 +193,7 @@ module Steward
     # events separately; these stand in for entries written on the box itself —
     # one under our own client (authored) so the merge shows both origins.
     def record_data(machine)
-      app = machine.installs.first&.name || "app"
+      app = machine.apps.first&.name || "app"
       client = ENV.fetch("STEWARD_CLIENT_NAME", "console")
       entries = [
         { "time" => 26.hours.ago.iso8601, "actor" => "ci-deployer",    "action" => "deploy",  "args" => [ app ] },
@@ -218,8 +218,8 @@ module Steward
     end
 
     def apps_for(machine)
-      machine.install_targets.includes(:install).map do |t|
-        { "name" => t.install.name, "image" => t.current_image || t.install.image }
+      machine.placements.includes(:app).map do |t|
+        { "name" => t.app.name, "image" => t.current_image || t.app.image }
       end
     end
 

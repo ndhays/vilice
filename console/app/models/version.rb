@@ -1,5 +1,5 @@
 # A released image of a library App — a `(tag, image)` pair. The library curates
-# which releases exist; exactly one per app is `latest` (the install default).
+# which releases exist; exactly one per app is `latest` (the app default).
 # See decisions/open/app-library.md.
 class Version < ApplicationRecord
   belongs_to :app_template

@@ -28,20 +28,20 @@ class MutationsController < ApplicationController
     # authorize gap (a *reading* that can be stale, so it only warns), we either hold a
     # value or we do not. Refused before the Event is written, the same shape as the
     # observe-scope refusal above: nothing was attempted, so nothing is recorded.
-    if @mutation.act.verb == "deploy" && (missing = @mutation.install&.missing_secrets).present?
+    if @mutation.act.verb == "deploy" && (missing = @mutation.app&.missing_secrets).present?
       return redirect_to @return_path,
-        alert: "#{@mutation.install.name} needs #{'a value'.pluralize(missing.size)} for " \
+        alert: "#{@mutation.app.name} needs #{'a value'.pluralize(missing.size)} for " \
                "#{missing.join(', ')} — the box refuses a deploy without one. " \
                "Set them under Configuration."
     end
     # A compose act reaching create without its input is a malformed request.
     return redirect_to(new_machine_mutation_path(@machine, act: @mutation.act.verb,
-      install_id: @mutation.install&.id, from: @from)) unless @mutation.composed?
+      app_id: @mutation.app&.id, from: @from)) unless @mutation.composed?
 
     outcome = Steward::Mutate.run(
       @machine, @mutation.command,
       actor: Current.user.email_address, action: @mutation.action,
-      install: @mutation.install, summary: @mutation.summary, stdin: @mutation.stdin
+      app: @mutation.app, summary: @mutation.summary, stdin: @mutation.stdin
     )
 
     reconcile(outcome) if outcome[:result][:ok]
@@ -69,24 +69,24 @@ class MutationsController < ApplicationController
   end
 
   # Where the ceremony returns when it settles or is cancelled. The act is always
-  # keyed to a machine (the SSH target), but it can be launched from the install
+  # keyed to a machine (the SSH target), but it can be launched from the app
   # page or the machine page — `from` says which, so we land back where we started.
   # See decisions/install-the-app-actions-home.md.
   def set_return
     @from = params[:from].presence
     @return_path =
-      if @from == "install" && @mutation.install
-        install_path(@mutation.install)
+      if @from == "app" && @mutation.app
+        app_path(@mutation.app)
       else
         machine_path(@machine)
       end
   end
 
-  # Bind the requested verb (+ install + compose params) to a runnable act, or bail.
+  # Bind the requested verb (+ app + compose params) to a runnable act, or bail.
   def set_mutation
     @mutation = Mutation.build(
       params[:act], machine: @machine, actor: Current.user.email_address,
-      install_id: params[:install_id], params: compose_params
+      app_id: params[:app_id], params: compose_params
     )
     redirect_to @machine, alert: "Unknown or invalid act." unless @mutation
   end
@@ -99,12 +99,12 @@ class MutationsController < ApplicationController
   # image (current_image stays observe-reconciled — honest drift). Remove retires
   # the target (the app is off the box; the row stays for history).
   def reconcile(outcome)
-    target = @mutation.install&.install_targets&.find_by(machine: @machine)
-    return unless target
+    placement = @mutation.app&.placements&.find_by(machine: @machine)
+    return unless placement
 
     case @mutation.act.verb
-    when "deploy" then target.update(desired_image: @mutation.image, status: "running")
-    when "remove" then target.update(status: "retired")
+    when "deploy" then placement.update(desired_image: @mutation.image, status: "running")
+    when "remove" then placement.update(status: "retired")
     end
   end
 end

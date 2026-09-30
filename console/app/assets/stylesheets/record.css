@@ -201,14 +201,14 @@
 .acts-app-verbs { align-items: center; }
 .verb-sep { width: 1px; align-self: stretch; background: var(--mutate-line); margin: 0.1rem 0.15rem; }
 
-/* The running/desired image under a target on the install page — indented under the
+/* The running/desired image under a target on the app page — indented under the
    box name. The digests are chips: this is the drift case, the one moment you most
    want to paste a digest somewhere, and it used to be plain text. */
-.target-image {
+.placement-image {
   display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem;
   color: var(--muted); font-size: 0.8rem; margin: 0 0 0.6rem 1.85rem;
 }
-.target-image .drift-word { color: var(--warn); font-weight: 700; }
+.placement-image .drift-word { color: var(--warn); font-weight: 700; }
 
 /* The intention's supporting facts — exposure, and whether it can replicate at all.
    Chips, not paragraphs: they qualify the number above them, they do not teach the
@@ -223,7 +223,7 @@
 /* An unreachable box takes no act, so the verbs are replaced by the reason. */
 .acts-app-verbs.note { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; }
 
-/* Apps on a box — read-only list on the machine page: the app (→ its install) and
+/* Apps on a box — read-only list on the machine page: the app (→ its app) and
    the project it serves. Neutral (not the violet act styling); acting is elsewhere. */
 .box-apps { list-style: none; margin: 0.3rem 0 1.5rem; padding: 0; }
 .box-apps li { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--line); }
@@ -332,7 +332,7 @@
 .tag.witnessed { color: var(--mutate); margin-left: 0.4rem; }
 
 
-/* The balancer's derived routing table: hostname → upstreams, one row per install
+/* The balancer's derived routing table: hostname → upstreams, one row per app
    behind it. Rendered in the intent panel because it is the *plan* half — what the
    box reports fronting is shown as prose beneath it. */
 .route-table { list-style: none; margin: 0.4rem 0 0; padding: 0; }
@@ -344,7 +344,7 @@
 .route-table .route-host { font-weight: 600; }
 .route-table .route-arrow { color: var(--muted); }
 .route-table .route-ups { color: var(--muted); font-size: 0.85rem; }
-.route-table .route-install { margin-left: auto; font-size: 0.85rem; }
+.route-table .route-app { margin-left: auto; font-size: 0.85rem; }
 
 /* ── The machine page: facts, then two zones ──────────────────────────────
    What the box *is* reads as a labelled line; only live state is a pill. Below,

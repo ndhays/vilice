@@ -42,7 +42,7 @@ Ordered by dependency. Built items are one line; open items keep their detail.
    what needs you, or *Nothing to report*. See
    [`../status-is-an-inbox.md`](../status-is-an-inbox.md).
 10. **Focus/pin lens** — *open.* Only `Project` carries `starred` today (plus the this-box
-    self-pin); Machine/Install need the same generic pin, then a "Focused" predicate over
+    self-pin); Machine/App need the same generic pin, then a "Focused" predicate over
     `Event.search`. Global pins for now; per-user when delegation (Access) lands.
 
 ### Wave 3 — The mutate ceremony (write side)
@@ -55,7 +55,7 @@ Ordered by dependency. Built items are one line; open items keep their detail.
 14. **Secret & env UI** — *open.* The **declaration** half is built (`AppTemplate.env` as
     `{ key, secret }`, `AppTemplate.secret_files`). **Still open — the value half (#14-B):** the
     install/redeploy form collects values (env recorded; secret + file values off-record on
-    stdin) and `Install#deploy_envelope` carries `secrets`/`secret_files`/`secret_values`.
+    stdin) and `App#deploy_envelope` carries `secrets`/`secret_files`/`secret_values`.
     Direction: **secret-by-default**, one Environment panel, two visibly-distinct modes
     mapping 1:1 to Steward's two delivery channels. See
     [`console-open-questions.md`](console-open-questions.md) and
@@ -95,26 +95,26 @@ Ordered by dependency. Built items are one line; open items keep their detail.
     with the OOM-sensitive caveat surfaced. The proof. See
     [`console-open-questions.md`](console-open-questions.md).
 
-### Beyond #1–20 — the install front-of-funnel
+### Beyond #1–20 — the app front-of-funnel
 Built and now graduated into [`blueprint/console/journeys.md`](../../blueprint/console/journeys.md):
 the App Library catalog + install-from-project + library-only setting + custom images
 ([`app-library.md`](app-library.md)), Add Project / Add Machine onboarding
-([`machine-onboarding.md`](create-machine.md)), the Install-as-app-actions-home
+([`machine-onboarding.md`](create-machine.md)), the App-as-actions-home
 ([`../install-the-app-actions-home.md`](../install-the-app-actions-home.md)), and
 attach-existing-machine. *Still ahead here:* **detach** a machine from a project (needs
-row-context UI), and the **migrate/re-target** verb (move an install to another box) — see
+row-context UI), and the **migrate/re-target** verb (move an app to another box) — see
 [`console-open-questions.md`](console-open-questions.md).
 
 Graduated 2026-08-19, all canonical in the blueprints now:
 
-- **The form pattern** — `machines/new` is the reference shape and `installs/new` follows
+- **The form pattern** — `machines/new` is the reference shape and `apps/new` follows
   it ([`interface.md`](../../blueprint/console/interface.md)). Pinned in tests, because a
   vocabulary nothing checks drifts apart again.
-- **An install needs no box.** It is an intention; the gap it opens is a first-class
+- **An app needs no box.** It is an intention; the gap it opens is a first-class
   state, and creating and placing are two acts
   ([`journeys.md`](../../blueprint/console/journeys.md)).
 - **Whether a gap is closable** — `candidate_machines` / `ready_machines`, surfaced on the
-  install and called out once on Status
+  app and called out once on Status
   ([`data-model.md`](../../blueprint/console/data-model.md)).
 - **Logs** — `steward logs` read on request, uncached, offered even where the key cannot
   act.
@@ -137,21 +137,19 @@ mark and the verb.
 
 1. **The machine page in zones** — BUILT. Online pill, a short facts list, Observe |
    Operate side by side, buttons named for their command, full command in the preview.
-2. **The install page in zones** — *open.* What it is = the spec, interpreted (image,
+2. **The app page in zones** — *open.* What it is = the spec, interpreted (image,
    hostnames, env names, volumes; accessories and processes nested under the app), with
    the literal deploy envelope behind a *Raw spec* disclosure (secret names only).
    Observe = where it runs, running vs. asked for. Operate = the command buttons, per box.
-**Queued next, in this order** (agreed 2026-09-30): the code rename (#2a), then a
-better deploy UI (#2b). (The status cards, #7, are built.)
+**Queued next** (agreed 2026-09-30): a better deploy UI (#2b). (The status cards, #7,
+and the rename, #2a, are built.)
 
 2b. **Deploy without pasting** — *open.* The machine page's `deploy` takes a pasted JSON
    spec today. Wanted: a form that builds the spec — from an App Template, or field by
    field — and shows the JSON it will send behind a *Raw spec* disclosure, the same
    plain-then-exact shape as everywhere else.
-2a. **Rename: Installs → Apps, App → App Template** — the words on the page are BUILT.
-   `App` → `AppTemplate` is BUILT (table, routes, params). *Open:* `Install` → `App`
-   and `InstallTarget` → `Placement`, with tables, routes, params and the blueprint. No backward
-   compatibility needed; nothing depends on the old names yet.
+2a. **Rename: Install → App, App → AppTemplate, InstallTarget → Placement** — BUILT,
+   words and code alike (tables, routes, params, the blueprint).
 3. **What a command does on the box** — *open.* Belongs in the record entry, not on the
    page: what apply-updates ran (its two apt commands) and how to check it. Read from `steward _commands`; where that
    lacks the detail it grows in the binary, not the console. Open: how the console gets
@@ -203,6 +201,6 @@ better deploy UI (#2b). (The status cards, #7, are built.)
   and whether a custom theme may set the rail colours or only the palette.
 - **List mechanics** (search / sort / pagination, label-aware) — the plan is in
   [`list-search.md`](list-search.md).
-- **Board view** is a later *skin* over the state-forward list — machines as lanes, installs
+- **Board view** is a later *skin* over the state-forward list — machines as lanes, apps
   as state-coloured cards, drag to place — a render of the same query, not new plumbing.
   Build the state-forward list first.

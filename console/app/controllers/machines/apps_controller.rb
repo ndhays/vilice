@@ -1,7 +1,7 @@
 # Apps on one box, as the box sees them.
 #
 # This is the machine view's deploy surface, and it is deliberately **stateless in the
-# console**: no Install row, no stored AppConfig, no Project. The config is transit —
+# console**: no App row, no stored AppConfig, no Project. The config is transit —
 # it is sent to the box on stdin and discarded. What happened afterwards is read back
 # from the box, whose record is the only record.
 #
@@ -29,7 +29,7 @@ class Machines::AppsController < ApplicationController
     end
 
     outcome = Steward::Mutate.run(
-      @machine, Mutation.command("deploy", @machine, app: name),
+      @machine, Mutation.command("deploy", @machine, name: name),
       actor: Current.user&.email_address || "console",
       action: "deployed",
       summary: "#{name} on #{@machine.name}",
@@ -47,7 +47,7 @@ class Machines::AppsController < ApplicationController
   def destroy
     name = params[:id].to_s
     outcome = Steward::Mutate.run(
-      @machine, Mutation.command("remove", @machine, app: name),
+      @machine, Mutation.command("remove", @machine, name: name),
       actor: Current.user&.email_address || "console",
       action: "removed",
       summary: "#{name} from #{@machine.name}"

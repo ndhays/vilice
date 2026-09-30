@@ -18,7 +18,7 @@ decisions are enforced and tested:
 - Observe reads run live over scoped SSH and cache in solid_cache (Decision 3) — see
   `app/services/steward.rb`, split into `Steward::Observe` and `Steward::Mutate`. A read
   also **reconciles the stored projection** (`Machine#status`/`last_seen_at`,
-  `InstallTarget#current_image`) so the Status page and the drift rollup read something
+  `Placement#current_image`) so the Status page and the drift rollup read something
   true; `FleetObserveJob` runs the read fleet-wide on a cadence
   (→ [observe-reconciliation.md](../../decisions/observe-reconciliation.md)).
 - **`Steward::Observe.logs` is the exception to both halves**, and deliberately.
@@ -29,7 +29,7 @@ decisions are enforced and tested:
   30-second-old tail would be a lie in the shape of a feature. Every tail is therefore
   an SSH round trip, so it is **pulled on request and never rendered by default** — the
   same rule that stops a list querying once per row, applied harder to asking a box.
-  The app name is re-checked against `Install::NAME_FORMAT` at the seam before it
+  The app name is re-checked against `App::NAME_FORMAT` at the seam before it
   reaches a command line.
 
 Partly wired: **ingestion**. The live projection above is reconciled on every read, but
@@ -47,7 +47,7 @@ open heartbeat question.
   homelab never creates one ([`../../decisions/console-layers.md`](../../decisions/console-layers.md)).
 - `name`, `contact_name`, `contact_email`
 - `starred:boolean` (home page "latest")
-- has_many `installs` (a lens over placement, not a container — an install may have no
+- has_many `apps` (a lens over placement, not a container — an app may have no
   project); has_many `machines, through: project_machines` (M:N)
 - has_many `labels` (polymorphic) — see `Label`
 
@@ -67,19 +67,19 @@ open heartbeat question.
 - `balancer:boolean` (default false) — **the Balancer role**, not a fourth primitive
   ([one-primitive-composed.md](../../decisions/one-primitive-composed.md)). A balancer is
   an ordinary box: same scoped key, same record, same ownership and sharing. What makes it
-  one is that installs select it and it is told a routing table. A separate Balancer model
+  one is that apps select it and it is told a routing table. A separate Balancer model
   would duplicate address, key, scope and ownership, then have to be kept in step with the
   Machine it already is. Not exclusive — a balancer may still run apps.
 - `Machine#routing_table` is **derived, never stored** (`RoutingTable`): one route per
-  install that selects this balancer, whose upstreams are the boxes that install is
+  app that selects this balancer, whose upstreams are the boxes that app is
   *actually serving from*. A placed-but-not-running or unreachable box is **not** an
   upstream — routing to it would turn a placement gap into a 502, and the gap is meant to
   stay visible. Upstreams address the backend's own edge on port 80, not the app's
   container port (that port is published on the backend's loopback and unreachable from
   the balancer); Caddy forwards the Host header, so the backend matches the same hostname
   and hands off to the app.
-- Dropping the role **nullifies** the installs behind it, never destroys them — they
-  surface as balanced installs with no balancer, a visible problem rather than a silent
+- Dropping the role **nullifies** the apps behind it, never destroys them — they
+  surface as balanced apps with no balancer, a visible problem rather than a silent
   disappearance.
 - `ssh_private_key` — **encrypted** (Active Record Encryption) → see decision 2
 - `ssh_public_key` — the authorized half (not secret). Steward Console generates the keypair at
@@ -107,7 +107,7 @@ open heartbeat question.
   command differs, stored as argv because the box execs it and never meets a shell. They
   deploy and roll back *with* the app, which is the point: a worker deployed separately
   could land on a different digest, and a worker running yesterday's code against today's
-  enqueued jobs is a failure the record cannot describe. Copied onto the Install at create
+  enqueued jobs is a failure the record cannot describe. Copied onto the App at create
   like everything else here.
 - **One collision check covers all three.** Colours, processes and accessories all mint
   container names from the app's, so `AppTemplate#container_names_are_distinct` enumerates every
@@ -118,7 +118,7 @@ open heartbeat question.
   ([`accessories-belong-to-one-app.md`](../../decisions/accessories-belong-to-one-app.md)).
   Stored in **the box's own spec shape** (`name`, `image`, `env`, `secrets`, `volumes`),
   so `deploy_envelope` hands them across as a copy rather than a translation and there is
-  no second definition to keep in step. Copied onto the Install at create like `release`,
+  no second definition to keep in step. Copied onto the App at create like `release`,
   and for the same reason. Validations mirror `validAccessories` on the box: a
   digest-pinned image, a box-safe name that is not `a`/`b` (the deploy colors) and not the
   app's own, and volumes under the bind root.
@@ -128,11 +128,11 @@ open heartbeat question.
   **argv**, because argv is what the box execs: it never sees a shell, so the form takes
   one line and splits it, and a multi-step release belongs in a script inside the image
   where the digest covers what it does. It sits on the App because it is a property of
-  the image the way `port` and `health` are — and an **Install copies it at create**, so
+  the image the way `port` and `health` are — and an **App copies it at create**, so
   editing the library later never silently changes what an already-placed app runs on its
   next deploy. That is the same rule the image itself follows: copied from the Version,
   never followed.
-- **Declared inputs — names only, no values** (values are supplied at install). `env` is a
+- **Declared inputs — names only, no values** (values are supplied at app). `env` is a
   list of `{ key, secret }`: a `secret` entry is an env var delivered **off-record** (the
   box mirrors this — env vs `Secret=type=env`), so "secrets are env vars" with one flag.
   `secret_files` is a list of `{ name, path }` — values mounted as files off-record (a
@@ -140,14 +140,14 @@ open heartbeat question.
   can't be both an env var and a file. Edited on the App page; carried in the manifest.
 - **Validations mirror the box** (`steward` `validateState`/`validClient`), so a bad
   value fails in Steward Console — before the act — not cryptically at deploy: `name` is
-  box-safe `[A-Za-z0-9_-]` starting with a letter or digit (it seeds the install name,
+  box-safe `[A-Za-z0-9_-]` starting with a letter or digit (it seeds the app name,
   which becomes `apps/<name>.json`
   + volumes + unit on the box; **not** dash-cased for you); `port` is 1024–65535 or blank
   (unprivileged containers can't bind below 1024); `health` starts with `/` or is blank.
   Blank port/health mean "no app default" — the box falls back (8080, `/`).
 - The **catalog/bookmarking** layer (`decisions/open/app-library.md`) — a curated, reusable
-  app definition the admin saves. The top of the three-tier model: **`AppTemplate` → `Install`
-  (a deployment into a Project) → `InstallTarget` (per machine)** — and itself the head of
+  app definition the admin saves. The top of the three-tier model: **`AppTemplate` → `App`
+  (a deployment into a Project) → `Placement` (per machine)** — and itself the head of
   its release history (**`AppTemplate` → `Version`**). Curating it is a recorded own-record act.
   `has_many :labels` (polymorphic, generic metadata). Not a security boundary — the
   un-bypassable image allowlist is a separate Steward-side concern.
@@ -163,7 +163,7 @@ open heartbeat question.
 ### `Version` — a release of an App
 - `app_id`, `tag` (unique per app, e.g. `v1.2.0`), `image` (digest-pinned), `latest:boolean`.
 - The library curates which releases exist; **exactly one per app is `latest`** (DB-enforced
-  by a partial unique index; `AppTemplate#set_latest!`). Install picks a version (default latest).
+  by a partial unique index; `AppTemplate#set_latest!`). App picks a version (default latest).
 - **Both halves are the release**: the tag is the name a person reads, the digest is what
   is actually pulled. `Version` refuses an unpinned image because the box does, so it
   fails where you type it rather than at the far end.
@@ -182,75 +182,75 @@ open heartbeat question.
   gets a sentence pointing at `steward registry-login` and an invitation to paste the
   digest — not a field to put a password in.
 
-### `Install` — a deployed app
+### `App` — a deployed app
 - `secret_values` — **encrypted at rest** (Active Record Encryption, the same protection
   `Machine#ssh_private_key` gets) and **resent on every deploy**, so a deploy is
   self-contained: no set-once ordering and no dangling secret waiting for an app
-  ([`declarative-deploy.md`](../../decisions/declarative-deploy.md)). Per *Install*, not
+  ([`declarative-deploy.md`](../../decisions/declarative-deploy.md)). Per *App*, not
   per App — staging and production are two placements of one app and do not share a
-  database password. The App declares the names; the Install holds what they are worth.
+  database password. The App declares the names; the App holds what they are worth.
   - They ride the envelope on **stdin**, never argv, so they are never recorded: the
     chain commits to the spec digest, which covers secret *names* and never values.
   - **Never rendered back.** A value goes in and only ever comes out on its way to a box;
     the form says whether one is held and typing replaces it. A blank field therefore
     means *leave it alone*, never *clear it* — a password input renders empty by design,
     so treating blank as a deletion would wipe every secret not retyped.
-  - `Install#declared_secret_names` reads the shape off the App **and its accessories** —
-    a database password is the install's to supply even though the database reads it —
+  - `App#declared_secret_names` reads the shape off the App **and its accessories** —
+    a database password is the app's to supply even though the database reads it —
     and `missing_secrets` is what the console checks before the ceremony. That check is a
     **refusal, not a warning**, and the difference from the authorize gap is the point:
     reachability is a reading that can be stale, whereas we either hold a value or we do
     not. Refused before the `Event` is written, because nothing was attempted.
   - Only names the current spec declares are sent. A value left over from a name the
     library has since dropped is not something to hand a box.
-- `project_id` — **nullable.** An install is a *placement*: this app, on these boxes. A
+- `project_id` — **nullable.** An app is a *placement*: this app, on these boxes. A
   Project says whose work it is, which is a separate and outer question
   ([`../../decisions/console-layers.md`](../../decisions/console-layers.md)), so an
-  install can have none — you are never made to invent a client to place an app. Where
-  there is one it comes from the URL (`installs/new?project_id=`) and narrows the machine
+  app can have none — you are never made to invent a client to place an app. Where
+  there is one it comes from the URL (`apps/new?project_id=`) and narrows the machine
   list to that project's boxes; it is never a form field. The App Library is a directory;
-  it has no install action.
+  it has no app action.
 - **No uniqueness on `name`.** The name has to be free *on the box* — that is the
-  namespace it lands in — and `InstallTarget` already enforces exactly that, independent
+  namespace it lands in — and `Placement` already enforces exactly that, independent
   of any project. A per-project scope would both miss the collision that matters (two
   projects on one shared box) and require a project to exist.
 - `app_id` (nullable) — the App Library entry it was **installed from**; nil = a custom
-  image. Removing the `AppTemplate` nullifies this (the install keeps running).
+  image. Removing the `AppTemplate` nullifies this (the app keeps running).
 - `version_id` (nullable) — the `Version` deployed; nil for custom images. `image` is
-  copied from it at install time.
+  copied from it at app time.
 - `name`, `image` (digest-pinned), `hostname`, `port`, `health`, `config` (jsonb) — `config`
-  holds the non-scalar spec: `env` and `volumes` (`Install#volumes`), the declarations that
+  holds the non-scalar spec: `env` and `volumes` (`App#volumes`), the declarations that
   version with the app, not the data.
 - `exposure` (`edge` | `balanced`, default **edge**) — how the app is reached, and the
   reason a count above 1 can or can't mean anything. *On the edge*, DNS points at the box
   and the box terminates its own TLS: one box, one IP, so `count` is pinned to 1 (scaling
   here would need round-robin DNS, rejected). *Behind a balancer*, the box is a backend and
   DNS points at the balancer, so more boxes are just more upstreams. **The console does not
-  manage a balancer yet** — marking an install balanced states the topology and unlocks the
+  manage a balancer yet** — marking an app balanced states the topology and unlocks the
   count; pointing something at those boxes is the operator's, and a managed Balancer is
   still pending.
-- `balancer_id` (nullable) — which box fronts this install. Only valid when balanced, and
+- `balancer_id` (nullable) — which box fronts this app. Only valid when balanced, and
   only pointing at a box that has taken the role; both refused rather than ignored, since
-  an install pointing at a box that fronts nothing would look routed and not be. Optional
+  an app pointing at a box that fronts nothing would look routed and not be. Optional
   even when balanced: an operator running their own edge just wants the count unlocked.
 - `count` (default 1) — **the intention**: how many boxes should serve this. A claim about
   what was asked for, never a reading of what is. Nothing reconciles it
   (→ [drift-is-surfaced-never-closed.md](../../decisions/drift-is-surfaced-never-closed.md)):
   the gap it opens is closed by a named act or it stays open.
-  - `Install#serving_count` is the other half — targets the **box** reports running, on a
+  - `App#serving_count` is the other half — targets the **box** reports running, on a
     machine we can still reach. A target we placed but that isn't up yet does not count,
     and neither does one on an unreachable box.
-  - `Install#placement_gap` is `serving − count`, signed: negative is short, positive is
+  - `App#placement_gap` is `serving − count`, signed: negative is short, positive is
     more than asked for. `in_step?` is the zero case, `short?` the negative one.
-    **Deliberately not folded into `Install#state`** — an intention is not a state, and
+    **Deliberately not folded into `App#state`** — an intention is not a state, and
     the UI keeps them apart.
   - **Whether the gap can be closed right now is a second question**, and it is the one
     with a fix attached: *asked for 3 · serving 2* says there is a gap, not whether that
-    is a click or an errand. `Install#candidate_machines` is where it could still go —
+    is a click or an errand. `App#candidate_machines` is where it could still go —
     operate-scoped, in the project when there is one, not already carrying it — and it is
     **the single definition**, read by the picker, by the page that offers the act, and by
     Status. Three copies of that rule would drift, the way `added` and `placed` did.
-  - `Install#ready_machines` narrows candidates to boxes we have **heard from**
+  - `App#ready_machines` narrows candidates to boxes we have **heard from**
     (`Machine#reached?`). Placing works on any candidate — it reaches nothing, the target
     sits `pending` — but the deploy that follows cannot connect to a box that never
     authorized us. So *ready* means ready to **finish**, not merely ready to record, and
@@ -258,20 +258,20 @@ open heartbeat question.
   - Readiness is a **reading, not a claim**: it is as fresh as the last observe and nothing
     here probes a box. It is surfaced beside the gap and never inside the status glyph.
   - `candidate_machines` takes an optional preloaded **pool** so a list can answer for many
-    installs without a query each. Two preloads are required for that to hold — the pool's
-    `project_machines` and each install's `install_targets` — and it is pinned in
+    apps without a query each. Two preloads are required for that to hold — the pool's
+    `project_machines` and each app's `placements` — and it is pinned in
     `install_test.rb`, because half of it fails silently.
   - **Two gates on `count`, both validations rather than form hints.** `exposure` must be
-    `balanced`, *and* the install must be replicable. Either one alone pins it to 1, and
+    `balanced`, *and* the app must be replicable. Either one alone pins it to 1, and
     the stateful gate wins even behind a balancer — a balancer in front of N diverging
     datasets is still N diverging datasets.
-  - `Install#replicable?` gates `count > 1`, and is **derived, not stored**: an install is
+  - `App#replicable?` gates `count > 1`, and is **derived, not stored**: an app is
     replicable when it declares no volumes **and brings no accessory that keeps data**.
     The second is the same fact as the first — an accessory's volume is data on that
     box's disk — so it folds in rather than sitting beside it. Replication is stateless-only (a volume is data
     on *that box's* disk, so N replicas are N diverging datasets), and deriving it from the
     spec means the gate can never disagree with the spec the way a flag could. A stateful
-    install is refused a count above 1 at validation, not merely discouraged in the form.
+    app is refused a count above 1 at validation, not merely discouraged in the form.
 - **Validated against the box, since these deploy verbatim** (same as `AppTemplate`, mirroring
   `steward` `validateState`): `name` is box-safe `[A-Za-z0-9_-]`, first character
   alphanumeric — it's the box's own
@@ -280,17 +280,17 @@ open heartbeat question.
   entry mirrors the box's `Volume=` line (`steward/internal/app/quadlet.go`): `source:/container-path[:opts]`
   where `source` is a named volume or host path and the mount path is absolute — a malformed
   mount fails here, before the act.
-- has_many `install_targets`
-- **The Install *is* the deploy spec.** `Install#deploy_envelope(image:)` builds the
+- has_many `placements`
+- **The App *is* the deploy spec.** `App#deploy_envelope(image:)` builds the
   JSON envelope Steward's `deploy` reads on stdin (`{app:{image,hostnames,port,health,
   env,volumes}}`) — secret *values* never live here (#14's off-record channel). A deploy through
   the mutate ceremony just pins a new `image` digest (compose step).
 
-### `InstallTarget` — Install × Machine
-- `install_id`, `machine_id`
+### `Placement` — App × Machine
+- `app_id`, `machine_id`
 - `strategy` (single | replica…), `position`, `desired_image`, `current_image`, `status`
-- the old Dispatcher install decision points (one machine vs. replica set) live here.
-- **Isolation guard** — validates the install's `name` and `hostname` are unique **per
+- the old Dispatcher app decision points (one machine vs. replica set) live here.
+- **Isolation guard** — validates the app's `name` and `hostname` are unique **per
   machine** (a non-retired target on the same box may not share either). Apps share a
   box's namespace (`apps/<name>.json`, one Caddy, named volumes), so this stops one
   Project clobbering another's app or hijacking its route on a shared box — the
@@ -299,7 +299,7 @@ open heartbeat question.
 - A successful deploy pins `desired_image` (what we asked Steward to run); `current_image`
   is reconciled from what the box reports (observe), not written by the deploy — so
   `in_sync?` is honest drift, not an assumption.
-- **The intention is editable; the spec is not, here.** `installs#edit`/`update` reach
+- **The intention is editable; the spec is not, here.** `apps#edit`/`update` reach
   `count` and `exposure` and nothing else, recorded as a `restated intention` act with
   human attribution and no outcome to settle. Restating is not a deploy and not a removal:
   asking for more opens a gap, asking for fewer closes one **without touching a box** —
@@ -307,7 +307,7 @@ open heartbeat question.
   cascade of destructive calls whose only trace is a changed number is exactly what
   [drift-is-surfaced-never-closed.md](../../decisions/drift-is-surfaced-never-closed.md)'s
   first corollary refuses.
-- **Creating a target is the act that closes a placement gap** (`InstallTargetsController`,
+- **Creating a target is the act that closes a placement gap** (`PlacementsController`,
   `POST /installs/:id/targets`): a person picks a box, the placement is recorded, and the
   deploy follows through the ordinary witnessed ceremony. Placing alone does **not** close
   the gap — the target starts `pending`, and the gap narrows only when the box reports it
@@ -325,8 +325,8 @@ open heartbeat question.
   `../../decisions/open/list-search.md`).
 
 ### `Setting` — fleet-wide policy (singleton)
-- One row, `Setting.current`. `installs_library_only` (default on) gates the install
-  flow: installs come from the App Library unless the operator turns it off (then a
+- One row, `Setting.current`. `apps_library_only` (default on) gates the app
+  flow: apps come from the App Library unless the operator turns it off (then a
   custom image is allowed). A **guardrail, not security** — see
   `../../decisions/open/app-library.md`.
 
@@ -339,7 +339,7 @@ open heartbeat question.
 ## The record — Steward Console's own, plus a Steward mirror
 
 ### `Event`
-- `machine_id` / `install_id` / `project_id`, `at`, `actor`, `action`, `summary`, `raw`
+- `machine_id` / `app_id` / `project_id`, `at`, `actor`, `action`, `summary`, `raw`
   (`raw["command"]`: the steward command sent, for an act that sent one)
 - **Outcome lifecycle** — `outcome` (nil → `pending` → `ok`/`failed`), `finished_at`,
   `detail`. A witnessed act is recorded `pending` *before* it runs (record-before-act),

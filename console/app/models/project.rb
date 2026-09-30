@@ -13,7 +13,7 @@ class Project < ApplicationRecord
   # Sharing grants this project holds on *other* owners' boxes. These vanish with
   # the project (the grant is just a permission; the owner's box is untouched).
   has_many :machine_grants, dependent: :destroy
-  has_many :installs, dependent: :destroy
+  has_many :apps, dependent: :destroy
   has_many :events, dependent: :nullify
   has_many :labels, as: :labelable, dependent: :destroy
 

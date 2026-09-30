@@ -25,13 +25,13 @@ class Machine < ApplicationRecord
   has_many :projects, through: :project_machines
   has_many :machine_grants, dependent: :destroy
   has_many :granted_projects, through: :machine_grants, source: :project
-  has_many :install_targets, dependent: :destroy
-  has_many :installs, through: :install_targets
-  # Installs this box fronts — the balancer role (decisions/one-primitive-composed.md).
+  has_many :placements, dependent: :destroy
+  has_many :apps, through: :placements
+  # Apps this box fronts — the balancer role (decisions/one-primitive-composed.md).
   # Nullify, never destroy: turning a balancer off must not delete other people's
-  # placements. They fall back to needing one, which surfaces as an install that can't
-  # be routed rather than an install that vanished.
-  has_many :fronted_installs, class_name: "Install", foreign_key: :balancer_id,
+  # placements. They fall back to needing one, which surfaces as an app that can't
+  # be routed rather than an app that vanished.
+  has_many :fronted_apps, class_name: "App", foreign_key: :balancer_id,
            inverse_of: :balancer, dependent: :nullify
   has_many :snapshots, dependent: :destroy
   has_many :events, dependent: :nullify
@@ -60,29 +60,29 @@ class Machine < ApplicationRecord
   # What this box carries, for the row's trailing glyph. Both use `size` rather than
   # `count`, so a preloaded list costs no extra query — the fleet list preloads them,
   # and a list that asks the database once per row is the thing this page must avoid.
-  def app_count = installs.size
+  def app_count = apps.size
 
-  # Hosts behind this balancer: the distinct boxes its fronted installs land on. A
+  # Hosts behind this balancer: the distinct boxes its fronted apps land on. A
   # balancer fronting nothing reports zero rather than nothing — "fronts 0 hosts" is
   # an answer, and a quiet blank would read as "not a balancer".
   def fronted_host_count
-    fronted_installs.flat_map { |i| i.install_targets.map(&:machine_id) }.uniq.size
+    fronted_apps.flat_map { |i| i.placements.map(&:machine_id) }.uniq.size
   end
 
-  # The balancers this box sits behind. Read through the installs it runs, because
+  # The balancers this box sits behind. Read through the apps it runs, because
   # the relationship is *placement*, not machine-to-machine — the same edge the Fleet
   # grouping reads. A box can serve apps fronted by more than one, and a balancer
   # that fronts its own app is not behind itself. `size` over `count` again: the
-  # fleet list preloads `installs: :balancer`, so this costs no query per row.
+  # fleet list preloads `apps: :balancer`, so this costs no query per row.
   #
   # It is a fact about this one box, which is why the row may carry it under *any*
   # grouping — unlike the fleet tree, which draws a relationship between rows and so
   # is only honest when the group is the fleet itself.
   def behind
-    installs.filter_map(&:balancer).uniq.reject { |b| b == self }.sort_by(&:name)
+    apps.filter_map(&:balancer).uniq.reject { |b| b == self }.sort_by(&:name)
   end
 
-  # The table this box should be serving, derived from the installs that select it —
+  # The table this box should be serving, derived from the apps that select it —
   # never hand-authored (decisions/one-primitive-composed.md). This is the *plan* half;
   # what the box reports fronting is the other. See RoutingTable.
   def routing_table = RoutingTable.for(self)

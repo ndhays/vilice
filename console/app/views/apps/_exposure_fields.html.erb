@@ -11,12 +11,12 @@
   <div class="radio-cards plain">
     <div class="radio-row">
       <label class="radio">
-        <%= f.radio_button :exposure, "edge", checked: install.exposure_edge? %>
+        <%= f.radio_button :exposure, "edge", checked: app.exposure_edge? %>
         <%= icon "edge", size: 20 %>
         <span class="radio-label">On the edge</span>
       </label>
       <label class="radio">
-        <%= f.radio_button :exposure, "balanced", checked: install.exposure_balanced? %>
+        <%= f.radio_button :exposure, "balanced", checked: app.exposure_balanced? %>
         <%= icon "network", size: 20 %>
         <span class="radio-label">Behind a balancer</span>
       </label>
@@ -25,7 +25,7 @@
 
   <label class="field"><span>How many boxes
     <%= hint "The intention — how many boxes should serve this app. Placing each one is a separate recorded act; nothing is provisioned automatically." %></span>
-    <%= f.number_field :count, value: install.count || 1, min: 1, max: 50 %>
+    <%= f.number_field :count, value: app.count || 1, min: 1, max: 50 %>
     <small class="muted">Only above 1 when behind a balancer, and only for stateless
       apps — an app that declares a volume is single-placement, since replicas would each
       keep their own copy of that data.</small>
@@ -33,7 +33,7 @@
 
   <%# Which balancer fronts it. Optional even when balanced: an operator may be running
       their own edge (Cloudflare, a cloud LB) and only wants the count unlocked. Picking
-      one here is what puts this install into that box's derived routing table. %>
+      one here is what puts this app into that box's derived routing table. %>
   <label class="field balanced-only"><span>Balancer
     <%= hint "The box that fronts this app. Its routing table is derived from the apps that select it — you apply that table as a witnessed act on the balancer's own page." %></span>
     <% balancers = Machine.balancers.operate.order(:name) %>

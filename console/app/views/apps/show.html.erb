@@ -1,32 +1,32 @@
 <%# The trail follows tenancy when there is any: through the client that owns this
-    work, else straight down from Installs. Placement stands on its own — an install
-    with no project is not an install missing one (decisions/console-layers.md). %>
-<% content_for :title, [ @install.name, @project&.name, "Steward" ].compact.join(" — ") %>
+    work, else straight down from Apps. Placement stands on its own — an app
+    with no project is not an app missing one (decisions/console-layers.md). %>
+<% content_for :title, [ @app.name, @project&.name, "Steward" ].compact.join(" — ") %>
 
 <% if @project %>
-  <%= breadcrumb [["Projects", projects_path], [@project.name, project_path(@project)], [@install.name, nil]] %>
+  <%= breadcrumb [["Projects", projects_path], [@project.name, project_path(@project)], [@app.name, nil]] %>
 <% else %>
-  <%= breadcrumb [["Apps", installs_path], [@install.name, nil]] %>
+  <%= breadcrumb [["Apps", apps_path], [@app.name, nil]] %>
 <% end %>
 
 <h1 class="machine-head">
   <%= icon "box", size: 22 %>
-  <span class="machine-name"><%= @install.name %></span>
-  <%= install_state_badge(@install) %>
+  <span class="machine-name"><%= @app.name %></span>
+  <%= app_state_badge(@app) %>
 </h1>
 <%# One line of facts: whose work it is, what it runs, and where it answers. %>
 <p class="addr machine-facts">
   <% if @project %><%= link_to @project.name, @project %> · <% end %>
-  <% if @install.app_template %>
-    <%= link_to @install.app_template.name, @install.app_template %><% if @install.version %> ·
-      <span class="mono"><%= @install.version.tag %></span><% end %>
+  <% if @app.app_template %>
+    <%= link_to @app.app_template.name, @app.app_template %><% if @app.version %> ·
+      <span class="mono"><%= @app.version.tag %></span><% end %>
   <% else %>
     custom image
   <% end %>
-  <% if @install.hostname.present? %> · <span class="mono"><%= @install.hostname %></span><% end %>
-  <% if @install.volumes.any? %>
+  <% if @app.hostname.present? %> · <span class="mono"><%= @app.hostname %></span><% end %>
+  <% if @app.volumes.any? %>
     · <%= icon "hard-drive", size: 13 %>
-    <%= safe_join(@install.volumes.map { |v| tag.span(v, class: "mono") }, " ") %>
+    <%= safe_join(@app.volumes.map { |v| tag.span(v, class: "mono") }, " ") %>
   <% end %>
 </p>
 
@@ -40,20 +40,20 @@
 <div class="panel intent">
   <div class="panel-head">
     <div class="kicker">Intention · asked for, not observed</div>
-    <%= button_link_to "Change the ask", edit_install_path(@install),
+    <%= button_link_to "Change the ask", edit_app_path(@app),
           icon: "pencil", class: "btn-quiet panel-action" %>
   </div>
-  <p class="intent-head"><%= placement_gap_line(@install, verbose: true) %></p>
-  <p class="note muted"><%= placement_gap_word(@install) %></p>
+  <p class="intent-head"><%= placement_gap_line(@app, verbose: true) %></p>
+  <p class="note muted"><%= placement_gap_word(@app) %></p>
 
   <%# Exposure is the reason a count is or is not allowed above one, so it reads as a
       chip on the intention rather than as a paragraph teaching the model. %>
   <p class="intent-facts">
     <span class="intent-fact">
-      <%= icon @install.exposure_edge? ? "edge" : "network", size: 13 %>
-      <%= @install.exposure_edge? ? "On the edge — one box" : "Behind a balancer" %>
+      <%= icon @app.exposure_edge? ? "edge" : "network", size: 13 %>
+      <%= @app.exposure_edge? ? "On the edge — one box" : "Behind a balancer" %>
     </span>
-    <% unless @install.replicable? %>
+    <% unless @app.replicable? %>
       <span class="intent-fact">
         <%= icon "hard-drive", size: 13 %> Single-placement — it keeps data
       </span>
@@ -65,14 +65,14 @@
       button used to appear on any negative gap and could lead to a page that had
       nothing to offer. Still nothing here acts: it says which of the two you are in.
 
-      "Another" is only true once there is one; an install can be created with no box
+      "Another" is only true once there is one; an app can be created with no box
       at all, so the first placement is the common first thing this button ever does. %>
-  <% if @install.short? %>
-    <% candidates = @install.candidate_machines %>
+  <% if @app.short? %>
+    <% candidates = @app.candidate_machines %>
     <% ready = candidates.select(&:reached?) %>
     <% if candidates.any? %>
-      <p><%= button_link_to @targets.any? ? "Place on another box" : "Place on a box",
-               new_install_target_path(@install), icon: "plus", class: "btn" %></p>
+      <p><%= button_link_to @placements.any? ? "Place on another box" : "Place on a box",
+               new_app_placement_path(@app), icon: "plus", class: "btn" %></p>
       <p class="note muted">
         <% if ready.any? %>
           <%= pluralize(ready.size, "box") %> ready to take it<%
@@ -89,53 +89,53 @@
       <%# The gap is real and there is nowhere to put it. Naming the fix beats a button
           that leads to an empty picker. %>
       <p class="note muted">No box is free to take this
-        <%= "on #{@install.project.name}" if @install.project %> — every operate-scoped
+        <%= "on #{@app.project.name}" if @app.project %> — every operate-scoped
         box already runs it, or there are none.
-        <%= link_to "Add a machine", new_machine_path(project_id: @install.project&.id) %>.</p>
+        <%= link_to "Add a machine", new_machine_path(project_id: @app.project&.id) %>.</p>
     <% end %>
   <% end %>
 </div>
 
 <%# Where it runs — each live target box, its state, image drift, and the witnessed
     verbs. This half is *reality*: the box's own report, reconciled by observe. The
-    Install is the app-actions home; the act still runs on the box (the SSH target), and
+    App is the app-actions home; the act still runs on the box (the SSH target), and
     returns here. See decisions/install-the-app-actions-home.md. %>
 <div class="panel mutate">
   <div class="kicker">Where it runs · witnessed</div>
-  <% if @targets.any? %>
+  <% if @placements.any? %>
     <ul class="acts-apps">
-      <% @targets.each do |target| %>
+      <% @placements.each do |placement| %>
         <li class="acts-app">
           <span class="acts-app-name">
             <%= icon "hard-drive", size: 13 %>
-            <%= link_to target.machine.name, target.machine %>
-            <span class="badge state-<%= target.state %>"><%= target.state %></span>
+            <%= link_to placement.machine.name, placement.machine %>
+            <span class="badge state-<%= placement.state %>"><%= placement.state %></span>
             <%# Logs sit with the box's name, not with the verbs, because they are not
                 one: reading is `observe` and every verb below is `operate`. That is why
                 this is offered on a box whose key cannot act — the moment you most want
                 to look is the moment you are least able to touch. %>
-            <% unless target.machine.seen_unreachable? %>
+            <% unless placement.machine.seen_unreachable? %>
               <%= link_to safe_join([ icon("file-text", size: 12), "Logs" ]),
-                    machine_logs_path(target.machine, install_id: @install.id),
+                    machine_logs_path(placement.machine, app_id: @app.id),
                     class: "logs-link", data: { turbo_frame: "logs" } %>
             <% end %>
           </span>
-          <% if target.machine.operate? %>
-            <%= render "installs/acts", install: @install, machine: target.machine, from: "install" %>
+          <% if placement.machine.operate? %>
+            <%= render "apps/acts", app: @app, machine: placement.machine, from: "app" %>
           <% else %>
             <span class="acts-app-verbs note muted">observe only — grant operate to act here</span>
           <% end %>
         </li>
-        <div class="target-image">
-          <% if target.in_sync? %>
-            running <%= digest_chip(target.current_image) %>
-          <% elsif target.current_image.present? %>
-            running <%= digest_chip(target.current_image) %>
-            · desired <%= digest_chip(target.desired_image) %> <span class="drift-word">drift</span>
-          <% elsif target.desired_image.present? %>
-            desired <%= digest_chip(target.desired_image) %>, not yet running
+        <div class="placement-image">
+          <% if placement.in_sync? %>
+            running <%= digest_chip(placement.current_image) %>
+          <% elsif placement.current_image.present? %>
+            running <%= digest_chip(placement.current_image) %>
+            · desired <%= digest_chip(placement.desired_image) %> <span class="drift-word">drift</span>
+          <% elsif placement.desired_image.present? %>
+            desired <%= digest_chip(placement.desired_image) %>, not yet running
           <% else %>
-            <%= digest_chip(@install.image) %>
+            <%= digest_chip(@app.image) %>
           <% end %>
         </div>
       <% end %>
@@ -155,18 +155,18 @@
 
     A read of this page never shows a stored secret. The panel says whether a value is
     held and nothing more; the value goes out on stdin to a box and comes back nowhere. %>
-<% if @install.plain_env_names.any? || @install.declared_secret_names.any? %>
+<% if @app.plain_env_names.any? || @app.declared_secret_names.any? %>
   <div class="panel config">
     <div class="panel-head">
       <div class="kicker">Configuration · values behind the declared names</div>
-      <% if (missing = @install.missing_secrets).any? %>
+      <% if (missing = @app.missing_secrets).any? %>
         <span class="panel-action note muted"><%= icon "triangle-alert", size: 13 %>
           <%= pluralize(missing.size, "value") %> still needed</span>
       <% end %>
     </div>
-    <%= form_with url: configure_install_path(@install), method: :patch, scope: :install,
+    <%= form_with url: configure_app_path(@app), method: :patch, scope: :app,
           class: "stack-form" do |f| %>
-      <%= render "installs/env_fields", install: @install, f: f %>
+      <%= render "apps/env_fields", app: @app, f: f %>
       <div class="form-actions">
         <%= button_tag class: "btn" do %>
           <%= safe_join([ icon("save", size: 14), "Save Configuration" ]) %>
@@ -187,19 +187,19 @@
   <%= icon "disc", size: 15 %> Record
   
 </h2>
-<%= form_with url: install_path(@install), method: :get, class: "filter-bar" do |f| %>
+<%= form_with url: app_path(@app), method: :get, class: "filter-bar" do |f| %>
   <span class="filter-search">
     <%= icon "search", size: 15 %>
     <%= f.search_field :q, value: @q, autocomplete: "off", spellcheck: false,
-          placeholder: "Search this install's record" %>
+          placeholder: "Search this app's record" %>
   </span>
   <%= f.submit "Search", class: "btn sm" %>
   <% if @q.present? %>
-    <%= link_to "Clear", install_path(@install), class: "filter-clear" %>
+    <%= link_to "Clear", app_path(@app), class: "filter-clear" %>
   <% end %>
 <% end %>
 <% if @chain.empty? && @q.present? %>
-  <p class="empty">Nothing in this record matches. <%= link_to "Clear it", install_path(@install) %>.</p>
+  <p class="empty">Nothing in this record matches. <%= link_to "Clear it", app_path(@app) %>.</p>
 <% else %>
   <%= render "events/chain", items: @chain, within: @project %>
 <% end %>

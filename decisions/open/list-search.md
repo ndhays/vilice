@@ -64,11 +64,11 @@ Same `?q=` box over name + contact + labels; grid stays a grid. Sorting optional
   stayed only so a hand-written or shared link keeps working. Nothing in the UI
   requires knowing it.
 - **List search** — **BUILT** for Machines (`Searchable`, the shared label-selector
-  parser lifted out of `AppTemplate.search`) and for **Installs** (`Install.search` — free text
-  over name / hostname / app / box, no selectors, because installs carry no labels and
+  parser lifted out of `AppTemplate.search`) and for **Apps** (`App.search` — free text
+  over name / hostname / app / box, no selectors, because apps carry no labels and
   every categorical axis is a grouping chip). Projects is the remaining lighter half.
 - **Grouping, not filtering** — **BUILT** and now the primitive both list pages are
-  built on (`Groupings`, shared by `MachineGroups`/`InstallGroups`). It answers most of
+  built on (`Groupings`, shared by `MachineGroups`/`AppGroups`). It answers most of
   what the "sort" section below was reaching for: grouped by the axis that matters,
   with counts, a list rarely needs a sortable column header. **Sort is not built and
   may not be needed** — revisit only if a real fleet asks for it.

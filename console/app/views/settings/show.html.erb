@@ -14,7 +14,7 @@
   <div class="title">Apps</div>
   <%= form_with model: @setting, url: settings_path, method: :patch do |f| %>
     <label class="toggle">
-      <%= f.check_box :installs_library_only %>
+      <%= f.check_box :apps_library_only %>
       <span>Only allow apps from App Library templates (no custom images)</span>
     </label>
     <div class="card-actions">

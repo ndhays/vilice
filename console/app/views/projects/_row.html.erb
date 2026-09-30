@@ -8,7 +8,7 @@
     <% if project.starred? %><span class="star" title="starred">★</span><% end %>
   </span>
   <span class="cell-counts">
-    <%= pluralize(project.installs.size, "app") %> ·
+    <%= pluralize(project.apps.size, "app") %> ·
     <%= pluralize(project.machines.size, "machine") %>
   </span>
   <span class="cell-labels"><%= label_badges(project) %></span>

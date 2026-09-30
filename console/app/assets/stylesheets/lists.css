@@ -126,8 +126,8 @@
 
 /* App Library — a stacked list (reuses .rows machinery) with its own 4 columns,
    a touch taller than the machine list, and a versions panel on the app page. */
-.rows.app-rows { grid-template-columns: minmax(8rem, max-content) max-content minmax(1rem, 1fr) max-content; }
-.rows.app-rows .row { padding: 0.55rem 0.95rem; min-height: 3rem; align-items: center; }
+.rows.template-rows { grid-template-columns: minmax(8rem, max-content) max-content minmax(1rem, 1fr) max-content; }
+.rows.template-rows .row { padding: 0.55rem 0.95rem; min-height: 3rem; align-items: center; }
 .rows .cell-version { display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; white-space: nowrap; }
 .more-versions { font-size: 0.72rem; font-weight: 700; color: var(--muted); }
 .rows .cell-actions { display: flex; gap: 0.35rem; justify-content: flex-end; }
@@ -230,11 +230,11 @@
 .kv-add { margin-bottom: 0.5rem; }
 .rows .cell-host, .rows .cell-seen { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
 
-/* Installs — a state-forward list (reuses .rows machinery): status glyph + name ·
+/* Apps — a state-forward list (reuses .rows machinery): status glyph + name ·
    app/version · hostname (flexes, links out) · whose work it is · the box it runs
    on. The project column is empty on a project's own page (show_project: false). */
-.rows.install-rows { grid-template-columns: minmax(8rem, max-content) minmax(6rem, max-content) minmax(1rem, 1fr) max-content max-content; }
-.rows.install-rows .row { padding: 0.55rem 0.95rem; min-height: 3rem; align-items: center; }
+.rows.app-rows { grid-template-columns: minmax(8rem, max-content) minmax(6rem, max-content) minmax(1rem, 1fr) max-content max-content; }
+.rows.app-rows .row { padding: 0.55rem 0.95rem; min-height: 3rem; align-items: center; }
 .rows .cell-app { color: var(--muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rows .cell-project { font-size: 0.85rem; white-space: nowrap; }
 .rows .cell-project .owner-link { color: var(--muted); }
@@ -414,8 +414,8 @@
    keys — rendered identically to read-only. */
 .badge.scope-grant { color: var(--mutate); font-weight: 700; }
 .badge.shared { color: var(--warn); }
-/* Install state — running is good, failed is bad, in-flight/queued is warn,
-   not-yet-placed is quiet. The protagonist of the install row. */
+/* App state — running is good, failed is bad, in-flight/queued is warn,
+   not-yet-placed is quiet. The protagonist of the app row. */
 .badge.state-running { color: var(--ok); }
 .badge.state-failed, .badge.state-unreachable { color: var(--bad); }
 .badge.state-drift { color: var(--warn); }

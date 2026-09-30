@@ -177,12 +177,12 @@ change, and the design insight worth keeping when this is picked up:
 
 > **apt puts bits on disk; `prepare` stays the accountable act that turns them on.**
 
-The package installs an *inert* Steward — binary (`/usr/bin`, not `/usr/local`),
+The package apps an *inert* Steward — binary (`/usr/bin`, not `/usr/local`),
 units shipped in `/usr/lib/systemd/system` (disabled), the `steward` user via
 postinst, deps declared not installed (`Depends: podman (>= 4.4), uidmap`;
 `Recommends: restic`; **caddy availability varies by release — verify, else it
 stays a prepare step**). `prepare` shrinks to the recorded root ceremony: lay the
-floor, configure Caddy routing, enable the timer. Its current `apt-get install`
+floor, configure Caddy routing, enable the timer. Its current `apt-get app`
 steps stay for the curl-install path (already idempotent).
 
 **Interaction with the recorded binary digest** ([`roles-not-packs.md`](../roles-not-packs.md)):
@@ -227,7 +227,7 @@ Generalize the "Steward Console deploys Steward Console" POC
 ([console-open-questions.md](console-open-questions.md)) into a first-class grant:
 a scope, narrower than `operate`, that lets a deployed app **redeploy only itself** and
 do nothing else. The named actor is the app; the forced command pins both the *verb*
-(deploy/rollback) and the *target* (this one install), so the key can push a new image of
+(deploy/rollback) and the *target* (this one app), so the key can push a new image of
 itself but can't touch another app, read the record, or open a shell. Sits *below* operate
 on the ladder — `observe ⊂ self-update ⊂ operate ⊂ grant` — the smallest useful write.
 

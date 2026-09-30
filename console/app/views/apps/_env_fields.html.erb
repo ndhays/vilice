@@ -1,5 +1,5 @@
-<%# The values behind the names the app declares. Shared by the install form and the
-    install's own Configuration panel, so there is one place that states the rules.
+<%# The values behind the names the app declares. Shared by the app form and the
+    app's own Configuration panel, so there is one place that states the rules.
 
     **Split by consequence, not by the word "secret."** A plain value is written to the
     spec and into an append-only record; a secret value rides stdin and is never
@@ -9,11 +9,11 @@
 
     A secret's stored value is **never rendered back**. It goes in and only ever comes
     out on its way to a box; the field says whether one is held, and typing replaces it.
-    Locals: install, f. %>
-<% plain    = install.plain_env_names %>
-<% secrets  = install.declared_secret_names %>
-<% files    = install.secret_file_paths %>
-<% held     = install.secret_values %>
+    Locals: app, f. %>
+<% plain    = app.plain_env_names %>
+<% secrets  = app.declared_secret_names %>
+<% files    = app.secret_file_paths %>
+<% held     = app.secret_values %>
 
 <% if plain.any? %>
   <fieldset class="step">
@@ -22,7 +22,7 @@
       Written to the record. Don't put a password here — the entry can't be taken back.</p>
     <% plain.each do |key| %>
       <label class="field"><span class="mono"><%= key %></span>
-        <%= text_field_tag "install[env][#{key}]", install.config.dig("env", key),
+        <%= text_field_tag "app[env][#{key}]", app.config.dig("env", key),
               class: "mono", autocomplete: "off", spellcheck: false %>
       </label>
     <% end %>
@@ -41,11 +41,11 @@
           %><% if files.key?(name) %> <span class="muted">mounted at <%= files[name] %></span><% end %></span>
         <% if files.key?(name) %>
           <%# A file's contents, not a value on a line. %>
-          <%= text_area_tag "install[secret_values][#{name}]", nil, rows: 3, class: "mono",
+          <%= text_area_tag "app[secret_values][#{name}]", nil, rows: 3, class: "mono",
                 autocomplete: "off", spellcheck: false,
                 placeholder: held[name].present? ? "A value is held — type to replace it" : "Contents of the file" %>
         <% else %>
-          <%= password_field_tag "install[secret_values][#{name}]", nil, class: "mono",
+          <%= password_field_tag "app[secret_values][#{name}]", nil, class: "mono",
                 autocomplete: "new-password",
                 placeholder: held[name].present? ? "A value is held — type to replace it" : "Required" %>
         <% end %>

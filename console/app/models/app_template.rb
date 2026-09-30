@@ -1,6 +1,6 @@
 # An entry in the App Library — a saved, reusable app definition the admin curates
 # (decisions/open/app-library.md). The catalog/bookmarking layer: what *can* be
-# installed. The top of the three-tier model — AppTemplate → Install → InstallTarget — and
+# installed. The top of the three-tier model — AppTemplate → App → Placement — and
 # itself the head of its own release history (AppTemplate → Version). Bookmarking, not
 # security: the un-bypassable image allowlist is a separate Steward-side concern.
 class AppTemplate < ApplicationRecord
@@ -9,10 +9,10 @@ class AppTemplate < ApplicationRecord
   has_many :versions, dependent: :destroy
   # Exactly one version per app is the latest (DB-enforced partial unique index).
   has_one :latest_version, -> { where(latest: true) }, class_name: "Version"
-  has_many :installs, dependent: :nullify
+  has_many :apps, dependent: :nullify
   has_many :labels, as: :labelable, dependent: :destroy
 
-  # The name seeds the install name, which the box uses for its files, volumes, and
+  # The name seeds the app name, which the box uses for its files, volumes, and
   # unit (`apps/<name>.json`). Steward rejects anything outside [A-Za-z0-9_-], and
   # refuses a leading dash besides — a name is handed to systemctl and podman as an
   # argument, and one starting with a dash reads as a flag. It does not dash-case for
@@ -26,7 +26,7 @@ class AppTemplate < ApplicationRecord
   validates :name, presence: true, uniqueness: true,
                    format: { with: NAME_FORMAT, message: "must start with a letter or digit, then letters, digits, dashes, and underscores" }
 
-  # Port and health are the app's defaults, carried into the install form. Mirror
+  # Port and health are the app's defaults, carried into the app form. Mirror
   # what the box enforces (steward validateState) so a bad value fails here — with a
   # clear message, before the act — not cryptically at deploy time. Both optional:
   # blank means "no app default", and the box falls back (port 8080, health "/").
@@ -35,7 +35,7 @@ class AppTemplate < ApplicationRecord
   # Health is a URL path Caddy probes — it must start with "/".
   validates :health, format: { with: %r{\A/}, message: "must start with /" }, allow_blank: true
 
-  # The app's declared inputs — *names only*, no values (values are supplied at install).
+  # The app's declared inputs — *names only*, no values (values are supplied at app).
   #   env          : [{ "key" => "PASSWORD", "secret" => true }, …]  — secret? = off-record.
   #   secret_files : [{ "name" => "config", "path" => "/etc/zot/config.json" }, …] — mounted.
   # "secrets are env vars": a secret is just an env entry delivered off-record (the box
@@ -56,7 +56,7 @@ class AppTemplate < ApplicationRecord
   # image digest covers what it does (blueprint/steward/deploy.md, "The Release Step").
   #
   # It lives on the App because it is a property of the image the way port and health
-  # are. An install copies it at create, so editing the library never silently changes
+  # are. An app copies it at create, so editing the library never silently changes
   # what an already-placed app runs on its next deploy.
   def release = self[:release] || []
 
@@ -124,7 +124,7 @@ class AppTemplate < ApplicationRecord
 
   # The box refuses a control character in the release command, because the value is
   # rendered into a record entry and an error message. Refuse it here, where it is typed,
-  # rather than at the far end after someone has built an install on it — the same shape
+  # rather than at the far end after someone has built an app on it — the same shape
   # as the digest-pin rule on Version.
   def release_well_formed
     return errors.add(:release, "must be a list") unless release.is_a?(Array)
@@ -207,7 +207,7 @@ class AppTemplate < ApplicationRecord
       seen << n
       accessory_image_well_formed(n, a["image"])
       Array(a["volumes"]).each do |v|
-        if (message = Install.volume_error(v))
+        if (message = App.volume_error(v))
           errors.add(:accessories, "#{n}: #{message}")
         end
       end

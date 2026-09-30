@@ -34,7 +34,7 @@
 .stack-form .form-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; }
 
 /* A step — one concern, under a plain-language legend. The unit every form is built
-   from, not an install-form special: a form that groups its fields and one that runs
+   from, not an app-form special: a form that groups its fields and one that runs
    them together as a single column are two different vocabularies, and the reader
    pays for the second one. */
 .stack-form .step { border: none; padding: 0; margin: 0 0 var(--step); }
@@ -75,7 +75,7 @@
 .auth-link { display: block; margin-top: 0.9rem; text-align: center; font-size: 0.85rem; color: var(--muted); }
 .auth-link:hover { color: var(--accent); }
 
-/* ── Install form — the progressive-reveal flow + its catalog picker ──────── */
+/* ── App form — the progressive-reveal flow + its catalog picker ──────── */
 /* The steps, the gaps and the radio cards are the shared vocabulary above. What is
    left here is the one thing only this form has: the catalog picker. */
 

@@ -19,7 +19,7 @@ mechanism — not as documentation.
 
 ## The two programs
 
-- **Steward** — a Go CLI on every machine. It hardens the box, installs the
+- **Steward** — a Go CLI on every machine. It hardens the box, apps the
   dependencies, and deploys applications from the machine itself. It owns the
   privilege and is where Agora becomes mechanism. Detailed spec: `blueprint/steward/`.
 

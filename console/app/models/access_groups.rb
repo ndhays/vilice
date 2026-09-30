@@ -5,7 +5,7 @@
 # — meant reading every card on the page. Both are the same set of lines seen down a
 # different axis, so both are a grouping.
 #
-# The mechanism is shared with the fleet and installs lists (`Groupings`); only these
+# The mechanism is shared with the fleet and apps lists (`Groupings`); only these
 # axes are this page's own.
 class AccessGroups
   extend Groupings

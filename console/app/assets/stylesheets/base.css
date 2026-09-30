@@ -89,6 +89,6 @@ a:focus-visible, button:focus-visible, .nav:focus-visible, input:focus-visible {
 }
 
 /* The `hidden` attribute must win over .field/.pick-option display rules, or the
- * install form's progressively-revealed sections never actually hide. */
+ * app form's progressively-revealed sections never actually hide. */
 [hidden] { display: none !important; }
 

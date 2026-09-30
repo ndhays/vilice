@@ -58,17 +58,17 @@ class JourneysTest < ActionDispatch::IntegrationTest
   end
 
   # blueprint/console/interface.md: "Every chain the UI renders goes through it."
-  # The Install and Project pages did not, so a routine sample could take a slot on
-  # the one page that is meant to show what *happened* to that install.
-  test "a status sample never reaches the Install or Project record either" do
+  # The App and Project pages did not, so a routine sample could take a slot on
+  # the one page that is meant to show what *happened* to that app.
+  test "a status sample never reaches the App or Project record either" do
     sign_in_as @user
-    install = @project.installs.create!(name: "chain-app")
+    app = @project.apps.create!(name: "chain-app")
     Event.record!(actor: "alice", action: "deployed", machine: @observer,
-                  project: @project, install: install, summary: "chain-app on obs")
+                  project: @project, app: app, summary: "chain-app on obs")
     Event.record!(actor: "snapshot.timer", action: "observed", machine: @observer,
-                  project: @project, install: install, summary: "Status sample ingested")
+                  project: @project, app: app, summary: "Status sample ingested")
 
-    get install_path(install)
+    get app_path(app)
     assert_response :success
     assert_select ".chain-entry", 1
     assert_select "body", text: /Status sample ingested/, count: 0
@@ -78,20 +78,20 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_select "body", text: /Status sample ingested/, count: 0
   end
 
-  test "Status leads with installs that need a look and the machines behind them" do
+  test "Status leads with apps that need a look and the machines behind them" do
     sign_in_as @user
     down = Machine.create!(name: "down", ssh_host: "10.0.0.9", ssh_private_key: "k",
                            status: "unreachable", owner: @project)
-    failing = @project.installs.create!(name: "acme-web")
-    failing.install_targets.create!(machine: down, status: "failed")
-    healthy = @project.installs.create!(name: "acme-ok")
-    healthy.install_targets.create!(machine: @observer, status: "running")
+    failing = @project.apps.create!(name: "acme-web")
+    failing.placements.create!(machine: down, status: "failed")
+    healthy = @project.apps.create!(name: "acme-ok")
+    healthy.placements.create!(machine: @observer, status: "running")
 
     get root_path
     assert_response :success
-    # The bad install surfaces through the shared install row; the healthy one stays quiet.
-    assert_select ".install-rows a[href=?]", install_path(failing), text: "acme-web"
-    assert_select ".install-rows a[href=?]", install_path(healthy), count: 0
+    # The bad app surfaces through the shared app row; the healthy one stays quiet.
+    assert_select ".app-rows a[href=?]", app_path(failing), text: "acme-web"
+    assert_select ".app-rows a[href=?]", app_path(healthy), count: 0
     # The unreachable box is called out separately, through the shared machine row.
     assert_select ".machine-rows a[href=?]", machine_path(down), text: "down"
     assert_select ".all-clear", count: 0
@@ -200,11 +200,11 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_match(/failed/i, flash[:alert])
   end
 
-  test "machine page lists its apps read-only, linking to the install (no act verbs)" do
+  test "machine page lists its apps read-only, linking to the app (no act verbs)" do
     sign_in_as @user
     project = Project.create!(name: "Globex")
-    install = project.installs.create!(name: "globex-api")
-    install.install_targets.create!(machine: @operator, status: "running")
+    app = project.apps.create!(name: "globex-api")
+    app.placements.create!(machine: @operator, status: "running")
 
     # The card lists what the *box* reports, and attaches our record to it — so the
     # box has to report it.
@@ -214,22 +214,22 @@ class JourneysTest < ActionDispatch::IntegrationTest
     record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
     stub_observe(status: canned, record: record) { get machine_path(@operator) }
     assert_response :success
-    assert_select ".app-box-rows a[href=?]", install_path(install), text: "globex-api"
+    assert_select ".app-box-rows a[href=?]", app_path(app), text: "globex-api"
     assert_select ".app-box-rows a", text: "Globex"    # the project it serves
     # The digest is truncated and copyable; the button carries the *whole* reference.
     assert_select ".digest-chip[data-clipboard-text-value=?]", apps.first["image"]
     assert_select ".digest-chip .digest-text", "@abcdef012345"
     assert_select ".acts-app-verbs", count: 0          # acting on an app happens from its project
-    assert_select "a[href*=?]", "act=deploy", count: 0  # no install redeploy here
+    assert_select "a[href*=?]", "act=deploy", count: 0  # no app redeploy here
   end
 
-  # Plan and reality are kept apart: an install we placed here that the box does not
+  # Plan and reality are kept apart: an app we placed here that the box does not
   # report back is a gap, stated and never closed on its own.
   test "a placement the box does not report is named as a gap, not shown as running" do
     sign_in_as @user
     project = Project.create!(name: "Globex")
-    install = project.installs.create!(name: "ghost-api")
-    install.install_targets.create!(machine: @operator, status: "running")
+    app = project.apps.create!(name: "ghost-api")
+    app.placements.create!(machine: @operator, status: "running")
 
     canned = { ok: true, at: Time.current,
                data: { "data" => { "machine" => { "hostname" => "op.local" }, "apps" => [] } } }
@@ -238,11 +238,11 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".app-box-rows .row", count: 0
     assert_select ".panel", /Placed here but not reported running/
-    assert_select ".panel a[href=?]", install_path(install), text: "ghost-api"
+    assert_select ".panel a[href=?]", app_path(app), text: "ghost-api"
   end
 
   # …and the mirror of it: something the box runs that we hold no placement for. A
-  # machine-view deploy keeps no Install, so this is a normal state, not an alarm.
+  # machine-view deploy keeps no App, so this is a normal state, not an alarm.
   test "an app the box runs with no placement of ours says so" do
     sign_in_as @user
     apps   = [ { "name" => "stray", "image" => "docker.io/stray@sha256:0011223344556677001122334455667700112233445566770011223344556677" } ]
@@ -255,17 +255,17 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_select ".app-box-rows .badge.unowned", "not in our record"
   end
 
-  test "a lifecycle act targets an app on the machine and records the install" do
+  test "a lifecycle act targets an app on the machine and records the app" do
     sign_in_as @user
     project = Project.create!(name: "Globex")
-    app = project.installs.create!(name: "globex-api")
-    app.install_targets.create!(machine: @operator, status: "running")
+    app = project.apps.create!(name: "globex-api")
+    app.placements.create!(machine: @operator, status: "running")
     stub_returning(Steward, :read, { ok: true, data: {}, at: Time.current }) do
-      post machine_mutation_path(@operator, act: "restart", install_id: app.id)
+      post machine_mutation_path(@operator, act: "restart", app_id: app.id)
     end
     event = Event.latest.first
     assert_equal "restarted", event.action
-    assert_equal app.id, event.install_id
+    assert_equal app.id, event.app_id
     assert_equal "ok", event.outcome
   end
 
@@ -274,12 +274,12 @@ class JourneysTest < ActionDispatch::IntegrationTest
     app = deployable_app
 
     assert_no_difference -> { Event.count } do
-      get new_machine_mutation_path(@operator, act: "deploy", install_id: app.id)
+      get new_machine_mutation_path(@operator, act: "deploy", app_id: app.id)
     end
     assert_select "form.compose"
     assert_select "input[name=image]"
 
-    get new_machine_mutation_path(@operator, act: "deploy", install_id: app.id,
+    get new_machine_mutation_path(@operator, act: "deploy", app_id: app.id,
           image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e")
     assert_select ".ceremony .spec"
     assert_select ".chain-entry.is-pending .chain-what", /deploy web on op/
@@ -288,12 +288,12 @@ class JourneysTest < ActionDispatch::IntegrationTest
   test "deploy records pending, pipes the envelope, settles ok, and pins desired_image" do
     sign_in_as @user
     app    = deployable_app
-    target = app.install_targets.find_by(machine: @operator)
+    placement = app.placements.find_by(machine: @operator)
 
     with_fake_steward do |steward|
       steward.on(/deploy web/, data: { "ok" => true })
       assert_difference -> { Event.count }, 1 do
-        post machine_mutation_path(@operator, act: "deploy", install_id: app.id,
+        post machine_mutation_path(@operator, act: "deploy", app_id: app.id,
               image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e")
       end
       assert_match "@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e", steward.stdin_for(/deploy web/), "envelope on stdin"
@@ -302,27 +302,27 @@ class JourneysTest < ActionDispatch::IntegrationTest
     event = Event.latest.first
     assert_equal "deployed", event.action
     assert_equal "ok", event.outcome
-    assert_equal "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e", target.reload.desired_image
+    assert_equal "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e", placement.reload.desired_image
   end
 
   test "rollback issues the parameterless command and records it" do
     sign_in_as @user
     app = deployable_app
     stub_returning(Steward, :read, { ok: true, data: {}, at: Time.current }) do
-      post machine_mutation_path(@operator, act: "rollback", install_id: app.id)
+      post machine_mutation_path(@operator, act: "rollback", app_id: app.id)
     end
     assert_equal "rolled back", Event.latest.first.action
   end
 
-  test "remove records the act and retires the target on success" do
+  test "remove records the act and retires the placement on success" do
     sign_in_as @user
     app    = deployable_app
-    target = app.install_targets.find_by(machine: @operator)
+    placement = app.placements.find_by(machine: @operator)
     stub_returning(Steward, :read, { ok: true, data: {}, at: Time.current }) do
-      post machine_mutation_path(@operator, act: "remove", install_id: app.id)
+      post machine_mutation_path(@operator, act: "remove", app_id: app.id)
     end
     assert_equal "removed", Event.latest.first.action
-    assert_equal "retired", target.reload.status
+    assert_equal "retired", placement.reload.status
   end
 
   private
@@ -330,17 +330,17 @@ class JourneysTest < ActionDispatch::IntegrationTest
   # An app with a running target on the operate machine, ready to deploy.
   def deployable_app
     project = Project.create!(name: "Proj-#{SecureRandom.hex(3)}")
-    app = project.installs.create!(name: "web", image: "ghcr.io/acme/web@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf",
+    app = project.apps.create!(name: "web", image: "ghcr.io/acme/web@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf",
                                    hostname: "acme.example", port: 8080, health: "/up")
-    app.install_targets.create!(machine: @operator, status: "running")
+    app.placements.create!(machine: @operator, status: "running")
     app
   end
 
   # Being short and being able to do something about it are different asks: one is a
-  # click on the install, the other is "go get a box". The inbox says which.
-  test "status calls out installs with a gap that no free box can close" do
+  # click on the app, the other is "go get a box". The inbox says which.
+  test "status calls out apps with a gap that no free box can close" do
     sign_in_as @user
-    stuck = @project.installs.create!(name: "stuck", count: 2, exposure: "balanced",
+    stuck = @project.apps.create!(name: "stuck", count: 2, exposure: "balanced",
                                       image: "img@sha256:#{'c' * 64}")
 
     get root_path
@@ -354,7 +354,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     ProjectMachine.create!(project: @project, machine: @operator.tap { |m| m.update!(owner: @project) })
     get root_path
     assert_select ".section-note", 0
-    assert_select ".install-rows a", text: "stuck"   # still listed: still short
+    assert_select ".app-rows a", text: "stuck"   # still listed: still short
   end
 
   # ── The authorize gap, at the last place it can bite ───────────────────────

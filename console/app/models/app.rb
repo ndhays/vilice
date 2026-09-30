@@ -1,15 +1,15 @@
-class Install < ApplicationRecord
-  # Tenancy is the outermost, optional ring — an install is a placement, and a placement
+class App < ApplicationRecord
+  # Tenancy is the outermost, optional ring — an app is a placement, and a placement
   # is coherent with no client anywhere (decisions/console-layers.md). A Project, when
   # there is one, is context: whose work it is, never what contains it.
   belongs_to :project, optional: true
   # The App Library entry this was installed from; nil = a custom image (slice 2b).
   belongs_to :app_template, optional: true
-  # The release deployed; nil for custom images. `image` is copied from it at install.
+  # The release deployed; nil for custom images. `image` is copied from it at app.
   belongs_to :version, optional: true
 
-  has_many :install_targets, dependent: :destroy
-  has_many :machines, through: :install_targets
+  has_many :placements, dependent: :destroy
+  has_many :machines, through: :placements
   has_many :events, dependent: :nullify
 
   # This name is the one the box actually uses — `apps/<name>.json`, volumes, the unit.
@@ -19,7 +19,7 @@ class Install < ApplicationRecord
   NAME_FORMAT = /\A[A-Za-z0-9][A-Za-z0-9_-]*\z/
 
   # No uniqueness here on purpose. The name has to be free *on the box* — that's the
-  # namespace it lands in — and `InstallTarget#install_name_free_on_machine` already
+  # namespace it lands in — and `Placement#app_name_free_on_machine` already
   # enforces exactly that, independent of any project. Scoping it per project instead
   # would both miss the collision that matters and require a project to exist.
   validates :name, presence: true,
@@ -34,7 +34,7 @@ class Install < ApplicationRecord
   # backend and DNS points at the balancer, so more boxes are just more upstreams.
   enum :exposure, { edge: "edge", balanced: "balanced" }, default: "edge", prefix: :exposure
 
-  # Which box fronts this install. Only meaningful when balanced — on the edge the app is
+  # Which box fronts this app. Only meaningful when balanced — on the edge the app is
   # reached at its own box and there is nothing in front of it. A Balancer is a Machine in
   # a role, not a separate primitive (decisions/one-primitive-composed.md).
   belongs_to :balancer, class_name: "Machine", optional: true
@@ -61,7 +61,7 @@ class Install < ApplicationRecord
   # find out where you typed it rather than at the far end, after building on it.
   BIND_ROOT = "/srv".freeze
 
-  # One rule, shared: an Install's own volumes and an AppTemplate's accessory volumes are the
+  # One rule, shared: an App's own volumes and an AppTemplate's accessory volumes are the
   # same declaration going to the same place. Returns a sentence or nil.
   def self.volume_error(v)
     v = v.to_s
@@ -83,7 +83,7 @@ class Install < ApplicationRecord
   # the `config` blob alongside env (deploy-config-model.md: a volume is a *ref* to data).
   def volumes = Array(config["volumes"])
 
-  # The release command this install deploys with — copied from the App at create, so a
+  # The release command this app deploys with — copied from the App at create, so a
   # later library edit never silently changes what an already-placed app runs on its next
   # deploy. argv, so it reaches the box as a list and never as a shell string.
   def release = Array(config["release"])
@@ -103,7 +103,7 @@ class Install < ApplicationRecord
 
   def secret_values = self[:secret_values] || {}
 
-  # The containers this install brings with it — a database, a cache — copied from the
+  # The containers this app brings with it — a database, a cache — copied from the
   # App at create like the release command, and for the same reason: a later library
   # edit must not silently change what an already-placed app runs.
   def accessories = Array(config["accessories"])
@@ -113,7 +113,7 @@ class Install < ApplicationRecord
   # end up running different code from the web process.
   def processes = Array(config["processes"])
 
-  # An accessory keeps data on *that box's* disk, exactly like a volume, so an install
+  # An accessory keeps data on *that box's* disk, exactly like a volume, so an app
   # that brings one is single-placement for the same reason. Folded into `replicable?`
   # rather than bolted beside it, because it is the same fact: a thing that keeps data
   # cannot be multiplied.
@@ -127,13 +127,13 @@ class Install < ApplicationRecord
   def replicable? = volumes.empty? && !stateful_accessories?
 
   # Where it was actually placed. A retired target is gone, not a placement at zero.
-  def live_targets = install_targets.reject(&:install_retired?)
+  def live_placements = placements.reject(&:retired?)
 
   # **Reality** — boxes the app is genuinely serving from, per what the box reported
-  # (InstallTarget#status is observe-reconciled, not written by the deploy). An install
+  # (Placement#status is observe-reconciled, not written by the deploy). An app
   # running on a box we can no longer reach is not counted as serving.
   def serving_count
-    live_targets.count { |t| t.install_running? && !t.machine.seen_unreachable? }
+    live_placements.count { |t| t.running? && !t.machine.seen_unreachable? }
   end
 
   # The gap, signed: negative is short of the intention, positive is more than was asked
@@ -151,18 +151,18 @@ class Install < ApplicationRecord
   # *go get a box*. Both are surfaced; neither is acted on
   # (decisions/drift-is-surfaced-never-closed.md).
   #
-  # Boxes this install could still be placed on: operate-scoped (an observe key cannot
+  # Boxes this app could still be placed on: operate-scoped (an observe key cannot
   # deploy), within the project when there is one, and not already carrying it. One
   # definition, because the picker, the page that offers the act, and Status all ask
   # it — and three copies would drift, the way `added` and `placed` did.
   #
-  # Pass a preloaded `pool` to answer for many installs without a query each; a list
+  # Pass a preloaded `pool` to answer for many apps without a query each; a list
   # must not ask the database once per row. **Two** preloads are needed for that to
-  # hold — the pool must carry `project_machines`, and the installs must carry their
-  # `install_targets` — and `install_test.rb` pins it, because half of it is silent.
+  # hold — the pool must carry `project_machines`, and the apps must carry their
+  # `placements` — and `install_test.rb` pins it, because half of it is silent.
   def candidate_machines(pool = nil)
     pool ||= Machine.operate.includes(:project_machines).order(:name)
-    taken = live_targets.map(&:machine_id)
+    taken = live_placements.map(&:machine_id)
     pool.select do |m|
       m.operate? && !taken.include?(m.id) &&
         (project_id.nil? || m.project_machines.any? { |pm| pm.project_id == project_id })
@@ -177,9 +177,9 @@ class Install < ApplicationRecord
 
   def ready_to_place?(pool = nil) = short? && ready_machines(pool).any?
 
-  # Land this install on one more box: the target, plus the `placed install` act that
+  # Land this app on one more box: the target, plus the `placed app` act that
   # accounts for it. **Both doors into a placement go through here** — creating an
-  # install with a box already chosen, and closing a gap later from the install's own
+  # app with a box already chosen, and closing a gap later from the app's own
   # page — because the same thing recorded two different ways is the drift this layer
   # exists to prevent. It was recorded as `added` from one door and `placed` from the
   # other until this method existed.
@@ -188,14 +188,14 @@ class Install < ApplicationRecord
   # when observe reports the app running (drift-is-surfaced-never-closed.md). Raises —
   # the caller owns the transaction and decides what a failure looks like.
   def place_on!(machine, actor:)
-    install_targets.create!(machine: machine, status: "pending")
-    Event.record!(actor: actor, action: "placed", project: project, install: self,
+    placements.create!(machine: machine, status: "pending")
+    Event.record!(actor: actor, action: "placed", project: project, app: self,
                   machine: machine, summary: "#{name} on #{machine.name}")
   end
 
   # The rolled-up state of this placement — worst-but-actionable wins across live
   # targets, in the order below. One word, shared by the row's leading glyph, the
-  # Status page's exception list, and the Installs list's grouping, so all three
+  # Status page's exception list, and the Apps list's grouping, so all three
   # agree by construction rather than by three copies of the same ladder.
   #
   # HONESTY NOTE: built from *stored* state (the last deploy outcome, last-seen
@@ -210,23 +210,23 @@ class Install < ApplicationRecord
 
   # The states that need a person. Transient states (deploying/pending) and healthy
   # ones stay quiet — they resolve on their own or are already fine. Read by the
-  # Status page's exception list and by the Installs headline, so "needs a look"
+  # Status page's exception list and by the Apps headline, so "needs a look"
   # means one thing in both places.
   EXCEPTION_STATES = %w[failed unreachable drift].freeze
 
   def needs_a_look? = EXCEPTION_STATES.include?(state)
 
   # The worst state among the live placements — one ladder, defined once on the
-  # target and folded here, so a target row and the install header can never disagree.
+  # target and folded here, so a target row and the app header can never disagree.
   def state
-    states = live_targets.map(&:state)
+    states = live_placements.map(&:state)
     return "unplaced" if states.empty?
     STATES.find { |s| states.include?(s) } || "running"
   end
 
   # Free-text list search over what identifies a placement: its own name, the
   # hostname it serves, the app it came from, and the box it runs on. No selector
-  # grammar here — installs carry no labels, and the categorical axes (project, app,
+  # grammar here — apps carry no labels, and the categorical axes (project, app,
   # exposure, edge, state) are the *grouping*, so a selector would be a second way
   # to ask a question the chips already answer. See decisions/open/list-search.md.
   def self.search(query)
@@ -234,41 +234,41 @@ class Install < ApplicationRecord
     return all if query.blank?
 
     like = "%#{query}%"
-    where(id: joins("LEFT JOIN app_templates ON app_templates.id = installs.app_template_id")
-              .where("installs.name LIKE :q OR installs.hostname LIKE :q OR app_templates.name LIKE :q", q: like)
+    where(id: joins("LEFT JOIN app_templates ON app_templates.id = apps.app_template_id")
+              .where("apps.name LIKE :q OR apps.hostname LIKE :q OR app_templates.name LIKE :q", q: like)
               .select(:id))
-      .or(where(id: joins(install_targets: :machine).where("machines.name LIKE ?", like).select(:id)))
+      .or(where(id: joins(placements: :machine).where("machines.name LIKE ?", like).select(:id)))
   end
 
   # The desired-state envelope Steward's `deploy` reads on stdin
-  # (steward/deploy.go `deployEnvelope`/`appSpec`). The Install *is* the spec; a
+  # (steward/deploy.go `deployEnvelope`/`appSpec`). The App *is* the spec; a
   # deploy just pins a new `image` digest, with hostname/port/health overridable
   # from the compose form. Secret *values* never live here — that's #14's
   # off-record channel — so `secret_values` is omitted.
   def deploy_envelope(image:, hostname: self.hostname, port: self.port, health: self.health)
-    app = { image: image, hostnames: Array(hostname).reject(&:blank?),
+    spec = { image: image, hostnames: Array(hostname).reject(&:blank?),
             port: port.presence, health: health.presence }
-    app[:env]     = config["env"] if config["env"].present?
-    app[:volumes] = volumes if volumes.any?
-    app[:release] = release if release.any?
+    spec[:env]     = config["env"] if config["env"].present?
+    spec[:volumes] = volumes if volumes.any?
+    spec[:release] = release if release.any?
     # Copied through as-is: the console's stored shape is the box's spec shape, so this
     # is a hand-off rather than a translation, and there is no second definition to drift.
-    app[:accessories] = accessories if accessories.any?
-    app[:processes]   = processes if processes.any?
-    app[:secrets]      = secret_env_names if secret_env_names.any?
-    app[:secret_files] = secret_file_paths if secret_file_paths.any?
+    spec[:accessories] = accessories if accessories.any?
+    spec[:processes]   = processes if processes.any?
+    spec[:secrets]      = secret_env_names if secret_env_names.any?
+    spec[:secret_files] = secret_file_paths if secret_file_paths.any?
 
     # Values in the *other half* of the envelope — bound to the spec, never part of it,
     # and never recorded. Only names this spec actually declares are sent: a value left
     # over from a name the library has since dropped is not something to hand a box.
-    envelope = { app: app.compact }
+    envelope = { app: spec.compact }
     envelope[:secret_values] = secret_values.slice(*declared_secret_names) if declared_secret_names.any?
     envelope
   end
 
   # ── What the box will ask for ───────────────────────────────────────────────
   # Declared on the App (and on its accessories), never here: the library carries the
-  # shape, the install carries the values. One reading of that shape, used by the form,
+  # shape, the app carries the values. One reading of that shape, used by the form,
   # by the envelope, and by the check that runs before the ceremony.
 
   def secret_env_names = app_template ? app_template.secret_keys : []
@@ -285,7 +285,7 @@ class Install < ApplicationRecord
   def plain_env_names = app_template ? app_template.env_recorded : []
 
   # Every name that needs a value, an accessory's included: a database password is the
-  # install's to supply even though the database is the thing that reads it.
+  # app's to supply even though the database is the thing that reads it.
   def declared_secret_names
     return [] unless app_template
 
@@ -300,16 +300,16 @@ class Install < ApplicationRecord
   private
 
   # A balancer only makes sense in front of something balanced, and only a box that has
-  # taken the role can be one. Both are refused rather than quietly ignored — an install
+  # taken the role can be one. Both are refused rather than quietly ignored — an app
   # pointing at a box that isn't fronting anything would look routed and not be.
   def balancer_fits_exposure
     return if balancer.nil?
 
-    errors.add(:balancer, "only applies behind a balancer — this install is on the edge") if exposure_edge?
+    errors.add(:balancer, "only applies behind a balancer — this app is on the edge") if exposure_edge?
     errors.add(:balancer, "#{balancer.name} isn't marked as a balancer") unless balancer.balancer?
   end
 
-  # The exposure gate. An install on the edge is reached at its own address, so a second
+  # The exposure gate. An app on the edge is reached at its own address, so a second
   # box cannot serve the same hostname — asking for one is stating something no amount of
   # deploying will deliver. Refused here rather than allowed and left to disappoint.
   def count_within_exposure_limit
@@ -330,7 +330,7 @@ class Install < ApplicationRecord
 
   def volumes_well_formed
     volumes.each do |v|
-      next unless (message = Install.volume_error(v))
+      next unless (message = App.volume_error(v))
 
       return errors.add(:base, "Volume #{message}.")
     end

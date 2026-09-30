@@ -238,18 +238,18 @@ module ApplicationHelper
     machine.ssh_port.to_i == 22 ? machine.ssh_host : "#{machine.ssh_host}:#{machine.ssh_port}"
   end
 
-  # State-forward badge, on the Install page. Reads `Install#state` — the one ladder
+  # State-forward badge, on the App page. Reads `App#state` — the one ladder
   # (blueprint/console/interface.md). It used to compute its own, shallower one that
   # knew only failed/deploying/pending/running/unplaced, so the *deep-dive* page for
-  # an install was the least accurate thing about it: a drifted install, or one whose
+  # an app was the least accurate thing about it: a drifted app, or one whose
   # box had gone unreachable, read here as plainly "running".
   INSTALL_STATE_LABEL = {
     "unplaced"    => "not placed",
     "unreachable" => "machine unreachable"
   }.freeze
 
-  def install_state_badge(install)
-    state = install.state
+  def app_state_badge(app)
+    state = app.state
     tag.span(INSTALL_STATE_LABEL.fetch(state, state), class: "badge state-#{state}",
              title: INSTALL_STATUS.dig(state, :word))
   end
@@ -260,28 +260,28 @@ module ApplicationHelper
   # (decisions/drift-is-surfaced-never-closed.md: an intention never renders as state).
   # The asked-for half is marked as a claim; the serving half is what the boxes report.
   # Returns nil when in step and single-placement — the common case earns no chrome.
-  def placement_gap_line(install, verbose: false)
-    gap = install.placement_gap
-    return if gap.zero? && install.count == 1 && !verbose
+  def placement_gap_line(app, verbose: false)
+    gap = app.placement_gap
+    return if gap.zero? && app.count == 1 && !verbose
 
-    asked   = tag.span("asked for #{pluralize(install.count, 'box')}", class: "intent-asked")
-    serving = tag.span("serving #{install.serving_count}", class: "intent-serving")
+    asked   = tag.span("asked for #{pluralize(app.count, 'box')}", class: "intent-asked")
+    serving = tag.span("serving #{app.serving_count}", class: "intent-serving")
     tag.span(safe_join([ asked, " · ", serving ], ""),
              class: "intent-line #{gap.zero? ? 'in-step' : (gap.negative? ? 'short' : 'over')}",
-             title: placement_gap_word(install))
+             title: placement_gap_word(app))
   end
 
-  def placement_gap_word(install)
-    gap = install.placement_gap
+  def placement_gap_word(app)
+    gap = app.placement_gap
     return "In step — as many boxes serving as were asked for." if gap.zero?
     return "Short by #{gap.abs} — fewer boxes serving than were asked for. Closing this is an act." if gap.negative?
 
     "#{gap} more serving than were asked for. Removing one is an act."
   end
 
-  # How each `Install#state` draws: the glyph that leads the install row, its colour,
+  # How each `App#state` draws: the glyph that leads the app row, its colour,
   # and the precise word on the tooltip. The state ladder — and the honesty note about
-  # what it is built from — lives with the logic, on `Install`.
+  # what it is built from — lives with the logic, on `App`.
   INSTALL_STATUS = {
     "failed"      => { icon: "circle-x",       klass: "bad",   word: "Failed" },
     "unreachable" => { icon: "circle-x",       klass: "bad",   word: "Machine unreachable" },
@@ -292,12 +292,12 @@ module ApplicationHelper
     "unplaced"    => { icon: "circle-dot",     klass: "muted", word: "Not placed" }
   }.freeze
 
-  # The leading glyph for an install row. Sits in the row-icon slot but carries its
+  # The leading glyph for an app row. Sits in the row-icon slot but carries its
   # own status colour and the precise word as a tooltip. The state itself is
-  # `Install#state` — domain logic, so it lives on the model where the grouping and
+  # `App#state` — domain logic, so it lives on the model where the grouping and
   # the Status page can read the same ladder.
-  def install_status_icon(install)
-    s = INSTALL_STATUS.fetch(install.state)
+  def app_status_icon(app)
+    s = INSTALL_STATUS.fetch(app.state)
     tag.span(icon(s[:icon], size: 15), class: "row-icon status-ico #{s[:klass]}", title: s[:word])
   end
 
@@ -458,7 +458,7 @@ module ApplicationHelper
 
   # What an event touched, as links — minus the entity whose page we're on
   # (`within`), so a machine's own chain doesn't link back to itself. An event's
-  # machine is the box it happened *on at the time*; if an install later moves to
+  # machine is the box it happened *on at the time*; if an app later moves to
   # another box, its old entries keep pointing at the old machine — the record
   # shows the move as a sequence, it doesn't rewrite history.
   def event_context(event, within: nil)

@@ -6,7 +6,7 @@
 
 <%# The headline — this layer's story in one line. It states only facts the floor
     owns: how many boxes there are, how many can't be reached, how many we've never
-    met. The moment it mentions installs or clients it has reached up a ring. %>
+    met. The moment it mentions apps or clients it has reached up a ring. %>
 <p class="headline">
   <%= pluralize(@total, "box", plural: "boxes") %><%
     %><% if @unreachable.positive? %> · <span class="bad"><%= @unreachable %> unreachable</span><% end %><%

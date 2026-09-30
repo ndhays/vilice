@@ -1,19 +1,19 @@
 <%# Compose — the ceremony's first step for an act that needs operator input.
-    Deploy: pick the image digest (hostname/port/health prefilled from the Install,
+    Deploy: pick the image digest (hostname/port/health prefilled from the App,
     overridable). Submitting GETs back to `new` with the inputs, which then renders
     the preview. Nothing is written here. %>
 <%= turbo_frame_tag "ceremony" do %>
   <div class="ceremony">
-    <div class="kicker">Compose · deploy <%= @mutation.install.name %> → <%= @machine.name %></div>
+    <div class="kicker">Compose · deploy <%= @mutation.app.name %> → <%= @machine.name %></div>
 
     <%= form_with url: new_machine_mutation_path(@machine), method: :get, class: "compose" do %>
       <%= hidden_field_tag :act, @mutation.act.verb %>
-      <%= hidden_field_tag :install_id, @mutation.install.id %>
+      <%= hidden_field_tag :app_id, @mutation.app.id %>
       <%= hidden_field_tag :from, @from %>
 
       <label class="compose-field">
         <span>Image</span>
-        <%= text_field_tag :image, @mutation.install.image, required: true,
+        <%= text_field_tag :image, @mutation.app.image, required: true,
               autocomplete: "off", spellcheck: false,
               placeholder: "ghcr.io/acme/web@sha256:…" %>
         <small class="muted">Pin a digest (<code>@sha256:…</code>) — the one thing this deploy changes.</small>

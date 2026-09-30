@@ -47,7 +47,7 @@ module ActiveSupport
       Steward::Mutate.define_singleton_method(:run) do |machine, command, **kw|
         raise "the box must not be called" if refuse
         captured = { machine: machine, command: command, stdin: kw[:stdin],
-                     install: kw[:install], action: kw[:action] }
+                     app: kw[:app], action: kw[:action] }
         { event: nil, result: result }
       end
       yield
@@ -64,7 +64,7 @@ module ActiveSupport
       owner.define_singleton_method(name, original)
     end
 
-    # Install a scripted, offline Steward transport for the block (Tier-1 contract
+    # App a scripted, offline Steward transport for the block (Tier-1 contract
     # tests). Replaces the `Steward.ssh` subprocess seam with a FakeSteward::Transport,
     # so the real read/parse/error path runs but nothing touches the network. Yields
     # the fake: script replies with `.on(...)`, then assert with `.issued?`/`.commands`.

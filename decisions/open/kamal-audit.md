@@ -147,7 +147,7 @@ audit:
   answered** (`processes`, above); the **hosts half is not** — a Steward process runs
   wherever its app is placed, and there is no way to say *this worker, on that box*.
   Whether that matters depends on whether anyone wants a worker fleet separate from a web
-  fleet, which the placement layer could express as two installs but the process field
+  fleet, which the placement layer could express as two apps but the process field
   cannot.
 - **A deploy lock.** `kamal lock` prevents two people deploying at once. Steward's only lock
   is a flock on the Record for sequence integrity — two concurrent deploys of one app would

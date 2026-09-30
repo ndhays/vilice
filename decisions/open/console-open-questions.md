@@ -55,15 +55,15 @@ the box, so any operator with a scoped key (or the console) can redeploy or roll
 the CLI. The in-app self-drive is a convenience on top of that floor, never a dependency —
 and the break-glass when the control plane is wedged.
 
-**State has to outlive the container — and the install has to say so.** Steward Console's data
+**State has to outlive the container — and the app has to say so.** Steward Console's data
 (the fleet's keys + its own record) must sit on a **persistent volume**, or a redeploy
 swaps the code and loses the memory. The Steward deploy spec already carries `volumes`
 ([deploy-config-model.md](deploy-config-model.md): a volume is a ref to data that survives
-every deploy). **Closed (slice 1):** the `Install` now declares volumes — `config.volumes`,
+every deploy). **Closed (slice 1):** the `App` now declares volumes — `config.volumes`,
 carried into `deploy_envelope`, validated against the box's `Volume=` format, surfaced on the
-new/show pages ([data-model.md](../../blueprint/console/data-model.md) `Install`). That fork
+new/show pages ([data-model.md](../../blueprint/console/data-model.md) `App`). That fork
 resolved toward the **general** per-install field, not a Steward Console-only special case: any
-install declares its own volumes. **Still open:** whether Steward Console's *own* volume then needs
+app declares its own volumes. **Still open:** whether Steward Console's *own* volume then needs
 extra protection (named, never pruned on `remove`) on top of the general field — and the
 **volume-name uniqueness** guard on a shared box ([journeys.md](../../blueprint/console/journeys.md)).
 
@@ -77,7 +77,7 @@ the first time? Two shapes, not yet chosen:
   the self-pin) — you install it onto a box like any other app, but you can't misconfigure
   the thing that runs the control plane. Simple, lives entirely Steward Console-side; the risk is
   a special case in a layer meant to be plain curation ([app-library.md](app-library.md)).
-- **Steward installs Steward Console itself.** A Steward-native bootstrap — `steward` brings up
+- **Steward apps Steward Console itself.** A Steward-native bootstrap — `steward` brings up
   its own control plane from the CLI with no Steward Console in the loop (the chicken-and-egg
   seed). Cleaner for the very first box and for break-glass (stand up the UI from a bare
   prepared box), but it puts knowledge of a specific app into the substrate, which
@@ -94,7 +94,7 @@ Decide the volume/identity model (above) first — genesis and self-update share
 The console's own layering — machine view, placement, tenancy — is settled in
 [`console-layers.md`](../console-layers.md), and the reconciliation rule in
 [`drift-is-surfaced-never-closed.md`](../drift-is-surfaced-never-closed.md). What is
-still open here is the **build**: the `Install.project` inversion (the prerequisite for
+still open here is the **build**: the `App.project` inversion (the prerequisite for
 either engine), then `steward-intentions`, then `steward-projects`. The machine view is
 built and is the floor.
 
@@ -106,7 +106,7 @@ in one Environment panel with two visibly-distinct modes — masked/guarded secr
 plain public — labelled by consequence (public is recorded with the deploy; secret is
 kept off the record). Maps 1:1 to Steward's two delivery channels. Full plan:
 [steward-open-questions.md](steward-open-questions.md). The **App-side declaration** —
-each env entry as `{ key, required?, secret?, default }`, driving the install form — is in
+each env entry as `{ key, required?, secret?, default }`, driving the app form — is in
 [app-library.md](app-library.md); this UI is its deploy-time counterpart.
 
 ## OOM priority — don't kill the control plane first
@@ -142,8 +142,8 @@ edits (`decisions/two-records.md`).
 
 **Built (2026-06-17): the live projection.** A status read now reconciles the box into
 Steward Console's stored columns — `Machine#status`/`last_seen_at` and
-`InstallTarget#current_image` — in the read path, so the **Now**/Status page exceptions
-(unreachable, drift) and the install rollups read something true instead of a column
+`Placement#current_image` — in the read path, so the **Now**/Status page exceptions
+(unreachable, drift) and the app rollups read something true instead of a column
 nothing wrote. `FleetObserveJob` runs the read fleet-wide on a cadence so the page is
 fresh without a per-box visit. This is the *current-state* mirror; the *historical* index
 (`Snapshot`/box-entry persistence) below is still open. See
@@ -211,7 +211,7 @@ The model is settled and the reasoning has moved up:
 [`one-primitive-composed.md`](../one-primitive-composed.md) (including the rejected
 shortcuts — DNS round-robin, in-box replicas — and the floating-IP note for balancer HA),
 canonical in [`patterns.md`](../../blueprint/console/patterns.md). There is no Fleet
-object: a fleet is an Install with count > 1 behind a balancer.
+object: a fleet is an App with count > 1 behind a balancer.
 
 What is left is build, not model:
 
@@ -221,14 +221,14 @@ What is left is build, not model:
 - **provisioning the backends**, and the **private-backend jump** (`via` / ProxyJump);
 - **balancer HA** (two boxes + floating IP).
 
-Single-machine deploy and rollback are built. The install flow's placement step ships an
+Single-machine deploy and rollback are built. The app flow's placement step ships an
 **interim Single/Fleet stub** and reworks to **Box × Exposure × scale** once the balancer
 lands.
 
 
-## Migrate an install to another machine — a missing verb
+## Migrate an app to another machine — a missing verb
 
-Today an `InstallTarget` is created on one machine and only ever `deploy`/`rollback`/
+Today an `Placement` is created on one machine and only ever `deploy`/`rollback`/
 `remove`d *there*; there's no "**move this app to that box**." The "deploy game" pressure
 test surfaced it — dragging a train between yards is an obvious motion, and the model
 can't express it. It's distinct from replicas (above): one placement *relocates*, it

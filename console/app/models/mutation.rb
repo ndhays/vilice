@@ -1,16 +1,16 @@
 # A witnessed act the operator can issue through the ceremony. The registry is
 # the single allowlist — a verb never comes from raw input; it's looked up here.
 # Each act knows its past-tense fact for the record, whether it targets the whole
-# machine or one app (Install), whether it needs a compose step, and how to build
+# machine or one app (App), whether it needs a compose step, and how to build
 # the steward command. This is the one seam future acts (reboot, …) extend.
 #
-# A Mutation instance binds an act to a machine/install/actor (+ any compose
+# A Mutation instance binds an act to a machine/app/actor (+ any compose
 # params) and can produce the exact record line the ceremony previews — so
 # "confirm" shows precisely what will be written
 # (decisions/open/ui-shape.md §"the mutate ceremony").
 class Mutation
   Act = Struct.new(:verb, :label, :past, :target, :compose, :build, keyword_init: true) do
-    def install_scoped? = target == :install
+    def app_scoped? = target == :app
     def compose? = compose == true
   end
 
@@ -19,30 +19,30 @@ class Mutation
                                past: "updated", target: :machine,
                                build: ->(_m, _i) { "apply-updates --json" }),
     "restart"       => Act.new(verb: "restart", label: "Restart", past: "restarted",
-                               target: :install,
+                               target: :app,
                                build: ->(_m, i) { "restart #{i.name} --json" }),
     "stop"          => Act.new(verb: "stop", label: "Stop", past: "stopped",
-                               target: :install,
+                               target: :app,
                                build: ->(_m, i) { "stop #{i.name} --json" }),
     "start"         => Act.new(verb: "start", label: "Start", past: "started",
-                               target: :install,
+                               target: :app,
                                build: ->(_m, i) { "start #{i.name} --json" }),
     # Deploy needs a compose step (pick the image digest) and ships the desired-state
     # envelope on stdin; rollback is parameterless (the box re-runs its PrevImage).
     "deploy"        => Act.new(verb: "deploy", label: "Deploy", past: "deployed",
-                               target: :install, compose: true,
+                               target: :app, compose: true,
                                build: ->(_m, i) { "deploy #{i.name} --json" }),
     "rollback"      => Act.new(verb: "rollback", label: "Roll back", past: "rolled back",
-                               target: :install,
+                               target: :app,
                                build: ->(_m, i) { "rollback #{i.name} --json" }),
     # Destructive: takes the app off the box (units, secrets, route). The
     # ceremony's preview+confirm is the guard.
     "remove"        => Act.new(verb: "remove", label: "Remove", past: "removed",
-                               target: :install,
+                               target: :app,
                                build: ->(_m, i) { "remove #{i.name} --json" }),
     # The balancer's table, applied. Machine-scoped: it is about this box's edge, not
     # about one app. The table rides stdin and is *derived* at send time from the
-    # installs that select this balancer — never stored, so it cannot drift from the
+    # apps that select this balancer — never stored, so it cannot drift from the
     # placements it describes (decisions/one-primitive-composed.md). Applying is an act
     # because nothing converges on its own
     # (decisions/drift-is-surfaced-never-closed.md).
@@ -54,34 +54,34 @@ class Mutation
   # The app-lifecycle acts, in the order they read on the machine page.
   LIFECYCLE = %w[start stop restart].freeze
 
-  attr_reader :act, :machine, :install, :actor, :params
+  attr_reader :act, :machine, :app, :actor, :params
 
   # The command an act sends, from its name alone — for places that show or send it
-  # without a stored Install to bind: the machine page's Operate zone, and the box-app
-  # deploy/remove that keeps no Install row. One builder, so the command a page
+  # without a stored App to bind: the machine page's Operate zone, and the box-app
+  # deploy/remove that keeps no App row. One builder, so the command a page
   # shows is the command that is sent.
   AppRef = Data.define(:name)
-  def self.command(verb, machine, app: nil)
-    ACTS.fetch(verb.to_s).build.call(machine, app && AppRef.new(name: app))
+  def self.command(verb, machine, name: nil)
+    ACTS.fetch(verb.to_s).build.call(machine, name && AppRef.new(name: name))
   end
 
   # Resolve a verb to a bound Mutation — or nil if the verb is unknown or an
-  # app-scoped act names no (valid) install on this machine. `params` carries the
+  # app-scoped act names no (valid) app on this machine. `params` carries the
   # compose inputs (image/hostname/port/health) for deploy.
-  def self.build(verb, machine:, actor:, install_id: nil, params: {})
+  def self.build(verb, machine:, actor:, app_id: nil, params: {})
     act = ACTS[verb.to_s]
     return nil unless act
 
-    install = act.install_scoped? ? machine.installs.find_by(id: install_id) : nil
-    return nil if act.install_scoped? && install.nil?
+    app = act.app_scoped? ? machine.apps.find_by(id: app_id) : nil
+    return nil if act.app_scoped? && app.nil?
 
-    new(act, machine: machine, install: install, actor: actor, params: params)
+    new(act, machine: machine, app: app, actor: actor, params: params)
   end
 
-  def initialize(act, machine:, install:, actor:, params: {})
+  def initialize(act, machine:, app:, actor:, params: {})
     @act = act
     @machine = machine
-    @install = install
+    @app = app
     @actor = actor
     @params = (params || {}).to_h.symbolize_keys
   end
@@ -90,13 +90,13 @@ class Mutation
   # A compose act is ready once the operator has picked an image; others always are.
   def composed? = !needs_compose? || image.present?
 
-  def command = act.build.call(machine, install)
+  def command = act.build.call(machine, app)
 
   # Two acts ship desired state on stdin: deploy sends one app's spec, route sends the
   # whole edge table. Both are derived at send time rather than read from a stored copy.
   def stdin
     case act.verb
-    when "deploy" then composed? ? install.deploy_envelope(image: image, hostname: hostname, port: port, health: health).to_json : nil
+    when "deploy" then composed? ? app.deploy_envelope(image: image, hostname: hostname, port: port, health: health).to_json : nil
     when "route"  then RoutingTable.envelope(machine).to_json
     end
   end
@@ -105,11 +105,11 @@ class Mutation
 
   def summary
     case act.verb
-    when "deploy"   then "#{install.name} on #{machine.name} @#{short_digest}"
-    when "rollback" then "#{install.name} on #{machine.name}"
+    when "deploy"   then "#{app.name} on #{machine.name} @#{short_digest}"
+    when "rollback" then "#{app.name} on #{machine.name}"
     when "route"    then route_summary
     else
-      install ? "#{install.name} on #{machine.name}" : machine.name
+      app ? "#{app.name} on #{machine.name}" : machine.name
     end
   end
 
@@ -123,11 +123,11 @@ class Mutation
     "#{machine.name} → #{hosts} across #{routes.sum { |r| r.upstreams.size }} upstreams"
   end
 
-  # Compose fields — what the operator picks, each defaulting from the Install.
+  # Compose fields — what the operator picks, each defaulting from the App.
   def image    = params[:image].presence
-  def hostname = params[:hostname].presence || install&.hostname
-  def port     = (params[:port].presence || install&.port)&.to_i
-  def health   = params[:health].presence || install&.health
+  def hostname = params[:hostname].presence || app&.hostname
+  def port     = (params[:port].presence || app&.port)&.to_i
+  def health   = params[:health].presence || app&.health
 
   # A short, human handle for the pinned image (the sha, trimmed).
   def short_digest
@@ -139,7 +139,7 @@ class Mutation
   # step looks identical to the record entry it commits to.
   def preview_item
     ChainItem.new(at: Time.current, actor: actor, action: action, summary: summary,
-                  origin: :authored, machine: machine, project: install&.project,
+                  origin: :authored, machine: machine, project: app&.project,
                   outcome: "pending", command: "steward #{command}")
   end
 end

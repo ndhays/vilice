@@ -19,33 +19,33 @@
         <%# The release command runs on the box, with this app's secrets, before anything
             starts — so it is shown before the press that authorizes it, not discovered in
             the record afterwards. That is the confirm step's actual job. %>
-        <% if (release = @mutation.install&.release).present? %>
+        <% if (release = @mutation.app&.release).present? %>
           <div><dt>release</dt><dd class="mono"><%= release.join(" ") %></dd></div>
         <% end %>
       </dl>
       <% if release.present? %>
         <p class="note">Runs first, from the new image. If it fails, nothing is deployed
-          and <%= @mutation.install.name %> keeps serving what it serves now.</p>
+          and <%= @mutation.app.name %> keeps serving what it serves now.</p>
       <% end %>
       <%# Accessories come up before anything else, hold data, and are reachable by this
           app alone. Worth seeing before the press for the same reason the release command
           is: they are containers this act starts on the box. %>
       <%# The app's other containers — the same image, a different command. They come up
           and go down with the colour, so they are part of what this act starts. %>
-      <% if (procs = @mutation.install&.processes).present? %>
+      <% if (procs = @mutation.app&.processes).present? %>
         <dl class="spec">
           <% procs.each do |pr| %>
             <div><dt>process</dt><dd class="mono"><%= pr["name"] %> · <%= Array(pr["command"]).join(" ") %></dd></div>
           <% end %>
         </dl>
       <% end %>
-      <% if (accessories = @mutation.install&.accessories).present? %>
+      <% if (accessories = @mutation.app&.accessories).present? %>
         <dl class="spec">
           <% accessories.each do |a| %>
             <div><dt>accessory</dt><dd class="mono"><%= a["name"] %> · <%= a["image"] %></dd></div>
           <% end %>
         </dl>
-        <p class="note">Brought up first, on a network only <%= @mutation.install.name %>
+        <p class="note">Brought up first, on a network only <%= @mutation.app.name %>
           joins. Already-running ones are left alone.</p>
       <% end %>
     <% end %>
@@ -69,7 +69,7 @@
       </div>
     <% end %>
 
-    <% confirm = { act: @mutation.act.verb, install_id: @mutation.install&.id, from: @from } %>
+    <% confirm = { act: @mutation.act.verb, app_id: @mutation.app&.id, from: @from } %>
     <% confirm.merge!(image: @mutation.image, hostname: @mutation.hostname, port: @mutation.port, health: @mutation.health) if @mutation.needs_compose? %>
     <div class="ceremony-actions">
       <%= button_to safe_join([ icon("check", size: 14), "Confirm — write & run" ]),

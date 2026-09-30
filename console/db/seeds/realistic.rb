@@ -42,22 +42,22 @@ project!("Globex", contact_name: "Hank Scorpio")
 
 link!(acme, devbox)
 
-if acme.installs.none?
-  install = acme.installs.create!(name: "acme-web", image: "ghcr.io/acme/web@sha256:dedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedf", hostname: "acme.example")
-  install.install_targets.create!(machine: devbox, strategy: "single", status: "running",
-                                  desired_image: install.image, current_image: install.image)
+if acme.apps.none?
+  app = acme.apps.create!(name: "acme-web", image: "ghcr.io/acme/web@sha256:dedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedf", hostname: "acme.example")
+  app.placements.create!(machine: devbox, strategy: "single", status: "running",
+                                  desired_image: app.image, current_image: app.image)
 end
 
 if Event.none?
-  install = acme.installs.first
+  app = acme.apps.first
   event!(actor: "operator@console.test", action: "linked",
          machine: devbox, project: acme, summary: "devbox to Acme", at: 3.days.ago)
   event!(actor: "operator@console.test", action: "authorized",
          machine: devbox, project: acme, summary: "ci-deployer at operate on devbox", at: 2.days.ago)
   event!(actor: "ci-deployer", action: "deployed", machine: devbox,
-         install: install, project: acme, summary: "acme-web @sha256:dedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedf", at: 26.hours.ago)
+         app: app, project: acme, summary: "acme-web @sha256:dedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedf", at: 26.hours.ago)
   event!(actor: "ci-deployer", action: "restarted", machine: devbox,
-         install: install, project: acme, summary: "acme-web on devbox", at: 90.minutes.ago)
+         app: app, project: acme, summary: "acme-web on devbox", at: 90.minutes.ago)
 end
 
 # A Steward Console-own act on this-box, so its chain shows the *merge*: this authored
@@ -68,12 +68,12 @@ if (tb = Machine.find_by(name: "this-box"))
     event!(actor: "operator@console.test", action: "linked",
            machine: tb, summary: "this-box", at: 2.days.ago)
   end
-  if tb.installs.none?
-    app = acme.installs.find_or_create_by!(name: "console") do |i|
+  if tb.apps.none?
+    app = acme.apps.find_or_create_by!(name: "console") do |i|
       i.image = "ghcr.io/console/console@sha256:dedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedfdedf"
       i.hostname = "console.local"
     end
-    app.install_targets.find_or_create_by!(machine: tb) do |t|
+    app.placements.find_or_create_by!(machine: tb) do |t|
       t.strategy = "single"
       t.status = "running"
       t.desired_image = app.image

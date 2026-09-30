@@ -1,6 +1,6 @@
 # Fleet-wide policy, a single row. `Setting.current` is the one instance.
 #
-# `installs_library_only` gates the install flow: when on (the default), installs
+# `apps_library_only` gates the app flow: when on (the default), apps
 # must come from the App Library; when off, a custom image is allowed too
 # (decisions/open/app-library.md). A Steward Console-side guardrail, not a security
 # boundary — the un-bypassable image allowlist would live on the box.

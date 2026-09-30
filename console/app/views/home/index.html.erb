@@ -6,34 +6,34 @@
     is nothing. Nothing else belongs here — the record has its own destination, and
     a feed of things that are already fine is noise on the one screen whose job is
     to be empty most days. %>
-<% if @problem_installs.any? || @down_machines.any? %>
-  <%# Installs that need a look — the unit of concern, rendered through the same
+<% if @problem_apps.any? || @down_machines.any? %>
+  <%# Apps that need a look — the unit of concern, rendered through the same
       row as the project and fleet pages so the page reads the same everywhere.
       The leading glyph carries the precise word (failed / unreachable / drift). %>
-  <% if @problem_installs.any? %>
+  <% if @problem_apps.any? %>
     <section>
       <h2 class="section-kicker"><%= icon "triangle-alert", size: 15 %> Needs a look</h2>
-      <%# Short with a box free is a click on the install. Short with nowhere to put it
+      <%# Short with a box free is a click on the app. Short with nowhere to put it
           is a different job, done elsewhere, so it is said once here rather than
-          discovered one install at a time. %>
-      <% if @stuck_installs.any? %>
+          discovered one app at a time. %>
+      <% if @stuck_apps.any? %>
         <p class="section-note muted">
-          <%= @stuck_installs.size == 1 ? "One app asks" : "#{@stuck_installs.size} apps ask" %>
+          <%= @stuck_apps.size == 1 ? "One app asks" : "#{@stuck_apps.size} apps ask" %>
           for more boxes than are free to take
-          <%= @stuck_installs.one? ? "it" : "them" %> —
-          <%= safe_join(@stuck_installs.map { |i| link_to i.name, i }, ", ") %>.
+          <%= @stuck_apps.one? ? "it" : "them" %> —
+          <%= safe_join(@stuck_apps.map { |i| link_to i.name, i }, ", ") %>.
           <%= link_to "Add a machine", new_machine_path %>, or authorize one you have.
         </p>
       <% end %>
-      <ul class="rows install-rows">
-        <%= render partial: "installs/row", collection: @problem_installs, as: :install,
+      <ul class="rows app-rows">
+        <%= render partial: "apps/row", collection: @problem_apps, as: :app,
               locals: { show_project: true } %>
       </ul>
     </section>
   <% end %>
 
-  <%# Unreachable machines — the root cause behind the installs above. One down box
-      explains many down installs, and you fix it here, so it's called out on its own. %>
+  <%# Unreachable machines — the root cause behind the apps above. One down box
+      explains many down apps, and you fix it here, so it's called out on its own. %>
   <% if @down_machines.any? %>
     <section class="status-section">
       <h2 class="section-kicker"><%= icon "hard-drive", size: 15 %> Unreachable machines</h2>
@@ -50,7 +50,7 @@
     <%= icon "circle-check", size: 60, css_class: "all-clear-mark" %>
     <p class="all-clear-head">Nothing to report</p>
     <p class="all-clear-sub">
-      <%= pluralize(@install_count, "app") %> ·
+      <%= pluralize(@app_count, "app") %> ·
       <%= pluralize(@machine_count, "machine") %> · all healthy
     </p>
   </div>

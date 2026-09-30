@@ -1,8 +1,8 @@
-<%# One install as a compact list row. State-forward: the rolled-up status glyph
-    leads (install_status_icon), then the app/version deployed, the hostname it
+<%# One app as a compact list row. State-forward: the rolled-up status glyph
+    leads (app_status_icon), then the app/version deployed, the hostname it
     serves (a link OUT to the live site, new tab), whose work it is, and the box it
-    runs on. The name links to the Install show page — the app-actions home; the
-    machine link is pure navigation (acts live on the Install, never the machine —
+    runs on. The name links to the App show page — the app-actions home; the
+    machine link is pure navigation (acts live on the App, never the machine —
     see decisions/install-the-app-actions-home.md). Reuses the .rows machinery.
 
     `show_project: false` drops the project column where it'd just repeat the page's
@@ -10,47 +10,47 @@
 <% show_project = local_assigns.fetch(:show_project, false) %>
 <li class="row">
   <span class="cell-name">
-    <%= install_status_icon(install) %>
-    <%= link_to install.name, install, class: "row-name" %>
+    <%= app_status_icon(app) %>
+    <%= link_to app.name, app, class: "row-name" %>
     <%# The placement gap sits *beside* the status glyph, never inside it. The glyph is
         the health of what is running; this is the distance from what was asked for, and
         merging the two would make an intention read as a state
         (decisions/drift-is-surfaced-never-closed.md). Absent when in step. %>
-    <%= placement_gap_line(install) %>
+    <%= placement_gap_line(app) %>
   </span>
   <span class="cell-app mono">
-    <% if install.app_template %>
-      <%= install.app_template.name %><% if install.version %> · <%= install.version.tag %><% end %>
+    <% if app.app_template %>
+      <%= app.app_template.name %><% if app.version %> · <%= app.version.tag %><% end %>
     <% else %>
       <span class="muted">custom image</span>
     <% end %>
   </span>
   <span class="cell-host mono">
-    <% if install.hostname.present? %>
-      <%= link_to "https://#{install.hostname}", target: "_blank", rel: "noopener",
-            class: "host-link", title: "Open #{install.hostname} in a new tab" do %>
-        <%= install.hostname %><%= icon "external-link", size: 12 %>
+    <% if app.hostname.present? %>
+      <%= link_to "https://#{app.hostname}", target: "_blank", rel: "noopener",
+            class: "host-link", title: "Open #{app.hostname} in a new tab" do %>
+        <%= app.hostname %><%= icon "external-link", size: 12 %>
       <% end %>
     <% else %>
       —
     <% end %>
   </span>
   <%# Always render the cell so the subgrid columns line up; empty when suppressed.
-      An install with no project is a placement with no tenant — a legitimate state,
+      An app with no project is a placement with no tenant — a legitimate state,
       so it reads as a quiet dash, not as missing data. %>
   <span class="cell-project">
     <% if show_project %>
-      <% if install.project %>
-        <%= link_to install.project.name, install.project, class: "owner-link" %>
+      <% if app.project %>
+        <%= link_to app.project.name, app.project, class: "owner-link" %>
       <% else %>
         <span class="muted">—</span>
       <% end %>
     <% end %>
   </span>
   <span class="cell-where">
-    <% targets = install.install_targets.reject(&:install_retired?) %>
-    <% if targets.any? %>
-      <%= safe_join(targets.map { |t| link_to(t.machine.name, t.machine) }, ", ") %>
+    <% placements = app.placements.reject(&:retired?) %>
+    <% if placements.any? %>
+      <%= safe_join(placements.map { |p| link_to(p.machine.name, p.machine) }, ", ") %>
     <% else %>
       <span class="muted">—</span>
     <% end %>

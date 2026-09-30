@@ -52,21 +52,21 @@ class MachineGroupsTest < ActiveSupport::TestCase
     by_ring = MachineGroups::ALL.group_by(&:ring).transform_values { |g| g.map(&:key).sort }
 
     assert_equal %w[ balancer scope status ], by_ring[1], "layer-1 groupings"
-    assert_equal %w[ fleet ],                 by_ring[2], "fleet runs through Install"
+    assert_equal %w[ fleet ],                 by_ring[2], "fleet runs through App"
     assert_equal %w[ project ],               by_ring[3], "a machine's owner is a Project"
     assert_equal 1, MachineGroups.label_grouping("env").ring, "a label is the box's own"
   end
 
   # A fleet is a balancer and the hosts it fronts — and the balancer heads it.
-  test "fleet groups a balancer with the hosts its installs land on" do
+  test "fleet groups a balancer with the hosts its apps land on" do
     project = Project.create!(name: "Fleet-mg")
     edge    = box("edge-mg", balancer: true, scope: "operate")
     host    = box("host-mg")
     loose   = box("loose-mg")
 
-    install = project.installs.create!(name: "app-mg", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    app = project.apps.create!(name: "app-mg", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                                        exposure: "balanced", balancer: edge)
-    install.install_targets.create!(machine: host, status: "running")
+    app.placements.create!(machine: host, status: "running")
 
     # Passed in reverse, so the ordering below is the grouping's doing, not the input's.
     groups = MachineGroups.apply([ loose, host, edge ], "fleet")

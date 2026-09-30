@@ -1,7 +1,7 @@
 <%# The reference form. Every stack-form is a run of `fieldset.step`s — one concern
     each, under a plain-language legend — with errors at the top and the act's own glyph
     on the submit. This one is the smallest complete example, so it is where the shape
-    is set and `installs/new` follows it rather than the other way round
+    is set and `apps/new` follows it rather than the other way round
     (blueprint/console/interface.md, "The form pattern"). %>
 <% content_for :title, "Add Machine — Steward" %>
 
@@ -19,7 +19,7 @@
     <div class="flash alert"><%= @machine.errors.full_messages.to_sentence %></div>
   <% end %>
 
-  <%# Address first — the concrete thing, the way installs/new leads with placement.
+  <%# Address first — the concrete thing, the way apps/new leads with placement.
       Tenancy is optional context and goes last; nothing should ask you to settle
       ownership before you have said which box you mean. %>
   <fieldset class="step">

@@ -1,5 +1,5 @@
 # Releases of a library AppTemplate. Each version is a (tag, image) pair; exactly one is
-# `latest` (the install default). Adding, removing, and promoting a version are
+# `latest` (the app default). Adding, removing, and promoting a version are
 # control-plane own-record acts, recorded with the change in one transaction.
 class VersionsController < ApplicationController
   before_action :set_app

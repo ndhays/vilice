@@ -6,7 +6,7 @@ class Event < ApplicationRecord
   #   - A re-derivable *mirror* of Steward's box record, for unified display.
   # `actor` is the responsible party; `action` is the past-tense fact.
   belongs_to :machine, optional: true
-  belongs_to :install, optional: true
+  belongs_to :app, optional: true
   belongs_to :project, optional: true
 
   validates :at, :actor, :action, presence: true
@@ -32,12 +32,12 @@ class Event < ApplicationRecord
   scope :by_action, ->(v) { where("action LIKE ?", "%#{v}%") }
   scope :by_text,   ->(v) { where("actor LIKE :q OR action LIKE :q OR summary LIKE :q", q: "%#{v}%") }
 
-  # Target = the machine / project / install an act touched, matched by name.
+  # Target = the machine / project / app an act touched, matched by name.
   scope :by_target,  ->(v) {
     like = "%#{v}%"
     where(machine_id: Machine.where("name LIKE ?", like).ids)
       .or(where(project_id: Project.where("name LIKE ?", like).ids))
-      .or(where(install_id: Install.where("name LIKE ?", like).ids))
+      .or(where(app_id: App.where("name LIKE ?", like).ids))
   }
   # Project = the client an act was recorded under (its own dimension, since a
   # project is the context, not really a "target").

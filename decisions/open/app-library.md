@@ -2,7 +2,7 @@
 
 > The App Library is **built and graduated**: the operator-facing flow is in
 > [`blueprint/console/journeys.md`](../../blueprint/console/journeys.md), the model
-> (`AppTemplate → Version`, the three-tier `AppTemplate → Install → InstallTarget`, the manifest) in
+> (`AppTemplate → Version`, the three-tier `AppTemplate → App → Placement`, the manifest) in
 > [`blueprint/console/data-model.md`](../../blueprint/console/data-model.md), and the
 > manifest *why* in [`../app-library-manifest.md`](../app-library-manifest.md). What remains
 > here is the **governing principle** and the open items.
@@ -22,7 +22,7 @@ Steward-side item rather than a property of the (built) library.
   security boundary.**
 - **Steward image allowlist — security.** Separate, simple, maybe later. The box refuses any
   image not on an authorized allowlist (`authorized_keys`, but for images) —
-  **un-bypassable**. Its own Steward-side feature + decision. The `installs_library_only`
+  **un-bypassable**. Its own Steward-side feature + decision. The `apps_library_only`
   setting *may* later be backed by it for real teeth, but the two ship independently.
 
 Convenience lives in Steward Console; un-bypassability lives on the box (the scoped `operate` key
@@ -30,10 +30,10 @@ is the real ceiling today — a key-holder can `steward deploy <any-image>` dire
 
 ## Open
 
-- **Env value-half (#14-B) — built 2026-08-19.** `Install#secret_values` is encrypted at
+- **Env value-half (#14-B) — built 2026-08-19.** `App#secret_values` is encrypted at
   rest and resent on every deploy, `deploy_envelope` carries
-  `secrets`/`secret_files`/`secret_values`, and the values are supplied on the install's
-  own page (`installs#configure`) rather than in the create form — a value is not part of
+  `secrets`/`secret_files`/`secret_values`, and the values are supplied on the app's
+  own page (`apps#configure`) rather than in the create form — a value is not part of
   an intention, and the declared names depend on the app chosen a step earlier. The env
   schema sits on the **App**, as planned. *Still open here:* per-version overrides, and
   the dropped `default` / `required?` fields. See
@@ -61,4 +61,4 @@ is the real ceiling today — a key-holder can `steward deploy <any-image>` dire
   can't deploy — see
   [`steward-open-questions.md`](steward-open-questions.md).
 - **The Steward allowlist itself** — whether/when it lands, and whether
-  `installs_library_only` then drives it.
+  `apps_library_only` then drives it.

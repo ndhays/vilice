@@ -1,8 +1,8 @@
 # Status Signals — the page is built, the signals behind it weren't
 
-> The Status page ("Now") leads with **exceptions**: installs that are `failed`,
+> The Status page ("Now") leads with **exceptions**: apps that are `failed`,
 > `unreachable`, or in `drift`, with the boxes behind them. The page and its rollups
-> ([`Install#state`](../../console/app/models/install.rb)) are built —
+> ([`App#state`](../../console/app/models/app.rb)) are built —
 > but an audit of what's actually *persisted* found that most of those signals could
 > never fire. This is the thread that tracks closing that gap. As each piece settles,
 > its truth migrates into `decisions/` (the why) and `blueprint/` (the canonical
@@ -18,7 +18,7 @@ the stored projection the Status page reads. So:
 - `install_target.current_image` was never populated from a read (only `desired_image`,
   set at deploy) → `drift` could not be detected.
 - A failed deploy settles the *Event* `failed` but never marks the `install_target`
-  `failed` → the install "failed" rollup stayed latent.
+  `failed` → the app "failed" rollup stayed latent.
 
 Four threads come out of that, below.
 
@@ -40,8 +40,8 @@ but the operator can't *do* it in the app.
 
 Open shape:
 
-- Where does it live? A registry is **box state shared across apps**, not an install
-  field — so it belongs on the **machine** (an Access-adjacent panel), not the install
+- Where does it live? A registry is **box state shared across apps**, not an app
+  field — so it belongs on the **machine** (an Access-adjacent panel), not the app
   ceremony. It outlives any one app and `remove` must never drop it.
 - It's a witnessed act with a **secret on stdin** — the same off-record channel as the
   deploy envelope's secret values. Maps onto the planned secret/env UI (secret by
@@ -62,12 +62,12 @@ Open shape:
 
 These are the most common real-world "I deployed and nothing's there" cases (see the
 user-facing write-up in [`what-could-go-wrong.md`](what-could-go-wrong.md#dns-not-pointing-yet--acme-fails)).
-The install row links *out* to `https://<hostname>` but never probes it.
+The app row links *out* to `https://<hostname>` but never probes it.
 
 Open shape:
 
 - A post-deploy **reachability probe** (does `<hostname>` answer; did a cert issue?),
-  surfaced as install health distinct from "the deploy command returned ok."
+  surfaced as app health distinct from "the deploy command returned ok."
 - Whether the probe is Steward Console-side (an HTTP HEAD from the control plane) or a box
   `doctor` check that already knows the local truth (preferred — it can see Caddy's cert
   state). Ties to the "future `doctor`/reachability check" note in

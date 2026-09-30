@@ -45,7 +45,7 @@ h2 { font-size: 1.15rem; margin: 2.5rem 0 1rem; }
 .head-actions { display: flex; align-items: center; gap: 0.5rem; }
 /* A hairline that sets a primary action (Add) apart from secondary ones (Import/Export). */
 .head-divider { width: 1px; height: 1.4rem; background: var(--line); margin: 0 0.15rem; }
-/* A section heading (h2) with an action on the right (e.g. project Installs + Add). */
+/* A section heading (h2) with an action on the right (e.g. project Apps + Add). */
 /* A section heading + its action on one line, vertically centred and evenly
    spaced from the content above and below — consistent whether the list is empty
    or full. The h2 carries no margin of its own so it centres cleanly on the button. */

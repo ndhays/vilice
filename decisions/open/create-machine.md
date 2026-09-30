@@ -17,24 +17,24 @@
 
 ---
 
-## Open, and asked first: does provisioning belong *inside the install form*?
+## Open, and asked first: does provisioning belong *inside the app form*?
 
 Raised 2026-08-14, when the **New box (Hetzner) — coming soon** card was removed from
-`installs/new`. That card was a stub in the middle of the built path: choosing it hid the
+`apps/new`. That card was a stub in the middle of the built path: choosing it hid the
 submit button, so the form's most prominent second option was a dead end. Deleting it is
 not a decision about Create Machine; it is a refusal to advertise one.
 
 The question it leaves open is narrower than "should we build an adapter" (that shape is
-settled, above). It is: **should Create Machine ever be a branch of the install form, or
+settled, above). It is: **should Create Machine ever be a branch of the app form, or
 only its own act?** The two readings:
 
-- **Its own act.** Boxes are made on the fleet page and arrive at the install form the
+- **Its own act.** Boxes are made on the fleet page and arrive at the app form the
   way every other box does — already reachable, already holding an `operate` key. The
-  install form keeps one machine question with one kind of answer, and provisioning
-  inherits nothing from the install's lifecycle. The seam is the seam we already have.
+  app form keeps one machine question with one kind of answer, and provisioning
+  inherits nothing from the app's lifecycle. The seam is the seam we already have.
 - **A branch of the install.** "Give me a box and put this on it" is genuinely one
-  intention, and splitting it makes the newcomer's first install a two-page errand.
-  The cost is the whole `awaiting_machine → ready` machinery below — an install that
+  intention, and splitting it makes the newcomer's first app a two-page errand.
+  The cost is the whole `awaiting_machine → ready` machinery below — an app that
   must survive minutes of async, resume after a crash, and surface a provisioning
   failure without hanging — plus a form that behaves differently depending on a choice
   made three fields earlier.
@@ -44,7 +44,7 @@ removes a failure mode rather than handling one, and the async lifecycle is a la
 mechanism bought entirely to serve one branch of one form. Worth deciding **before** the
 adapter is built, because the answer changes what the adapter has to promise: a
 standalone act can be synchronous-with-polling on its own page, while an in-form branch
-forces the install states.
+forces the app states.
 
 Not settled. When it settles, it graduates to `decisions/` and the winning shape lands in
 [`../../blueprint/console/journeys.md`](../../blueprint/console/journeys.md).
@@ -54,7 +54,7 @@ Not settled. When it settles, it graduates to `decisions/` and the winning shape
 ## Create Machine — Hetzner / cloud-init
 
 Steward Console calls a provider's API (Hetzner Cloud first) to provision a server, passing
-**cloud-init userdata** that installs Steward, runs `prepare` (+ `harden`), and
+**cloud-init userdata** that apps Steward, runs `prepare` (+ `harden`), and
 `authorize`s Steward Console's pubkey at `operate` scope — so the box boots Steward-ready and
 reachable, **zero manual steps, Steward Console never root** (cloud-init does the local
 bootstrap; this satisfies [`../machine-onboarding.md`](../machine-onboarding.md)).
@@ -62,7 +62,7 @@ bootstrap; this satisfies [`../machine-onboarding.md`](../machine-onboarding.md)
 Needs:
 
 - An **encrypted provider token** (a `Setting` / credential), server-type + region pickers.
-- **Async provisioning + a "provisioning…" state** — it takes minutes, so the install must
+- **Async provisioning + a "provisioning…" state** — it takes minutes, so the app must
   carry itself across it rather than block (the lifecycle-states question in
   [`install-journeys.md`](install-journeys.md)).
 - With **no provider configured**, "New dedicated box" degrades to **emit the cloud-init /

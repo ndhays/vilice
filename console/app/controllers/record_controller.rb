@@ -32,7 +32,7 @@ class RecordController < ApplicationController
     events = events.where(actor: @actor)        if @actor
     events = events.where(project: @project)    if @project
     events = events.since(RANGES[@since].ago)   if @since
-    @chain = events.latest.includes(:machine, :project, :install).limit(200)
+    @chain = events.latest.includes(:machine, :project, :app).limit(200)
                    .map { |e| ChainItem.from_event(e) }
   end
 

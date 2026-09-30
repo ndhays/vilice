@@ -1,21 +1,21 @@
-# How the Installs list is grouped.
+# How the Apps list is grouped.
 #
 # The page is placement, fleet-wide: what should run where. So the axes are the ones
 # a placement actually has — how it's doing, what it is, whose it is, how it's
 # reached, and what fronts it. The mechanism is shared with the fleet list
 # (`Groupings`); only these axes are this page's own.
 #
-# **Ring 2 is the floor here**, not ring 1: an Install *is* the placement ring
+# **Ring 2 is the floor here**, not ring 1: an App *is* the placement ring
 # (decisions/console-layers.md). `project` is the one axis that reaches out to
 # tenancy, and — as on the fleet list — it is offered as a choice rather than baked
 # into the page, so with tenancy never mounted this list loses one chip and nothing
 # else.
-class InstallGroups
+class AppGroups
   extend Groupings
   Grouping = Groupings::Grouping
 
   # Exceptions first, then the transient states, then the calm ones, then not-yet-
-  # placed. Same ladder as `Install::STATES` and the same order the Status page ranks
+  # placed. Same ladder as `App::STATES` and the same order the Status page ranks
   # its exception list by, because they are the same judgement about what needs a
   # person. `unplaced` sits last: it is a placement nobody has landed yet, not a
   # fault.
@@ -49,13 +49,13 @@ class InstallGroups
     # "Fleet" groups by *which* balancer, and this is the second of those. One word,
     # one meaning, across both pages.
     #
-    # Unlike the fleet list's version — which has to reach through installs to find the
-    # relationship — an Install names its balancer directly, so this is a plain read of
+    # Unlike the fleet list's version — which has to reach through apps to find the
+    # relationship — an App names its balancer directly, so this is a plain read of
     # its own column.
     Grouping.new(key: "fleet", label: "Fleet", ring: 2, within: nil,
                  of: ->(i) { i.balancer ? [ 0, i.balancer.name ] : [ 1, "No balancer" ] }),
 
-    # The one axis that reaches into tenancy. An install with no project is a
+    # The one axis that reaches into tenancy. An app with no project is a
     # placement with no tenant — a legitimate state, listed first as its own group
     # rather than hidden.
     Grouping.new(key: "project", label: "Project", ring: 3, within: nil,

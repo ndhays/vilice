@@ -26,7 +26,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
   # This form is the reference shape every other stack-form follows
   # (blueprint/console/interface.md, "The form pattern"). Pinned here because a
   # vocabulary nothing checks is a vocabulary that drifts back apart — which is how
-  # this form and installs/new came to disagree in the first place.
+  # this form and apps/new came to disagree in the first place.
   test "the reference form: steps with legends, errors at the top, the act's glyph" do
     sign_in_as @user
     get new_machine_path
@@ -42,7 +42,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_select "form.stack-form > .field", 0
 
     # Address leads. Tenancy is optional context and comes last — the same order
-    # installs/new takes, which never asks you to settle a client first.
+    # apps/new takes, which never asks you to settle a client first.
     legends = css_select("fieldset.step > legend").map { |l| l.text.strip[/\A\w+/] }
     assert_equal %w[Address Scope Owner], legends
 
@@ -102,7 +102,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to machine_path(machine)
   end
 
-  test "creating a machine from a project links it and returns to the install" do
+  test "creating a machine from a project links it and returns to the app" do
     sign_in_as @user
     project = Project.create!(name: "Acme")
     assert_difference [ -> { Machine.count }, -> { ProjectMachine.count } ], 1 do
@@ -111,7 +111,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       } }
     end
     assert_includes project.machines, Machine.find_by(ssh_host: "5.78.9.9")
-    assert_redirected_to new_install_path(project_id: project)
+    assert_redirected_to new_app_path(project_id: project)
   end
 
   test "an invalid machine re-renders and generates nothing" do
@@ -240,35 +240,35 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "removed", Event.latest.first.action
   end
 
-  test "removing a machine that still runs installs is refused, naming the apps" do
+  test "removing a machine that still runs apps is refused, naming the apps" do
     sign_in_as @user
     project = Project.create!(name: "Acme-rm")
     m = Machine.create!(name: "edge-inst", ssh_host: "x", scope: "operate", owner: project)
     ProjectMachine.create!(project: project, machine: m)
-    install = project.installs.create!(name: "web-rm", image: "img@sha256:8888888888888888888888888888888888888888888888888888888888888888")
-    install.install_targets.create!(machine: m, status: "running")
+    app = project.apps.create!(name: "web-rm", image: "img@sha256:8888888888888888888888888888888888888888888888888888888888888888")
+    app.placements.create!(machine: m, status: "running")
 
-    assert_no_difference [ -> { Machine.count }, -> { InstallTarget.count }, -> { Event.count } ] do
+    assert_no_difference [ -> { Machine.count }, -> { Placement.count }, -> { Event.count } ] do
       delete machine_path(m)
     end
     assert_redirected_to machine_path(m)
     assert_match(/web-rm/, flash[:alert])
   end
 
-  test "removing a machine with only retired installs keeps the record intact" do
+  test "removing a machine with only retired apps keeps the record intact" do
     sign_in_as @user
     project = Project.create!(name: "Acme-retired")
     m = Machine.create!(name: "edge-retired", ssh_host: "x", scope: "operate", owner: project)
     ProjectMachine.create!(project: project, machine: m)
-    install = project.installs.create!(name: "web-old", image: "img@sha256:8888888888888888888888888888888888888888888888888888888888888888")
-    install.install_targets.create!(machine: m, status: "retired")
+    app = project.apps.create!(name: "web-old", image: "img@sha256:8888888888888888888888888888888888888888888888888888888888888888")
+    app.placements.create!(machine: m, status: "retired")
 
-    assert_no_difference -> { Install.count } do          # the install survives
-      assert_difference -> { InstallTarget.count }, -1 do # its retired target on this box drops
+    assert_no_difference -> { App.count } do          # the app survives
+      assert_difference -> { Placement.count }, -1 do # its retired placement on this box drops
         delete machine_path(m)
       end
     end
-    assert install.reload.persisted?
+    assert app.reload.persisted?
     # The removal event survives with no machine link (events nullify on destroy).
     assert_equal "removed", Event.latest.first.action
   end
@@ -368,9 +368,9 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     edge    = Machine.create!(name: "aaa-edge", ssh_host: "x", scope: "operate", balancer: true)
     host    = Machine.create!(name: "zzz-host", ssh_host: "x")
     loose   = Machine.create!(name: "mmm-loose", ssh_host: "x")
-    install = project.installs.create!(name: "app-tree", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    app = project.apps.create!(name: "app-tree", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                                        exposure: "balanced", balancer: edge)
-    install.install_targets.create!(machine: host, status: "running")
+    app.placements.create!(machine: host, status: "running")
 
     get machines_path(group: "fleet")
     assert_response :success
@@ -399,9 +399,9 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     project = Project.create!(name: "Roles-idx")
     host    = Machine.create!(name: "host-idx", ssh_host: "x")
     edge    = Machine.create!(name: "edge-idx", ssh_host: "x", scope: "operate", balancer: true)
-    install = project.installs.create!(name: "app-idx", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    app = project.apps.create!(name: "app-idx", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                                        exposure: "balanced", balancer: edge)
-    install.install_targets.create!(machine: host, status: "running")
+    app.placements.create!(machine: host, status: "running")
     Machine.create!(name: "bare-idx", ssh_host: "x") # carries nothing
 
     get machines_path
@@ -456,8 +456,8 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       sign_in_as @user
       box = Machine.create!(name: "cards-box", ssh_host: "x", scope: "operate")
       box.labels.create!(key: "fake-health", value: "warn")
-      install = Install.create!(name: "shop", hostname: "shop.example")
-      install.install_targets.create!(machine: box, status: "running")
+      app = App.create!(name: "shop", hostname: "shop.example")
+      app.placements.create!(machine: box, status: "running")
       get machine_path(box)
       assert_response :success
 
@@ -480,8 +480,8 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       sign_in_as @user
       box = Machine.create!(name: "crit-cards", ssh_host: "x", scope: "operate")
       box.labels.create!(key: "fake-health", value: "crit")
-      install = Install.create!(name: "shop2", hostname: "shop2.example")
-      install.install_targets.create!(machine: box, status: "running")
+      app = App.create!(name: "shop2", hostname: "shop2.example")
+      app.placements.create!(machine: box, status: "running")
       get machine_path(box)
       assert_select ".fact-rows li.bad", /Last attempt failed/
       assert_select ".fact-rows li.bad .fact-detail", /connection refused/

@@ -73,7 +73,7 @@
 
   /* Space — the 4px scale from blueprint/design/tokens.md. Use it; do not invent
    * values between its steps. The console had no scale at all and picked its spacing
-   * per rule, which is how the install form ended up with seven gaps that meant
+   * per rule, which is how the app form ended up with seven gaps that meant
    * nothing to each other. */
   --space-1: 0.25rem;
   --space-2: 0.5rem;

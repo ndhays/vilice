@@ -268,7 +268,7 @@ details.menu > summary::-webkit-details-marker { display: none; }
 
 /* A small-caps section heading with an optional trailing link. (Distinct from
  * layout.css's .section-head, which is an h2 + action — they used to collide.) */
-/* Spacing between the Status page's exception blocks (installs, then machines). */
+/* Spacing between the Status page's exception blocks (apps, then machines). */
 .status-section { margin-top: 1.75rem; }
 .section-kicker {
   display: flex; align-items: center; gap: 0.4rem;
@@ -387,7 +387,7 @@ details.menu > summary::-webkit-details-marker { display: none; }
   gap: 0.45rem; padding: 1.05rem 0.85rem; }
 .radio-cards.plain .radio input { top: 0.6rem; right: 0.6rem; }
 
-/* Install placement — reveal the sub-section that matches the radio choice, no JS.
+/* App placement — reveal the sub-section that matches the radio choice, no JS.
    Single is checked in the HTML, so :has matches on load and nothing is revealed;
    only Fleet has more to ask, because only a count needs an exposure to be allowed.
    The box itself is asked in its own step and is optional in both branches, which is

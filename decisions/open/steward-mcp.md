@@ -75,7 +75,7 @@ time the scope boundary lives in code rather than in `authorized_keys`, and
 *is* the boundary. That sentence would need to change, which is reason enough to think
 hard before making it true.
 
-**3. A console-hosted endpoint.** Attractive because the fleet view — installs, drift,
+**3. A console-hosted endpoint.** Attractive because the fleet view — apps, drift,
 plan-vs-reality — lives in the console, not on any one box, and a per-box adapter can
 never see it. The obvious objection (the box's record would say `client=console`, not the
 agent's name) is already answered:
