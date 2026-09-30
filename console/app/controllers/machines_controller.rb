@@ -178,17 +178,10 @@ class MachinesController < ApplicationController
 
   # Merge the two records into one newest-first timeline: this machine's
   # Steward Console events (authored) + the box's own record (witnessed, unless our
-  # own client issued it). See decisions/two-records.md.
+  # own client issued it). See Chain and decisions/two-records.md.
   def chain_for(machine, record)
-    client = ENV.fetch("STEWARD_CLIENT_NAME", "console")
-    own = machine.events.acts.latest.includes(:project, :install).limit(40)
-                 .map { |e| ChainItem.from_event(e) }
-    # The box record carries its own timer's observe entries. They are the status
-    # series, not the chain, and on a box polled every minute they would be the
-    # whole page — so they are dropped here on the same rule as `Event.acts`.
-    box = (record.dig(:data, "data", "entries") || [])
-            .map { |e| ChainItem.from_record_entry(e, client: client) }
-            .reject(&:status?)
-    (own + box).sort_by(&:at).reverse.first(40)
+    events = machine.events.acts.latest.includes(:project, :install).limit(40)
+    Chain.for_machine(events, record.dig(:data, "data", "entries") || [],
+                      client: ENV.fetch("STEWARD_CLIENT_NAME", "console"))
   end
 end

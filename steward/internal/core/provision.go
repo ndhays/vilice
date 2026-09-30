@@ -211,15 +211,7 @@ func ensureSnapshotTimer() error {
 	if err != nil {
 		return err
 	}
-	service := fmt.Sprintf(`[Unit]
-Description=Steward status snapshot
-After=network.target
-
-[Service]
-Type=oneshot
-User=%s
-ExecStart=%s snapshot
-`, StewardUser, self)
+	service := snapshotService(self)
 	timer := `[Unit]
 Description=Run steward snapshot on a cadence
 
@@ -238,6 +230,25 @@ WantedBy=timers.target
 		return err
 	}
 	return Sh("systemctl daemon-reload && systemctl enable --now steward-snapshot.timer")
+}
+
+// SnapshotActor is the name the timer's runs are recorded under. Without it a run
+// takes ActorName's default, `operator` — the name a person at the shell gets — so a
+// timer refused once a minute read in the record as someone typing the same command
+// once a minute.
+const SnapshotActor = "snapshot-timer"
+
+func snapshotService(self string) string {
+	return fmt.Sprintf(`[Unit]
+Description=Steward status snapshot
+After=network.target
+
+[Service]
+Type=oneshot
+User=%s
+Environment=STEWARD_ACTOR=%s
+ExecStart=%s snapshot
+`, StewardUser, SnapshotActor, self)
 }
 
 // --- prepare UX ---

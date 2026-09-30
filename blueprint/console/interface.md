@@ -549,18 +549,35 @@ when — is the reading. An act that ran a steward command leads it with a **sta
 that command's verb — the button that was pressed, drawn flat (square corners, no hover,
 no pointer) so it reads as a record of a press and never as a thing to press. The door
 the act came through sets the stamp (`ChainItem#via`): **filled** amber with the mark
-when this console sent it; **dashed yellow with a terminal glyph**, tagged *run by hand
-on the box*, when it was typed at the box's own shell (Steward records a local run under
-the actor `operator`); **outlined**, tagged *witnessed*, for any other key — CI, an
-agent, the snapshot timer. An act recorded here that sent nothing keeps its plain
-past-tense verb. Beneath it, the **command that ran**, in bold mono: `steward
-apply-updates --json` for an act the console sent (from `Event.raw["command"]`), `steward
-deploy app1` for a box entry (its verb and arguments, read straight off the entry). An act
-recorded here that sent nothing to a box says *recorded here · no command sent to a box*
-rather than inventing one. The command opens to the **raw**: *Output*, what the box
-replied (`Event.output`; on a failure with no reply, the reason), and *Raw record entry*,
-the entry as stored. The same shape as a card's *Raw status output*: plain on the
-surface, exact one step down.
+when this console sent it; **dashed yellow with a terminal glyph**, tagged *on the box
+itself*, when it ran there rather than through a scoped key (Steward records a local run
+under `operator`); **outlined**, tagged *witnessed*, for any other key. An act recorded
+here that sent nothing keeps its plain past-tense verb.
+
+Not every box entry is a command, and none is drawn as one that is not (`ChainItem#kind`):
+
+- A **refusal** (`scope: deny`) reads *refused snapshot — binary unrecognized*, in red,
+  with no stamp — nothing ran. Its command line is the verb that was refused.
+- A **step** — a note a command wrote about its own work (`prepare-role`,
+  `authorize-binary`, `deploy-spec`) — is folded under its command as *Also recorded*,
+  so one `prepare` is one line, not three.
+
+The machine page's timeline is assembled by `Chain.for_machine`, which also says each
+thing once: an act this console sent is **one line** — our event (the person, the
+outcome, the reply) carrying the box's own entry for it (matched on verb, within two
+minutes) — and a **run of the same entry** (a timer refused every minute) is one line
+with a count, *× 40 · since 2 days ago*.
+
+Beneath the plain line, the **command that ran**, in bold mono: `steward apply-updates
+--json` for an act the console sent (from `Event.raw["command"]`), `steward deploy app1`
+for a box entry (its verb and arguments, read straight off the entry). An act recorded
+here that sent nothing to a box says *recorded here · no command sent to a box*. The
+command opens to the **raw**: *Also recorded* (its steps), *Output* (`Event.output`; on a
+failure with no reply, the reason), *Raw record entry*, and — for an act the console sent
+— *The box's record entry*, whose seq and hash are the proof the box wrote it down before
+it ran. The same shape as a card's *Raw status output*: plain on the surface, exact one
+step down. Long tokens — a public key, a digest — are shortened from the middle in the
+plain line and kept whole below.
 
 **A command to run carries a copy button.** Every command the console prints is
 meant to be pasted into a shell on a box, and an `authorize` line carries a whole

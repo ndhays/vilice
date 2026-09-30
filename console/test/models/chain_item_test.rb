@@ -74,7 +74,7 @@ class ChainItemTest < ActiveSupport::TestCase
     assert_equal "apply-updates", ChainItem.from_event(sent).verb
 
     typed = { "time" => "2026-06-10T00:00:00Z", "actor" => "operator", "action" => "restart", "args" => [ "web" ] }
-    assert_equal :by_hand, ChainItem.from_record_entry(typed, client: "console").via
+    assert_equal :local, ChainItem.from_record_entry(typed, client: "console").via
 
     ci = typed.merge("actor" => "ci-deployer")
     assert_equal :key, ChainItem.from_record_entry(ci, client: "console").via

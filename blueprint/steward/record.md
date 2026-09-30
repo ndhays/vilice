@@ -90,7 +90,7 @@ working, not a second fault.
 | `steward logs <app>` | Tail an app's logs. |
 | `steward verify` | Walk the record and confirm the hash chain is intact — report the first break (reorder, broken link, or edited entry), or that it verifies. |
 | `steward record` | Dump the record itself — every entry plus the integrity check — so a reader (Steward Console) can show the witnessed history *and* prove it's unbroken. `verify` answers yes/no; `record` returns the entries. |
-| `steward snapshot` | Write one record point — machine and app state at a moment — to the status time-series (`status.jsonl`), kept separate from the audit chain. Not a command a person types: a **systemd timer** (installed by `prepare`) runs it on a cadence. |
+| `steward snapshot` | Write one record point — machine and app state at a moment — to the status time-series (`status.jsonl`), kept separate from the audit chain. Not a command a person types: a **systemd timer** (installed by `prepare`) runs it on a cadence, under the actor **`snapshot-timer`** (`STEWARD_ACTOR` in the unit) — without it, a run would be recorded under `operator`, the name a person at the shell gets. |
 
 Residency is **daemonless**: the `snapshot` timer above is installed by `prepare`, so
 systemd provides the heartbeat and nothing runs resident on the box.

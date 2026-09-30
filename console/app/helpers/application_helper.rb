@@ -118,7 +118,7 @@ module ApplicationHelper
   # The stamp an entry leads with: the steward verb it ran, drawn like the button that
   # sends it (`steward_verb`) but flat — a record of a press, not a thing to press.
   def act_stamp(item)
-    mark = item.via == :by_hand ? icon("terminal", size: 14) : render("shared/mark", size: 16)
+    mark = item.via == :local ? icon("terminal", size: 14) : render("shared/mark", size: 16)
     tag.span(safe_join([ mark, tag.span(item.verb, class: "cmd-verb") ]),
              class: "act-stamp via-#{item.via.to_s.dasherize}")
   end

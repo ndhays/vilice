@@ -27,8 +27,9 @@ Ordered by dependency. Built items are one line; open items keep their detail.
 6. **Ingestion** — *open.* The read+merge half is built (`steward record` verb, the
    two-record merge, the chain-integrity line). **Still open:** the *persistent* mirror +
    Steward Console's own-record schema (whether `Event` becomes Boxcar `Eventable` and persists
-   box entries for cross-fleet query — the Boxcar audit), **dedup** of a Steward Console-issued
-   box command appearing as both its own `Event` and a box entry, and `Snapshot` ingestion
+   box entries for cross-fleet query — the Boxcar audit), **dedup** in a persisted
+   mirror (the machine page already shows a console-issued act once — `Chain.for_machine`
+   matches the `Event` to the box entry at display time), and `Snapshot` ingestion
    cadence (on-demand vs. background job). This blocks the fleet-wide Record/Now and the
    state-driven machine-row name cell. See
    [`console-open-questions.md`](console-open-questions.md) and

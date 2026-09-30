@@ -13,7 +13,7 @@
   <ol class="chain">
     <% items.each do |item| %>
       <li class="chain-entry<%= " is-#{item.outcome}" if item.outcome.present? %>">
-        <span class="chain-dot"><%= icon event_icon_name(item), size: 16 %></span>
+        <span class="chain-dot"><%= icon(item.refusal? ? "circle-slash" : event_icon_name(item), size: 16) %></span>
         <div class="chain-body">
           <div class="chain-line">
             <%# Verb first and in bold, then what it touched. Two columns of the record,
@@ -21,23 +21,31 @@
                 act this was. %>
             <%# An act that ran a steward command leads with a stamp of that command — the
                 button that was pressed, drawn flat so it cannot be pressed again. How it
-                reached the box sets the stamp: filled when this console sent it, dashed and
-                loud when someone typed it at the box, outlined for any other key. An act
-                recorded here that sent nothing keeps its plain past-tense verb. %>
+                reached the box sets the stamp: filled when this console sent it, dashed
+                when it ran on the box itself, outlined for any other key. A refusal says
+                so in red; a step a command noted about itself reads as plain words; an
+                act recorded here that sent nothing keeps its past-tense verb. %>
             <span class="chain-what"><%
-              if item.via %><%= act_stamp(item) %><% else %><span class="chain-act"><%= item.action %></span><% end
-              %><% if (detail = act_detail(item)).present? %> <%= detail %><% end %></span>
+              if item.refusal? %><span class="chain-act refused"><%= icon "circle-slash", size: 14 %> refused</span> <%= item.summary %><%
+              elsif item.step? %><span class="chain-act"><%= item.summary %></span><%
+              elsif item.via %><%= act_stamp(item) %><% if (detail = act_detail(item)).present? %> <%= detail %><% end %><%
+              else %><span class="chain-act"><%= item.action %></span><% if (detail = act_detail(item)).present? %> <%= detail %><% end %><% end
+              %></span>
             <% case item.via %>
-            <% when :by_hand %>
-              <span class="tag by-hand" title="Typed at the box's own shell, not sent through a scoped key">run by hand on the box</span>
+            <% when :local %>
+              <span class="tag on-box" title="Run on the box itself, not through a scoped key — at its shell, or by something there that did not name itself">on the box itself</span>
             <% when :key %>
               <span class="tag witnessed" title="Seen in the box record — sent by another key, not this console">witnessed</span>
+            <% end %>
+            <% if item.repeats %>
+              <span class="tag repeats" title="The same entry, <%= item.repeats %> times in a row, from <%= item.first_at %>">× <%= item.repeats %></span>
             <% end %>
             <%= outcome_tag(item) %>
           </div>
           <div class="chain-meta">
             by <span class="chain-actor mono"><%= item.actor %></span>
             <% if (ctx = event_context(item, within: within)) %> · <%= ctx %><% end %>
+            <% if item.repeats %> · since <%= time_ago_in_words(item.first_at) %> ago<% end %>
           </div>
           <%# The entry's lower levels. The line above is the plain reading; this is the
               exact one — the command that ran, in bold — and it opens to the raw: what
@@ -52,6 +60,13 @@
                   <span class="muted">recorded here · no command sent to a box</span>
                 <% end %>
               </summary>
+              <%# Steps the command noted about its own work, in the order it wrote them. %>
+              <% if item.steps.present? %>
+                <p class="raw-label">Also recorded</p>
+                <ul class="chain-steps">
+                  <% item.steps.each do |step| %><li><%= step.summary %></li><% end %>
+                </ul>
+              <% end %>
               <% unless item.output.nil? %>
                 <p class="raw-label">Output</p>
                 <pre class="raw"><%= item.output.is_a?(String) ? item.output : JSON.pretty_generate(item.output) %></pre>
@@ -59,6 +74,15 @@
               <% if item.entry.present? %>
                 <p class="raw-label">Raw record entry</p>
                 <pre class="raw"><%= JSON.pretty_generate(item.entry.as_json) %></pre>
+              <% end %>
+              <%# The box's own entry for an act this console sent — its seq and hash are
+                  the proof the box wrote it down before it ran. %>
+              <% if item.box_entry.present? %>
+                <p class="raw-label">The box's record entry</p>
+                <pre class="raw"><%= JSON.pretty_generate(item.box_entry.as_json) %></pre>
+              <% end %>
+              <% Array(item.steps).each do |step| %>
+                <pre class="raw"><%= JSON.pretty_generate(step.entry.as_json) %></pre>
               <% end %>
             </details>
           <% end %>

@@ -445,9 +445,9 @@ h1 .health-line.crit { font-size: 1rem; }
 .act-stamp svg { flex: none; transform: translateY(1px); }
 .act-stamp.via-console { background: var(--mutate); color: var(--card); }
 .act-stamp.via-key { border-color: var(--line); color: var(--ink); }
-.act-stamp.via-by-hand { border: 1px dashed var(--accent-text); color: var(--accent-text); background: var(--accent-soft); padding-left: 0.35rem; }
+.act-stamp.via-local { border: 1px dashed var(--accent-text); color: var(--accent-text); background: var(--accent-soft); padding-left: 0.35rem; }
 .chain-entry.is-failed .act-stamp.via-console { background: var(--bad); }
-.tag.by-hand { color: var(--accent-text); margin-left: 0.4rem; }
+.tag.on-box { color: var(--accent-text); margin-left: 0.4rem; }
 .chain-what:has(> .act-stamp)::first-letter { text-transform: none; }
 
 /* A card of named facts, one per line: the thing on the left, what is true of it on
@@ -479,3 +479,9 @@ h1 .health-line.crit { font-size: 1rem; }
   display: flex; align-items: center; gap: 0.4rem;
   font-size: 0.95rem; margin: 0 0 0.6rem;
 }
+
+/* A refusal: Steward said no. Red words, not a stamp — nothing ran. */
+.chain-act.refused { color: var(--bad); display: inline-flex; align-items: center; gap: 0.25rem; vertical-align: -0.1em; }
+.chain-entry.is-refused .chain-dot { color: var(--bad); }
+.tag.repeats { color: var(--muted); margin-left: 0.4rem; }
+.chain-steps { margin: 0.1rem 0 0.4rem; padding-left: 1.1rem; font-size: 0.82rem; }
