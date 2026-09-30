@@ -421,6 +421,12 @@ enough to make a group read as a group.
   never from a stored copy — `authorized_keys` *is* the ledger, and a mirror of it here
   would be a second answer to "who can act on this box" that could quietly disagree
   with the box. So the page has no model behind it and nothing to keep in sync.
+  **The page never waits on the fleet.** The shell renders at once; the ledgers load
+  into a frame (`AccessController#live`) that shows `$ steward actors --json` and a
+  cursor until they arrive. Every box is read in parallel, four at a time
+  (`Steward::Observe.actors_of`), so the page costs about the slowest box rather than
+  the sum of them — one unreachable box is one timeout, not one added to everyone
+  else's wait. **Re-read** refreshes the same way.
 
   **One list of keys, grouped — not one card per box.** The row is a *line of a
   ledger* (`AccessLine`), and the same set of lines is read down three axes:

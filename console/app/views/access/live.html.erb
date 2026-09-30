@@ -1,0 +1,87 @@
+<%# The ledgers, read from every box (AccessController#live) and loaded into the Access
+    page after it renders. Links and forms go to the whole page. %>
+<%= turbo_frame_tag "access-live", target: "_top" do %>
+<p class="headline">
+  <%= pluralize(@total, "key") %> on <%= pluralize(@boxes_read, "box", plural: "boxes") %><%
+    %><% if @ungated.positive? %> · <span class="bad"><%= @ungated %> not written by Steward</span><% end %><%
+    %><% if @unreadable.any? %> · <span class="muted"><%= pluralize(@unreadable.size, "ledger") %> unreadable</span><% end %><%
+    %><% if @ungated.zero? && @unreadable.empty? && @total.positive? %> · <span class="ok">every key is scoped</span><% end %>
+</p>
+
+<p class="muted addr">
+  Read straight from <%= @paths.any? ? safe_join(@paths.map { |p| tag.code(p) }, ", ") : tag.code("authorized_keys") %>
+  on each box — that file <em>is</em> the ledger, so this page asks rather than remembers.
+</p>
+
+<%# The one hole un-bypassability cannot close from inside, because it is made
+    outside. The grouping puts these first, but the *reason* has to be said somewhere,
+    and under the Box or Actor axis they are scattered through the list. %>
+<% if @ungated.positive? %>
+  <div class="panel mutate">
+    <h2><%= icon "triangle-alert", size: 16 %> <%= pluralize(@ungated, "key") %> not written by Steward</h2>
+    <p>
+      These carry no forced command, so whoever holds them reaches the box without
+      passing the gate — nothing they do is scoped, and nothing they do is recorded.
+      They were added outside Steward and can only be removed the same way.
+    </p>
+  </div>
+<% end %>
+
+<%# Boxes whose ledger could not be read. Their own panel, never rows: they have no
+    lines to show, and an empty list must never be mistaken for "nobody has access". %>
+<% if @unreadable.any? %>
+  <div class="panel readonly">
+    <h2><%= icon "circle-cut", size: 15 %> <%= pluralize(@unreadable.size, "ledger") %> could not be read</h2>
+    <p class="note muted">Their grants are <strong>unknown</strong>, not absent.</p>
+    <%# The reason is usually one reason for all of them, so it is said once per reason
+        rather than once per box — 51 boxes each repeating the same sentence is a wall
+        you scroll past instead of read. Every name is still here. %>
+    <% @unreadable.group_by(&:last).sort_by { |_, boxes| -boxes.size }.each do |error, boxes| %>
+      <p class="unreadable-group">
+        <span class="unreadable-why"><%= error %></span>
+        <span class="unreadable-boxes">
+          <%= safe_join(boxes.map { |machine, _| link_to(machine.name, machine) }, ", ") %>
+        </span>
+      </p>
+    <% end %>
+  </div>
+<% end %>
+
+  <%= render layout: "shared/list_toolbar",
+        locals: { search_url: access_path, q: @q, placeholder: "actor, box, or fingerprint",
+                  selectable: false, hidden: { group: @group } } do %><% end %>
+
+  <%# Group by — the same primitive the fleet and apps lists are built on. Each
+      choice is a link, so a grouped view has its own URL and can be shared. %>
+  <div class="action-chips filter-row" role="group" aria-label="Group the keys by">
+    <span class="chip-label muted">Group by</span>
+    <% AccessGroups::ALL.each do |grouping| %>
+      <%= link_to access_path(group: grouping.key, q: @q.presence),
+            class: "chip #{'on' if @group == grouping.key}",
+            "aria-pressed": (@group == grouping.key).to_s do %>
+        <%= grouping.label %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @lines.any? %>
+    <div class="grouped-list" key="access-<%= @group %>">
+      <% @groups.each do |heading, lines| %>
+        <h2 class="group-head">
+          <span class="group-name"><%= heading %></span>
+          <span class="group-count"><%= lines.size %></span>
+        </h2>
+        <ul class="rows access-rows">
+          <%= render partial: "access/line", collection: lines, as: :line,
+                locals: { group: @group } %>
+        </ul>
+      <% end %>
+    </div>
+  <% elsif @q.present? %>
+    <p class="empty">No keys match this search. <%= link_to "Clear it", access_path %>.</p>
+  <% elsif @unreadable.any? %>
+    <p class="empty">No ledger could be read, so nothing can be shown here yet.</p>
+  <% else %>
+    <p class="empty">No scoped keys anywhere — nobody can reach these boxes through Steward.</p>
+  <% end %>
+<% end %>

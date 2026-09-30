@@ -111,6 +111,35 @@ module Steward
       end
     end
 
+    # Every box's ledger at once, for the fleet-wide Access page. Asked in parallel, a
+    # few at a time, so the page costs about the slowest box rather than the sum of them
+    # — one unreachable box is one timeout, not one added to everyone else's wait.
+    #
+    # The width stays under the database pool (config/database.yml, 5): each worker
+    # touches the cache, and the request thread holds a connection of its own. Each
+    # worker runs inside the app executor, which gives it its own connections and hands
+    # them back; the request thread lets go of the autoload lock while it waits, or a
+    # worker that needs to load a constant would wait on it forever.
+    READ_WIDTH = 4
+    def actors_of(machines, refresh: false)
+      machines = machines.to_a
+      queue    = Queue.new.tap { |q| machines.each { |m| q << m } }
+      results  = {}
+      lock     = Mutex.new
+      workers  = Array.new([ READ_WIDTH, machines.size ].min) do
+        Thread.new do
+          Rails.application.executor.wrap do
+            while (machine = (queue.pop(true) rescue nil))
+              result = actors(machine, refresh: refresh)
+              lock.synchronize { results[machine] = result }
+            end
+          end
+        end
+      end
+      ActiveSupport::Dependencies.interlock.permit_concurrent_loads { workers.each(&:join) }
+      machines.to_h { |m| [ m, results[m] ] }
+    end
+
     # Recent doctor check, cached. Same read contract as status.
     def doctor(machine, refresh: false)
       cached(machine, "doctor", refresh: refresh) do

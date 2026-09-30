@@ -34,6 +34,15 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
     "raw" => "ssh-ed25519 AAAA sneaky@elsewhere"
   }.freeze
 
+  # Answer the ledger read with a block, per box, and put the real one back after.
+  def answering_actors(answer)
+    original = Steward::Observe.method(:actors)
+    Steward::Observe.define_singleton_method(:actors) { |machine, **| answer.call(machine) }
+    yield
+  ensure
+    Steward::Observe.define_singleton_method(:actors, original)
+  end
+
   def headings = css_select(".group-head .group-name").map(&:text)
   def actors   = css_select(".access-rows .row-name").map(&:text)
 
@@ -42,12 +51,36 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
   end
 
+  # The page never waits on the fleet: the shell renders without reading any box, and
+  # the ledgers load into a frame after it.
+  test "the page renders without reading a box, and loads the ledgers after" do
+    sign_in_as @user
+    answering_actors(->(_) { raise "the shell must not read a box" }) { get access_path }
+    assert_response :success
+    assert_select "h1", /Access/
+    assert_select "turbo-frame#access-live[src=?][target=_top]", live_access_path(group: "reach")
+    assert_select "turbo-frame#access-live .reading-line", /steward actors --json/
+  end
+
+  # Every box is read, in parallel, and each answer lands against its own box.
+  test "every box's ledger is read, and each lands against its own box" do
+    sign_in_as @user
+    others = (1..6).map { |i| Machine.create!(name: "box-#{i}", ssh_host: "10.0.1.#{i}", scope: "observe") }
+    by_name = ->(m) { ledger([ GRANT.merge("client" => "key-for-#{m.name}", "fingerprint" => "SHA256:#{m.name}") ]) }
+    answering_actors(by_name) { get live_access_path(group: "box") }
+    assert_response :success
+    ([ @machine ] + others).each do |m|
+      assert_select ".access-rows .row", /key-for-#{m.name}/
+    end
+    assert_select ".headline", /7 keys on 7 boxes/
+  end
+
   test "lists each key with actor, box, scope and fingerprint" do
     sign_in_as @user
     stub_returning(Steward::Observe, :actors, ledger([ GRANT ])) do
-      get access_path
+      get live_access_path
       assert_response :success
-      assert_select "h1", /Access/
+      assert_select "turbo-frame#access-live"
       assert_select ".access-rows .row-name", "console"
       assert_select ".access-rows .cell-print", /SHA256:abc123/
       # Reach is the heading under the default grouping, so it is not repeated per row.
@@ -61,7 +94,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
   test "the default grouping orders every key by how far it reaches" do
     sign_in_as @user
     stub_returning(Steward::Observe, :actors, ledger([ WATCHER, GRANT, UNPINNED, ADMIT ])) do
-      get access_path
+      get live_access_path
       assert_response :success
       assert_equal [ "Not written by Steward — no ceiling at all",
                      "Grant — can admit other keys",
@@ -74,7 +107,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
   test "a key steward did not write is called out, not listed quietly" do
     sign_in_as @user
     stub_returning(Steward::Observe, :actors, ledger([ UNPINNED, GRANT ])) do
-      get access_path
+      get live_access_path
       assert_response :success
       assert_select ".access-rows .row.ungated"
       assert_select "h2", /not written by Steward/
@@ -89,7 +122,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     other = Machine.create!(name: "node-9", ssh_host: "10.0.0.2")
     stub_returning(Steward::Observe, :actors, ledger([ GRANT ])) do
-      get access_path(group: "actor")
+      get live_access_path(group: "actor")
       assert_response :success
       # One actor, holding the same key on both boxes.
       assert_equal [ "console" ], headings
@@ -103,7 +136,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
   test "grouping by box is the old per-machine view, as one axis of several" do
     sign_in_as @user
     stub_returning(Steward::Observe, :actors, ledger([ GRANT, UNPINNED ])) do
-      get access_path(group: "box")
+      get live_access_path(group: "box")
       assert_equal [ "edge-1" ], headings
       # Ungated leads within the box too, for the same reason it leads the page.
       assert_equal [ "sneaky@elsewhere", "console" ], actors
@@ -113,13 +146,13 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
   test "search narrows by actor, box or fingerprint" do
     sign_in_as @user
     stub_returning(Steward::Observe, :actors, ledger([ GRANT, WATCHER ])) do
-      get access_path(q: "ci-deployer")
+      get live_access_path(q: "ci-deployer")
       assert_equal [ "ci-deployer" ], actors
 
-      get access_path(q: "SHA256:abc123")
+      get live_access_path(q: "SHA256:abc123")
       assert_equal [ "console" ], actors
 
-      get access_path(q: "no-such-thing")
+      get live_access_path(q: "no-such-thing")
       assert_select ".empty", /No keys match/
       # The headline counts the fleet, not the query — a search must not look like a fix.
       assert_select ".headline", /2 keys/
@@ -129,7 +162,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
   test "an unreachable box reads as unknown, not as nobody" do
     sign_in_as @user
     stub_returning(Steward::Observe, :actors, { ok: false, error: "connection refused" }) do
-      get access_path
+      get live_access_path
       assert_response :success
       assert_select ".panel.readonly", /could not be read/
       assert_select ".unreadable-boxes a[href=?]", machine_path(@machine)
@@ -155,7 +188,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
     original = Steward::Observe.method(:actors)
     Steward::Observe.define_singleton_method(:actors) { |m, **| replies[m] }
     begin
-      get access_path
+      get live_access_path
       assert_response :success
       assert_select ".unreadable-group", 2                  # two reasons, not three boxes
       assert_select ".unreadable-why", /no ssh key on file/
@@ -171,7 +204,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
   test "a box with an empty ledger says so plainly" do
     sign_in_as @user
     stub_returning(Steward::Observe, :actors, ledger([])) do
-      get access_path
+      get live_access_path
       assert_response :success
       assert_match(/nobody can reach these boxes through Steward/, response.body)
     end

@@ -14,6 +14,8 @@ Rails.application.routes.draw do
   # Access — the rights ledger: who may act on which box, at what scope. Read
   # straight from each box's authorized_keys through `steward actors`.
   get "access", to: "access#index"
+  # The ledgers themselves, read from every box and loaded into the page after it renders.
+  get "access/live", to: "access#live", as: :live_access
   # Re-read every box's ledger, bypassing the 30s cache. A POST because it opens an
   # SSH connection to every box in the fleet — a GET must be safe to repeat unasked,
   # and Turbo prefetches links on hover. Same rule as machines#refresh.

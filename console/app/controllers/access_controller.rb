@@ -8,13 +8,18 @@
 #
 # Observe only. It holds an observe-scoped key, changes nothing, and writes no Event.
 # Granting and revoking happen on the box (or on a machine page), never here.
+#
+# Two requests, so the page never waits on the fleet. `index` is the shell — the search
+# and the grouping, rendered at once. `live` reads every box's ledger and fills a frame.
 class AccessController < ApplicationController
-  def index
-    @q     = params[:q].to_s.strip
-    @group = params[:group].presence || AccessGroups::DEFAULT.key
+  before_action :set_query
 
-    # One read per box, through the 30s observe cache.
-    reads = Machine.order(:name).to_h { |m| [ m, Steward::Observe.actors(m) ] }
+  def index
+  end
+
+  def live
+    # One read per box, in parallel, through the 30s observe cache.
+    reads = Steward::Observe.actors_of(Machine.order(:name))
 
     # A box we cannot reach keeps a place on the page rather than vanishing from it.
     # A ledger you cannot currently read is not the same as an empty one, and the
@@ -42,13 +47,21 @@ class AccessController < ApplicationController
     lines   = lines.select { |l| l.matches?(@q) }
     @lines  = lines
     @groups = AccessGroups.apply(lines, @group)
+    render layout: false
   end
 
   # Re-read every box's ledger, bypassing the 30s cache. A POST, not a GET, for the
   # same reason machines#refresh is: it opens an SSH connection to every box in the
   # fleet, and a GET must be safe to repeat unasked.
   def refresh
-    Machine.find_each { |m| Steward::Observe.actors(m, refresh: true) }
+    Steward::Observe.actors_of(Machine.all, refresh: true)
     redirect_to access_path(q: params[:q].presence, group: params[:group].presence)
+  end
+
+  private
+
+  def set_query
+    @q     = params[:q].to_s.strip
+    @group = params[:group].presence || AccessGroups::DEFAULT.key
   end
 end
