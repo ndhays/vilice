@@ -42,4 +42,28 @@ class ChainItemTest < ActiveSupport::TestCase
     act = ChainItem.from_event(Event.new(at: Time.current, actor: "alice", action: "deployed"))
     refute act.status?
   end
+
+  # The record's lower levels: the exact command, the reply, and the entry as stored.
+  test "an event carries the command it sent and the reply it got" do
+    e = Event.create!(at: Time.current, actor: "alice@x", action: "updated",
+                      outcome: "pending", raw: { command: "apply-updates --json" })
+    e.settle!("ok", output: { "ok" => true, "message" => "machine packages updated" })
+    i = ChainItem.from_event(e)
+    assert_equal "steward apply-updates --json", i.command
+    assert_equal "machine packages updated", i.output["message"]
+    assert_equal "apply-updates --json", i.entry["command"]
+    refute i.entry.key?("output")                  # shown once, under Output
+  end
+
+  test "an act recorded here that sent nothing to a box has no command" do
+    i = ChainItem.from_event(Event.new(at: Time.current, actor: "alice@x", action: "labelled"))
+    assert_nil i.command
+  end
+
+  test "a box entry's command is its verb and arguments, read straight off the entry" do
+    entry = { "time" => "2026-06-10T00:00:00Z", "actor" => "ci", "action" => "deploy", "args" => [ "app1" ] }
+    i = ChainItem.from_record_entry(entry, client: "console")
+    assert_equal "steward deploy app1", i.command
+    assert_equal entry, i.entry
+  end
 end

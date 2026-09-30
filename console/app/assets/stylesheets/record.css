@@ -422,3 +422,11 @@ h1 .health-line.crit { font-size: 1rem; }
 .read-age { font-size: 0.8rem; color: var(--muted); margin: 0.15rem 0 0; }
 .raw-output summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
 .raw-cmd { font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; margin: 0.6rem 0 0.3rem; }
+
+/* An entry's lower levels: the command that ran, in bold mono, opening to the raw —
+   the box's reply and the entry as stored. The plain line above stays the reading. */
+.chain-raw { margin-top: 0.25rem; }
+.chain-raw > summary { cursor: pointer; font-size: 0.8rem; list-style-position: outside; }
+.chain-cmd { font-family: var(--font-mono); font-weight: 700; font-size: 0.8rem; color: var(--ink); background: none; padding: 0; }
+.chain-raw[open] > summary { margin-bottom: 0.4rem; }
+.raw-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0.5rem 0 0.2rem; }

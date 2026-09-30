@@ -182,6 +182,10 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_equal "updated", event.action
     assert_equal "ok", event.outcome          # settled on the same entry
     assert event.finished_at.present?
+    # The box's reply is kept on the entry; the command recorded before it ran is not
+    # touched by settling.
+    assert_equal({ "ok" => true }, event.output)
+    assert_equal "apply-updates --json", event.raw["command"]
   end
 
   test "a failed command settles the entry failed with the box's reason" do
@@ -192,6 +196,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     event = Event.latest.first
     assert_equal "failed", event.outcome
     assert_equal "podman: no such app", event.detail
+    assert_equal "podman: no such app", event.output  # no raw reply, so the reason stands in
     assert_match(/failed/i, flash[:alert])
   end
 

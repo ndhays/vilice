@@ -340,10 +340,14 @@ open heartbeat question.
 
 ### `Event`
 - `machine_id` / `install_id` / `project_id`, `at`, `actor`, `action`, `summary`, `raw`
+  (`raw["command"]`: the steward command sent, for an act that sent one)
 - **Outcome lifecycle** — `outcome` (nil → `pending` → `ok`/`failed`), `finished_at`,
   `detail`. A witnessed act is recorded `pending` *before* it runs (record-before-act),
   then **settled once** on the same row when it returns. Instantaneous acts (a label
-  edit, a star) carry `outcome = nil` and never settle. The append-only guard freezes
+  edit, a star) carry `outcome = nil` and never settle. Settling also keeps the box's
+  reply — `output` (the parsed JSON, or the raw text of a failure, capped at 64 KB) and
+  `exit_status` — in their own columns, so a settle never touches `raw`, which holds the
+  command as recorded before the act ran. The append-only guard freezes
   the facts but permits this single pending→settled transition — see
   [`../../decisions/record-outcome-on-the-entry.md`](../../decisions/record-outcome-on-the-entry.md).
 - **Two roles, kept distinct** (see [`../../decisions/two-records.md`](../../decisions/two-records.md)):

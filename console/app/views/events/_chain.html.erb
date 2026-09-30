@@ -28,6 +28,29 @@
             by <span class="chain-actor mono"><%= item.actor %></span>
             <% if (ctx = event_context(item, within: within)) %> · <%= ctx %><% end %>
           </div>
+          <%# The entry's lower levels. The line above is the plain reading; this is the
+              exact one — the command that ran, in bold — and it opens to the raw: what
+              the box replied, and the record entry as stored. An act recorded here that
+              sent nothing to a box says so rather than inventing a command. %>
+          <% if item.entry.present? || item.command.present? %>
+            <details class="chain-raw">
+              <summary>
+                <% if item.command.present? %>
+                  <code class="chain-cmd"><%= item.command %></code>
+                <% else %>
+                  <span class="muted">recorded here · no command sent to a box</span>
+                <% end %>
+              </summary>
+              <% unless item.output.nil? %>
+                <p class="raw-label">Output</p>
+                <pre class="raw"><%= item.output.is_a?(String) ? item.output : JSON.pretty_generate(item.output) %></pre>
+              <% end %>
+              <% if item.entry.present? %>
+                <p class="raw-label">Raw record entry</p>
+                <pre class="raw"><%= JSON.pretty_generate(item.entry.as_json) %></pre>
+              <% end %>
+            </details>
+          <% end %>
         </div>
         <time class="chain-when" title="<%= item.at %>"><%= time_ago_in_words(item.at) %> ago</time>
       </li>

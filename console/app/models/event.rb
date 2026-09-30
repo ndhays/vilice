@@ -82,7 +82,7 @@ class Event < ApplicationRecord
   # act), then stamped ok/failed on the same row when it finishes. Not
   # hash-chained — Steward's on-box chain is the external anchor; this guard is
   # hygiene. (dependent: :nullify uses update_all and bypasses these, as intended.)
-  SETTLE_COLUMNS = %w[outcome finished_at detail updated_at].freeze
+  SETTLE_COLUMNS = %w[outcome finished_at detail output exit_status updated_at].freeze
 
   before_update  :allow_only_a_single_settle
   before_destroy { raise ActiveRecord::ReadOnlyRecord, "the record is append-only" }
@@ -93,9 +93,15 @@ class Event < ApplicationRecord
   def settled?    = outcome.present? && outcome != "pending"
   def outcome_ok? = outcome == "ok"
 
-  # Stamp the result on the entry — the one permitted update (pending → settled).
-  def settle!(outcome, detail: nil)
-    update!(outcome: outcome, finished_at: Time.current, detail: detail)
+  # Stamp the result on the entry — the one permitted update (pending → settled). The
+  # box's reply is kept in its own columns, so the record can show what came back and
+  # not only that something did — and so settling never touches `raw`, which holds the
+  # command as it was recorded before the act ran. Capped: the record is not a log store.
+  OUTPUT_LIMIT = 64.kilobytes
+  def settle!(outcome, detail: nil, output: nil, exit_status: nil)
+    output = output.truncate(OUTPUT_LIMIT) if output.is_a?(String)
+    update!(outcome: outcome, finished_at: Time.current, detail: detail,
+            output: output, exit_status: exit_status)
   end
 
   # Write one entry. Used for Steward Console's own acts (with a human actor), for

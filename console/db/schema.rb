@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_162019) do
   create_table "apps", force: :cascade do |t|
     t.json "accessories", default: [], null: false
     t.datetime "created_at", null: false
@@ -32,10 +32,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_100000) do
     t.datetime "at", null: false
     t.datetime "created_at", null: false
     t.text "detail"
+    t.integer "exit_status"
     t.datetime "finished_at"
     t.integer "install_id"
     t.integer "machine_id"
     t.string "outcome"
+    t.json "output"
     t.integer "project_id"
     t.json "raw", default: {}, null: false
     t.string "summary"

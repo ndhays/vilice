@@ -537,6 +537,16 @@ words say made the list louder without saying more, and the list behind it rotte
 silently (`updated` had fallen out of it, so apply-updates drew as an observe). Both
 are gone; nothing replaced them.
 
+**An entry reads at three levels.** The plain line — what happened, by whom, where,
+when — is the reading. Beneath it, the **command that ran**, in bold mono: `steward
+apply-updates --json` for an act the console sent (from `Event.raw["command"]`), `steward
+deploy app1` for a box entry (its verb and arguments, read straight off the entry). An act
+recorded here that sent nothing to a box says *recorded here · no command sent to a box*
+rather than inventing one. The command opens to the **raw**: *Output*, what the box
+replied (`Event.output`; on a failure with no reply, the reason), and *Raw record entry*,
+the entry as stored. The same shape as a card's *Raw status output*: plain on the
+surface, exact one step down.
+
 **A command to run carries a copy button.** Every command the console prints is
 meant to be pasted into a shell on a box, and an `authorize` line carries a whole
 public key — selecting one by hand is exactly the operation that half-succeeds and

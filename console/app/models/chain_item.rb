@@ -6,14 +6,21 @@
 #     issued it, otherwise only witnessed (a direct CLI, the timer, another plane).
 #
 # A presentation value, not persisted.
+#
+# Each also carries its exact form, for the entry's lower levels: the `command` that ran
+# (nil for an act recorded here that sent nothing to a box), the `output` the box
+# replied with, and `entry` — the record entry itself, as stored.
 ChainItem = Struct.new(:at, :actor, :action, :summary, :origin, :machine, :project,
-                       :outcome, :detail, keyword_init: true) do
+                       :outcome, :detail, :command, :output, :entry, keyword_init: true) do
   def self.from_event(event)
     new(
       at: event.at, actor: event.actor, action: event.action,
       summary: event.summary.presence || event.action,
       origin: :authored, machine: event.machine, project: event.project,
-      outcome: event.outcome, detail: event.detail
+      outcome: event.outcome, detail: event.detail,
+      command: event.raw&.dig("command").presence&.then { |c| "steward #{c}" },
+      output: event.output,
+      entry: event.attributes.except("raw", "output").merge("command" => event.raw&.dig("command")).compact
     )
   end
 
@@ -24,7 +31,12 @@ ChainItem = Struct.new(:at, :actor, :action, :summary, :origin, :machine, :proje
       at: (Time.zone.parse(entry["time"].to_s) rescue nil) || Time.current,
       actor: entry["actor"], action: entry["action"],
       summary: [ entry["action"], *entry["args"] ].compact.join(" "),
-      origin: entry["actor"] == client ? :authored : :witnessed
+      origin: entry["actor"] == client ? :authored : :witnessed,
+      # The box records the verb and the arguments it was given, so the command is read
+      # straight off the entry. (Output flags such as --json are not part of the act,
+      # and the box does not record them.)
+      command: [ "steward", entry["action"], *entry["args"] ].compact.join(" "),
+      entry: entry
     )
   end
 

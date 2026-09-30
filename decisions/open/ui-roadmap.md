@@ -140,6 +140,13 @@ mark and the verb.
    hostnames, env names, volumes; accessories and processes nested under the app), with
    the literal deploy envelope behind a *Raw spec* disclosure (secret names only).
    Observe = where it runs, running vs. asked for. Operate = the command buttons, per box.
+**Queued next, in this order** (agreed 2026-09-30): the new status cards (#7), the
+code rename (#2a), then a better deploy UI (#2b).
+
+2b. **Deploy without pasting** — *open.* The machine page's `deploy` takes a pasted JSON
+   spec today. Wanted: a form that builds the spec — from an App Template, or field by
+   field — and shows the JSON it will send behind a *Raw spec* disclosure, the same
+   plain-then-exact shape as everywhere else.
 2a. **Rename: Installs → Apps, App → App Template** — the words on the page are BUILT.
    *Open:* the code follows — `App` → `AppTemplate` first (to free the name), then
    `Install` → `App`, with tables, routes, params and the blueprint. No backward
@@ -149,10 +156,9 @@ mark and the verb.
    lacks the detail it grows in the binary, not the console. Open: how the console gets
    the table — `_commands` is not reachable through `_exec`, so either a build-time copy
    (as the docs site does) or a new observe verb.
-4. **The record entry shows the command and its output** — *open.* The preview shows the
-   command (built). A console-written entry already stores it (`Event.raw["command"]`)
-   but does not display it, and keeps the output only on failure (`detail`). The entry
-   opens to: the command in bold, then the raw output.
+4. **The record entry shows the command and its output** — BUILT. Three levels: the
+   plain line, the command in bold, then the raw (the box's reply, kept on settle in
+   `Event.output`, and the entry as stored).
 5. **Machines list as the board** — *open.* Status stays the inbox; the Machines list
    becomes the glanceable board — every box's memory, disk and reachability at once.
    Blocked on the per-row read that ingestion (#6) brings.

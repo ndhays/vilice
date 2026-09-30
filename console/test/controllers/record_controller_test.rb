@@ -78,4 +78,19 @@ class RecordControllerTest < ActionDispatch::IntegrationTest
     assert_select ".chain-entry", 1
     assert_select ".chain-what", text: /acme-api/
   end
+
+  # Each entry reads plainly, then opens to its exact form: the command in bold, then
+  # the box's reply and the entry as stored.
+  test "an entry shows the command that ran and opens to its raw reply" do
+    act = Event.record!(actor: "alice", action: "updated", machine: @box, summary: "devbox",
+                        outcome: "pending", raw: { command: "apply-updates --json" })
+    act.settle!("ok", output: { "ok" => true, "message" => "machine packages updated" })
+    get record_path
+    assert_select ".chain-raw summary .chain-cmd", "steward apply-updates --json"
+    assert_select ".chain-raw .raw-label", "Output"
+    assert_select ".chain-raw pre.raw", /machine packages updated/
+    assert_select ".chain-raw .raw-label", "Raw record entry"
+    # An act recorded here, with no command, says so rather than inventing one.
+    assert_select ".chain-raw summary", /no command sent to a box/
+  end
 end

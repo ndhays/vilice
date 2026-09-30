@@ -174,7 +174,9 @@ module Steward
         outcome: "pending", raw: { command: command }
       )
       result = Steward.read(machine, command, stdin: stdin)
-      event.settle!(result[:ok] ? "ok" : "failed", detail: result[:ok] ? nil : result[:error])
+      event.settle!(result[:ok] ? "ok" : "failed", detail: result[:ok] ? nil : result[:error],
+                    output: result[:ok] ? result[:data] : result[:output].presence || result[:error],
+                    exit_status: result[:exit_status])
       { event: event, result: result }
     end
   end
@@ -202,7 +204,8 @@ module Steward
       # answered badly. Two different problems with two different fixes, and the merged
       # output names neither, so the caller gets told which one this was.
       { ok: false, reached: st.exitstatus != 255,
-        error: failure_message(out, st), at: Time.current }
+        error: failure_message(out, st), output: out.to_s, exit_status: st.exitstatus,
+        at: Time.current }
     end
   rescue JSON::ParserError
     # A reply we could not read is still a reply: something answered.

@@ -140,6 +140,6 @@ class Mutation
   def preview_item
     ChainItem.new(at: Time.current, actor: actor, action: action, summary: summary,
                   origin: :authored, machine: machine, project: install&.project,
-                  outcome: "pending")
+                  outcome: "pending", command: "steward #{command}")
   end
 end
