@@ -1,18 +1,18 @@
-<% content_for :title, "#{@app.name} — Steward" %>
+<% content_for :title, "#{@app_template.name} — Steward" %>
 
-<%= breadcrumb [ [ "App Library", apps_path ], [ @app.name, nil ] ] %>
-<h1><%= icon "box", size: 20 %> <%= @app.name %></h1>
-<% if @app.description.present? %><p class="muted"><%= @app.description %></p><% end %>
+<%= breadcrumb [ [ "App Library", app_templates_path ], [ @app_template.name, nil ] ] %>
+<h1><%= icon "box", size: 20 %> <%= @app_template.name %></h1>
+<% if @app_template.description.present? %><p class="muted"><%= @app_template.description %></p><% end %>
 <div class="spec-row">
-  <% if @app.port %>
-    <span class="spec"><span class="spec-k">Port</span><span class="spec-v mono"><%= @app.port %></span></span>
+  <% if @app_template.port %>
+    <span class="spec"><span class="spec-k">Port</span><span class="spec-v mono"><%= @app_template.port %></span></span>
   <% end %>
-  <span class="spec"><span class="spec-k">Health</span><span class="spec-v mono"><%= @app.health.presence || "/" %></span></span>
-  <%= link_to "Edit", edit_app_path(@app), class: "spec-edit" %>
+  <span class="spec"><span class="spec-k">Health</span><span class="spec-v mono"><%= @app_template.health.presence || "/" %></span></span>
+  <%= link_to "Edit", edit_app_template_path(@app_template), class: "spec-edit" %>
 </div>
-<div class="label-row"><%= render "labels/editor", labelable: @app %></div>
+<div class="label-row"><%= render "labels/editor", labelable: @app_template %></div>
 
-<%= render "apps/inputs", app: @app %>
+<%= render "app_templates/inputs", app: @app_template %>
 
 <div class="versions">
   <div class="kicker">Versions</div>
@@ -36,12 +36,12 @@
           </span>
           <span class="version-actions">
             <% unless v.latest? %>
-              <%= button_to latest_app_version_path(@app, v), method: :patch, class: "btn-quiet" do %>
+              <%= button_to latest_app_template_version_path(@app_template, v), method: :patch, class: "btn-quiet" do %>
                 <%= safe_join([ icon("book-check", size: 14), "Make Latest" ]) %>
               <% end %>
             <% end %>
-            <%= button_to app_version_path(@app, v), method: :delete, class: "btn-quiet danger",
-                  data: { turbo_confirm: "Remove #{@app.name} #{v.tag}?" } do %>
+            <%= button_to app_template_version_path(@app_template, v), method: :delete, class: "btn-quiet danger",
+                  data: { turbo_confirm: "Remove #{@app_template.name} #{v.tag}?" } do %>
               <%= safe_join([ icon("trash-2", size: 14), "Remove" ]) %>
             <% end %>
           </span>
@@ -52,7 +52,7 @@
     <p class="empty">No versions yet. Add one so apps can be made from this template.</p>
   <% end %>
 
-  <%= form_with model: [ @app, @version ], scope: :version, class: "version-add" do |f| %>
+  <%= form_with model: [ @app_template, @version ], scope: :version, class: "version-add" do |f| %>
     <% if @version.errors.any? %>
       <div class="flash alert"><%= @version.errors.full_messages.to_sentence %></div>
     <% end %>
@@ -67,7 +67,7 @@
         and stops there; adding the version is still its own press, because resolution is
         a read and pinning is a decision (app/services/registry.rb). %>
     <%= button_tag "Look up digest", type: "submit", name: nil, class: "btn-quiet",
-          formaction: resolve_app_versions_path(@app), formnovalidate: true,
+          formaction: resolve_app_template_versions_path(@app_template), formnovalidate: true,
           title: "Ask the registry what this tag points at right now, and fill in the digest" %>
     <label class="version-latest"><%= check_box_tag "make_latest", "1", true %> latest</label>
     <%= f.submit "Add Version", class: "btn mutate" %>

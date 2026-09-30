@@ -64,7 +64,7 @@ Same `?q=` box over name + contact + labels; grid stays a grid. Sorting optional
   stayed only so a hand-written or shared link keeps working. Nothing in the UI
   requires knowing it.
 - **List search** — **BUILT** for Machines (`Searchable`, the shared label-selector
-  parser lifted out of `App.search`) and for **Installs** (`Install.search` — free text
+  parser lifted out of `AppTemplate.search`) and for **Installs** (`Install.search` — free text
   over name / hostname / app / box, no selectors, because installs carry no labels and
   every categorical axis is a grouping chip). Projects is the remaining lighter half.
 - **Grouping, not filtering** — **BUILT** and now the primitive both list pages are

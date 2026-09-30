@@ -2,7 +2,7 @@
     per-label trash and the add form. Each change is recorded with attribution. %>
 <% add_url = case labelable
    when Machine then machine_labels_path(labelable)
-   when App then app_labels_path(labelable)
+   when AppTemplate then app_template_labels_path(labelable)
    else project_labels_path(labelable)
    end %>
 <div class="labels-editor" data-controller="labels">

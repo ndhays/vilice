@@ -2,32 +2,32 @@ require "test_helper"
 
 # The App Library catalog — CRUD, gated by login, each change recorded as an
 # attributed own-record act (decisions/open/app-library.md).
-class AppsControllerTest < ActionDispatch::IntegrationTest
+class AppTemplatesControllerTest < ActionDispatch::IntegrationTest
   setup { @user = users(:one) }
 
   test "the library is behind the login" do
-    get apps_path
+    get app_templates_path
     assert_redirected_to new_session_path
   end
 
   test "index renders the list, search, and the sidebar link" do
     sign_in_as @user
-    App.create!(name: "nginx")
-    App.create!(name: "billing")
-    get apps_path
+    AppTemplate.create!(name: "nginx")
+    AppTemplate.create!(name: "billing")
+    get app_templates_path
     assert_response :success
     assert_select "h1", /App Library/
-    assert_select ".nav[href=?]", apps_path                 # sidebar entry
+    assert_select ".nav[href=?]", app_templates_path                 # sidebar entry
     assert_select ".app-rows .row-name", /nginx/            # stacked list
 
-    get apps_path(q: "nginx")
+    get app_templates_path(q: "nginx")
     assert_select ".app-rows .row-name", { count: 1, text: "nginx" }  # search filters
   end
 
   test "index shows the manage toolbar — select-all, search, and a disabled bulk action" do
     sign_in_as @user
-    App.create!(name: "nginx")
-    get apps_path
+    AppTemplate.create!(name: "nginx")
+    get app_templates_path
     assert_select ".list-managed[data-controller=selection]"
     assert_select ".toolbar-select input[data-selection-target=all]"
     assert_select ".toolbar-search input[name=q]"
@@ -37,15 +37,15 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     # Import menu offers both a file and a URL source; Export is present.
     assert_select "details.menu input[type=file]"
     assert_select "details.menu input[type=url]"
-    assert_select "a[href=?]", export_apps_path
+    assert_select "a[href=?]", export_app_templates_path
   end
 
   test "show lists the app's versions" do
     sign_in_as @user
-    app = App.create!(name: "web")
+    app = AppTemplate.create!(name: "web")
     v = app.versions.create!(tag: "v1.2.0", image: "img@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
     app.set_latest!(v)
-    get app_path(app)
+    get app_template_path(app)
     assert_response :success
     assert_select ".version-tag", /v1.2.0/
     assert_select ".tag.latest"
@@ -53,10 +53,10 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
 
   test "adding an app records the act and goes to its page" do
     sign_in_as @user
-    assert_difference [ -> { App.count }, -> { Event.count } ], 1 do
-      post apps_path, params: { app: { name: "web", port: 8080 } }
+    assert_difference [ -> { AppTemplate.count }, -> { Event.count } ], 1 do
+      post app_templates_path, params: { app_template: { name: "web", port: 8080 } }
     end
-    app = App.find_by(name: "web")
+    app = AppTemplate.find_by(name: "web")
     assert_redirected_to app                                # → show, to add a version
     assert_equal 8080, app.port
     event = Event.latest.first
@@ -66,17 +66,17 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
 
   test "an invalid app neither persists nor records" do
     sign_in_as @user
-    assert_no_difference [ -> { App.count }, -> { Event.count } ] do
-      post apps_path, params: { app: { name: "" } }
+    assert_no_difference [ -> { AppTemplate.count }, -> { Event.count } ] do
+      post app_templates_path, params: { app_template: { name: "" } }
     end
     assert_response :unprocessable_entity
   end
 
   test "editing records the change" do
     sign_in_as @user
-    app = App.create!(name: "web", description: "old")
+    app = AppTemplate.create!(name: "web", description: "old")
     assert_difference -> { Event.count }, 1 do
-      patch app_path(app), params: { app: { description: "new" } }
+      patch app_template_path(app), params: { app_template: { description: "new" } }
     end
     assert_equal "new", app.reload.description
     assert_equal "edited", Event.latest.first.action
@@ -84,8 +84,8 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
 
   test "the inputs editor saves env (with a secret flag) and secret files" do
     sign_in_as @user
-    app = App.create!(name: "web")
-    patch app_path(app), params: { app: {
+    app = AppTemplate.create!(name: "web")
+    patch app_template_path(app), params: { app_template: {
       inputs_form: "1",
       env_rows: { "0" => { key: "LOG", secret: "0" }, "1" => { key: "TOKEN", secret: "1" },
                   "2" => { key: "", secret: "0" } }, # blank row dropped
@@ -103,9 +103,9 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # variable) came back on every save and could not be deleted at all.
   test "removing the last secret file actually removes it" do
     sign_in_as @user
-    app = App.create!(name: "web", env: [ { "key" => "TOKEN", "secret" => true } ],
+    app = AppTemplate.create!(name: "web", env: [ { "key" => "TOKEN", "secret" => true } ],
                       secret_files: [ { "name" => "config", "path" => "/etc/web/config" } ])
-    patch app_path(app), params: { app: {
+    patch app_template_path(app), params: { app_template: {
       inputs_form: "1",
       env_rows: { "0" => { key: "TOKEN", secret: "1" } }
       # no secret_file_rows at all — the editor posts none once the last row is gone
@@ -116,8 +116,8 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
 
   test "removing the last variable actually removes it" do
     sign_in_as @user
-    app = App.create!(name: "web", env: [ { "key" => "ONLY", "secret" => false } ])
-    patch app_path(app), params: { app: { inputs_form: "1" } }
+    app = AppTemplate.create!(name: "web", env: [ { "key" => "ONLY", "secret" => false } ])
+    patch app_template_path(app), params: { app_template: { inputs_form: "1" } }
     assert_empty app.reload.env
   end
 
@@ -125,9 +125,9 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # an absent key really does mean "leave it alone".
   test "editing name or port leaves the declaration untouched" do
     sign_in_as @user
-    app = App.create!(name: "web", env: [ { "key" => "TOKEN", "secret" => true } ],
+    app = AppTemplate.create!(name: "web", env: [ { "key" => "TOKEN", "secret" => true } ],
                       secret_files: [ { "name" => "config", "path" => "/etc/web/config" } ])
-    patch app_path(app), params: { app: { name: "web", port: 9090 } }
+    patch app_template_path(app), params: { app_template: { name: "web", port: 9090 } }
     app.reload
     assert_equal 9090, app.port
     assert_equal [ { "key" => "TOKEN", "secret" => true } ], app.env
@@ -136,10 +136,10 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
 
   test "removing an app records it and leaves the record intact" do
     sign_in_as @user
-    app = App.create!(name: "web")
-    assert_difference [ -> { App.count } ], -1 do
+    app = AppTemplate.create!(name: "web")
+    assert_difference [ -> { AppTemplate.count } ], -1 do
       assert_difference -> { Event.count }, 1 do
-        delete app_path(app)
+        delete app_template_path(app)
       end
     end
     assert_equal "removed", Event.latest.first.action
@@ -147,8 +147,8 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
 
   test "export streams the library as a yaml attachment" do
     sign_in_as @user
-    App.create!(name: "web")
-    get export_apps_path
+    AppTemplate.create!(name: "web")
+    get export_app_templates_path
     assert_response :success
     assert_match %r{attachment.*console-library\.yml}, response.headers["Content-Disposition"]
     assert_equal 1, YAML.safe_load(response.body)["apps"].size
@@ -159,9 +159,9 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     manifest = { "format" => 1, "apps" => [ { "name" => "abc" }, { "name" => "xyz" } ] }
     file = Rack::Test::UploadedFile.new(StringIO.new(manifest.to_yaml), "text/yaml",
                                         original_filename: "vendor.yml")
-    assert_difference [ -> { App.count } ], 2 do
+    assert_difference [ -> { AppTemplate.count } ], 2 do
       assert_difference -> { Event.count }, 1 do
-        post import_apps_path, params: { file: file }
+        post import_app_templates_path, params: { file: file }
       end
     end
     event = Event.latest.first
@@ -173,24 +173,24 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     file = Rack::Test::UploadedFile.new(StringIO.new({ "format" => 99 }.to_yaml), "text/yaml",
                                         original_filename: "bad.yml")
-    assert_no_difference [ -> { App.count }, -> { Event.count } ] do
-      post import_apps_path, params: { file: file }
+    assert_no_difference [ -> { AppTemplate.count }, -> { Event.count } ] do
+      post import_app_templates_path, params: { file: file }
     end
-    assert_redirected_to apps_path
+    assert_redirected_to app_templates_path
   end
 
   test "remove selected bulk-deletes and records one act" do
     sign_in_as @user
-    a = App.create!(name: "a")
-    b = App.create!(name: "b")
-    App.create!(name: "keep")
-    assert_difference [ -> { App.count } ], -2 do
+    a = AppTemplate.create!(name: "a")
+    b = AppTemplate.create!(name: "b")
+    AppTemplate.create!(name: "keep")
+    assert_difference [ -> { AppTemplate.count } ], -2 do
       assert_difference -> { Event.count }, 1 do
-        delete remove_selected_apps_path, params: { ids: [ a.id, b.id ] }
+        delete remove_selected_app_templates_path, params: { ids: [ a.id, b.id ] }
       end
     end
     assert_equal "removed", Event.latest.first.action
-    assert_equal %w[ keep ], App.pluck(:name)
+    assert_equal %w[ keep ], AppTemplate.pluck(:name)
   end
 
   # The chip editor is quick to toggle and hard to audit. The mistake that matters is a
@@ -199,13 +199,13 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # second time, sorted, split by what actually happens to the value.
   test "the app page reads its declaration back in two sorted columns" do
     sign_in_as @user
-    app = App.create!(name: "zot", env: [
+    app = AppTemplate.create!(name: "zot", env: [
       { "key" => "LOG_LEVEL", "secret" => false },
       { "key" => "DATABASE_PASSWORD", "secret" => true },
       { "key" => "API_URL", "secret" => false },
       { "key" => "S3_SECRET_KEY", "secret" => true } ])
 
-    get app_path(app)
+    get app_template_path(app)
     assert_response :success
     recorded = css_select(".declared-col:not(.is-secret) .declared-list li").map(&:text)
     secret   = css_select(".declared-col.is-secret .declared-list li").map(&:text)
@@ -219,8 +219,8 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
 
   test "an app with no declared variables says so in both columns" do
     sign_in_as @user
-    app = App.create!(name: "bare")
-    get app_path(app)
+    app = AppTemplate.create!(name: "bare")
+    get app_template_path(app)
     assert_select ".declared-none", 2
   end
 
@@ -228,24 +228,24 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # in the DOM, so toggling never discards an in-progress edit and the form posts as before.
   test "the declaration is what you see; the editor is behind a toggle" do
     sign_in_as @user
-    app = App.create!(name: "toggler", env: [ { "key" => "A", "secret" => false } ])
-    get app_path(app)
+    app = AppTemplate.create!(name: "toggler", env: [ { "key" => "A", "secret" => false } ])
+    get app_template_path(app)
     assert_response :success
     assert_select ".inputs:not(.editing)"                      # closed by default
     assert_select ".inputs .declared .declared-col", 2
     assert_select ".inputs-toggle[data-action=?]", "env-editor#toggle"
     # The editor is present but not the resting view — it still carries the form.
-    assert_select ".inputs form.inputs-form input[name=?]", "app[env_rows][0][key]"
+    assert_select ".inputs form.inputs-form input[name=?]", "app_template[env_rows][0][key]"
   end
 
   # Secret files are off-record by definition, so they belong in that column — marked as
   # files, because a path is a different kind of thing from a variable name.
   test "secret files are counted and listed with the never-recorded half" do
     sign_in_as @user
-    app = App.create!(name: "filed",
+    app = AppTemplate.create!(name: "filed",
                       env: [ { "key" => "TOKEN", "secret" => true } ],
                       secret_files: [ { "name" => "htpasswd", "path" => "/etc/app/htpasswd" } ])
-    get app_path(app)
+    get app_template_path(app)
     assert_select ".declared-col.is-secret .declared-count", "2"
     assert_select ".declared-col.is-secret .declared-list li.is-file", /htpasswd/
     assert_select ".declared-col.is-secret .declared-path", "/etc/app/htpasswd"
@@ -254,16 +254,16 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # The browser refuses it before the round trip; the model refuses it regardless.
   test "the version form asks for a digest-pinned image" do
     sign_in_as @user
-    app = App.create!(name: "pinned")
-    get app_path(app)
+    app = AppTemplate.create!(name: "pinned")
+    get app_template_path(app)
     assert_select "input[name=?][pattern=?]", "version[image]", ".+@sha256:[0-9a-f]{64}"
   end
 
   test "a floating tag is refused, and the app page says why" do
     sign_in_as @user
-    app = App.create!(name: "floating")
+    app = AppTemplate.create!(name: "floating")
     assert_no_difference -> { Version.count } do
-      post app_versions_path(app), params: { version: { tag: "v1", image: "ghcr.io/a/b:latest" } }
+      post app_template_versions_path(app), params: { version: { tag: "v1", image: "ghcr.io/a/b:latest" } }
     end
     assert_match(/digest-pinned/, response.body)
   end
@@ -273,18 +273,18 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # a shell (blueprint/steward/deploy.md, "The Release Step").
   test "a release command is typed as a line and stored as argv" do
     sign_in_as @user
-    app = App.create!(name: "web")
+    app = AppTemplate.create!(name: "web")
 
-    patch app_path(app), params: { app: { name: "web", release_line: "bin/rails db:migrate" } }
+    patch app_template_path(app), params: { app_template: { name: "web", release_line: "bin/rails db:migrate" } }
 
     assert_equal [ "bin/rails", "db:migrate" ], app.reload.release
   end
 
   test "clearing the line clears the command" do
     sign_in_as @user
-    app = App.create!(name: "web", release: [ "bin/rails", "db:migrate" ])
+    app = AppTemplate.create!(name: "web", release: [ "bin/rails", "db:migrate" ])
 
-    patch app_path(app), params: { app: { name: "web", release_line: "" } }
+    patch app_template_path(app), params: { app_template: { name: "web", release_line: "" } }
 
     assert_empty app.reload.release
   end
@@ -293,18 +293,18 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # "leave it alone" is right — the same rule the env editor follows.
   test "a form that does not carry the field leaves the command alone" do
     sign_in_as @user
-    app = App.create!(name: "web", release: [ "bin/rails", "db:migrate" ])
+    app = AppTemplate.create!(name: "web", release: [ "bin/rails", "db:migrate" ])
 
-    patch app_path(app), params: { app: { name: "web", port: 3000 } }
+    patch app_template_path(app), params: { app_template: { name: "web", port: 3000 } }
 
     assert_equal [ "bin/rails", "db:migrate" ], app.reload.release
   end
 
   test "the form says a shell is not available, rather than letting one be typed" do
     sign_in_as @user
-    get edit_app_path(App.create!(name: "web"))
+    get edit_app_template_path(AppTemplate.create!(name: "web"))
 
-    assert_select "input[name=?]", "app[release_line]"
+    assert_select "input[name=?]", "app_template[release_line]"
     assert_select ".field small", /no shell/i
   end
 
@@ -313,9 +313,9 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # rather than a translation (decisions/accessories-belong-to-one-app.md).
   test "an accessory row is stored in the shape the box's spec uses" do
     sign_in_as @user
-    app = App.create!(name: "web")
+    app = AppTemplate.create!(name: "web")
 
-    patch app_path(app), params: { app: { name: "web", inputs_form: "1", accessory_rows: {
+    patch app_template_path(app), params: { app_template: { name: "web", inputs_form: "1", accessory_rows: {
       "0" => { name: "db", image: "postgres@sha256:#{'b' * 64}",
                volumes: "db-data:/var/lib/postgresql/data",
                env: "POSTGRES_DB=app\nPOSTGRES_USER=app", secrets: "POSTGRES_PASSWORD" }
@@ -330,9 +330,9 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
 
   test "a blank row is dropped, and removing the last one removes it" do
     sign_in_as @user
-    app = App.create!(name: "web", accessories: [ { "name" => "db", "image" => "p@sha256:#{'b' * 64}" } ])
+    app = AppTemplate.create!(name: "web", accessories: [ { "name" => "db", "image" => "p@sha256:#{'b' * 64}" } ])
 
-    patch app_path(app), params: { app: { name: "web", inputs_form: "1" } }
+    patch app_template_path(app), params: { app_template: { name: "web", inputs_form: "1" } }
 
     assert_empty app.reload.accessories
   end
@@ -341,13 +341,13 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # deploy after someone has built an install on them.
   test "an accessory the box would refuse is refused where it is typed" do
     sign_in_as @user
-    app = App.create!(name: "web")
+    app = AppTemplate.create!(name: "web")
 
     [ { name: "db", image: "postgres:16" },                    # a tag, not a digest
       { name: "a",  image: "p@sha256:#{'b' * 64}" },           # a deploy color
       { name: "web", image: "p@sha256:#{'b' * 64}" },          # the app's own name
       { name: "db", image: "p@sha256:#{'b' * 64}", volumes: "/etc:/etc" } ].each do |row|
-      patch app_path(app), params: { app: { name: "web", inputs_form: "1",
+      patch app_template_path(app), params: { app_template: { name: "web", inputs_form: "1",
                                             accessory_rows: { "0" => row } } }
       assert_response :unprocessable_entity, "accepted #{row.inspect}"
       assert_empty app.reload.accessories
@@ -359,9 +359,9 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # because the box execs it and never sees a shell.
   test "a process row is stored as name and argv" do
     sign_in_as @user
-    app = App.create!(name: "web")
+    app = AppTemplate.create!(name: "web")
 
-    patch app_path(app), params: { app: { name: "web", inputs_form: "1", process_rows: {
+    patch app_template_path(app), params: { app_template: { name: "web", inputs_form: "1", process_rows: {
       "0" => { name: "worker", command: "bin/jobs --queue default" }
     } } }
 
@@ -371,11 +371,11 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
 
   test "a process the box would refuse is refused where it is typed" do
     sign_in_as @user
-    app = App.create!(name: "web")
+    app = AppTemplate.create!(name: "web")
 
     [ { name: "worker", command: "" },       # nothing to run is not a process
       { name: "web",    command: "bin/jobs" } ].each do |row|
-      patch app_path(app), params: { app: { name: "web", inputs_form: "1",
+      patch app_template_path(app), params: { app_template: { name: "web", inputs_form: "1",
                                             process_rows: { "0" => row } } }
       assert_response :unprocessable_entity, "accepted #{row.inspect}"
       assert_empty app.reload.processes
@@ -386,9 +386,9 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
   # console checks the same set the box does — so this fails here, not at deploy.
   test "a process and an accessory cannot claim one container name" do
     sign_in_as @user
-    app = App.create!(name: "web")
+    app = AppTemplate.create!(name: "web")
 
-    patch app_path(app), params: { app: { name: "web", inputs_form: "1",
+    patch app_template_path(app), params: { app_template: { name: "web", inputs_form: "1",
       process_rows:   { "0" => { name: "worker", command: "bin/jobs" } },
       accessory_rows: { "0" => { name: "worker-a", image: "p@sha256:#{'b' * 64}" } } } }
 

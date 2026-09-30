@@ -2,7 +2,7 @@
 
 > The App Library is **built and graduated**: the operator-facing flow is in
 > [`blueprint/console/journeys.md`](../../blueprint/console/journeys.md), the model
-> (`App → Version`, the three-tier `App → Install → InstallTarget`, the manifest) in
+> (`AppTemplate → Version`, the three-tier `AppTemplate → Install → InstallTarget`, the manifest) in
 > [`blueprint/console/data-model.md`](../../blueprint/console/data-model.md), and the
 > manifest *why* in [`../app-library-manifest.md`](../app-library-manifest.md). What remains
 > here is the **governing principle** and the open items.

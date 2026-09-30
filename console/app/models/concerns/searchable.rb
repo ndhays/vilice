@@ -1,6 +1,6 @@
 # Shared list search. `key=value` / bare-key tokens match labels; free text is a
 # name substring (mirrors the record's selector grammar — see Event.search). Lifted
-# out of App.search so App, Project (and later Machine) share one parser, per
+# out of AppTemplate.search so AppTemplate, Project (and later Machine) share one parser, per
 # decisions/open/list-search.md. Requires the model to have a `name` column and to
 # be polymorphically `labelable`.
 module Searchable

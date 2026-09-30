@@ -1,7 +1,7 @@
 <% content_for :title, "App Library — Steward" %>
 
 <%= page_header "App Library", icon: "library-big" do %>
-  <%= button_link_to "Add Template", new_app_path, icon: "plus", class: "btn sm" %>
+  <%= button_link_to "Add Template", new_app_template_path, icon: "plus", class: "btn sm" %>
 
   <span class="head-divider" aria-hidden="true"></span>
 
@@ -10,13 +10,13 @@
   <details class="menu">
     <summary class="btn sm"><%= safe_join([ icon("file-up", size: 14), "Import Library" ]) %></summary>
     <div class="menu-pop">
-      <%= form_with url: import_apps_path, method: :post, html: { multipart: true }, class: "menu-form" do |f| %>
+      <%= form_with url: import_app_templates_path, method: :post, html: { multipart: true }, class: "menu-form" do |f| %>
         <span class="menu-label">From a file</span>
         <%= f.file_field :file, accept: ".yml,.yaml", required: true %>
         <%= f.submit "Import file", class: "btn-quiet" %>
       <% end %>
       <div class="menu-rule"></div>
-      <%= form_with url: import_apps_path, method: :post, class: "menu-form" do |f| %>
+      <%= form_with url: import_app_templates_path, method: :post, class: "menu-form" do |f| %>
         <span class="menu-label">From a URL</span>
         <%= f.url_field :url, placeholder: "https://applibrary.agoraforge.org/…", required: true %>
         <%= f.submit "Import URL", class: "btn-quiet" %>
@@ -24,26 +24,26 @@
     </div>
   </details>
 
-  <% if App.exists? %>
-    <%= button_link_to "Export Library", export_apps_path, icon: "file-down", class: "btn sm" %>
+  <% if AppTemplate.exists? %>
+    <%= button_link_to "Export Library", export_app_templates_path, icon: "file-down", class: "btn sm" %>
   <% end %>
 <% end %>
 
-<% if @apps.any? || @q.present? %>
+<% if @app_templates.any? || @q.present? %>
   <div class="list-managed" data-controller="selection">
     <%= render layout: "shared/list_toolbar",
-          locals: { search_url: apps_path, q: @q, placeholder: "name  ·  key=value label" } do %>
+          locals: { search_url: app_templates_path, q: @q, placeholder: "name  ·  key=value label" } do %>
       <%= button_tag type: "submit", form: "apps-bulk", class: "btn-quiet danger",
             formnovalidate: true, disabled: true, data: { selection_target: "action" } do %>
         <%= safe_join([ icon("trash-2", size: 14), "Remove" ]) %>
       <% end %>
     <% end %>
 
-    <% if @apps.any? %>
-      <%= form_with url: remove_selected_apps_path, method: :delete, id: "apps-bulk",
+    <% if @app_templates.any? %>
+      <%= form_with url: remove_selected_app_templates_path, method: :delete, id: "apps-bulk",
             data: { turbo_confirm: "Remove the selected templates from the App Library?" } do %>
         <ul class="rows app-rows">
-          <%= render partial: "apps/row", collection: @apps, as: :app %>
+          <%= render partial: "app_templates/row", collection: @app_templates, as: :app %>
         </ul>
       <% end %>
     <% else %>
@@ -51,6 +51,6 @@
     <% end %>
   </div>
 <% else %>
-  <p class="empty">No templates yet. <%= link_to "Add one", new_app_path %>, or import from
+  <p class="empty">No templates yet. <%= link_to "Add one", new_app_template_path %>, or import from
     <a href="https://applibrary.agoraforge.org">a shared library</a>.</p>
 <% end %>

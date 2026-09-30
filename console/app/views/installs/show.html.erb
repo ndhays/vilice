@@ -17,8 +17,8 @@
 <%# One line of facts: whose work it is, what it runs, and where it answers. %>
 <p class="addr machine-facts">
   <% if @project %><%= link_to @project.name, @project %> · <% end %>
-  <% if @install.app %>
-    <%= link_to @install.app.name, @install.app %><% if @install.version %> ·
+  <% if @install.app_template %>
+    <%= link_to @install.app_template.name, @install.app_template %><% if @install.version %> ·
       <span class="mono"><%= @install.version.tag %></span><% end %>
   <% else %>
     custom image

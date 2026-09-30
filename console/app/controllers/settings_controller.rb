@@ -61,7 +61,7 @@ class SettingsController < ApplicationController
 
     ActiveRecord::Base.transaction do
       [ InstallTarget, Snapshot, Event, Label, Install, Version, ProjectMachine,
-        App, Machine, Project ].each(&:delete_all)
+        AppTemplate, Machine, Project ].each(&:delete_all)
     end
     redirect_to settings_path, notice: "All fleet data erased."
   end

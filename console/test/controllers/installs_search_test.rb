@@ -9,10 +9,10 @@ class InstallsSearchTest < ActionDispatch::IntegrationTest
     @acme  = Project.create!(name: "Acme")
     @box   = Machine.create!(name: "node-005", ssh_host: "x")
     @other = Machine.create!(name: "node-999", ssh_host: "x")
-    @nginx = App.create!(name: "nginx")
+    @nginx = AppTemplate.create!(name: "nginx")
 
     @web = @acme.installs.create!(name: "acme-web", image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                                 hostname: "shop.example.com", app: @nginx)
+                                 hostname: "shop.example.com", app_template: @nginx)
     @web.install_targets.create!(machine: @box, status: "running")
 
     @api = @acme.installs.create!(name: "billing-api", image: "x@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")

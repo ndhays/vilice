@@ -4,7 +4,7 @@ require "test_helper"
 # and the deliberate omissions (labels stay local). See decisions/open/app-library.md.
 class LibraryTest < ActiveSupport::TestCase
   test "export carries the app spec, env/secret schema, files, and versions" do
-    app = App.create!(name: "web", description: "Frontend", port: 8080, health: "/up",
+    app = AppTemplate.create!(name: "web", description: "Frontend", port: 8080, health: "/up",
                       env: [ { "key" => "LOG", "secret" => false },
                              { "key" => "TOKEN", "secret" => true } ],
                       secret_files: [ { "name" => "config", "path" => "/etc/web/config" } ])
@@ -29,7 +29,7 @@ class LibraryTest < ActiveSupport::TestCase
       "secret_files" => [ { "name" => "config", "path" => "/etc/web/config" } ],
     } ])
 
-    app = App.find_by!(name: "web")
+    app = AppTemplate.find_by!(name: "web")
     assert_equal [ { "key" => "LOG", "secret" => false },
                    { "key" => "TOKEN", "secret" => true } ], app.env
     assert_equal %w[ TOKEN ], app.secret_keys
@@ -37,17 +37,17 @@ class LibraryTest < ActiveSupport::TestCase
   end
 
   test "labels are never exported — they are local, not part of the app's definition" do
-    app = App.create!(name: "web")
+    app = AppTemplate.create!(name: "web")
     app.labels.create!(key: "team", value: "payments")
     assert_not Library.export["apps"].sole.key?("labels")
   end
 
   test "round-trips an exported library back to an equivalent manifest" do
-    app = App.create!(name: "web", port: 8080)
+    app = AppTemplate.create!(name: "web", port: 8080)
     app.set_latest!(app.versions.create!(tag: "v1", image: "img@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
     manifest = Library.export
 
-    App.destroy_all
+    AppTemplate.destroy_all
     Library.import(manifest)
 
     assert_equal manifest, Library.export
@@ -56,11 +56,11 @@ class LibraryTest < ActiveSupport::TestCase
   test "import is additive — two libraries merge rather than replace" do
     Library.import("format" => 1, "apps" => [ { "name" => "abc-web" } ])
     Library.import("format" => 1, "apps" => [ { "name" => "acme-web" } ])
-    assert_equal %w[ abc-web acme-web ], App.order(:name).pluck(:name)
+    assert_equal %w[ abc-web acme-web ], AppTemplate.order(:name).pluck(:name)
   end
 
   test "re-import upserts versions by tag and refreshes the image, deleting nothing" do
-    app = App.create!(name: "web")
+    app = AppTemplate.create!(name: "web")
     app.set_latest!(app.versions.create!(tag: "v1", image: "img@sha256:fcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdfcdf"))
 
     Library.import("format" => 1, "apps" => [ {
@@ -75,7 +75,7 @@ class LibraryTest < ActiveSupport::TestCase
   end
 
   test "a re-import without a latest flag leaves the chosen latest alone" do
-    app = App.create!(name: "web")
+    app = AppTemplate.create!(name: "web")
     app.versions.create!(tag: "v1", image: "img@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
     v2 = app.versions.create!(tag: "v2", image: "img@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
     app.set_latest!(v2)
@@ -117,51 +117,51 @@ class LibraryTest < ActiveSupport::TestCase
   # on the way out and back. argv stays a list — flattening it to a string would export a
   # shell command the box has no shell to run.
   test "a release command survives an export/import round trip as argv" do
-    app = App.create!(name: "web", port: 8080, release: [ "bin/rails", "db:migrate" ])
+    app = AppTemplate.create!(name: "web", port: 8080, release: [ "bin/rails", "db:migrate" ])
     app.versions.create!(tag: "v1", image: "img@sha256:#{'a' * 64}")
 
     manifest = Library.export
     Version.delete_all
-    App.delete_all
+    AppTemplate.delete_all
     Library.import(manifest)
 
-    assert_equal [ "bin/rails", "db:migrate" ], App.find_by(name: "web").release
+    assert_equal [ "bin/rails", "db:migrate" ], AppTemplate.find_by(name: "web").release
   end
 
   # Absent means "leave it alone", the same rule every other field follows here.
   test "a manifest without a release command does not clear one" do
-    App.create!(name: "web", release: [ "bin/rails", "db:migrate" ])
+    AppTemplate.create!(name: "web", release: [ "bin/rails", "db:migrate" ])
 
     Library.import({ "format" => 1, "apps" => [ { "name" => "web", "port" => 3000 } ] })
 
-    assert_equal [ "bin/rails", "db:migrate" ], App.find_by(name: "web").release
+    assert_equal [ "bin/rails", "db:migrate" ], AppTemplate.find_by(name: "web").release
   end
 
   test "accessories survive an export/import round trip in the box's own shape" do
     db = { "name" => "db", "image" => "postgres@sha256:#{'b' * 64}",
            "env" => { "POSTGRES_DB" => "app" }, "secrets" => [ "POSTGRES_PASSWORD" ],
            "volumes" => [ "db-data:/var/lib/postgresql/data" ] }
-    app = App.create!(name: "web", accessories: [ db ])
+    app = AppTemplate.create!(name: "web", accessories: [ db ])
     app.versions.create!(tag: "v1", image: "img@sha256:#{'a' * 64}")
 
     manifest = Library.export
     Version.delete_all
-    App.delete_all
+    AppTemplate.delete_all
     Library.import(manifest)
 
-    assert_equal [ db ], App.find_by(name: "web").accessories
+    assert_equal [ db ], AppTemplate.find_by(name: "web").accessories
   end
 
   test "processes survive an export/import round trip as argv" do
     worker = { "name" => "worker", "command" => [ "bin/jobs" ] }
-    app = App.create!(name: "web", processes: [ worker ])
+    app = AppTemplate.create!(name: "web", processes: [ worker ])
     app.versions.create!(tag: "v1", image: "img@sha256:#{'a' * 64}")
 
     manifest = Library.export
     Version.delete_all
-    App.delete_all
+    AppTemplate.delete_all
     Library.import(manifest)
 
-    assert_equal [ worker ], App.find_by(name: "web").processes
+    assert_equal [ worker ], AppTemplate.find_by(name: "web").processes
   end
 end

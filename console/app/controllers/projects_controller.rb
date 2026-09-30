@@ -87,7 +87,7 @@ class ProjectsController < ApplicationController
 
   def show
     @project  = Project.find(params[:id])
-    @installs = @project.installs.includes(:app, :version, install_targets: :machine).order(:name)
+    @installs = @project.installs.includes(:app_template, :version, install_targets: :machine).order(:name)
     # Two clean groups: boxes this project OWNS (its hardware), and boxes it uses
     # but another project owns (shared in). machine-ownership.md.
     @owned_machines  = @project.owned_machines.includes(:labels, :owner).order(:name)

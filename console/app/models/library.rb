@@ -20,7 +20,7 @@ module Library
   def self.export
     {
       "format" => FORMAT,
-      "apps" => App.order(:name).includes(:versions).map { |app| app_to_h(app) },
+      "apps" => AppTemplate.order(:name).includes(:versions).map { |app| app_to_h(app) },
     }
   end
 
@@ -77,8 +77,8 @@ module Library
   # written — an absent key never clears an existing value (additive, true to the
   # "nothing is deleted" rule).
   def self.import_app(row)
-    App.transaction do
-      app = App.find_or_initialize_by(name: row.fetch("name"))
+    AppTemplate.transaction do
+      app = AppTemplate.find_or_initialize_by(name: row.fetch("name"))
       attrs = row.slice("description", "port", "health")
       attrs["env"] = normalize_env(row["env"]) if row["env"].present?
       attrs["secret_files"] = Array(row["secret_files"]) if row["secret_files"].present?

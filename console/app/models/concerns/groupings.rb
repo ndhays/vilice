@@ -1,5 +1,5 @@
 # Shared grouping mechanism for the list pages. Lifted out of MachineGroups when the
-# Installs list wanted the same thing, the way Searchable was lifted out of App.search
+# Installs list wanted the same thing, the way Searchable was lifted out of AppTemplate.search
 # (decisions/open/list-search.md) — the *mechanism* is shared; each page keeps its own
 # `ALL` and `DEFAULT`, because what a fleet groups by and what a set of placements
 # groups by are different questions.

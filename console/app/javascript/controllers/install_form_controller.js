@@ -16,7 +16,7 @@ export default class extends Controller {
     this.versionFieldTarget.hidden = true
     if (this.hasImageFieldTarget) this.imageFieldTarget.hidden = true
 
-    const chosen = this.element.querySelector('input[name="install[app_id]"]:checked')
+    const chosen = this.element.querySelector('input[name="install[app_template_id]"]:checked')
     if (chosen) this.pick(chosen)
   }
 
@@ -48,7 +48,7 @@ export default class extends Controller {
   filter() {
     const q = this.searchTarget.value.trim().toLowerCase()
     this.element.querySelectorAll(".pick-list .pick-option").forEach((opt) => {
-      const name = (opt.querySelector('input[name="install[app_id]"]')?.dataset.name || "").toLowerCase()
+      const name = (opt.querySelector('input[name="install[app_template_id]"]')?.dataset.name || "").toLowerCase()
       opt.hidden = q.length > 0 && !name.includes(q)
     })
   }

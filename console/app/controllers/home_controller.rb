@@ -17,7 +17,7 @@ class HomeController < ApplicationController
   # is not a state (decisions/drift-is-surfaced-never-closed.md), and the row renders it
   # as a gap beside the health glyph, not inside it.
   def index
-    installs = Install.includes(:app, :version, :project, install_targets: :machine)
+    installs = Install.includes(:app_template, :version, :project, install_targets: :machine)
     ranked = installs.map { |i| [ i, i.state ] }
 
     unhealthy = ranked.select { |_, state| Install::EXCEPTION_STATES.include?(state) }

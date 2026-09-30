@@ -91,10 +91,10 @@ Access · App Library · Settings      the surfaces that serve them
 ```
 
 **What the page calls things.** An `Install` reads as an **App** — it is what an
-operator means by "the app": a template configured and placed for a client. An `App` (a
+operator means by "the app": a template configured and placed for a client. An `AppTemplate` (a
 Library entry) reads as an **App Template**, and the Library keeps its name, the **App
-Library**. The code names follow in their own change (roadmap); until then the model is
-`Install` and the page says *App*.
+Library**. The template's code name already matches; `Install` → `App` follows (roadmap), and
+until then the model is `Install` and the page says *App*.
 
 **The rings read bottom-up, floor first.** The three rings of
 [`decisions/console-layers.md`](../../decisions/console-layers.md) — machine view,

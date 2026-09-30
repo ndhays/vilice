@@ -10,8 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_162019) do
-  create_table "apps", force: :cascade do |t|
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_190719) do
+  create_table "app_templates", force: :cascade do |t|
     t.json "accessories", default: [], null: false
     t.datetime "created_at", null: false
     t.string "description"
@@ -23,7 +23,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_162019) do
     t.json "release", default: [], null: false
     t.json "secret_files", default: [], null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_apps_on_name", unique: true
+    t.index ["name"], name: "index_app_templates_on_name", unique: true
   end
 
   create_table "events", force: :cascade do |t|
@@ -64,7 +64,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_162019) do
   end
 
   create_table "installs", force: :cascade do |t|
-    t.integer "app_id"
+    t.integer "app_template_id"
     t.integer "balancer_id"
     t.json "config", default: {}, null: false
     t.integer "count", default: 1, null: false
@@ -79,7 +79,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_162019) do
     t.text "secret_values"
     t.datetime "updated_at", null: false
     t.integer "version_id"
-    t.index ["app_id"], name: "index_installs_on_app_id"
+    t.index ["app_template_id"], name: "index_installs_on_app_template_id"
     t.index ["balancer_id"], name: "index_installs_on_balancer_id"
     t.index ["project_id"], name: "index_installs_on_project_id"
     t.index ["version_id"], name: "index_installs_on_version_id"
@@ -197,15 +197,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_162019) do
   end
 
   create_table "versions", force: :cascade do |t|
-    t.integer "app_id", null: false
+    t.integer "app_template_id", null: false
     t.datetime "created_at", null: false
     t.string "image", null: false
     t.boolean "latest", default: false, null: false
     t.string "tag", null: false
     t.datetime "updated_at", null: false
-    t.index ["app_id", "tag"], name: "index_versions_on_app_id_and_tag", unique: true
-    t.index ["app_id"], name: "index_versions_on_app_id"
-    t.index ["app_id"], name: "index_versions_one_latest_per_app", unique: true, where: "latest"
+    t.index ["app_template_id", "tag"], name: "index_versions_on_app_template_id_and_tag", unique: true
+    t.index ["app_template_id"], name: "index_versions_on_app_template_id"
+    t.index ["app_template_id"], name: "index_versions_one_latest_per_app", unique: true, where: "latest"
   end
 
   add_foreign_key "events", "installs"
@@ -213,7 +213,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_162019) do
   add_foreign_key "events", "projects"
   add_foreign_key "install_targets", "installs"
   add_foreign_key "install_targets", "machines"
-  add_foreign_key "installs", "apps"
+  add_foreign_key "installs", "app_templates"
   add_foreign_key "installs", "machines", column: "balancer_id"
   add_foreign_key "installs", "projects"
   add_foreign_key "installs", "versions"
@@ -224,5 +224,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_162019) do
   add_foreign_key "project_machines", "projects"
   add_foreign_key "sessions", "users"
   add_foreign_key "snapshots", "machines"
-  add_foreign_key "versions", "apps"
+  add_foreign_key "versions", "app_templates"
 end

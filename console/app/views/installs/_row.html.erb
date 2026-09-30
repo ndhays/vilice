@@ -19,8 +19,8 @@
     <%= placement_gap_line(install) %>
   </span>
   <span class="cell-app mono">
-    <% if install.app %>
-      <%= install.app.name %><% if install.version %> · <%= install.version.tag %><% end %>
+    <% if install.app_template %>
+      <%= install.app_template.name %><% if install.version %> · <%= install.version.tag %><% end %>
     <% else %>
       <span class="muted">custom image</span>
     <% end %>

@@ -4,43 +4,43 @@ require "test_helper"
 class VersionsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one)
-    @app  = App.create!(name: "web")
+    @app_template  = AppTemplate.create!(name: "web")
   end
 
   test "the first version is made latest and recorded" do
     sign_in_as @user
     assert_difference [ -> { Version.count }, -> { Event.count } ], 1 do
-      post app_versions_path(@app), params: { version: { tag: "v1", image: "img@sha256:1111111111111111111111111111111111111111111111111111111111111111" } }
+      post app_template_versions_path(@app_template), params: { version: { tag: "v1", image: "img@sha256:1111111111111111111111111111111111111111111111111111111111111111" } }
     end
-    assert_redirected_to @app
-    assert_equal "v1", @app.reload.latest_version&.tag
+    assert_redirected_to @app_template
+    assert_equal "v1", @app_template.reload.latest_version&.tag
     assert_equal "added", Event.latest.first.action
   end
 
   test "make latest flips the flag to exactly one, recorded" do
     sign_in_as @user
-    v1 = @app.versions.create!(tag: "v1", image: "ghcr.io/acme/app@sha256:9191919191919191919191919191919191919191919191919191919191919191"); @app.set_latest!(v1)
-    v2 = @app.versions.create!(tag: "v2", image: "ghcr.io/acme/app@sha256:9292929292929292929292929292929292929292929292929292929292929292")
+    v1 = @app_template.versions.create!(tag: "v1", image: "ghcr.io/acme/app@sha256:9191919191919191919191919191919191919191919191919191919191919191"); @app_template.set_latest!(v1)
+    v2 = @app_template.versions.create!(tag: "v2", image: "ghcr.io/acme/app@sha256:9292929292929292929292929292929292929292929292929292929292929292")
     assert_difference -> { Event.count }, 1 do
-      patch latest_app_version_path(@app, v2)
+      patch latest_app_template_version_path(@app_template, v2)
     end
-    assert_equal v2, @app.reload.latest_version
-    assert_equal 1, @app.versions.where(latest: true).count
+    assert_equal v2, @app_template.reload.latest_version
+    assert_equal 1, @app_template.versions.where(latest: true).count
   end
 
   test "a non-first version with make_latest off does not steal latest" do
     sign_in_as @user
-    v1 = @app.versions.create!(tag: "v1", image: "ghcr.io/acme/app@sha256:9191919191919191919191919191919191919191919191919191919191919191"); @app.set_latest!(v1)
-    post app_versions_path(@app), params: { version: { tag: "v2", image: "ghcr.io/acme/app@sha256:9292929292929292929292929292929292929292929292929292929292929292" }, make_latest: "0" }
-    assert_equal v1, @app.reload.latest_version
+    v1 = @app_template.versions.create!(tag: "v1", image: "ghcr.io/acme/app@sha256:9191919191919191919191919191919191919191919191919191919191919191"); @app_template.set_latest!(v1)
+    post app_template_versions_path(@app_template), params: { version: { tag: "v2", image: "ghcr.io/acme/app@sha256:9292929292929292929292929292929292929292929292929292929292929292" }, make_latest: "0" }
+    assert_equal v1, @app_template.reload.latest_version
   end
 
   test "removing a version is recorded" do
     sign_in_as @user
-    v = @app.versions.create!(tag: "v1", image: "ghcr.io/acme/app@sha256:9191919191919191919191919191919191919191919191919191919191919191")
+    v = @app_template.versions.create!(tag: "v1", image: "ghcr.io/acme/app@sha256:9191919191919191919191919191919191919191919191919191919191919191")
     assert_difference -> { Version.count }, -1 do
       assert_difference -> { Event.count }, 1 do
-        delete app_version_path(@app, v)
+        delete app_template_version_path(@app_template, v)
       end
     end
     assert_equal "removed", Event.latest.first.action
@@ -55,7 +55,7 @@ class VersionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference [ -> { Version.count }, -> { Event.count } ] do
       with_resolve(digest) do
-        post resolve_app_versions_path(@app),
+        post resolve_app_template_versions_path(@app_template),
              params: { version: { tag: "v1", image: "ghcr.io/acme/web:v1" } }
       end
     end
@@ -72,7 +72,7 @@ class VersionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference -> { Version.count } do
       with_resolve_error("ghcr.io wants a credential for acme/web.") do
-        post resolve_app_versions_path(@app),
+        post resolve_app_template_versions_path(@app_template),
              params: { version: { tag: "v1", image: "ghcr.io/acme/web:v1" } }
       end
     end
@@ -81,7 +81,7 @@ class VersionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "resolving is behind the login like everything else" do
-    post resolve_app_versions_path(@app), params: { version: { tag: "v1", image: "nginx" } }
+    post resolve_app_template_versions_path(@app_template), params: { version: { tag: "v1", image: "nginx" } }
     assert_redirected_to new_session_path
   end
 

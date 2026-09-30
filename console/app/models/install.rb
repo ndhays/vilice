@@ -4,7 +4,7 @@ class Install < ApplicationRecord
   # there is one, is context: whose work it is, never what contains it.
   belongs_to :project, optional: true
   # The App Library entry this was installed from; nil = a custom image (slice 2b).
-  belongs_to :app, optional: true
+  belongs_to :app_template, optional: true
   # The release deployed; nil for custom images. `image` is copied from it at install.
   belongs_to :version, optional: true
 
@@ -14,8 +14,8 @@ class Install < ApplicationRecord
 
   # This name is the one the box actually uses — `apps/<name>.json`, volumes, the unit.
   # Steward rejects anything outside [A-Za-z0-9_-] (auth.go `validClient`) and won't
-  # dash-case it, so validate here (matching App's rule) to fail before the act. Port
-  # and health are deployed verbatim too, so they mirror the box's bounds like App's.
+  # dash-case it, so validate here (matching AppTemplate's rule) to fail before the act. Port
+  # and health are deployed verbatim too, so they mirror the box's bounds like AppTemplate's.
   NAME_FORMAT = /\A[A-Za-z0-9][A-Za-z0-9_-]*\z/
 
   # No uniqueness here on purpose. The name has to be free *on the box* — that's the
@@ -61,7 +61,7 @@ class Install < ApplicationRecord
   # find out where you typed it rather than at the far end, after building on it.
   BIND_ROOT = "/srv".freeze
 
-  # One rule, shared: an Install's own volumes and an App's accessory volumes are the
+  # One rule, shared: an Install's own volumes and an AppTemplate's accessory volumes are the
   # same declaration going to the same place. Returns a sentence or nil.
   def self.volume_error(v)
     v = v.to_s
@@ -234,8 +234,8 @@ class Install < ApplicationRecord
     return all if query.blank?
 
     like = "%#{query}%"
-    where(id: joins("LEFT JOIN apps ON apps.id = installs.app_id")
-              .where("installs.name LIKE :q OR installs.hostname LIKE :q OR apps.name LIKE :q", q: like)
+    where(id: joins("LEFT JOIN app_templates ON app_templates.id = installs.app_template_id")
+              .where("installs.name LIKE :q OR installs.hostname LIKE :q OR app_templates.name LIKE :q", q: like)
               .select(:id))
       .or(where(id: joins(install_targets: :machine).where("machines.name LIKE ?", like).select(:id)))
   end
@@ -271,23 +271,23 @@ class Install < ApplicationRecord
   # shape, the install carries the values. One reading of that shape, used by the form,
   # by the envelope, and by the check that runs before the ceremony.
 
-  def secret_env_names = app ? app.secret_keys : []
+  def secret_env_names = app_template ? app_template.secret_keys : []
 
   # Secret files, as the box wants them: `{ name => container path }`.
   def secret_file_paths
-    return {} unless app
+    return {} unless app_template
 
-    app.secret_files.to_h { |f| [ f["name"], f["path"] ] }
+    app_template.secret_files.to_h { |f| [ f["name"], f["path"] ] }
   end
 
   # Plain env var names — recorded in the clear, so their values are part of the spec
   # rather than of the values half.
-  def plain_env_names = app ? app.env_recorded : []
+  def plain_env_names = app_template ? app_template.env_recorded : []
 
   # Every name that needs a value, an accessory's included: a database password is the
   # install's to supply even though the database is the thing that reads it.
   def declared_secret_names
-    return [] unless app
+    return [] unless app_template
 
     (secret_env_names + secret_file_paths.keys +
       accessories.flat_map { |a| Array(a["secrets"]) }).uniq

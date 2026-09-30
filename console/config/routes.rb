@@ -55,7 +55,7 @@ Rails.application.routes.draw do
 
   # App Library — the curated directory of installable app definitions (no install
   # action here; the library is a directory, not a launcher).
-  resources :apps do
+  resources :app_templates do
     # The library as a portable manifest, and bulk curation (the counterweight to
     # additive import). See decisions/open/app-library.md.
     collection do

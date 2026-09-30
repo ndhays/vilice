@@ -26,7 +26,7 @@ class LabelsController < ApplicationController
   def find_labelable
     if params[:machine_id] then Machine.find(params[:machine_id])
     elsif params[:project_id] then Project.find(params[:project_id])
-    elsif params[:app_id] then App.find(params[:app_id])
+    elsif params[:app_template_id] then AppTemplate.find(params[:app_template_id])
     else raise ActiveRecord::RecordNotFound
     end
   end

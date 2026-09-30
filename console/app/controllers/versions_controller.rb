@@ -1,27 +1,27 @@
-# Releases of a library App. Each version is a (tag, image) pair; exactly one is
+# Releases of a library AppTemplate. Each version is a (tag, image) pair; exactly one is
 # `latest` (the install default). Adding, removing, and promoting a version are
 # control-plane own-record acts, recorded with the change in one transaction.
 class VersionsController < ApplicationController
   before_action :set_app
 
   def create
-    first       = @app.versions.empty? # the first version is always latest
-    @version    = @app.versions.new(version_params)
+    first       = @app_template.versions.empty? # the first version is always latest
+    @version    = @app_template.versions.new(version_params)
     make_latest = first || ActiveModel::Type::Boolean.new.cast(params[:make_latest])
 
     ok = false
-    App.transaction do
+    AppTemplate.transaction do
       ok = @version.save
       raise ActiveRecord::Rollback unless ok
-      @app.set_latest!(@version) if make_latest
-      record("added", "#{@app.name} #{@version.tag}")
+      @app_template.set_latest!(@version) if make_latest
+      record("added", "#{@app_template.name} #{@version.tag}")
     end
 
     if ok
-      redirect_to @app, notice: "Added #{@app.name} #{@version.tag}."
+      redirect_to @app_template, notice: "Added #{@app_template.name} #{@version.tag}."
     else
-      @versions = @app.versions.newest_first
-      render "apps/show", status: :unprocessable_entity
+      @versions = @app_template.versions.newest_first
+      render "app_templates/show", status: :unprocessable_entity
     end
   end
 
@@ -30,8 +30,8 @@ class VersionsController < ApplicationController
   # records nothing: it hands back a filled-in form, and adding the version is still
   # the same press it always was. The two steps are deliberately visible.
   def resolve
-    @version  = @app.versions.new(version_params)
-    @versions = @app.versions.newest_first
+    @version  = @app_template.versions.new(version_params)
+    @versions = @app_template.versions.newest_first
 
     begin
       @version.image = Registry.pin(@version.image)
@@ -40,29 +40,29 @@ class VersionsController < ApplicationController
       flash.now[:alert] = e.message
     end
 
-    render "apps/show"
+    render "app_templates/show"
   end
 
   def latest
-    version = @app.versions.find(params[:id])
-    @app.set_latest!(version)
-    record("set", "#{@app.name} latest to #{version.tag}")
-    redirect_to @app, notice: "#{version.tag} is now latest."
+    version = @app_template.versions.find(params[:id])
+    @app_template.set_latest!(version)
+    record("set", "#{@app_template.name} latest to #{version.tag}")
+    redirect_to @app_template, notice: "#{version.tag} is now latest."
   end
 
   def destroy
-    version = @app.versions.find(params[:id])
-    App.transaction do
+    version = @app_template.versions.find(params[:id])
+    AppTemplate.transaction do
       version.destroy!
-      record("removed", "#{@app.name} #{version.tag}")
+      record("removed", "#{@app_template.name} #{version.tag}")
     end
-    redirect_to @app, notice: "Removed #{@app.name} #{version.tag}."
+    redirect_to @app_template, notice: "Removed #{@app_template.name} #{version.tag}."
   end
 
   private
 
   def set_app
-    @app = App.find(params[:app_id])
+    @app_template = AppTemplate.find(params[:app_template_id])
   end
 
   def version_params

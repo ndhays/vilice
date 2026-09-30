@@ -8,9 +8,9 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user     = users(:one)
     @project  = Project.create!(name: "Acme")
-    @app      = App.create!(name: "web", port: 8080, health: "/up")
-    @version  = @app.versions.create!(tag: "v1", image: "ghcr.io/acme/web@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
-    @app.set_latest!(@version)
+    @app_template      = AppTemplate.create!(name: "web", port: 8080, health: "/up")
+    @version  = @app_template.versions.create!(tag: "v1", image: "ghcr.io/acme/web@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
+    @app_template.set_latest!(@version)
     @operator = Machine.create!(name: "op", ssh_host: "10.0.0.4", scope: "operate", ssh_private_key: "k", owner: @project)
     ProjectMachine.create!(project: @project, machine: @operator)
   end
@@ -27,8 +27,8 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     # One name for one thing — the crumb carries the project, the heading does not.
     assert_select "h1", /\AAdd App\z/
     assert_select ".breadcrumb", /Acme/
-    assert_select "input[type=radio][name=?]", "install[app_id]"  # the catalog picker
-    assert_select "input[name='install[app_id]'][checked]", false # nothing pre-selected
+    assert_select "input[type=radio][name=?]", "install[app_template_id]"  # the catalog picker
+    assert_select "input[name='install[app_template_id]'][checked]", false # nothing pre-selected
     assert_select "select[name=?]", "install[version_id]"         # version (default latest)
     assert_select "select[name=?]", "install[machine_id]"
     assert_select "select[name=?]", "install[project_id]", false  # project is the context
@@ -66,7 +66,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_difference [ -> { Install.count }, -> { Event.count } ], 1 do
       assert_no_difference -> { InstallTarget.count } do
         post installs_path(project_id: @project), params: { install: {
-          app_id: @app.id, hostname: "acme.example", count: 2, exposure: "balanced"
+          app_template_id: @app_template.id, hostname: "acme.example", count: 2, exposure: "balanced"
         } }
       end
     end
@@ -90,7 +90,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference [ -> { Install.count }, -> { Event.count } ] do
       post installs_path(project_id: @project), params: { install: {
-        app_id: @app.id, machine_id: outsider.id, hostname: "acme.example"
+        app_template_id: @app_template.id, machine_id: outsider.id, hostname: "acme.example"
       } }
     end
     assert_response :unprocessable_entity
@@ -107,7 +107,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_difference [ -> { Install.count }, -> { InstallTarget.count } ], 1 do
       assert_difference -> { Event.count }, 2 do
         post installs_path, params: { install: {
-          app_id: @app.id, machine_id: loose.id, hostname: "home.example"
+          app_template_id: @app_template.id, machine_id: loose.id, hostname: "home.example"
         } }
       end
     end
@@ -190,13 +190,13 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_difference [ -> { Install.count }, -> { InstallTarget.count } ], 1 do
       assert_difference -> { Event.count }, 2 do
         post installs_path(project_id: @project), params: { install: {
-          app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+          app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
         } }
       end
     end
     install = Install.last
     assert_equal @project.id, install.project_id
-    assert_equal @app.id, install.app_id
+    assert_equal @app_template.id, install.app_template_id
     assert_equal @version.id, install.version_id        # latest
     assert_equal @version.image, install.image
     assert_equal "web", install.name                    # defaulted from the app
@@ -206,9 +206,9 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "create can pin a specific version (the default is latest)" do
     sign_in_as @user
-    v2 = @app.versions.create!(tag: "v2", image: "ghcr.io/acme/web@sha256:defdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefd")  # @version (v1) stays latest
+    v2 = @app_template.versions.create!(tag: "v2", image: "ghcr.io/acme/web@sha256:defdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefdefd")  # @version (v1) stays latest
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, version_id: v2.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, version_id: v2.id, machine_id: @operator.id, hostname: "acme.example"
     } }
     install = Install.last
     assert_equal v2.id, install.version_id
@@ -220,7 +220,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   test "create parses the volumes textarea into the install config" do
     sign_in_as @user
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example",
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example",
       volumes: "storage:/rails/storage\n\n/srv/x:/data:ro\n"
     } }
     install = Install.last
@@ -235,7 +235,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     assert_no_difference [ -> { Install.count }, -> { InstallTarget.count } ] do
       post installs_path(project_id: @project), params: { install: {
-        app_id: @app.id, machine_id: @operator.id, hostname: "acme.example",
+        app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example",
         volumes: "storage"   # no container path
       } }
     end
@@ -247,7 +247,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     stray = Machine.create!(name: "stray", ssh_host: "10.0.0.9", scope: "operate")
     assert_no_difference -> { Install.count } do
       post installs_path(project_id: @project), params: { install: {
-        app_id: @app.id, machine_id: stray.id, hostname: "x"
+        app_template_id: @app_template.id, machine_id: stray.id, hostname: "x"
       } }
     end
     assert_response :unprocessable_entity
@@ -267,14 +267,14 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
       post installs_path(project_id: @project), params: params
     end
     install = Install.last
-    assert_nil install.app_id
+    assert_nil install.app_template_id
     assert_equal "ghcr.io/x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", install.image
   end
 
   # The Install is the app-actions home (decisions/install-the-app-actions-home.md).
   test "show renders the install — state, the box it runs on, and the witnessed verbs" do
     sign_in_as @user
-    install = @project.installs.create!(name: "web", app: @app, version: @version,
+    install = @project.installs.create!(name: "web", app_template: @app_template, version: @version,
                                         image: @version.image, hostname: "acme.example")
     install.install_targets.create!(machine: @operator, status: "running",
                                     desired_image: @version.image, current_image: @version.image)
@@ -292,7 +292,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "show lists the install's declared volumes" do
     sign_in_as @user
-    install = @project.installs.create!(name: "web", app: @app, version: @version,
+    install = @project.installs.create!(name: "web", app_template: @app_template, version: @version,
                                         image: @version.image, config: { "volumes" => [ "storage:/rails/storage" ] })
     install.install_targets.create!(machine: @operator, status: "running")
 
@@ -306,7 +306,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     observer = Machine.create!(name: "obs", ssh_host: "10.0.0.7", scope: "observe", ssh_private_key: "k", owner: @project)
     ProjectMachine.create!(project: @project, machine: observer)
-    install = @project.installs.create!(name: "web", app: @app, version: @version, image: @version.image)
+    install = @project.installs.create!(name: "web", app_template: @app_template, version: @version, image: @version.image)
     install.install_targets.create!(machine: observer, status: "pending")
 
     # observe scope can't act — the guard redirect proves the return path is the install
@@ -326,7 +326,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference [ -> { Install.count }, -> { InstallTarget.count }, -> { Event.count } ] do
       post installs_path(project_id: @project), params: { install: {
-        app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"  # app name "web" collides
+        app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"  # app name "web" collides
       } }
     end
     assert_response :unprocessable_entity
@@ -417,7 +417,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference [ -> { Install.count }, -> { InstallTarget.count } ] do
       post installs_path, params: { install: {
-        app_id: @app.id, machine_id: @operator.id, hostname: "home.example"
+        app_template_id: @app_template.id, machine_id: @operator.id, hostname: "home.example"
       } }
     end
     assert_response :unprocessable_entity
@@ -428,15 +428,15 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   # library later never silently changes what an already-placed app runs.
   test "an install copies the app's release command, and a later library edit does not follow" do
     sign_in_as @user
-    @app.update!(release: [ "bin/rails", "db:migrate" ])
+    @app_template.update!(release: [ "bin/rails", "db:migrate" ])
 
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
     install = Install.last
     assert_equal [ "bin/rails", "db:migrate" ], install.release
 
-    @app.update!(release: [ "bin/rails", "db:seed" ])
+    @app_template.update!(release: [ "bin/rails", "db:seed" ])
     assert_equal [ "bin/rails", "db:migrate" ], install.reload.release
   end
 
@@ -444,9 +444,9 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   # shell to run it with.
   test "the deploy envelope carries the release command as argv" do
     sign_in_as @user
-    @app.update!(release: [ "bin/rails", "db:migrate" ])
+    @app_template.update!(release: [ "bin/rails", "db:migrate" ])
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
 
     envelope = Install.last.deploy_envelope(image: "img@sha256:#{'a' * 64}")
@@ -458,7 +458,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   test "an app with no release command puts no release key in the envelope" do
     sign_in_as @user
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
 
     envelope = Install.last.deploy_envelope(image: "img@sha256:#{'a' * 64}")
@@ -469,9 +469,9 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   # runs on the box with this app's secrets belongs there, before the press.
   test "the deploy ceremony shows the release command before you confirm it" do
     sign_in_as @user
-    @app.update!(release: [ "bin/rails", "db:migrate" ])
+    @app_template.update!(release: [ "bin/rails", "db:migrate" ])
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
     install = Install.last
 
@@ -488,10 +488,10 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     db = { "name" => "db", "image" => "postgres@sha256:#{'b' * 64}",
            "volumes" => [ "db-data:/var/lib/postgresql/data" ] }
-    @app.update!(accessories: [ db ])
+    @app_template.update!(accessories: [ db ])
 
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
     install = Install.last
 
@@ -499,7 +499,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ db ], install.deploy_envelope(image: "img@sha256:#{'a' * 64}")[:app][:accessories]
 
     # Copied, not followed: editing the library later must not change what a placed app runs.
-    @app.update!(accessories: [])
+    @app_template.update!(accessories: [])
     assert_equal [ db ], install.reload.accessories
   end
 
@@ -508,10 +508,10 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   # already exists refuses more than one box.
   test "an accessory with a volume makes the install single-placement" do
     sign_in_as @user
-    @app.update!(accessories: [ { "name" => "db", "image" => "p@sha256:#{'b' * 64}",
+    @app_template.update!(accessories: [ { "name" => "db", "image" => "p@sha256:#{'b' * 64}",
                                   "volumes" => [ "db-data:/data" ] } ])
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
     install = Install.last
 
@@ -523,9 +523,9 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "a stateless accessory leaves the install replicable" do
     sign_in_as @user
-    @app.update!(accessories: [ { "name" => "cache", "image" => "redis@sha256:#{'c' * 64}" } ])
+    @app_template.update!(accessories: [ { "name" => "cache", "image" => "redis@sha256:#{'c' * 64}" } ])
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
 
     assert Install.last.replicable?
@@ -533,9 +533,9 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "the ceremony shows the accessories it will bring up" do
     sign_in_as @user
-    @app.update!(accessories: [ { "name" => "db", "image" => "postgres@sha256:#{'b' * 64}" } ])
+    @app_template.update!(accessories: [ { "name" => "db", "image" => "postgres@sha256:#{'b' * 64}" } ])
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
     install = Install.last
 
@@ -552,13 +552,13 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   # self-contained (decisions/declarative-deploy.md). They ride stdin, never argv, and
   # are never recorded.
   def configured_install
-    @app.update!(env: [ { "key" => "RAILS_ENV", "secret" => false },
+    @app_template.update!(env: [ { "key" => "RAILS_ENV", "secret" => false },
                         { "key" => "SECRET_KEY_BASE", "secret" => true } ],
                  secret_files: [ { "name" => "creds", "path" => "/etc/app/creds.json" } ],
                  accessories: [ { "name" => "db", "image" => "p@sha256:#{'b' * 64}",
                                   "secrets" => [ "POSTGRES_PASSWORD" ] } ])
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
     Install.last
   end
@@ -661,10 +661,10 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   test "an install copies the app's processes and carries them in the envelope" do
     sign_in_as @user
     worker = { "name" => "worker", "command" => [ "bin/jobs" ] }
-    @app.update!(processes: [ worker ])
+    @app_template.update!(processes: [ worker ])
 
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
     install = Install.last
 
@@ -673,7 +673,7 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
     # Copied, not followed — the whole point is that a placed app's worker cannot change
     # under it.
-    @app.update!(processes: [])
+    @app_template.update!(processes: [])
     assert_equal [ worker ], install.reload.processes
   end
 
@@ -681,9 +681,9 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
   # an accessory with a volume does — nothing new is kept on that box's disk.
   test "a process leaves the install replicable" do
     sign_in_as @user
-    @app.update!(processes: [ { "name" => "worker", "command" => [ "bin/jobs" ] } ])
+    @app_template.update!(processes: [ { "name" => "worker", "command" => [ "bin/jobs" ] } ])
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
 
     assert Install.last.replicable?
@@ -691,9 +691,9 @@ class InstallsControllerTest < ActionDispatch::IntegrationTest
 
   test "the ceremony shows the processes it will start" do
     sign_in_as @user
-    @app.update!(processes: [ { "name" => "worker", "command" => [ "bin/jobs" ] } ])
+    @app_template.update!(processes: [ { "name" => "worker", "command" => [ "bin/jobs" ] } ])
     post installs_path(project_id: @project), params: { install: {
-      app_id: @app.id, machine_id: @operator.id, hostname: "acme.example"
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
     } }
     install = Install.last
 

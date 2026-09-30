@@ -40,7 +40,7 @@ for Steward Console's own volume (never pruned on `remove`).
 
 The other missing key. `deploy_envelope` today omits secret *names*, and there is no off-record
 channel for their *values*. This slice: surface declared secrets on the install (names in the
-config, mirroring `App`'s declared inputs), carry the names into the envelope, and wire the
+config, mirroring `AppTemplate`'s declared inputs), carry the names into the envelope, and wire the
 value channel that keeps values off the record (the box's `Secret=type=env` — env vs secret is
 "one flag", per [`data-model.md`](../../blueprint/console/data-model.md)). **Unblocks any real
 app**, since almost every app needs at least one secret. Ties to the off-record value channel

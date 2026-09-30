@@ -1,9 +1,9 @@
 <%# One secret-file row: a name and the absolute container path it mounts at. The value
     is always off-record. %>
 <div class="kv-row" data-env-editor-target="row">
-  <input type="text" name="app[secret_file_rows][<%= i %>][name]" value="<%= name %>"
+  <input type="text" name="app_template[secret_file_rows][<%= i %>][name]" value="<%= name %>"
          placeholder="name" class="mono kv-key" autocomplete="off" spellcheck="false">
-  <input type="text" name="app[secret_file_rows][<%= i %>][path]" value="<%= path %>"
+  <input type="text" name="app_template[secret_file_rows][<%= i %>][path]" value="<%= path %>"
          placeholder="/etc/app/config.json" class="mono kv-path" autocomplete="off" spellcheck="false">
   <button type="button" class="kv-del" data-action="env-editor#removeFile" aria-label="Remove">
     <%= icon "trash-2", size: 14 %>

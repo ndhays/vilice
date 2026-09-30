@@ -99,7 +99,7 @@ open heartbeat question.
 - validation: the Machine must **permit** the Project (`Machine#permits?`) — it owns it,
   it's shared with everyone, or the Project is on its allowlist. → decision 1
 
-### `App` — an App Library entry
+### `AppTemplate` — an App Library entry
 - `name` (unique), `port`, `health`, `description`, `env` + `secret_files` + `release` +
   `accessories` + `processes` (jsonb). **Image lives on its versions, not here.**
 - **`processes`** are the app's other containers — a worker, a clock. Each is
@@ -110,7 +110,7 @@ open heartbeat question.
   enqueued jobs is a failure the record cannot describe. Copied onto the Install at create
   like everything else here.
 - **One collision check covers all three.** Colours, processes and accessories all mint
-  container names from the app's, so `App#container_names_are_distinct` enumerates every
+  container names from the app's, so `AppTemplate#container_names_are_distinct` enumerates every
   container the app will ever create and refuses a duplicate — the same set the box
   checks, so a name that would clobber a unit file fails where it is typed.
 - **`accessories`** are the containers this app needs on the same box and that nothing
@@ -146,9 +146,9 @@ open heartbeat question.
   (unprivileged containers can't bind below 1024); `health` starts with `/` or is blank.
   Blank port/health mean "no app default" — the box falls back (8080, `/`).
 - The **catalog/bookmarking** layer (`decisions/open/app-library.md`) — a curated, reusable
-  app definition the admin saves. The top of the three-tier model: **`App` → `Install`
+  app definition the admin saves. The top of the three-tier model: **`AppTemplate` → `Install`
   (a deployment into a Project) → `InstallTarget` (per machine)** — and itself the head of
-  its release history (**`App` → `Version`**). Curating it is a recorded own-record act.
+  its release history (**`AppTemplate` → `Version`**). Curating it is a recorded own-record act.
   `has_many :labels` (polymorphic, generic metadata). Not a security boundary — the
   un-bypassable image allowlist is a separate Steward-side concern.
 - **Portable as a manifest** (`Library`, `apps#export`/`import`). The whole library
@@ -163,7 +163,7 @@ open heartbeat question.
 ### `Version` — a release of an App
 - `app_id`, `tag` (unique per app, e.g. `v1.2.0`), `image` (digest-pinned), `latest:boolean`.
 - The library curates which releases exist; **exactly one per app is `latest`** (DB-enforced
-  by a partial unique index; `App#set_latest!`). Install picks a version (default latest).
+  by a partial unique index; `AppTemplate#set_latest!`). Install picks a version (default latest).
 - **Both halves are the release**: the tag is the name a person reads, the digest is what
   is actually pulled. `Version` refuses an unpinned image because the box does, so it
   fails where you type it rather than at the far end.
@@ -215,7 +215,7 @@ open heartbeat question.
   of any project. A per-project scope would both miss the collision that matters (two
   projects on one shared box) and require a project to exist.
 - `app_id` (nullable) — the App Library entry it was **installed from**; nil = a custom
-  image. Removing the `App` nullifies this (the install keeps running).
+  image. Removing the `AppTemplate` nullifies this (the install keeps running).
 - `version_id` (nullable) — the `Version` deployed; nil for custom images. `image` is
   copied from it at install time.
 - `name`, `image` (digest-pinned), `hostname`, `port`, `health`, `config` (jsonb) — `config`
@@ -272,7 +272,7 @@ open heartbeat question.
     on *that box's* disk, so N replicas are N diverging datasets), and deriving it from the
     spec means the gate can never disagree with the spec the way a flag could. A stateful
     install is refused a count above 1 at validation, not merely discouraged in the form.
-- **Validated against the box, since these deploy verbatim** (same as `App`, mirroring
+- **Validated against the box, since these deploy verbatim** (same as `AppTemplate`, mirroring
   `steward` `validateState`): `name` is box-safe `[A-Za-z0-9_-]`, first character
   alphanumeric — it's the box's own
   identifier (`apps/<name>.json`, volumes, unit), prefilled from the app name and not

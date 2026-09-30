@@ -66,7 +66,7 @@
   <%= form_with model: app, class: "inputs-form",
         data: { env_editor_target: "form", action: "input->env-editor#touch" } do %>
     <%# Says "the editor posted this", so no rows means none — see apps#app_params. %>
-    <%= hidden_field_tag "app[inputs_form]", "1" %>
+    <%= hidden_field_tag "app_template[inputs_form]", "1" %>
     <% if app.errors.any? %>
       <div class="flash alert"><%= app.errors.full_messages.to_sentence %></div>
     <% end %>
@@ -77,7 +77,7 @@
     </p>
     <div class="chips" data-env-editor-target="envChips">
       <% app.env.each_with_index do |e, i| %>
-        <%= render "apps/env_chip", i: i, key: e["key"], secret: e["secret"] %>
+        <%= render "app_templates/env_chip", i: i, key: e["key"], secret: e["secret"] %>
       <% end %>
     </div>
     <div class="chip-add">
@@ -95,7 +95,7 @@
     </p>
     <div class="kv-list" data-env-editor-target="fileList">
       <% app.secret_files.each_with_index do |f, i| %>
-        <%= render "apps/file_row", i: i, name: f["name"], path: f["path"] %>
+        <%= render "app_templates/file_row", i: i, name: f["name"], path: f["path"] %>
       <% end %>
     </div>
     <button type="button" class="btn-quiet kv-add" data-action="env-editor#addFile">
@@ -115,7 +115,7 @@
     </p>
     <div class="acc-list" data-env-editor-target="accessoryList">
       <% app.accessories.each_with_index do |a, i| %>
-        <%= render "apps/accessory_row", i: i, name: a["name"], image: a["image"],
+        <%= render "app_templates/accessory_row", i: i, name: a["name"], image: a["image"],
               volumes: Array(a["volumes"]).join("\n"),
               env: Hash(a["env"]).map { |k, v| "#{k}=#{v}" }.join("\n"),
               secrets: Array(a["secrets"]).join(" ") %>
@@ -138,7 +138,7 @@
     </p>
     <div class="kv-list" data-env-editor-target="processList">
       <% app.processes.each_with_index do |pr, i| %>
-        <%= render "apps/process_row", i: i, name: pr["name"],
+        <%= render "app_templates/process_row", i: i, name: pr["name"],
               command: Array(pr["command"]).join(" ") %>
       <% end %>
     </div>
@@ -149,8 +149,8 @@
     <div class="form-actions"><%= submit_tag "Save Inputs", class: "btn mutate" %></div>
   <% end %>
 
-  <template data-env-editor-target="envTemplate"><%= render "apps/env_chip", i: "NEW", key: "KEYNAME", secret: false %></template>
-  <template data-env-editor-target="fileTemplate"><%= render "apps/file_row", i: "NEW", name: nil, path: nil %></template>
-  <template data-env-editor-target="processTemplate"><%= render "apps/process_row", i: "NEW", name: nil, command: nil %></template>
-  <template data-env-editor-target="accessoryTemplate"><%= render "apps/accessory_row", i: "NEW", name: nil, image: nil, volumes: nil, env: nil, secrets: nil %></template>
+  <template data-env-editor-target="envTemplate"><%= render "app_templates/env_chip", i: "NEW", key: "KEYNAME", secret: false %></template>
+  <template data-env-editor-target="fileTemplate"><%= render "app_templates/file_row", i: "NEW", name: nil, path: nil %></template>
+  <template data-env-editor-target="processTemplate"><%= render "app_templates/process_row", i: "NEW", name: nil, command: nil %></template>
+  <template data-env-editor-target="accessoryTemplate"><%= render "app_templates/accessory_row", i: "NEW", name: nil, image: nil, volumes: nil, env: nil, secrets: nil %></template>
 </div>

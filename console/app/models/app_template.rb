@@ -1,9 +1,9 @@
 # An entry in the App Library — a saved, reusable app definition the admin curates
 # (decisions/open/app-library.md). The catalog/bookmarking layer: what *can* be
-# installed. The top of the three-tier model — App → Install → InstallTarget — and
-# itself the head of its own release history (App → Version). Bookmarking, not
+# installed. The top of the three-tier model — AppTemplate → Install → InstallTarget — and
+# itself the head of its own release history (AppTemplate → Version). Bookmarking, not
 # security: the un-bypassable image allowlist is a separate Steward-side concern.
-class App < ApplicationRecord
+class AppTemplate < ApplicationRecord
   include Searchable
 
   has_many :versions, dependent: :destroy

@@ -2,49 +2,49 @@
 # (decisions/open/app-library.md). Curating the library is a Steward Console own-record
 # act, so each change is attributed and recorded in the same transaction (the
 # record is append-only; mirrors projects#star and the label editor).
-class AppsController < ApplicationController
+class AppTemplatesController < ApplicationController
   before_action :set_app, only: %i[ show edit update destroy ]
 
   def index
     @q    = params[:q].to_s.strip
-    @apps = App.search(@q).order(:name).includes(:latest_version, :versions, :labels)
+    @app_templates = AppTemplate.search(@q).order(:name).includes(:latest_version, :versions, :labels)
   end
 
   def show
-    @versions = @app.versions.newest_first
-    @version  = @app.versions.new
+    @versions = @app_template.versions.newest_first
+    @version  = @app_template.versions.new
   end
 
   def new
-    @app = App.new
+    @app_template = AppTemplate.new
   end
 
   def edit; end
 
   def create
-    @app = App.new(app_params)
-    if save_recording(@app, "added", "#{@app.name} to the App Library")
-      redirect_to @app, notice: "Added #{@app.name}. Add a version so apps can be made from it."
+    @app_template = AppTemplate.new(app_params)
+    if save_recording(@app_template, "added", "#{@app_template.name} to the App Library")
+      redirect_to @app_template, notice: "Added #{@app_template.name}. Add a version so apps can be made from it."
     else
       render :new, status: :unprocessable_entity
     end
   end
 
   def update
-    @app.assign_attributes(app_params)
-    if save_recording(@app, "edited", @app.name)
-      redirect_to @app, notice: "Updated #{@app.name}."
+    @app_template.assign_attributes(app_params)
+    if save_recording(@app_template, "edited", @app_template.name)
+      redirect_to @app_template, notice: "Updated #{@app_template.name}."
     else
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
-    App.transaction do
-      @app.destroy!
-      record("removed", "#{@app.name} from the App Library")
+    AppTemplate.transaction do
+      @app_template.destroy!
+      record("removed", "#{@app_template.name} from the App Library")
     end
-    redirect_to apps_path, notice: "Removed #{@app.name} from the App Library."
+    redirect_to app_templates_path, notice: "Removed #{@app_template.name} from the App Library."
   end
 
   # The library as a portable manifest — a YAML file to share, version, or seed
@@ -72,35 +72,35 @@ class AppsController < ApplicationController
     count = apps.size
     record("imported", "#{count} #{'app'.pluralize(count)} from #{source}",
            detail: apps.map(&:name).sort.join(", ")) if count.positive?
-    redirect_to apps_path, notice: "Imported #{count} #{'template'.pluralize(count)}."
+    redirect_to app_templates_path, notice: "Imported #{count} #{'template'.pluralize(count)}."
   rescue Library::UnsupportedFormat => e
-    redirect_to apps_path, alert: "Unsupported library (#{e.message})."
+    redirect_to app_templates_path, alert: "Unsupported library (#{e.message})."
   rescue Psych::Exception, KeyError, ActionController::ParameterMissing,
          ActiveRecord::RecordInvalid, URI::InvalidURIError, SocketError,
          SystemCallError, Timeout::Error => e
-    redirect_to apps_path, alert: "Couldn't import that library: #{e.message}"
+    redirect_to app_templates_path, alert: "Couldn't import that library: #{e.message}"
   end
 
   # Bulk curation — the deliberate, recorded counterweight to additive import.
   def remove_selected
-    apps  = App.where(id: Array(params[:ids]).reject(&:blank?))
+    apps  = AppTemplate.where(id: Array(params[:ids]).reject(&:blank?))
     names = apps.order(:name).pluck(:name)
     if names.any?
-      App.transaction do
+      AppTemplate.transaction do
         apps.destroy_all
         record("removed", "#{names.size} #{'app'.pluralize(names.size)} from the App Library",
                detail: names.join(", "))
       end
-      redirect_to apps_path, notice: "Removed #{names.size} #{'template'.pluralize(names.size)}."
+      redirect_to app_templates_path, notice: "Removed #{names.size} #{'template'.pluralize(names.size)}."
     else
-      redirect_to apps_path, alert: "No templates selected."
+      redirect_to app_templates_path, alert: "No templates selected."
     end
   end
 
   private
 
   def set_app
-    @app = App.find(params[:id])
+    @app_template = AppTemplate.find(params[:id])
   end
 
   # One accessory row → the shape the box's spec uses, so the deploy envelope is a copy
@@ -124,7 +124,7 @@ class AppsController < ApplicationController
   def lines(text) = text.to_s.split("\n").map(&:strip).reject(&:blank?)
 
   def app_params
-    attrs = params.require(:app).permit(:name, :port, :health, :description).to_h
+    attrs = params.require(:app_template).permit(:name, :port, :health, :description).to_h
 
     # The release command is typed as one line and stored as **argv**, because argv is
     # what the box execs — it never sees a shell, so a multi-step release belongs in a
@@ -135,7 +135,7 @@ class AppsController < ApplicationController
     # Keyed on the field being present, for the same reason the editors below are: the
     # details form posts to this action too and carries no release field, and there
     # "leave it alone" is right.
-    attrs["release"] = params[:app][:release_line].to_s.split if params[:app].key?(:release_line)
+    attrs["release"] = params[:app_template][:release_line].to_s.split if params[:app_template].key?(:release_line)
 
     # The env / secret-file editors post indexed rows. Build the stored lists by hand
     # (names only — no values), dropping blank rows and coercing the secret checkbox.
@@ -147,19 +147,19 @@ class AppsController < ApplicationController
     # posts to this same action and carries neither key, and there "leave it alone" is
     # exactly right. The marker separates the two: absent rows mean **empty** only when
     # the editor is the thing that was submitted.
-    if params.dig(:app, :inputs_form)
-      attrs["env"] = Array(params.dig(:app, :env_rows)&.values).filter_map { |r|
+    if params.dig(:app_template, :inputs_form)
+      attrs["env"] = Array(params.dig(:app_template, :env_rows)&.values).filter_map { |r|
         key = r[:key].to_s.strip
         { "key" => key, "secret" => r[:secret] == "1" } if key.present?
       }
-      attrs["secret_files"] = Array(params.dig(:app, :secret_file_rows)&.values).filter_map { |r|
+      attrs["secret_files"] = Array(params.dig(:app_template, :secret_file_rows)&.values).filter_map { |r|
         name = r[:name].to_s.strip
         { "name" => name, "path" => r[:path].to_s.strip } if name.present?
       }
-      attrs["accessories"] = Array(params.dig(:app, :accessory_rows)&.values).filter_map { |r|
+      attrs["accessories"] = Array(params.dig(:app_template, :accessory_rows)&.values).filter_map { |r|
         accessory_from(r)
       }
-      attrs["processes"] = Array(params.dig(:app, :process_rows)&.values).filter_map { |r|
+      attrs["processes"] = Array(params.dig(:app_template, :process_rows)&.values).filter_map { |r|
         name = r[:name].to_s.strip
         # Typed as a line, stored as argv — the box execs it and never sees a shell, the
         # same translation the release command gets and for the same reason.
@@ -170,7 +170,7 @@ class AppsController < ApplicationController
   end
 
   def save_recording(app, action, summary)
-    App.transaction do
+    AppTemplate.transaction do
       app.save!
       record(action, summary)
     end

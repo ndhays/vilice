@@ -2,9 +2,9 @@
 # which releases exist; exactly one per app is `latest` (the install default).
 # See decisions/open/app-library.md.
 class Version < ApplicationRecord
-  belongs_to :app
+  belongs_to :app_template
 
-  validates :tag, presence: true, uniqueness: { scope: :app_id }
+  validates :tag, presence: true, uniqueness: { scope: :app_template_id }
   validates :image, presence: true
   validate :image_is_digest_pinned
 

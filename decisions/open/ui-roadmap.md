@@ -52,8 +52,8 @@ Ordered by dependency. Built items are one line; open items keep their detail.
     step pins a digest, envelope on scoped-SSH stdin). *Still ahead:* **first-deploy via UI**
     (new app/target) and env/secret/volume compose (#14).
 13. **Lifecycle acts** (apply-updates, start/stop/restart, remove) — BUILT (Wave 3.1+3.3).
-14. **Secret & env UI** — *open.* The **declaration** half is built (`App.env` as
-    `{ key, secret }`, `App.secret_files`). **Still open — the value half (#14-B):** the
+14. **Secret & env UI** — *open.* The **declaration** half is built (`AppTemplate.env` as
+    `{ key, secret }`, `AppTemplate.secret_files`). **Still open — the value half (#14-B):** the
     install/redeploy form collects values (env recorded; secret + file values off-record on
     stdin) and `Install#deploy_envelope` carries `secrets`/`secret_files`/`secret_values`.
     Direction: **secret-by-default**, one Environment panel, two visibly-distinct modes
@@ -149,8 +149,8 @@ better deploy UI (#2b). (The status cards, #7, are built.)
    field — and shows the JSON it will send behind a *Raw spec* disclosure, the same
    plain-then-exact shape as everywhere else.
 2a. **Rename: Installs → Apps, App → App Template** — the words on the page are BUILT.
-   *Open:* the code follows — `App` → `AppTemplate` first (to free the name), then
-   `Install` → `App`, with tables, routes, params and the blueprint. No backward
+   `App` → `AppTemplate` is BUILT (table, routes, params). *Open:* `Install` → `App`
+   and `InstallTarget` → `Placement`, with tables, routes, params and the blueprint. No backward
    compatibility needed; nothing depends on the old names yet.
 3. **What a command does on the box** — *open.* Belongs in the record entry, not on the
    page: what apply-updates ran (its two apt commands) and how to check it. Read from `steward _commands`; where that

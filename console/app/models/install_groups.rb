@@ -37,7 +37,7 @@ class InstallGroups
     # fleet" — the question the App Library makes worth asking. A custom image has no
     # library entry behind it and says so, rather than being hidden in an "Other".
     Grouping.new(key: "app", label: "Template", ring: 2, within: nil,
-                 of: ->(i) { i.app ? [ 0, i.app.name ] : [ 1, "Custom image" ] }),
+                 of: ->(i) { i.app_template ? [ 0, i.app_template.name ] : [ 1, "Custom image" ] }),
 
     # How it is reached, which is what decides whether a count above one can mean
     # anything (decisions/one-primitive-composed.md).

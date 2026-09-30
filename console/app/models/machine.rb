@@ -1,5 +1,5 @@
 class Machine < ApplicationRecord
-  # Name + label search, shared with App/Project (decisions/open/list-search.md).
+  # Name + label search, shared with AppTemplate/Project (decisions/open/list-search.md).
   include Searchable
 
   # Decision 2 — the SSH private key is encrypted at rest. The public half is

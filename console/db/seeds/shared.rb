@@ -10,7 +10,7 @@ module Scenario
 
   # Children before parents, so delete_all is safe whether or not the DB enforces
   # foreign keys. Users/sessions are deliberately kept.
-  WIPE = [ Event, Label, InstallTarget, Install, Version, App, ProjectMachine, Machine, Project, Setting ].freeze
+  WIPE = [ Event, Label, InstallTarget, Install, Version, AppTemplate, ProjectMachine, Machine, Project, Setting ].freeze
 
   # Start from a known-empty slate (every scenario but `realistic` calls this), so
   # contradictory worlds never overlap — and clear the observe cache so no stale
@@ -89,7 +89,7 @@ module Scenario
   def demo_pin(ref) = "#{ref}@sha256:5eed#{Digest::SHA256.hexdigest(ref)[4..]}"
 
   def library_app!(name, image:, tag:, **attrs)
-    app = App.find_or_create_by!(name: name) { |a| a.assign_attributes(attrs) }
+    app = AppTemplate.find_or_create_by!(name: name) { |a| a.assign_attributes(attrs) }
     if app.versions.none?
       v = app.versions.create!(tag: tag, image: image)
       app.set_latest!(v)
@@ -101,7 +101,7 @@ module Scenario
   # Chosen to cover every shape the install form has to handle rather than to be a
   # recommended list: no inputs at all, plain env, secret env, a mounted secret
   # file, and a service that is not HTTP (no health path — nothing for Caddy to
-  # probe). Ports are all >= 1024: the box refuses anything lower, and the App
+  # probe). Ports are all >= 1024: the box refuses anything lower, and the AppTemplate
   # model mirrors that so it fails here with a sentence instead of at deploy.
   #
   # Every release carries a **tag and a digest**, because that is what a release is
@@ -165,7 +165,7 @@ module Scenario
   def report!
     name = ENV.fetch("SCENARIO", "empty")
     puts "Seeded [#{name}]: #{Project.count} projects, #{Machine.count} machines, " \
-         "#{Install.count} installs, #{App.count} apps, #{Event.count} events."
+         "#{Install.count} installs, #{AppTemplate.count} apps, #{Event.count} events."
     puts "Sign in: operator@console.test / password"
     puts "Boot with STEWARD_FAKE_OBSERVE=1 for live health (or use bin/scenario)."
   end

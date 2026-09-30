@@ -65,7 +65,7 @@ default port/health, declared env, versions) that make the *first* install easy 
 consistent. It is **bookmarking / curation, not a security boundary** — the un-bypassable
 image allowlist is a separate Steward-side concern (see
 [`decisions/open/app-library.md`](../../decisions/open/app-library.md)). The catalog model
-(`App → Version`, the three-tier `App → Install → InstallTarget`, the manifest import/
+(`AppTemplate → Version`, the three-tier `AppTemplate → Install → InstallTarget`, the manifest import/
 export) is specified in [`data-model.md`](data-model.md).
 
 - The library is a **pure directory** — it has no install action.

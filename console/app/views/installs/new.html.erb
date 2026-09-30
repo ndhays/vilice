@@ -89,15 +89,15 @@
 
   <fieldset class="step">
     <legend>Template</legend>
-    <% if @apps.any? %>
+    <% if @app_templates.any? %>
       <div class="pick-card">
         <input type="search" class="pick-search" placeholder="Search templates…" autocomplete="off"
                aria-label="Search templates"
                data-install-form-target="search" data-action="input->install-form#filter">
         <div class="pick-list">
-          <% @apps.each do |app| %>
+          <% @app_templates.each do |app| %>
             <label class="pick-option">
-              <%= f.radio_button :app_id, app.id,
+              <%= f.radio_button :app_template_id, app.id,
                     data: { action: "install-form#pickApp",
                             versions: app.versions.newest_first.map { |v| { id: v.id, tag: v.tag, latest: v.latest } }.to_json,
                             name: app.name, port: app.port, health: app.health } %>
@@ -112,12 +112,12 @@
         </div>
       </div>
     <% else %>
-      <p class="muted">No installable apps — <%= link_to "add a version to a library app", apps_path %> first.</p>
+      <p class="muted">No installable apps — <%= link_to "add a version to a library app", app_templates_path %> first.</p>
     <% end %>
 
     <% if @allow_custom %>
       <label class="pick-option pick-custom">
-        <%= f.radio_button :app_id, "", checked: false,
+        <%= f.radio_button :app_template_id, "", checked: false,
               data: { action: "install-form#pickApp", custom: "true" } %>
         <span class="row-icon"><%= icon "box", size: 15 %></span>
         <span class="row-name">Custom image</span>
@@ -125,7 +125,7 @@
       </label>
     <% end %>
 
-    <%# "App Version" under a legend that already says App. %>
+    <%# "App Version" under a legend that already says AppTemplate. %>
     <label class="field" data-install-form-target="versionField">
       <span>Version</span>
       <%= f.select :version_id, [], {}, data: { install_form_target: "version" } %>

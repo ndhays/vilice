@@ -4,10 +4,10 @@
     than discovered at deploy. %>
 <div class="acc-row" data-env-editor-target="row">
   <div class="acc-head">
-    <input type="text" name="app[accessory_rows][<%= i %>][name]" value="<%= name %>"
+    <input type="text" name="app_template[accessory_rows][<%= i %>][name]" value="<%= name %>"
            placeholder="db" class="mono acc-name" autocomplete="off" spellcheck="false"
            aria-label="Accessory name">
-    <input type="text" name="app[accessory_rows][<%= i %>][image]" value="<%= image %>"
+    <input type="text" name="app_template[accessory_rows][<%= i %>][image]" value="<%= image %>"
            placeholder="docker.io/library/postgres@sha256:…" class="mono acc-image"
            autocomplete="off" spellcheck="false" aria-label="Accessory image">
     <button type="button" class="kv-del" data-action="env-editor#removeRow" aria-label="Remove">
@@ -16,17 +16,17 @@
   </div>
   <div class="acc-fields">
     <label class="acc-field"><span>Volumes</span>
-      <textarea name="app[accessory_rows][<%= i %>][volumes]" rows="2" class="mono"
+      <textarea name="app_template[accessory_rows][<%= i %>][volumes]" rows="2" class="mono"
                 autocomplete="off" spellcheck="false"
                 placeholder="db-data:/var/lib/postgresql/data"><%= volumes %></textarea>
     </label>
     <label class="acc-field"><span>Environment</span>
-      <textarea name="app[accessory_rows][<%= i %>][env]" rows="2" class="mono"
+      <textarea name="app_template[accessory_rows][<%= i %>][env]" rows="2" class="mono"
                 autocomplete="off" spellcheck="false"
                 placeholder="POSTGRES_DB=app"><%= env %></textarea>
     </label>
     <label class="acc-field"><span>Secret names</span>
-      <input type="text" name="app[accessory_rows][<%= i %>][secrets]" value="<%= secrets %>"
+      <input type="text" name="app_template[accessory_rows][<%= i %>][secrets]" value="<%= secrets %>"
              class="mono" autocomplete="off" spellcheck="false"
              placeholder="POSTGRES_PASSWORD">
     </label>

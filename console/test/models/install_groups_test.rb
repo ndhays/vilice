@@ -8,12 +8,12 @@ class InstallGroupsTest < ActiveSupport::TestCase
     @edge  = Machine.create!(name: "edge-1", ssh_host: "x", scope: "operate", balancer: true)
     @box   = Machine.create!(name: "box-1", ssh_host: "x")
     @down  = Machine.create!(name: "box-down", ssh_host: "x", status: "unreachable")
-    @nginx = App.create!(name: "nginx")
+    @nginx = AppTemplate.create!(name: "nginx")
   end
 
-  def install(name, project: @acme, app: nil, machine: @box, status: "running", **attrs)
+  def install(name, project: @acme, app_template: nil, machine: @box, status: "running", **attrs)
     i = (project ? project.installs : Install).create!(
-      name: name, image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", app: app, **attrs)
+      name: name, image: "x@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", app_template: app_template, **attrs)
     i.install_targets.create!(machine: machine, status: status) if machine
     i
   end
@@ -37,7 +37,7 @@ class InstallGroupsTest < ActiveSupport::TestCase
   end
 
   test "groups by app, and a custom image says so rather than hiding" do
-    install("from-library", app: @nginx)
+    install("from-library", app_template: @nginx)
     install("hand-rolled")
 
     groups = InstallGroups.apply(Install.all.to_a, "app").to_h { |h, g| [ h, g.map(&:name) ] }

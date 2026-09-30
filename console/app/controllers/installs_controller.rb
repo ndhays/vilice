@@ -25,7 +25,7 @@ class InstallsController < ApplicationController
     # database once per row. `install_targets: :machine` carries `Install#state`,
     # which walks the targets and their boxes.
     @installs = installs.order(:name)
-                        .includes(:app, :version, :project, :balancer,
+                        .includes(:app_template, :version, :project, :balancer,
                                   install_targets: :machine)
     rows      = @installs.to_a
     @groups   = InstallGroups.apply(rows, @group)
@@ -177,31 +177,31 @@ class InstallsController < ApplicationController
   def allow_custom? = !Setting.current.installs_library_only
 
   def load_form
-    @apps         = App.where.associated(:latest_version).includes(:versions, :labels).order(:name)
+    @app_templates         = AppTemplate.where.associated(:latest_version).includes(:versions, :labels).order(:name)
     @machines     = placeable_machines.operate.order(:name)
     @allow_custom = allow_custom?
   end
 
   # Resolve the install's spec from the form: a custom image (when allowed) or a library
-  # app at a chosen version (default the app's latest). App-derived fields fill in any the
+  # app at a chosen version (default the app's latest). Template-derived fields fill in any the
   # operator left blank.
   def install_attrs
-    p = params.require(:install).permit(:name, :hostname, :port, :health, :image, :app_id,
+    p = params.require(:install).permit(:name, :hostname, :port, :health, :image, :app_template_id,
                                         :version_id, :volumes, :count, :exposure, :balancer_id)
     config = build_config(p)
     # The intention. Blank means the single-box default on its own edge, not zero.
     count    = p[:count].presence || 1
     exposure = p[:exposure].presence || "edge"
 
-    if allow_custom? && p[:app_id].blank? && p[:image].present?
+    if allow_custom? && p[:app_template_id].blank? && p[:image].present?
       { name: p[:name], hostname: p[:hostname], port: p[:port], health: p[:health],
         image: p[:image], config: config, count: count, exposure: exposure,
         balancer_id: p[:balancer_id].presence }
     else
-      app     = App.find_by(id: p[:app_id])
+      app     = AppTemplate.find_by(id: p[:app_template_id])
       # The version must belong to the chosen app; fall back to its latest.
       version = app&.versions&.find_by(id: p[:version_id]) || app&.latest_version
-      { app: app, version: version, image: version&.image,
+      { app_template: app, version: version, image: version&.image,
         name: p[:name].presence || app&.name, hostname: p[:hostname],
         port: p[:port].presence || app&.port, health: p[:health].presence || app&.health,
         config: config, count: count, exposure: exposure,
@@ -220,7 +220,7 @@ class InstallsController < ApplicationController
     volumes = p[:volumes].to_s.split("\n").map(&:strip).reject(&:blank?)
     config["volumes"] = volumes if volumes.any?
 
-    if (app = App.find_by(id: p[:app_id]))
+    if (app = AppTemplate.find_by(id: p[:app_template_id]))
       config["release"]     = app.release if app.release.present?
       config["accessories"] = app.accessories if app.accessories.present?
       config["processes"]   = app.processes if app.processes.present?
