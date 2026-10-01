@@ -53,7 +53,7 @@ class AppTemplate < ApplicationRecord
   # The command Steward runs once from the new image before the new container starts —
   # `bin/rails db:migrate` and its cousins. **argv, not a shell string**: the box execs it
   # directly, so a multi-step release belongs in a script inside the image, where the
-  # image digest covers what it does (blueprint/steward/deploy.md, "The Release Step").
+  # image digest covers what it does (blueprint/vilice/deploy.md, "The Release Step").
   #
   # It lives on the App because it is a property of the image the way port and health
   # are. An app copies it at create, so editing the library never silently changes

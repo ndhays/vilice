@@ -2,7 +2,7 @@
 
 The claim "Steward hardens the box and keeps an honest record" has to be *measured*, not
 asserted. This is how, and why it's shaped the way it is. Settles the "Security
-smoke-tests" thread in `decisions/open/steward-open-questions.md`.
+smoke-tests" thread in `decisions/open/vilice-open-questions.md`.
 
 ## Three audits, different homes
 
@@ -100,7 +100,7 @@ carries its own `checked_at` and staleness is visible.
 This also keeps `harden --check` off the **audit chain**: it's a read (like `verify`), it
 must work before `prepare` lays the floor, and the fact it emits belongs in the **status
 lane**, not the hash-chained action record. See `dispatch`'s `recordable()` and
-[blueprint/steward/record.md](../blueprint/steward/record.md).
+[blueprint/vilice/record.md](../blueprint/vilice/record.md).
 
 And it stays out of `doctor`: `doctor` answers "ready to deploy?" as the unprivileged
 steward user; hardening is optional and needs root. Folding it in would break both

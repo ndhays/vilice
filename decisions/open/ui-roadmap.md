@@ -72,7 +72,7 @@ Ordered by dependency. Built items are one line; open items keep their detail.
     `steward actors` verb rather than from anything stored, and leads with keys Steward
     did not write. Building it surfaced that the box had no way to *read* its own
     ledger: `authorize`/`revoke` wrote `authorized_keys` and nothing reported it, so the
-    verb had to come first ([`blueprint/steward/auth.md`](../../blueprint/steward/auth.md)).
+    verb had to come first ([`blueprint/vilice/auth.md`](../../blueprint/vilice/auth.md)).
 
     Since rebuilt as **one grouped list, not a card per box** — grouped by *reach*
     (an ungated key has no ceiling, so it sits above `grant` on one ladder), by *box*,

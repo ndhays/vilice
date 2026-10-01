@@ -279,7 +279,7 @@ enough to make a group read as a group.
 
   **The role is a statement, never a control.** `steward prepare <role>` writes it
   once and refuses to convert a prepared box into the other role — you take its apps
-  off, uninstall, and prepare again (`blueprint/steward/provision.md`). So the console
+  off, uninstall, and prepare again (`blueprint/vilice/provision.md`). So the console
   reports it and offers no way to change it. It used to offer a "Make this a balancer"
   button, which wrote a column the box had never agreed to: a `host` so marked would
   accept balanced apps and then be refused by its own box. The column survives as

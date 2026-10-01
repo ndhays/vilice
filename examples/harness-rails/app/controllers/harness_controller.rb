@@ -7,7 +7,7 @@ class HarnessController < ApplicationController
   end
 
   # GET /healthz — the health gate. 200 when ready, 503 while starting or failing, so
-  # Steward's health check (treats < 500 as healthy) waits out HEALTH_DELAY and never
+  # Vilice's health check (treats < 500 as healthy) waits out HEALTH_DELAY and never
   # flips traffic under HEALTH_FAIL.
   def healthz
     if Harness.ready?

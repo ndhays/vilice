@@ -17,7 +17,7 @@ Three choices inside that shape:
 - **Apps survive by default.** Removing them is an explicit opt-in (`--remove-apps`
   or the y/N prompt), and the teardown runs `steward remove` *as the steward user* —
   root driving Podman directly is the ghost-state mistake
-  ([one-steward-per-box.md](one-steward-per-box.md)) even on the way out.
+  ([one-vilice-per-box.md](one-vilice-per-box.md)) even on the way out.
 - **The record stays.** The `steward` user and `/var/lib/steward` are kept: the
   record is the box's history, not the tool's scratch space (Agora II — the history
   is preserved as it was). Uninstall itself is recorded before it runs, so the
@@ -33,7 +33,7 @@ Three choices inside that shape:
   Deferred, not rejected — it is the *hardware retirement* case, rarer and more
   destructive, and bundling it into uninstall would make the common, reversible act
   carry the irreversible one. The remaining gap stays in
-  [open/steward-open-questions.md](open/steward-open-questions.md).
+  [open/vilice-open-questions.md](open/vilice-open-questions.md).
 - **A guided Steward Console checklist as the only path.** The breakglass tenet says
   recovery — and departure — never depends on the web UI. Steward Console's Remove
   Machine remains the control-plane half; the box-side act is the CLI's.

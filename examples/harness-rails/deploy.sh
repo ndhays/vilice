@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Deploy the harness app to a Steward box — and, via env knobs, pick which axis of the
+# Deploy the harness app to a Vilice box — and, via env knobs, pick which axis of the
 # deploy contract to exercise. Mirrors examples/zot/deploy.sh: resolve the image digest on
-# the box, build the desired-state envelope, pipe it to `steward deploy` over scoped SSH.
+# the box, build the desired-state envelope, pipe it to `vilice deploy` over scoped SSH.
 #
 #   examples/harness-rails/deploy.sh --ssh devbox                       # plain hello
 #   HEALTH_DELAY=20s examples/harness-rails/deploy.sh --ssh devbox      # slow-boot health gate
@@ -13,13 +13,13 @@
 #   BALLOON_MB=400 examples/harness-rails/deploy.sh --ssh devbox        # memory pressure / OOM
 #
 # Needs: the `--ssh <alias>` admin login (to resolve the digest via podman) and the scoped
-# dev key (to deploy as the steward user). Reuses script/devbox.sh's key layout.
+# dev key (to deploy as the _vilice user). Reuses script/devbox.sh's key layout.
 set -euo pipefail
 
 ALIAS=""; [ "${1:-}" = "--ssh" ] && { ALIAS="${2:-}"; shift 2 || true; }
 [ -n "$ALIAS" ] || { echo "usage: $0 --ssh <devbox-alias>  [knobs as env vars]"; exit 1; }
 
-KEY="${DEVBOX_KEY:-$HOME/.steward-devbox/id_ed25519}"
+KEY="${DEVBOX_KEY:-$HOME/.vilice-devbox/id_ed25519}"
 KNOWN="$(dirname "$KEY")/known_hosts"
 APP="${HARNESS_APP:-harness}"
 TAG="${HARNESS_TAG:-ghcr.io/agoraforge/harness-rails:latest}"
@@ -45,7 +45,7 @@ HEALTH_DELAY="${HEALTH_DELAY:-}" HEALTH_FAIL="${HEALTH_FAIL:-}" \
 CRASH_AFTER="${CRASH_AFTER:-}" BALLOON_MB="${BALLOON_MB:-}" \
 DEMO_GREETING="${DEMO_GREETING:-hello from the harness}" \
 SECRET_TOKEN="${SECRET_TOKEN:-}" SECRET_FILE="${SECRET_FILE:-}" VOLUME="${VOLUME:-}" \
-python3 - <<'PY' | ssh -i "$KEY" -o IdentitiesOnly=yes "${kh[@]}" "steward@$HOST" "deploy $APP"
+python3 - <<'PY' | ssh -i "$KEY" -o IdentitiesOnly=yes "${kh[@]}" "_vilice@$HOST" "deploy $APP"
 import json, os
 
 env = {"DEMO_GREETING": os.environ["DEMO_GREETING"]}

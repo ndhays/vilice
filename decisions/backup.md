@@ -1,7 +1,7 @@
 # Backup engine — restic, generic over volumes
 
 How Steward backs up app data (and its own record), and why it's shaped this way.
-Settles the **Backup engine** thread in `decisions/open/steward-open-questions.md`.
+Settles the **Backup engine** thread in `decisions/open/vilice-open-questions.md`.
 
 ## restic (vs Kopia / Borg)
 

@@ -124,7 +124,7 @@ open heartbeat question.
   app's own, and volumes under the bind root.
 - **`release`** is the command the box runs once from the new image before the new
   container starts — migrations are the case it exists for
-  ([`blueprint/steward/deploy.md`](../steward/deploy.md), *The Release Step*). Stored as
+  ([`blueprint/vilice/deploy.md`](../vilice/deploy.md), *The Release Step*). Stored as
   **argv**, because argv is what the box execs: it never sees a shell, so the form takes
   one line and splits it, and a multi-step release belongs in a script inside the image
   where the digest covers what it does. It sits on the App because it is a property of

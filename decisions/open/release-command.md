@@ -7,7 +7,7 @@
 >
 > Reading order: [`no-key-gets-a-shell.md`](../no-key-gets-a-shell.md) is the rule this
 > has to survive, [`app-config-is-the-artifact.md`](../app-config-is-the-artifact.md) is
-> the pattern it follows, and [`blueprint/steward/deploy.md`](../../blueprint/steward/deploy.md)
+> the pattern it follows, and [`blueprint/vilice/deploy.md`](../../blueprint/vilice/deploy.md)
 > is the sequence it slots into.
 
 ---

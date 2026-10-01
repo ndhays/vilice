@@ -30,7 +30,7 @@ does that, does it well, and Steward should point at it rather than compete
 
 **A box declares a role instead** — `steward prepare host` or `steward prepare balancer` —
 and what gets installed and which ports open follow from it. See
-[`../blueprint/steward/provision.md`](../blueprint/steward/provision.md).
+[`../blueprint/vilice/provision.md`](../blueprint/vilice/provision.md).
 
 ## Why packs go: two arguments that arrive together
 

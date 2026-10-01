@@ -1,8 +1,8 @@
 # Go
-/steward/bin/
-/steward/dist/
+/vilice/bin/
+/vilice/dist/
 # stray binary from a bare `go build .` (canonical build → bin/)
-/steward/steward
+/vilice/vilice
 *.test
 *.out
 

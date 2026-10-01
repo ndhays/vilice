@@ -161,7 +161,7 @@ audit:
 
 1. ~~**A deploy lock.**~~ **Taken 2026-08-20.** Every verb that writes an app's state now
    holds an exclusive flock on `apps/<name>.lock` first
-   ([`blueprint/steward/deploy.md`](../../blueprint/steward/deploy.md), *One Act on an App
+   ([`blueprint/vilice/deploy.md`](../../blueprint/vilice/deploy.md), *One Act on an App
    at a Time*). Per app rather than per box, so a slow release step blocks only its own
    app; refused rather than queued, and refused before the record, because nothing was
    attempted. One thing fell out in our favour: flock dies with the process, so unlike
@@ -175,7 +175,7 @@ audit:
    can be deployed separately can land on a different digest from the web process, and a
    worker running yesterday's code against today's enqueued jobs is a failure the record
    could not describe. One spec, one digest, one deploy. See
-   [`blueprint/steward/deploy.md`](../../blueprint/steward/deploy.md), *Processes*.
+   [`blueprint/vilice/deploy.md`](../../blueprint/vilice/deploy.md), *Processes*.
    **Multi-server roles remain out** — placement across boxes is still N recorded acts, and
    nothing here changes that.
 4. **Nothing on hooks.** Kamal's hooks run on the deploying machine (*inferred from

@@ -1,7 +1,7 @@
 # Declarative deploy + secret/env delivery
 
 **Decided 2026-06-08.** Slice 1 (the core) is built and canonical in
-[`blueprint/steward/deploy.md`](../blueprint/steward/deploy.md); this records the *why*
+[`blueprint/vilice/deploy.md`](../blueprint/vilice/deploy.md); this records the *why*
 and the roads not taken. Supersedes the earlier "two imperative commands" sketch.
 
 ## Deploy is a declarative upsert, not an imperative run
@@ -68,4 +68,4 @@ The Steward Console UI side (secret-by-default Environment panel) is in
 [`console-open-questions.md`](open/console-open-questions.md). Remaining Steward
 slices — `secret ls`/`rm` + status surfacing, backup exclusion + digest tagging,
 encrypted-at-rest driver — stay open in
-[`steward-open-questions.md`](open/steward-open-questions.md).
+[`vilice-open-questions.md`](open/vilice-open-questions.md).

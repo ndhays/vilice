@@ -65,7 +65,7 @@ module ApplicationHelper
   # ── The box's role ──────────────────────────────────────────────────────────
   # What a box was prepared as — `host` (runs apps) or `balancer` (fronts others).
   # It is the box's own fact and it is **set once**: `steward prepare <role>` writes
-  # it, and re-preparing into the other role is refused (blueprint/steward/provision.md).
+  # it, and re-preparing into the other role is refused (blueprint/vilice/provision.md).
   # So it renders as a statement, never a control — the console used to offer a "Make
   # this a balancer" button, which wrote a column the box had never agreed to.
   #

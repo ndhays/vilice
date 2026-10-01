@@ -69,7 +69,7 @@ on demand and on a timer.
   queryable `Snapshot` history is still a real future item, but it's an *addition* for
   forensics, not the path that lights up the Status page.
 - **Marking the target `failed` on a failed deploy.** Per
-  [deploy.md](../blueprint/steward/deploy.md) a failed pull leaves the running app
+  [deploy.md](../blueprint/vilice/deploy.md) a failed pull leaves the running app
   untouched, so the truthful state is "still on the old image," not "dead." A genuine
   `failed` needs the box to report per-app container state, which `status --json` doesn't
   carry yet — left open in [open/status-signals.md](open/status-signals.md).

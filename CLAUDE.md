@@ -29,7 +29,7 @@ Three folders, three jobs. Truth flows in one direction: `decisions/open/` →
   blueprint changes *in the same change*. Drift turns the schema into fiction.
   - **Start at `blueprint/overview.md`** before making changes.
   - **Human-readable filenames.** Overviews are human prose. Fine-grained specs go
-    in **subfolders** (e.g. `blueprint/steward/`) and may be more technical/spec-like.
+    in **subfolders** (e.g. `blueprint/vilice/`) and may be more technical/spec-like.
   - History, if wanted, lives in a single `blueprint/project-history.md` — never
     smeared across the canonical docs.
 
@@ -38,7 +38,7 @@ Three folders, three jobs. Truth flows in one direction: `decisions/open/` →
   questions aren't re-litigated.
 
 - **`decisions/open/` — questions still being decided.** Planning docs and open
-  threads live here (e.g. `decisions/open/steward-open-questions.md`). As a piece
+  threads live here (e.g. `decisions/open/vilice-open-questions.md`). As a piece
   settles, its truth **migrates out**: into `decisions/` (the why) and `blueprint/`
   (the canonical schema). Once a doc here is fully graduated, retire it — git keeps
   the history.

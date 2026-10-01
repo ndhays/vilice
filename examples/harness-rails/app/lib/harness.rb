@@ -1,5 +1,5 @@
 # The harness app's whole behavior, driven entirely by env vars so one published image
-# can exercise each axis of the Steward deploy contract — health timing, secrets (env and
+# can exercise each axis of the Vilice deploy contract — health timing, secrets (env and
 # file), a volume-backed counter, a crash, and a memory balloon. See the README for the
 # knob → axis mapping. Kept deliberately plain: no database, no framework magic.
 

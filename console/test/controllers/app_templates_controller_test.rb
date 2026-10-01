@@ -270,7 +270,7 @@ class AppTemplatesControllerTest < ActionDispatch::IntegrationTest
 
   # ── The release command ────────────────────────────────────────────────────
   # Typed as a line, stored as argv, because argv is what the box execs — it never sees
-  # a shell (blueprint/steward/deploy.md, "The Release Step").
+  # a shell (blueprint/vilice/deploy.md, "The Release Step").
   test "a release command is typed as a line and stored as argv" do
     sign_in_as @user
     app = AppTemplate.create!(name: "web")

@@ -2,7 +2,7 @@
 
 **Decided 2026-06-15.** How Steward pulls from a private (authenticated) image
 registry, where that credential lives, and how it fails. Companion to
-`decisions/declarative-deploy.md` (secrets) and `blueprint/steward/deploy.md`.
+`decisions/declarative-deploy.md` (secrets) and `blueprint/vilice/deploy.md`.
 
 ## The question
 
@@ -74,7 +74,7 @@ surfaces at deploy time, not login time. That's safe by construction:
 Username/password, PAT, or htpasswd registries (GHCR PAT, Docker Hub, self-hosted
 zot). **AWS ECR / GCP Artifact Registry tokens expire in hours** and expect a
 *credential helper*, not a static `auth.json` — a different mechanism. Out of scope for
-v1; tracked in `decisions/open/steward-open-questions.md`. Doctor's coverage check
+v1; tracked in `decisions/open/vilice-open-questions.md`. Doctor's coverage check
 partly mitigates a rotted static token (it shows up as "registry not logged in").
 
 ## Roads not taken

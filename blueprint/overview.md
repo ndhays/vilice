@@ -1,4 +1,4 @@
-# Steward Console — Overview
+# Vilice Console — Overview
 
 > The canonical, plain-English picture of what this is. Start here.
 > Kept deliberately small; it grows only as decisions settle into truth.
@@ -19,13 +19,13 @@ mechanism — not as documentation.
 
 ## The two programs
 
-- **Steward** — a Go CLI on every machine. It hardens the box, apps the
+- **Vilice** — a Go CLI on every machine. It hardens the box, apps the
   dependencies, and deploys applications from the machine itself. It owns the
-  privilege and is where Agora becomes mechanism. Detailed spec: `blueprint/steward/`.
+  privilege and is where Agora becomes mechanism. Detailed spec: `blueprint/vilice/`.
 
-- **Steward Console** — a Rails app, the human interface. One codebase, whether it reaches
+- **Vilice Console** — a Rails app, the human interface. One codebase, whether it reaches
   one box or a hundred: a fleet is the list of machines it holds keys for, not a mode it
-  switches into. It reads the record and writes through Steward. Detailed spec:
+  switches into. It reads the record and writes through Vilice. Detailed spec:
   `blueprint/console/`.
 
 The console holds no privilege of its own. It carries a scoped key and comes through the
@@ -40,7 +40,7 @@ to how either looks has somewhere to be true.
 
 ## The console runs anywhere
 
-It reaches Steward over scoped SSH, and SSH is the same call whether it crosses a
+It reaches Vilice over scoped SSH, and SSH is the same call whether it crosses a
 loopback or the open internet. So **where the console runs does not matter**:
 
 - in a container on the very box you're inspecting,
@@ -52,7 +52,7 @@ only difference is how many machines it reaches and how far (N and distance), ne
 different program. (An earlier framing split this into "Operator" and "Dispatcher"; that
 distinction is dropped — see `decisions/ui-shape.md`.)
 
-It also keeps the machines thin: a box runs **only Steward** (a small static binary),
+It also keeps the machines thin: a box runs **only Vilice** (a small static binary),
 never a per-box web app. The rich surface reaches in from wherever it happens to live.
 
 ---
@@ -78,5 +78,5 @@ If you can't name the mechanism, the article isn't applied.
   with it.
 - `decisions/` — the settled **why**, especially roads not taken.
 - `decisions/open/` — questions still being decided (e.g.
-  `decisions/open/steward-open-questions.md`). Truth migrates *out* of here into
+  `decisions/open/vilice-open-questions.md`). Truth migrates *out* of here into
   `decisions/` and `blueprint/` as it settles.

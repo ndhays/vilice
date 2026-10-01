@@ -34,7 +34,7 @@ Writing your own file is not a privileged act. Running them as the `steward` use
 
 ## Granting is the top of the ladder, not a wall above it
 
-This overturns the earlier rationale in [provision.md](../blueprint/steward/provision.md)
+This overturns the earlier rationale in [provision.md](../blueprint/vilice/provision.md)
 ("if a scoped key could run `authorize`, the gate could rebuild its own gate, so they
 are root-only"). The objection assumes *any* scoped key could then grant. It can't.
 

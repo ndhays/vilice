@@ -33,7 +33,7 @@ The admin API listens on a Unix socket, and filesystem ownership decides who may
 | Check | `doctor`: the socket opens, and nothing answers on `:2019` | Drift is surfaced, not assumed away. |
 
 Written by `prepare` (see `configureCaddy`) and specified in
-[`../blueprint/steward/provision.md`](../blueprint/steward/provision.md). On a box whose
+[`../blueprint/vilice/provision.md`](../blueprint/vilice/provision.md). On a box whose
 Caddy still listens on TCP, `prepare` restarts Caddy once instead of reloading, because
 a reload would read the new config and dial a socket that does not exist yet.
 

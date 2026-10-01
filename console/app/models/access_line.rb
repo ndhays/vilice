@@ -1,13 +1,13 @@
 # One line of one box's rights ledger, as `steward actors` reads it back.
 #
 # A presentation value, not a record: nothing here is stored. `authorized_keys` *is*
-# the ledger (blueprint/steward/auth.md), and a copy of it in our database would be a
+# the ledger (blueprint/vilice/auth.md), and a copy of it in our database would be a
 # second answer to "who may act on this box" that could quietly disagree with the box.
 # So this is assembled per request from a live read and thrown away.
 class AccessLine < Data.define(:machine, :client, :scope, :key_type, :fingerprint,
                                :comment, :command, :pinned)
   # ── How far this key reaches ────────────────────────────────────────────────
-  # The scope ladder is `observe ⊂ operate ⊂ grant` (blueprint/steward/auth.md), and
+  # The scope ladder is `observe ⊂ operate ⊂ grant` (blueprint/vilice/auth.md), and
   # an ungated line sits **above** all three rather than beside them: a key with no
   # forced command has no ceiling at all. One ordered axis, most reach first — which
   # is what makes the thing this page exists for land at the top by construction

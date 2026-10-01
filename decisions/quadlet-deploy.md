@@ -2,10 +2,10 @@
 
 > The deploy rearchitecture: app containers are **systemd Quadlet units**, deployed
 > **blue/green**, drained by the **app itself**. **Shipped** (both slices); the canonical
-> behavior lives in [`blueprint/steward/deploy.md`](../blueprint/steward/deploy.md) and
-> [`provision.md`](../blueprint/steward/provision.md). This records the *why* and the roads
+> behavior lives in [`blueprint/vilice/deploy.md`](../blueprint/vilice/deploy.md) and
+> [`provision.md`](../blueprint/vilice/provision.md). This records the *why* and the roads
 > not taken. Graduated from `decisions/open/` 2026-06-11 (the one residual question — per-app
-> `MemoryMax`/`OOMScoreAdjust` overrides — moved to `open/steward-open-questions.md`).
+> `MemoryMax`/`OOMScoreAdjust` overrides — moved to `open/vilice-open-questions.md`).
 
 **Last touched:** 2026-06-11.
 
@@ -115,7 +115,7 @@ that can't simply exit — not baseline.)
 On `SIGTERM` an app should: (1) stop accepting new connections, (2) finish in-flight HTTP,
 (3) send `1001 "going away"` to any websockets, (4) exit. Apps that ignore SIGTERM get
 cut at `TimeoutStopSec` — the degraded, but bounded, fallback. This belongs in
-`blueprint/steward/deploy.md`'s app-contract section **and** in app-author-facing
+`blueprint/vilice/deploy.md`'s app-contract section **and** in app-author-facing
 [`site/content/`](../site/content/) (per "site docs must not lag the code").
 
 ## Lifecycle = systemd
@@ -153,12 +153,12 @@ just hold both colors during overlap — headroom is the lever, not the per-colo
 
 ## Supersedes / answers
 
-- `steward-open-questions.md` → **Gapless cutover** — answered here. Note its premise was
+- `vilice-open-questions.md` → **Gapless cutover** — answered here. Note its premise was
   *overturned*: it said to confirm the Caddy admin-API graceful flip before banking on it;
   we chose app-driven drain instead and do not use the Caddy admin API.
-- `steward-open-questions.md` → **Further hardening → "App unit hardening: systemd
+- `vilice-open-questions.md` → **Further hardening → "App unit hardening: systemd
   Quadlet"** — promoted from someday to this active plan.
-- `steward-open-questions.md` → **Container user model** — Slice A **closes** the Podman
+- `vilice-open-questions.md` → **Container user model** — Slice A **closes** the Podman
   rootless half: units are rootless user units as `steward`, and the `snapshot` timer flips
   to `User=steward`. (The auth half — scoped keys authenticate as `steward` — was already
   settled in `ceiling-is-the-machine.md`.)

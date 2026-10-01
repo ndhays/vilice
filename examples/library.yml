@@ -1,4 +1,4 @@
-# Steward Console App Library — demo / example apps.
+# Vilice Console App Library — demo / example apps.
 #
 # Import via Apps → Import (a file or a URL), or seed it. The format is what
 # Library.export produces (app/models/library.rb): additive on import — apps upsert by
@@ -6,9 +6,9 @@
 #
 # These ten double as the deploy contract's integration tests: each is a real public
 # image that exercises an axis (see the per-app note). All pass the two hard rules —
-# an **unprivileged port (>=1024)** and an **HTTP health path** (Steward's health gate
+# an **unprivileged port (>=1024)** and an **HTTP health path** (Vilice's health gate
 # does an HTTP GET, so pure-TCP services like Postgres/Redis can't be deployed through
-# it as-is — they'd need a TCP/exec health mode Steward doesn't have yet).
+# it as-is — they'd need a TCP/exec health mode Vilice doesn't have yet).
 #
 # Image refs here are catalog *defaults* (repo:tag). The deploy ceremony pins the exact
 # `@sha256:` digest at deploy time — a published/production manifest would pin digests.

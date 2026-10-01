@@ -62,7 +62,7 @@ module Steward
     #
     # The role is **the box's fact, and it is set once**: `steward prepare <role>`
     # writes it, and re-preparing into the other role is refused — you take the apps
-    # off, uninstall, and prepare again (blueprint/steward/provision.md). So the
+    # off, uninstall, and prepare again (blueprint/vilice/provision.md). So the
     # console does not get an opinion about it. It used to: a button offered "Make
     # this a balancer", which wrote this column with nothing behind it, and a `host`
     # so marked would accept balanced apps and then be refused by its own box.
@@ -104,7 +104,7 @@ module Steward
 
     # The box's rights ledger — who may act on it, at what scope, and any key in
     # authorized_keys that Steward did not write. A read: it holds no privilege and
-    # writes nothing to the chain. See blueprint/steward/auth.md.
+    # writes nothing to the chain. See blueprint/vilice/auth.md.
     def actors(machine, refresh: false)
       cached(machine, "actors", refresh: refresh) do
         Steward.read(machine, "actors --json")

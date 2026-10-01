@@ -31,7 +31,7 @@ which is why this is mechanism and not policy.
 ## Why the convenient shape is fatal
 
 The whole claim is *un-bypassability*: there is no path to the box's power that skips a
-named, scoped, recorded invocation ([`blueprint/steward/overview.md`](../blueprint/steward/overview.md)).
+named, scoped, recorded invocation ([`blueprint/vilice/overview.md`](../blueprint/vilice/overview.md)).
 An orchestrator that touches Podman and Caddy itself **is** that path. Steward would
 still be writing entries, but the entries would no longer describe the acts — they would
 describe a narration of the acts, produced by the same process that could choose to

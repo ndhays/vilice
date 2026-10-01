@@ -131,7 +131,7 @@ not a competing primitive.
 >
 > It also needed a Steward verb, which the box did not have — every route the app pack could
 > write was `reverse_proxy 127.0.0.1:<port>`. `steward route` is that verb; see
-> [`../blueprint/steward/deploy.md`](../blueprint/steward/deploy.md). The managed-LB
+> [`../blueprint/vilice/deploy.md`](../blueprint/vilice/deploy.md). The managed-LB
 > realization is still pending.
 
 **Ownership and sharing are the Machine model, unchanged** ([machine-ownership.md](machine-ownership.md)):

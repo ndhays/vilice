@@ -1,6 +1,6 @@
 # harness-rails
 
-A tiny Rails app whose only job is to **exercise the Steward deploy contract**. One
+A tiny Rails app whose only job is to **exercise the Vilice deploy contract**. One
 published image (`ghcr.io/agoraforge/harness-rails`) behaves differently per env var, so a
 single artifact covers most axes of a deploy: health timing, env config, env *and* file
 secrets, a volume-backed counter, a crash, and a memory balloon. It's the workhorse of the
@@ -51,7 +51,7 @@ The devbox is amd64; build a matching arch (or a multi-arch manifest) before dep
 ## Deploy
 
 `deploy.sh` resolves the image digest on the box, builds the desired-state envelope from
-whichever knobs you set, and pipes it to `steward deploy` over scoped SSH (same pattern as
+whichever knobs you set, and pipes it to `vilice deploy` over scoped SSH (same pattern as
 `examples/zot/`):
 
 ```sh

@@ -87,7 +87,7 @@ bring the text box back. It changes what a button *says*, not whether there is o
 - **Host an agent in the console.** A chat box that runs Steward verbs. It would compete
   on the ground where an agent at a shell is already better, and a free-text path to acts
   is exactly what Shape B rejected. If an agent needs Steward, it gets its own scoped key
-  ([`open/steward-mcp.md`](open/steward-mcp.md)).
+  ([`open/vilice-mcp.md`](open/vilice-mcp.md)).
 - **A separate actions page.** Every act in one place, apart from what it acts on. Clean
   to draw, but you act on the thing you are looking at: a separate page makes you carry
   the box and the app across in your head, and loses the observed state that decided the

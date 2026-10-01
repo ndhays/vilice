@@ -1,7 +1,7 @@
 # An accessory belongs to one app, and the network is the isolation
 
 > Decided 2026-08-19, building the database-next-to-the-app path. The canonical *what* is
-> [`blueprint/steward/deploy.md`](../blueprint/steward/deploy.md); this is the *why* and
+> [`blueprint/vilice/deploy.md`](../blueprint/vilice/deploy.md); this is the *why* and
 > the roads not taken. Closes the app-to-app gap
 > [`provider-boundary.md`](provider-boundary.md) names — *"app-to-app traffic, which has
 > no path at all today"* — for the on-box case, and deliberately not for any other.

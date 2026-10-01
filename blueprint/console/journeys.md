@@ -72,7 +72,7 @@ export) is specified in [`data-model.md`](data-model.md).
 - An app may declare **processes** — a worker, a clock — each the app's own image running
   a different command. They ride the app's deploy and rollback, so a worker can never be
   at a different version from the web process
-  ([`blueprint/steward/deploy.md`](../steward/deploy.md), *Processes*).
+  ([`blueprint/vilice/deploy.md`](../vilice/deploy.md), *Processes*).
 - An app may declare **accessories** — the database or cache it needs beside it, on a
   network only that app joins
   ([`accessories-belong-to-one-app.md`](../../decisions/accessories-belong-to-one-app.md)).
@@ -229,7 +229,7 @@ On a shared box the care is Steward Console-side discipline — **no Steward cha
 
 The only thing that would ever need Steward is *un-bypassable* per-app isolation **inside**
 a shared box (a scoped-per-app key) — the "separate, simple, maybe later" item in
-[`decisions/open/steward-open-questions.md`](../../decisions/open/steward-open-questions.md),
+[`decisions/open/vilice-open-questions.md`](../../decisions/open/vilice-open-questions.md),
 rarely necessary because dedicated is the default.
 
 ## Common pitfalls

@@ -13,7 +13,7 @@ role?
 
 **The box's.** `steward prepare <role>` writes `/var/lib/steward/role` once and
 **refuses to convert** a prepared box into the other role — you take its apps off,
-uninstall, and prepare again ([`blueprint/steward/provision.md`](../blueprint/steward/provision.md)).
+uninstall, and prepare again ([`blueprint/vilice/provision.md`](../blueprint/vilice/provision.md)).
 `SetRole` enforces this, and it is deliberate: turning a host that is running apps into
 a balancer by re-running one command is exactly the silent surprise this project avoids.
 

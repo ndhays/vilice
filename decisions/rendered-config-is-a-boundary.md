@@ -12,7 +12,7 @@ Steward was careful in exactly one direction. Nothing a caller sends reaches a s
 `SSH_ORIGINAL_COMMAND` is split into named arguments and never interpreted, secrets ride
 stdin and never argv, and every host-side `bash -c` interpolates only Steward's own
 constants. Command injection — the classic forced-command failure that
-[auth.md](../blueprint/steward/auth.md) names — was genuinely closed.
+[auth.md](../blueprint/vilice/auth.md) names — was genuinely closed.
 
 Config injection was wide open, because nobody had thought of the rendered file as an
 input at all. Three formats, all line-oriented, all built by string interpolation:

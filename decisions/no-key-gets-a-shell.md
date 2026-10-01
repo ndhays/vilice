@@ -19,7 +19,7 @@
    turned into `execShell()`, and the key's `authorized_keys` line carried
    `restrict,pty` instead of plain `restrict`.
 
-The second breaks the one claim. [overview.md](../blueprint/steward/overview.md) says
+The second breaks the one claim. [overview.md](../blueprint/vilice/overview.md) says
 un-bypassability means "there is no path to the box's power that skips a named, scoped,
 recorded invocation." A shell as `steward` is exactly that path. From it you can
 `podman run` directly, hand-write a Quadlet unit and `systemctl --user start` it, and

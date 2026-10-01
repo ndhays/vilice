@@ -62,7 +62,7 @@ dependency.
 The first app that needs a *companion* container, not just persistent state. Builds the
 `accessories` block inside the AppConfig artifact (shared Podman network + container-DNS + stable
 aliases, accessories outliving app redeploys). Design already in scope —
-[`steward-open-questions.md`](steward-open-questions.md) "Accessories" and
+[`vilice-open-questions.md`](vilice-open-questions.md) "Accessories" and
 [`deploy-config-model.md`](deploy-config-model.md). This is the step that turns "runs a
 single-container app" into "runs a normal web app", and it comes *after* dogfooding because
 Steward Console itself doesn't need an accessory to stand up.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy zot (a private OCI registry) to a Steward box — a real test of the file-secrets
+# Deploy zot (a private OCI registry) to a Vilice box — a real test of the file-secrets
 # affordance: zot's config.json and htpasswd are delivered as *file* secrets (mounted),
 # not env vars. Reuses the devbox you set up with script/devbox.sh.
 #
@@ -7,13 +7,13 @@
 #   ZOT_HOSTNAME=registry.example.com ZOT_PASS=secret examples/zot/deploy.sh --ssh devbox
 #
 # Needs: the `--ssh <alias>` admin login (to resolve the image digest via podman) and the
-# scoped dev key (to deploy as the steward user). `htpasswd` (apache2-utils) and `python3`.
+# scoped dev key (to deploy as the _vilice user). `htpasswd` (apache2-utils) and `python3`.
 set -euo pipefail
 
 ALIAS=""; [ "${1:-}" = "--ssh" ] && { ALIAS="${2:-}"; shift 2 || true; }
 [ -n "$ALIAS" ] || { echo "usage: ZOT_PASS=… $0 --ssh <devbox-alias>"; exit 1; }
 
-KEY="${DEVBOX_KEY:-$HOME/.steward-devbox/id_ed25519}"
+KEY="${DEVBOX_KEY:-$HOME/.vilice-devbox/id_ed25519}"
 KNOWN="$(dirname "$KEY")/known_hosts"
 APP="${ZOT_APP:-zot}"
 TAG="${ZOT_TAG:-ghcr.io/project-zot/zot-linux-amd64:latest}"
@@ -31,7 +31,7 @@ HOST="$(ssh -G "$ALIAS" | awk '$1=="hostname"{print $2; exit}')"
 HOSTNAME_="${ZOT_HOSTNAME:-http://$HOST}"   # real domain → HTTPS; http://<ip> → plain, no DNS needed
 
 # Pin the image by digest. Resolve it via the admin's (rootful) podman — the manifest
-# digest is registry-addressed, so it's the same one the steward user will pull at deploy.
+# digest is registry-addressed, so it's the same one the _vilice user will pull at deploy.
 echo "• resolving $TAG digest on the box…"
 digest="$(ssh "${kh[@]}" "$ALIAS" \
   "podman pull -q '$TAG' >/dev/null && podman image inspect '$TAG' --format '{{.Digest}}'")"
@@ -43,7 +43,7 @@ htline="$(htpasswd -nbB "$ZUSER" "$PASS")"
 
 echo "• deploying '$APP' to $HOSTNAME_ (config + htpasswd as file secrets)…"
 CONFIG="$(cat "$DIR/config.json")" IMAGE="$image" HOST_="$HOSTNAME_" HTLINE="$htline" python3 - <<'PY' \
-  | ssh -i "$KEY" -o IdentitiesOnly=yes "${kh[@]}" "steward@$HOST" "deploy $APP"
+  | ssh -i "$KEY" -o IdentitiesOnly=yes "${kh[@]}" "_vilice@$HOST" "deploy $APP"
 import json, os
 print(json.dumps({
     "app": {

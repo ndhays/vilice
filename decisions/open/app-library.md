@@ -59,6 +59,6 @@ is the real ceiling today — a key-holder can `steward deploy <any-image>` dire
   pinning** the library images, and a **seed convenience** to load `examples/library.yml`. A
   Steward gap surfaced: the health gate is HTTP-only, so pure-TCP services (Postgres/Redis)
   can't deploy — see
-  [`steward-open-questions.md`](steward-open-questions.md).
+  [`vilice-open-questions.md`](vilice-open-questions.md).
 - **The Steward allowlist itself** — whether/when it lands, and whether
   `apps_library_only` then drives it.

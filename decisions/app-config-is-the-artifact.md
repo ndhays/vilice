@@ -26,7 +26,7 @@ re-seat a digest. The procedure is reduced to a noun.
 ### What follows from that
 
 - **The editor is a producer, not the system.** Steward Console mints the artifact; the
-  [Steward CLI](../blueprint/steward/overview.md) mints the same artifact from hand-written
+  [Steward CLI](../blueprint/vilice/overview.md) mints the same artifact from hand-written
   JSON. Delete either and the system stands, because the unit that moves is the document,
   not the tool. A tool that hoards state nothing else can reconstruct has failed this test;
   ours checkpoints its state into a portable artifact on every change.
@@ -131,11 +131,11 @@ authoritative-on-conflict once the config is an addressable artifact:
 ## Consequences (design pending, principle settled)
 
 - The box layout moves from `apps/<name>.json` + `prev_image` to a per-slot timeline
-  (`current.json` + `history/`); folds into [`../blueprint/steward/deploy.md`](../blueprint/steward/deploy.md).
+  (`current.json` + `history/`); folds into [`../blueprint/vilice/deploy.md`](../blueprint/vilice/deploy.md).
 - `Install` gains a config-version timeline rather than a live `config` jsonb; folds into
   [`../blueprint/console/data-model.md`](../blueprint/console/data-model.md) when
   built. Until then those docs describe today's shape — this decision is the direction,
   not yet the schema.
-- Accessories (now in scope — see [`open/steward-open-questions.md`](open/steward-open-questions.md))
+- Accessories (now in scope — see [`open/vilice-open-questions.md`](open/vilice-open-questions.md))
   become **fields inside the AppConfig artifact**, so they version with it: change the
   Redis you depend on and you mint a new config, same as any other field.

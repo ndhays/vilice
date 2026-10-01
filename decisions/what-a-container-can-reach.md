@@ -34,7 +34,7 @@ networking, container run as the `steward` user.
 
 **The isolation claims hold.** Publishing to `127.0.0.1` is a real boundary, not a
 convention — which is what the accessory model and the Caddy-in-front model both assume.
-Recorded in [`../blueprint/steward/deploy.md`](../blueprint/steward/deploy.md) so the
+Recorded in [`../blueprint/vilice/deploy.md`](../blueprint/vilice/deploy.md) so the
 property is stated where the spec makes the claim, with the versions it was verified
 against, because a default that changed once can change again.
 
@@ -59,7 +59,7 @@ never touches metadata (the deploy envelope into Podman's secret store).
   generic and knows nothing about containers.
 - **Reject it for the `steward` user only** (an `--uid-owner` match, since pasta runs as
   that user). This is the version that would work, and it stays in
-  [`open/steward-open-questions.md`](open/steward-open-questions.md) rather than being
+  [`open/vilice-open-questions.md`](open/vilice-open-questions.md) rather than being
   built: a firewall rule per box, for information disclosure with no credentials in it, is
   mechanism ahead of need. It becomes worth building the day Steward runs on a substrate
   whose metadata service hands out credentials.

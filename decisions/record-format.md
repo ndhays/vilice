@@ -2,7 +2,7 @@
 
 **Decided 2026-06-09.** Settles the "tamper-evidence — journald FSS vs a hand-rolled hash
 chain" open question. The canonical format is specified in
-[`blueprint/steward/record.md`](../blueprint/steward/record.md); this records the *why*
+[`blueprint/vilice/record.md`](../blueprint/vilice/record.md); this records the *why*
 and the road not taken.
 
 ## What's locked

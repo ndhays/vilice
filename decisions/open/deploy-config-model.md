@@ -98,7 +98,7 @@ What varies between apps / deploys — and where it stands today (`appState` in
   scope** (decided 2026-06-24); the missing axis is being built. A new `accessories` block *inside*
   the AppConfig artifact (so it versions with the config), realized as shared Podman network +
   container-DNS (aardvark-dns) + stable network-aliases, with accessories that outlive app
-  redeploys — design in [steward-open-questions.md](steward-open-questions.md) "Accessories"
+  redeploys — design in [vilice-open-questions.md](vilice-open-questions.md) "Accessories"
 - **pre/post-deploy hooks** — *not built; the genuinely open one (below)*
 
 Note the **image digest itself** sits at the boundary: the config *points at* a code

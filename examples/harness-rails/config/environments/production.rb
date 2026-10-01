@@ -22,8 +22,8 @@ Rails.application.configure do
   config.assume_ssl = true
 
   # The platform's Caddy terminates TLS at the edge and proxies plain HTTP to the app on a
-  # loopback port (the app must not run its own edge — see blueprint/steward/deploy.md), and
-  # Steward's health check hits http://127.0.0.1. So the app speaks plain HTTP; no force_ssl.
+  # loopback port (the app must not run its own edge — see blueprint/vilice/deploy.md), and
+  # Vilice's health check hits http://127.0.0.1. So the app speaks plain HTTP; no force_ssl.
   config.force_ssl = false
 
   # Skip http-to-https redirect for the default health check endpoint.

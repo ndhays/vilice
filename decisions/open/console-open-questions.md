@@ -31,7 +31,7 @@ anywhere", the OOM per-app override, and the replica/deploy strategy below.
 
 The general form — letting *any* app redeploy itself through a narrow, app-pinned grant —
 is the **self-update scope** open question in
-[steward-open-questions.md](steward-open-questions.md). Steward Console-deploys-Steward Console is
+[vilice-open-questions.md](vilice-open-questions.md). Steward Console-deploys-Steward Console is
 just that scope's first customer.
 
 **Two halves, one version.** "Update Steward Console" is really two moves on different
@@ -47,7 +47,7 @@ contract.
 
 The Steward half is **settled and out of this doc**: the procedure, and why there is no
 `steward upgrade` command, are canonical in
-[blueprint/steward/provision.md](../../blueprint/steward/provision.md#upgrading-an-installed-steward).
+[blueprint/vilice/provision.md](../../blueprint/vilice/provision.md#upgrading-an-installed-steward).
 What stays open here is only the *Steward Console* half — the self-update scope above.
 
 **You never need Steward Console to update Steward Console.** Steward is daemonless and lives on
@@ -85,7 +85,7 @@ the first time? Two shapes, not yet chosen:
 
 These pair with the existing genesis decisions: the box self-bootstraps and authorizes
 Steward Console's operate key during provisioning ([create-machine.md](create-machine.md)),
-and the per-app **self-update scope** ([steward-open-questions.md](steward-open-questions.md))
+and the per-app **self-update scope** ([vilice-open-questions.md](vilice-open-questions.md))
 is the narrowest grant a born-on-the-box Steward Console could hold to push its own successor.
 Decide the volume/identity model (above) first — genesis and self-update share it.
 
@@ -105,7 +105,7 @@ chosen: **secret by default** (the fail-safe — forgetting protects rather than
 in one Environment panel with two visibly-distinct modes — masked/guarded secret vs
 plain public — labelled by consequence (public is recorded with the deploy; secret is
 kept off the record). Maps 1:1 to Steward's two delivery channels. Full plan:
-[steward-open-questions.md](steward-open-questions.md). The **App-side declaration** —
+[vilice-open-questions.md](vilice-open-questions.md). The **App-side declaration** —
 each env entry as `{ key, required?, secret?, default }`, driving the app form — is in
 [app-library.md](app-library.md); this UI is its deploy-time counterpart.
 

@@ -120,14 +120,14 @@ rule — the blueprint changes *in the same commit* as the behaviour — cannot 
 repo boundary. Drift is the failure mode this project guards hardest against.
 
 Duplicating the shared spec was rejected outright: two copies of the canonical truth is the
-exact fiction the doc model exists to prevent. Splitting `blueprint/steward/` away from the
+exact fiction the doc model exists to prevent. Splitting `blueprint/vilice/` away from the
 rest was considered and dropped — several decisions genuinely span both halves
 ([`one-primitive-composed.md`](one-primitive-composed.md),
 [`console-layers.md`](console-layers.md)), and cross-links would break.
 
 So the spec stays whole, on the Forgejo, with the console. **The handwritten core is the
 only thing that leaves**, and it is the one piece whose spec section
-([`../blueprint/steward/`](../blueprint/steward/)) is self-contained enough to work from at
+([`../blueprint/vilice/`](../blueprint/vilice/)) is self-contained enough to work from at
 a distance. The cost is real and accepted: a behaviour change in the Go and its blueprint
 update land in two commits in two repos rather than one, and nothing but discipline keeps
 them together.

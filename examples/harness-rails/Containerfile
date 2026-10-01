@@ -1,6 +1,6 @@
 # The harness image. Builds to ghcr.io/agoraforge/harness-rails.
 #
-# Honours the Steward deploy contract: runs as a non-root user and listens on an
+# Honours the Vilice deploy contract: runs as a non-root user and listens on an
 # unprivileged port (PORT, default 8080) on 0.0.0.0. No master key is baked in — the app
 # is stateless, so production runs with an ephemeral SECRET_KEY_BASE_DUMMY.
 ARG RUBY_VERSION=4.0.3

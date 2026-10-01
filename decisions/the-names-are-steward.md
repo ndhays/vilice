@@ -70,7 +70,7 @@ record path all become `steward`. There is no in-place migration for `0.1.x`.
 Renaming a unix account that owns rootless Podman containers, systemd user units, and
 `chattr +a` record files is the genuinely painful case — the one where a half-finished
 migration leaves a box with a healthy-looking ghost install, exactly the failure
-[`one-steward-per-box.md`](one-steward-per-box.md) exists to prevent. Migration code for
+[`one-vilice-per-box.md`](one-vilice-per-box.md) exists to prevent. Migration code for
 that would be written once, carried forever, and exercised for a window measured in
 weeks against an install base of roughly one. A documented reinstall is the boring
 long-term solution.
