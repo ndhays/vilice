@@ -750,3 +750,43 @@ main h2.section {
     margin-left: 0;
   }
 }
+
+/* ------------------------------------------------------------ app library --- */
+
+/* One card per app, drawn like the role cards: the name in mono (it is what you type
+   and what the console shows), the description, then the few facts the deploy
+   contract cares about. Generated from the manifest the console imports. */
+.library {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-8) 0;
+}
+.library-app {
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+}
+.library-app h2 {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  margin: 0 0 var(--space-2);
+}
+.library-app p {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  margin: 0 0 var(--space-3);
+}
+.library-app dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.library-app dt { color: var(--muted); }
+.library-app dd { margin: 0; overflow-wrap: anywhere; }

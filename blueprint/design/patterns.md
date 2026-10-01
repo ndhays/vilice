@@ -159,7 +159,7 @@ change here — the page cannot show one the binary does not have.
 ## Page chrome
 
 **Header.** The lockup on the left, primary nav on the right: Home, Overview,
-Commands, Console, Source. Home is named rather than left to the mark — a lockup is
+Commands, Console, App Library, Source. Home is named rather than left to the mark — a lockup is
 a convention, and a reader who does not know it should not have to guess. Nav items
 are `--text-sm`, `--ink-soft`, and go `--ink` on hover with a `--brand-yellow`
 underline. One hairline under the whole thing.

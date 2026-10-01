@@ -5,23 +5,31 @@ The Vilice documentation site, built with [Web Origami](https://weborigami.org).
 ```bash
 npm install
 npm run serve     # local preview
-npm run build     # → dist/  (drag-and-drop deploy)
+npm run build     # → dist/ (vilice.org) and dist-get/ (get.vilice.org)
 ```
 
 Both scripts build the CLI first (`make -C ../vilice build`), because the command
 pages are generated from it. `build` additionally checks that the signed release for
 the current `VERSION` is published — run `make -C ../vilice release` first.
 
+Two hosts, two outputs. `dist/` is the docs site. `dist-get/` is the installer host:
+`install.sh` and the signed releases, nothing else, so a compromise of the docs site
+cannot reach what root runs. Publish `dist-get/` first — the docs' install line must
+work the moment someone copies it.
+
 ## How it's wired
 
 - `content/*.md` — the hand-written pages (Markdown + front-matter `title`, `nav`):
   the home page, Overview, and Console.
+- `appLibrary.ori` — the App Library page, generated from `../examples/library.yml`,
+  which is also served as `/app-library.yml` for the console to import.
 - `content/commands/*.md` — optional prose appended to a command's page. Usually absent.
 - `help.js` — **runs `vilice _commands` at build time** and returns the command table:
   name, scope, group, summary, and the verbatim `--help` page for each.
 - `command.ori` / `commandIndex.ori` / `sidebar.ori` / `sitemap.ori` — the generated parts.
 - `page.ori` — the shared HTML layout (banner, header, sidebar, footer).
-- `site.ori` — the build tree: which pages exist, plus assets, fonts, and releases.
+- `site.ori` — the docs tree (vilice.org): which pages exist, plus assets and fonts.
+- `get.ori` — the installer tree (get.vilice.org): `install.sh` and `/releases/`.
 - `assets/` — `tokens.css`, `styles.css`, `copy.js`, the mark.
 - `versions.js` — reads the platform version from `VERSION` at build time, and fills
   `{{version}}` in the hand-written pages. Write `{{version}}` rather than a number:

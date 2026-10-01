@@ -1,0 +1,31 @@
+// The App Library page. Returns a document for page.ori to wrap.
+//
+// Generated from the same manifest the console imports (examples/library.yml, served
+// beside this page as /app-library.yml), so the page and the file cannot disagree
+// about what is in the library. Nothing here is typed twice.
+(library) => {
+  title: "App Library"
+  nav: "library"
+  _body: `        <h1>App Library</h1>
+        <p class="lead">Ready-made apps to deploy with Vilice Console.</p>
+        <p>Each one is a public image that meets the deploy contract: an unprivileged port and
+          an HTTP health check. To add them all to your console, open <strong>Apps</strong>,
+          choose <strong>Import</strong>, and give it this address:</p>
+        <pre><code>https://vilice.org/app-library.yml</code></pre>
+        <p>Importing adds and updates; it never deletes. The image tags are defaults: the
+          deploy step pins the exact digest when you deploy.
+          <a href="/app-library.yml">View the file</a>.</p>
+        <ul class="library">
+${ Tree.map(library.apps, (app) => `          <li class="card library-app">
+            <h2 id="${ app.name }">${ Origami.htmlEscape(app.name) }</h2>
+            <p>${ Origami.htmlEscape(app.description) }</p>
+            <dl>
+              <dt>Image</dt><dd><code>${ Origami.htmlEscape(app.versions[0].image) }</code></dd>
+              <dt>Port</dt><dd>${ app.port }</dd>
+              <dt>Health</dt><dd><code>${ Origami.htmlEscape(app.health) }</code></dd>
+${ app.env ? `              <dt>Asks for</dt><dd>${ Tree.map(app.env, (e) => `<code>${ e.key }</code>${ e.secret ? ` (secret)` : `` } `) }</dd>
+` : `` }            </dl>
+          </li>
+`) }        </ul>
+`
+}

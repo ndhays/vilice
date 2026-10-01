@@ -31,7 +31,7 @@ project that looks for daylight in it.
    the work (below).
 2. **Everything else — including this repository as it stands — lives where the clause
    does not apply.** A self-hosted Forgejo was the intended home; the interim is
-   `github.com/ndhays/vilice`.
+   `github.com/ndhays/steward`.
 3. **An LLM may review, never author.** The clause bans code *written by* generative AI. It
    says nothing about using one to critique code a human wrote, and that is the arrangement
    from here: the human writes the test and the implementation, the model reads them and
@@ -165,7 +165,7 @@ readable**, because the installer's fetch is unauthenticated
 > keeps the rest of the monorepo off Codeberg. No tension there.
 >
 > **GitHub is now a mirror, for visibility only.** Forgejo push-mirrors to
-> `github.com/ndhays/vilice`, force-pushing, with sync-on-commit. Nothing fetches anything
+> `github.com/ndhays/steward`, force-pushing, with sync-on-commit. Nothing fetches anything
 > security-relevant from it, which is the point: the mirror's token can expire and the
 > mirror can go stale without a single install being affected. Had the key stayed there,
 > mirror lag would have sat on the verification path.
@@ -226,3 +226,11 @@ unchanged — but nothing forces that, and it should not be mistaken for the rea
   a written spec section, an existing test suite to hold to, and recent enough to be fresh.
   An evening spent there says more about whether this plan is real than any further
   argument.
+
+> **Superseded in part, 2026-10-01 — the hosts moved again, with the rename.** The source
+> is now `github.com/ndhays/vilice`, the main repository rather than a mirror. Only the
+> release key is on Codeberg, at `codeberg.org/vilice/vilice`: a key is not code, so the
+> generative-AI clause does not reach it. The binary comes from `get.vilice.org`. The rule
+> above still holds — key and binary from different providers — and now the source is on
+> a third. See [`the-name-is-vilice.md`](the-name-is-vilice.md).
+

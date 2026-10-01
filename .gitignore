@@ -12,6 +12,7 @@
 # Docs site
 /site/node_modules/
 /site/dist/
+/site/dist-get/
 
 # OS / editor cruft
 .DS_Store

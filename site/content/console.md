@@ -6,7 +6,7 @@ title: Vilice Console
 
 Vilice Console is a GUI-based approach to Vilice via a Rails app. It can be deployed with
 Vilice itself, or run locally. For more details see the console code inside the
-[monorepo](https://git.agoraforge.org/agoraforge/steward).
+[monorepo](https://github.com/ndhays/vilice).
 
 It holds no privilege of its own. Each machine is reached over scoped SSH with its own key,
 authorized on the box at `observe` to read or `operate` to deploy — so the console can run
@@ -61,5 +61,5 @@ See [Secrets](/overview.html#secrets) for the general rule.
 
 Vilice Console is built on **[Boxcar](https://boxcar.run)** — a Rails pattern language that
 encodes
-[Agora Constitution](https://git.agoraforge.org/agoraforge/steward/src/branch/main/blueprint/agora.md)
+[Agora Constitution](https://github.com/ndhays/vilice/blob/main/blueprint/agora.md)
 articles as composable concerns: identity, the accountable record, scoped decisions.

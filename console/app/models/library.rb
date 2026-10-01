@@ -1,6 +1,6 @@
 # The App Library as a portable manifest. The DB is the runtime store; this is the
 # interchange format — a plain Hash ready for YAML, shareable and seedable, and the
-# shape a marketplace would publish (applibrary.agoraforge.org). See
+# shape the published App Library serves (vilice.org/app-library.yml). See
 # decisions/open/app-library.md.
 #
 # Two deliberate choices live here:

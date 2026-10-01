@@ -1,0 +1,15 @@
+// get.vilice.org — the installer and the signed releases, and nothing else.
+//
+// Kept apart from the docs site on purpose. install.sh is the one step of an install
+// that is not signature-checked: whatever this host serves, root runs. So the host
+// serves the least it can, and a compromise of the docs site does not reach it
+// (decisions/the-name-is-vilice.md). The release key is not here either: install.sh
+// fetches it from Codeberg, a different provider, so no one server hands out both a
+// binary and the key that vouches for it.
+{
+  // The verifying installer, served at /install.sh
+  "install.sh" = ../install.sh
+
+  // The signed release artifacts, served at /releases/vilice/<version>/…
+  releases = ../release/published
+}

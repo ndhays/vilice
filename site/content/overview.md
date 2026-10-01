@@ -161,7 +161,7 @@ jq --arg key "$RAILS_MASTER_KEY" \
 ```
 
 The deploy scripts in
-[`examples/`](https://git.agoraforge.org/agoraforge/steward/src/branch/main/examples) build
+[`examples/`](https://github.com/ndhays/vilice/tree/main/examples) build
 the same envelope with `python3`, which every Ubuntu box already has.
 
 ## Examples
@@ -219,5 +219,5 @@ stdin — see [Secrets](#secrets).
 ```
 
 More of these, with the deploy scripts that resolve each digest on the box, live in
-[`examples/`](https://git.agoraforge.org/agoraforge/steward/src/branch/main/examples) in
+[`examples/`](https://github.com/ndhays/vilice/tree/main/examples) in
 the repository.

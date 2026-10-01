@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://steward.agoraforge.org/sitemap.xml
+Sitemap: https://vilice.org/sitemap.xml

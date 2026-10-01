@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Vilice documentation site, built with Web Origami.",
+  "description": "Vilice documentation site (vilice.org) and installer host (get.vilice.org), built with Web Origami.",
   "scripts": {
     "cli": "make -C ../vilice build",
     "prebuild": "npm run cli && node scripts/check-release.js",
     "preserve": "npm run cli",
-    "build": "ori copy site.ori, clear files:dist",
+    "build": "ori copy site.ori, clear files:dist && ori copy get.ori, clear files:dist-get",
     "serve": "ori serve site.ori"
   },
   "dependencies": {

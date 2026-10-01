@@ -5,7 +5,7 @@
 // Document fields the chrome reads, all optional:
 //   title    — the <title> and og:title
 //   nav      — which nav item is current: "home" | "overview" | "commands" |
-//              "console"
+//              "console" | "library"
 //   command  — on a command page, which command, so the sidebar can mark it
 //   sidebar  — true to render the command sidebar
 //
@@ -24,7 +24,7 @@
     <meta property="og:type" content="website">
     <meta property="og:description" content="A tool to help you host your applications on a Linux server you control. Free, open source, and built to be boring.">
     <!-- A raster, because social platforms don't render SVG. Same mark. -->
-    <meta property="og:image" content="https://steward.agoraforge.org/assets/logo.png">
+    <meta property="og:image" content="https://vilice.org/assets/logo.png">
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/logo.png">
     <link rel="stylesheet" href="/assets/tokens.css">
@@ -44,7 +44,8 @@
         <a href="/overview.html"${ doc.nav === "overview" ? ` class="current" aria-current="page"` : `` }>Overview</a>
         <a href="/commands/"${ doc.nav === "commands" ? ` class="current" aria-current="page"` : `` }>Commands</a>
         <a href="/console.html"${ doc.nav === "console" ? ` class="current" aria-current="page"` : `` }>Console</a>
-        <a href="https://git.agoraforge.org/agoraforge/steward">Source <span aria-hidden="true">↗</span></a>
+        <a href="/app-library.html"${ doc.nav === "library" ? ` class="current" aria-current="page"` : `` }>App Library</a>
+        <a href="https://github.com/ndhays/vilice">Source <span aria-hidden="true">↗</span></a>
       </nav>
     </header>
     <div class="page${ doc.sidebar ? ` has-sidebar` : `` }">
@@ -62,7 +63,7 @@ ${ doc._body }
         &nbsp;·&nbsp;
         Site built with <a href="https://weborigami.org">Web Origami</a>
         &nbsp;·&nbsp;
-        <a href="https://git.agoraforge.org/agoraforge/steward">agoraforge/steward</a>
+        <a href="https://github.com/ndhays/vilice">ndhays/vilice</a>
       </span>
     </footer>
     <script src="/assets/copy.js" defer></script>

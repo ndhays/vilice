@@ -1,12 +1,13 @@
-// The sitemap. The hand-written pages are listed by hand — there are four, and
+// The sitemap. The hand-written pages are listed by hand — there are five, and
 // they change about once a year. The command pages are walked from the same table
 // that generates them, so adding a verb to the CLI puts it in the sitemap.
 (commands) => `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://steward.agoraforge.org/index.html</loc></url>
-  <url><loc>https://steward.agoraforge.org/commands/</loc></url>
-  <url><loc>https://steward.agoraforge.org/overview.html</loc></url>
-  <url><loc>https://steward.agoraforge.org/console.html</loc></url>
-${ Tree.map(commands, (cmd) => `  <url><loc>https://steward.agoraforge.org/commands/${ cmd.name }.html</loc></url>
+  <url><loc>https://vilice.org/index.html</loc></url>
+  <url><loc>https://vilice.org/commands/</loc></url>
+  <url><loc>https://vilice.org/overview.html</loc></url>
+  <url><loc>https://vilice.org/console.html</loc></url>
+  <url><loc>https://vilice.org/app-library.html</loc></url>
+${ Tree.map(commands, (cmd) => `  <url><loc>https://vilice.org/commands/${ cmd.name }.html</loc></url>
 `) }</urlset>
 `

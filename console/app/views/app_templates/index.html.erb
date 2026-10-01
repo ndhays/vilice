@@ -18,7 +18,7 @@
       <div class="menu-rule"></div>
       <%= form_with url: import_app_templates_path, method: :post, class: "menu-form" do |f| %>
         <span class="menu-label">From a URL</span>
-        <%= f.url_field :url, placeholder: "https://applibrary.agoraforge.org/…", required: true %>
+        <%= f.url_field :url, placeholder: "https://vilice.org/app-library.yml", required: true %>
         <%= f.submit "Import URL", class: "btn-quiet" %>
       <% end %>
     </div>
@@ -52,5 +52,5 @@
   </div>
 <% else %>
   <p class="empty">No templates yet. <%= link_to "Add one", new_app_template_path %>, or import from
-    <a href="https://applibrary.agoraforge.org">a shared library</a>.</p>
+    <a href="https://vilice.org/app-library.html">the Vilice App Library</a>.</p>
 <% end %>

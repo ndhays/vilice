@@ -25,7 +25,7 @@ help improve it.
 **Install Vilice:**
 
 ```bash
-curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- {{version}}
+curl -fsSL https://get.vilice.org/install.sh | sudo bash -s -- {{version}}
 ```
 
 [View all Vilice commands here](/commands/).
@@ -97,9 +97,8 @@ tools. The goal is one day to rebuild it by
 hand and host it on [Codeberg](https://codeberg.org), in a way that complies with the
 generative-AI clause of their
 [Terms of Use](https://codeberg.org/Codeberg/org/commit/96fac426a32d1ba91ff879366d59bf1af54080c2).
-Until then the repository is
-[self-hosted](https://git.agoraforge.org/agoraforge/steward) on
-[Forgejo](https://forgejo.org) — the same software Codeberg runs, and built by the same
-people — and deployed with Vilice itself.
+Until then the repository is on [GitHub](https://github.com/ndhays/vilice). Only the release
+key lives on Codeberg, so the key that vouches for a release never comes from the same place
+as the release itself.
 
 </aside>

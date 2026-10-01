@@ -6,9 +6,9 @@
 > carry over unchanged. **Answers** question 1 of
 > [`open/landscape-scan.md`](open/landscape-scan.md), the collision scan.
 >
-> **Built, except the installer and the hosts.** The code, the console, the site and the
-> docs say Vilice. `install.sh`, the site's URLs and the repo links still name
-> `steward.agoraforge.org` and `agoraforge/steward`, behind the gate under "Building it".
+> **Built; not yet published.** The code, the console, the site, the docs and
+> `install.sh` all say Vilice and point at the new homes. What is left is publishing:
+> the first release, the key on Codeberg, the two hosts — in the order under "Building it".
 
 ## The question
 
@@ -104,8 +104,16 @@ methods, files. They stay plain words.
 | `vilice.org` | The site and docs. The project's home: .org for the open-source project. |
 | `get.vilice.org` | `install.sh` and the release binaries. Nothing else. |
 | `vilice.com` | Redirects to `vilice.org` for now; held for a business site later. **Never serves `install.sh`.** |
-| `codeberg.org/vilice/vilice` | The release public key, from the repo's raw path. |
-| GitHub | Not ours: `github.com/vilice` is an unrelated, empty account. A mirror at most, under another name. **Never in the trust path, and never linked as the project's home.** |
+| `github.com/ndhays/vilice` | The source: the main repository. Personal on purpose. **Never in the trust path** — nothing an install fetches comes from GitHub. (`github.com/vilice` is an unrelated, empty account; never link it.) |
+| `codeberg.org/vilice/vilice` | The release public key, and only that, at `release-key.pub` in the repo root, fetched from the raw path. |
+
+**Why the source is on GitHub and only the key is on Codeberg.** Codeberg's Terms of Use
+now restrict generative-AI code ([`the-core-is-handwritten.md`](the-core-is-handwritten.md)),
+and this code is LLM-assisted, so it cannot live there yet. A public key is not code. The
+split also adds a property: the key sits on neither the host that serves the binary nor
+the one that holds the source, so no one account can change what a release is *and* the
+key that vouches for it. A self-hosted mirror of the source may follow; it changes
+nothing here.
 
 **The installer host stays bare.** `install.sh` is the one step in the install path that
 is not signature-checked: whatever that host serves, root runs. Keeping it on its own
@@ -135,22 +143,30 @@ with it.
 
 What does not move, on purpose:
 
-- **The signed releases up to `0.3.4`** keep their `steward` names. A version is one set
-  of bytes forever ([`versioning.md`](versioning.md)), and the binary's name is inside the
-  tarball, so the first Vilice binary ships as a new version. Until it does, the site's
-  release guard refuses to build — correctly.
-- **The retired `pack` value `steward-app`** in the pinned historical record entry. Boxes
+- **The retired `pack` value is not touched** — see below. The `steward` releases up to
+  `0.3.4` are withdrawn rather than kept: nobody ever installed one, and keeping a
+  version's bytes forever ([`versioning.md`](versioning.md)) protects installs, of which
+  there were none. The first Vilice release is **`0.4.0`**: the binary's name is inside
+  the tarball, so it could never have been a re-signed `0.3.4` anyway.
+- **The `steward-app` pack value** in the pinned historical record entry stays. Boxes
   that hold one must still verify.
 - **Past console migrations**, which are history. A new migration renames the column,
   the stored themes, and the stored ssh users.
 
-What is left, in order: register `get.vilice.org` and the Codeberg `vilice` org; cut the
-first Vilice release; point `install.sh`, the site's URLs and the repo links at the new
-hosts; reinstall the dev box.
+What is left, in order:
 
-**The gate:** `install.sh` does not change until `get.vilice.org` serves the release and
-`codeberg.org/vilice/vilice` serves the key. Point the installer at a path that does not
-answer and every install fails its check.
+1. **The release.** Move the signing key to `~/.keys/vilice-release-key.pem` and run
+   `make release` for `0.4.0`.
+2. **The key.** Publish `vilice/release-key.pub` as `release-key.pub` at the root of
+   `codeberg.org/vilice/vilice`, publicly readable.
+3. **The hosts.** `npm run build` in `site/` writes `dist/` (for `vilice.org`) and
+   `dist-get/` (for `get.vilice.org`). `vilice.com` redirects to `vilice.org`.
+4. **The dev box**, reinstalled from `get.vilice.org`.
+
+**The gate:** `get.vilice.org` does not go live until the key answers at its Codeberg
+path, and the docs site does not go live before `get.vilice.org` — the install line it
+prints must work the moment someone copies it. An installer pointed at a path that does
+not answer fails every install.
 
 ## Roads not taken
 
@@ -191,6 +207,8 @@ answer and every install fails its check.
 - **`cli.vilice.org` for the installer.** Names the host after the artifact, not the
   job. The host hands out releases, which may later be more than the CLI. `get.` is
   also the familiar convention.
+- **The source under a company account** (`github.com/obelisqueops/vilice`). Considered
+  and dropped for `ndhays/vilice`: the project is personal, and the repo should say so.
 - **`vilice.dev` as the home.** Its HTTPS-only default can be had on .org through HSTS
   preload, and .org says open source. Not held; cheap to add as a blocker for a
   lookalike install page.
