@@ -105,6 +105,7 @@ methods, files. They stay plain words.
 | `get.vilice.org` | `install.sh` and the release binaries. Nothing else. |
 | `vilice.com` | Redirects to `vilice.org` for now; held for a business site later. **Never serves `install.sh`.** |
 | `codeberg.org/vilice/vilice` | The release public key, from the repo's raw path. |
+| GitHub | Not ours: `github.com/vilice` is an unrelated, empty account. A mirror at most, under another name. **Never in the trust path, and never linked as the project's home.** |
 
 **The installer host stays bare.** `install.sh` is the one step in the install path that
 is not signature-checked: whatever that host serves, root runs. Keeping it on its own
