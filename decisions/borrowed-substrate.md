@@ -2,7 +2,7 @@
 
 **Decided 2026-06-02.**
 
-The dangerous-and-deep work is delegated to mature, purpose-built tools. Steward's own
+The dangerous-and-deep work is delegated to mature, purpose-built tools. Vilice's own
 code is confined to the wide-but-shallow orchestration.
 
 | Concern | Borrowed from |
@@ -18,11 +18,11 @@ forced-command gate, and OpenSSH carries the hard part of even that.
 
 ## Road not taken: Kamal as the deploy engine
 
-An earlier sketch (`switchyard-platform/blueprint/horizon3.md`) proposed making Steward
+An earlier sketch (`switchyard-platform/blueprint/horizon3.md`) proposed making Vilice
 an un-bypassable membrane in front of **Kamal**. Rejected:
 
 - Kamal's deep value — cert provisioning, gapless proxy — is **Caddy's** job here.
-- Kamal's config/repo model fights Steward's "deploy an image from a scoped request"
+- Kamal's config/repo model fights Vilice's "deploy an image from a scoped request"
   model.
 - With the deep parts borrowed, deployment orchestration is wide-not-deep — safe to
   own directly.

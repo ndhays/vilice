@@ -14,7 +14,7 @@
 A backend with no public IP has to be reachable. [`provider-boundary.md`](provider-boundary.md)
 answered that for the **operator**: `ssh -J <jump> <backend>`, where the jump is end-to-end,
 the jump box forwards raw TCP and cannot read the session, and the scoped key still
-authenticates to the backend's own Steward — so the forced command and the record stay on
+authenticates to the backend's own Vilice — so the forced command and the record stay on
 the backend, and the jump box holds and records nothing.
 
 It did not answer **app-to-app**. Today that does not matter: an app is one container plus
@@ -34,7 +34,7 @@ whether to use it for *everything*.
 | Path | Carries | Mechanism | Properties |
 |---|---|---|---|
 | **Control** | the operator, the console, any named actor | scoped SSH, `-J` via the jump box | named, scoped, recorded, un-bypassable |
-| **Data** | app → app | WireGuard between Steward boxes | fast, always-on, **carries no authority** |
+| **Data** | app → app | WireGuard between Vilice boxes | fast, always-on, **carries no authority** |
 
 And the rule that makes it hold:
 
@@ -100,7 +100,7 @@ The machinery already exists, because the balancer needed the same thing:
 |---|---|---|
 | Derived from | the installs that select this balancer | the Machines on the mesh |
 | Sent as | routing table on stdin | peer table on stdin |
-| Applied by | `steward route` | `steward peers` |
+| Applied by | `vilice route` | `vilice peers` |
 | Converges on its own | never | never |
 
 Derived on read, applied by a person, never reconciled in the background
@@ -150,5 +150,5 @@ Secondary triggers, weaker: the jump box proving a real single point of failure 
 rather than in theory, or a fleet spread across infrastructure no provider network spans.
 
 Left unanswered until then: how the mesh appears on the Access page, if at all; whether
-`steward peers` is one verb or peer-add/peer-remove; and what happens to a box's peers when it
+`vilice peers` is one verb or peer-add/peer-remove; and what happens to a box's peers when it
 is removed from the console.

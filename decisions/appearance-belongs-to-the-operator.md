@@ -27,10 +27,10 @@ the machine-view deploy.
 
 **Two axes, stored on the `User`, rendered onto `<html>`.**
 
-- `theme` — a named set of token values (`Theme::ALL`). Default `steward`.
+- `theme` — a named set of token values (`Theme::ALL`). Default `vilice`.
 - `mode` — `light`, `dark`, or `system`. Default `system`.
 
-`steward`'s light half **is** the canonical palette: near-black on near-white, yellow used
+`vilice`'s light half **is** the canonical palette: near-black on near-white, yellow used
 graphically. The interactive colour is ink, so links and buttons carry their own contrast
 and yellow is left to mark position — the active rail item, the focus halo. That is what
 makes black-and-yellow read as clean rather than branded-at, and it is the site's own rule
@@ -63,7 +63,7 @@ maintained twice — once for the attribute, once for the media query.
 - **Record appearance changes as `Event`s.** Rejected — it would put "changed theme"
   beside "deployed" and "revoked", which cheapens the chain the whole product is about.
   The same reasoning that keeps status samples out ([`a-sample-is-not-an-act.md`](a-sample-is-not-an-act.md)).
-- **One axis, with themes named `steward-light` / `steward-dark`.** Rejected: it multiplies
+- **One axis, with themes named `vilice-light` / `vilice-dark`.** Rejected: it multiplies
   entries by two, makes "follow my system" incoherent, and means a new theme is two
   registry entries that must be kept in step.
 - **Rename the console's neutrals to `--paper`/`--ink-soft` in the same change.** Deliberately

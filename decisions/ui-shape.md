@@ -1,6 +1,6 @@
-# Steward Console UI — the record is the spine (Shape B)
+# Vilice Console UI — the record is the spine (Shape B)
 
-The settled choice of what Steward Console's UI is *about*, and the two shapes rejected to get
+The settled choice of what Vilice Console's UI is *about*, and the two shapes rejected to get
 there. The canonical description of the resulting interface is in
 [`blueprint/console/interface.md`](../blueprint/console/interface.md); the build
 roadmap and screens still ahead are in
@@ -13,7 +13,7 @@ happened, who did it, what it touched)?
 
 ## The decision
 
-The **record**, with current state as just *the head of the record*. The reason Steward Console
+The **record**, with current state as just *the head of the record*. The reason Vilice Console
 exists is the witnessed, append-only, hash-chained record and un-bypassability — so the UI
 must make that the spine, not bury it under a state dashboard. This is the one thing no
 competitor can copy, because they don't keep the chain.
@@ -36,9 +36,9 @@ footer), the mutate ceremony (the record-before-act invariant *is* the confirm d
 ## A consequence worth recording: Dispatcher is dropped
 
 "Operator vs Dispatcher" was a persona/mode split. The pivot dissolved it: one Rails app
-reaches Steward over scoped SSH and runs anywhere, so the difference is only *how many
+reaches Vilice over scoped SSH and runs anywhere, so the difference is only *how many
 `Machine` rows you have* — the lens widens, same code, no mode. What was genuinely unique
 to "Dispatcher" — remote reach and multi-operator delegation — survives as plain features,
 not a second app. (If the name returns, it is the literal traffic-dispatching front box of
-the load-balancer tier — a Caddy box Steward manages, not a new program. See
+the load-balancer tier — a Caddy box Vilice manages, not a new program. See
 [`decisions/open/console-open-questions.md`](open/console-open-questions.md).)

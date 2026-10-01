@@ -12,7 +12,7 @@ Every claim about app isolation on a shared box rests on the network: accessorie
 "reachable on that network and nowhere else", and an app's port is published to
 `127.0.0.1` so only Caddy reaches it. Both are claims about what a *container* can open,
 and neither had been tested. Podman's rootless networking defaults (pasta) have changed
-between versions, and nothing in Steward pins them, so the honest position was "unknown".
+between versions, and nothing in Vilice pins them, so the honest position was "unknown".
 
 An unknown here is not academic. If a container can open the host's loopback, then one
 app reaches another app's port directly — past Caddy, past the accessory network — and
@@ -21,7 +21,7 @@ app reaches another app's port directly — past Caddy, past the accessory netwo
 ## What was measured
 
 On a live Hetzner box, 2026-09-29: Ubuntu 26.04.1 LTS, rootless Podman 5.7.0, pasta
-networking, container run as the `steward` user.
+networking, container run as the `_vilice` user.
 
 | Target | Result |
 |---|---|
@@ -57,9 +57,9 @@ never touches metadata (the deploy envelope into Podman's secret store).
   worse than the problem: cloud-init reads metadata on boot to configure the network, so a
   blanket rule risks a box that comes back up unreachable. `harden` is also deliberately
   generic and knows nothing about containers.
-- **Reject it for the `steward` user only** (an `--uid-owner` match, since pasta runs as
+- **Reject it for the `_vilice` user only** (an `--uid-owner` match, since pasta runs as
   that user). This is the version that would work, and it stays in
   [`open/vilice-open-questions.md`](open/vilice-open-questions.md) rather than being
   built: a firewall rule per box, for information disclosure with no credentials in it, is
-  mechanism ahead of need. It becomes worth building the day Steward runs on a substrate
+  mechanism ahead of need. It becomes worth building the day Vilice runs on a substrate
   whose metadata service hands out credentials.

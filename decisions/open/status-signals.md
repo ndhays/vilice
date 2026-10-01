@@ -29,11 +29,11 @@ Four threads come out of that, below.
 A private-registry deploy is a near-certain first failure for a real app, and it
 classifies cleanly on the box (`registry_auth` / `registry_unreachable` /
 `image_not_found` — [`registry-credentials.md`](../registry-credentials.md)). The
-Steward side is **settled**: `registry-login`/`registry-logout` read the secret on
+Vilice side is **settled**: `registry-login`/`registry-logout` read the secret on
 stdin and write a persistent rootless login; `status` lists logged-in registries
 redacted.
 
-**The gap is entirely Steward Console-side:** there is no `Mutation::ACT` for
+**The gap is entirely Vilice Console-side:** there is no `Mutation::ACT` for
 `registry-login`, no panel to enter credentials, and a `registry_auth` failure surfaces
 only as a generic "deploy failed: …" flash — the failure names the fix (`registry-login`)
 but the operator can't *do* it in the app.
@@ -68,7 +68,7 @@ Open shape:
 
 - A post-deploy **reachability probe** (does `<hostname>` answer; did a cert issue?),
   surfaced as app health distinct from "the deploy command returned ok."
-- Whether the probe is Steward Console-side (an HTTP HEAD from the control plane) or a box
+- Whether the probe is Vilice Console-side (an HTTP HEAD from the control plane) or a box
   `doctor` check that already knows the local truth (preferred — it can see Caddy's cert
   state). Ties to the "future `doctor`/reachability check" note in
   [`what-could-go-wrong.md`](what-could-go-wrong.md#cloud-provider-firewall-not-just-ufw).

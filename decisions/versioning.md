@@ -1,7 +1,7 @@
 # Versioning and releases
 
-**Decided 2026-06-09.** Records the release policy for the signed `steward` binary —
-the *why* behind the flow already encoded in `install.sh`, `steward/Makefile`
+**Decided 2026-06-09.** Records the release policy for the signed `vilice` binary —
+the *why* behind the flow already encoded in `install.sh`, `vilice/Makefile`
 (`sign`/`release`), and the `release/published/` tree.
 
 ## The one inviolable rule: a version is one set of bytes, forever

@@ -6,7 +6,7 @@
 
 ## The question
 
-`Steward::Observe` reads a box's live `status --json` over scoped SSH and **caches** the
+`Vilice::Observe` reads a box's live `status --json` over scoped SSH and **caches** the
 reply (Decision 3). The cache made reads cheap — but it was *all* the read did. The
 persisted columns that exist precisely to project box truth into the control plane —
 `machine.status` (the `unknown`/`reachable`/`unreachable` enum), `machine.last_seen_at`,
@@ -38,11 +38,11 @@ it fires when we genuinely talked to the box, not on every cache hit. Writes use
 
 ## Why this doesn't add a second recorder
 
-Two-records is the load-bearing invariant here: Steward is the *sole recorder* of the
-box; Steward Console never authors the box's record. Reconciliation respects that — it writes
-**Steward Console's own mirror** of reachability and the running image, the same mirror the
+Two-records is the load-bearing invariant here: Vilice is the *sole recorder* of the
+box; Vilice Console never authors the box's record. Reconciliation respects that — it writes
+**Vilice Console's own mirror** of reachability and the running image, the same mirror the
 cached read already was, just persisted instead of thrown away. No box entry is authored;
-no Steward Console `Event` is written. An observe read stays zero-privilege and accountable-to-
+no Vilice Console `Event` is written. An observe read stays zero-privilege and accountable-to-
 no-one because it changes nothing *on the box* — updating our local picture of the box is
 what "mirror" already meant.
 

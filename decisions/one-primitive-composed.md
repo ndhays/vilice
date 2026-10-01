@@ -8,7 +8,7 @@
 > keep the **build** detail; the **model** is settled here. Extends
 > [`declarative-deploy.md`](declarative-deploy.md) one level up. The canonical *what* now
 > lives in [`../blueprint/console/patterns.md`](../blueprint/console/patterns.md); the
-> Steward Console/cloud line is [`provider-boundary.md`](provider-boundary.md).
+> Vilice Console/cloud line is [`provider-boundary.md`](provider-boundary.md).
 >
 > **Revised 2026-08-03.** The model here is still the model — Install-as-intent, the
 > three nouns, exposure instead of a Fleet object, Balancer-as-a-role, stateless-only
@@ -20,7 +20,7 @@
 
 ## The frame: declarative all the way up
 
-Steward's `deploy` is a declarative upsert — *here is the full desired state, converge
+Vilice's `deploy` is a declarative upsert — *here is the full desired state, converge
 the box to it* ([declarative-deploy.md](declarative-deploy.md)). The control-plane knot
 (does Install or Machine come first? how does a fleet go 4→5?) comes from that thinking
 stopping at the box. **Extend it:** an `Install` is desired state for a *slice of the
@@ -66,7 +66,7 @@ not a thing you build beforehand:
 
 - **existing box** — pick one already on the project;
 - **new box** — declare it; the reconciler provisions it (cloud-provider API, Hetzner
-  first), installs Steward, authorizes the operate key, then deploys
+  first), installs Vilice, authorizes the operate key, then deploys
   ([machine-onboarding.md](machine-onboarding.md)).
 
 The Machines page still exists for pre-provisioning a bare box or browsing the lens — an
@@ -105,7 +105,7 @@ behind a balancer; "On the Edge" is for apps that will always be one box.
 
 ## The edge is a Balancer — a first-class managed resource
 
-A **Balancer** is a Machine with a balancer role, running a Caddy that **Steward Console
+A **Balancer** is a Machine with a balancer role, running a Caddy that **Vilice Console
 configures**, whose **routing table is derived, not hand-authored** — reconciled from the
 installs that select it. Add an install behind it → regenerate its config → reload; scale an
 install → update upstreams → reload. Same plan-vs-reality loop (below), applied to the edge;
@@ -129,8 +129,8 @@ not a competing primitive.
 > left out, because routing to it would turn a placement gap into a 502 when the whole point
 > is that the gap stays visible.
 >
-> It also needed a Steward verb, which the box did not have — every route the app pack could
-> write was `reverse_proxy 127.0.0.1:<port>`. `steward route` is that verb; see
+> It also needed a Vilice verb, which the box did not have — every route the app pack could
+> write was `reverse_proxy 127.0.0.1:<port>`. `vilice route` is that verb; see
 > [`../blueprint/vilice/deploy.md`](../blueprint/vilice/deploy.md). The managed-LB
 > realization is still pending.
 
@@ -139,7 +139,7 @@ not a competing primitive.
 - **dedicated to one project (default)** — the project's own edge; preserves client
   isolation (capture-resistance).
 - **shared to a list of projects** — the opt-in amortization: one edge box (unowned /
-  operator-level) fronting several small projects. "Owned by Steward Console, usable by selected
+  operator-level) fronting several small projects. "Owned by Vilice Console, usable by selected
   projects" is just *unowned + sharing=list* — no new ownership or isolation model.
 
 **The Install's machine configuration, then:**
@@ -228,6 +228,6 @@ Converging *containers* is cheap and reversible; converging *boxes* is not.
   `open/console-open-questions.md`.
 - **In-box replicas** (N containers behind one box's Caddy). Rejected the same day: real
   health-aware balancing, one IP and one cert, but bounded by a single box and no survival
-  of that box dying. Not worth a Steward change for what it buys.
+  of that box dying. Not worth a Vilice change for what it buys.
 - **Machine-first onboarding as the spine.** Kept as an *alternate* entry (pre-provision /
   the lens), not the foundation — intent leads.

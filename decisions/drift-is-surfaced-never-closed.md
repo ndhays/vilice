@@ -32,7 +32,7 @@ machine acting with no actor and no entry of its own. That is precisely the shap
 power over the box that does not come through the door.
 
 An auto-reconciler is a daemon by another name. It does not matter that it drives
-Steward rather than Podman; what matters is that it decides, and nothing named decided.
+Vilice rather than Podman; what matters is that it decides, and nothing named decided.
 
 So: the console shows *intention: 3 boxes · reality: 2*, and offers a button. A person
 presses it, the call goes through the same scoped door as everything else, and **that**
@@ -95,7 +95,7 @@ Deleting a statement of desire is not an
 act on a machine. A cascade that fires N destructive calls whose only trace is a
 vanished row is the same failure in a different costume. Removing the apps is a separate,
 explicit choice that *composes* N recorded removals — which is precisely the ceremony
-`steward uninstall` already performs on the box, where `--remove-apps` is opt-in and the
+`vilice uninstall` already performs on the box, where `--remove-apps` is opt-in and the
 plan is printed first ([`uninstall-removes-the-gate.md`](uninstall-removes-the-gate.md)).
 
 **An intention never renders as state.** It is a claim about what was asked for; reality

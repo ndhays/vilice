@@ -1,16 +1,16 @@
 # Rendered config is a boundary
 
-> Decided 2026-08-01. Every file Steward writes on a caller's behalf — `authorized_keys`,
+> Decided 2026-08-01. Every file Vilice writes on a caller's behalf — `authorized_keys`,
 > the Caddy fragment, a Quadlet unit — is a **trust boundary**, validated with an
 > allow-list before it is rendered. Found by a security audit of the whole surface;
 > the mechanism is `validateState` / `validHostname` / `looksLikePubkey`, plus the fuzz
-> targets in `steward/inject_test.go`.
+> targets in `vilice/inject_test.go`.
 
 ## The bite
 
-Steward was careful in exactly one direction. Nothing a caller sends reaches a shell:
+Vilice was careful in exactly one direction. Nothing a caller sends reaches a shell:
 `SSH_ORIGINAL_COMMAND` is split into named arguments and never interpreted, secrets ride
-stdin and never argv, and every host-side `bash -c` interpolates only Steward's own
+stdin and never argv, and every host-side `bash -c` interpolates only Vilice's own
 constants. Command injection — the classic forced-command failure that
 [auth.md](../blueprint/vilice/auth.md) names — was genuinely closed.
 
@@ -54,19 +54,19 @@ know what a hostname is.
 The same audit found the scope ladder didn't hold: `observe ⊂ operate ⊂ grant` is a claim
 about reachability, and an `operate` key could step over it two ways. A volume spec of
 `/:/host:rw` passed validation and bind-mounted the host filesystem into a container,
-from which `~steward/.ssh/authorized_keys` is writable — and writing that file *is* a
+from which `~_vilice/.ssh/authorized_keys` is writable — and writing that file *is* a
 grant. A hostile restic repo reached the same file through `restore --target /`.
 
 So:
 
-- **Bind-mount sources live under a declared root** (`/srv` by default, `STEWARD_BIND_ROOTS`
+- **Bind-mount sources live under a declared root** (`/srv` by default, `VILICE_BIND_ROOTS`
   to change it). Named volumes are unrestricted — Podman owns that namespace and keeps
-  them inside the steward user's own storage. This matched practice already: every
+  them inside the _vilice user's own storage. This matched practice already: every
   documented example uses named volumes, and the existing bind-mount test used `/srv`.
 - **A restore is confined with `--include`** to the app's declared volumes and its spec
   file. restic puts absolute paths back where they were, and the paths come from the
   snapshot — so an unbounded `--target /` lets whoever controls the repo write anywhere
-  the steward user can.
+  the _vilice user can.
 
 ## Where the checks sit — two tiers, on purpose
 
@@ -117,8 +117,8 @@ deploy it again.
 ## What this answers preemptively
 
 "Can a deploy change anything outside its own app?" — No. Its hostname becomes one Caddy
-site, its volumes stay inside the data root, its unit contains only directives Steward
+site, its volumes stay inside the data root, its unit contains only directives Vilice
 emits, and its name cannot leave the apps directory. If you can't name the check, it
-isn't enforced — so each of those is a test in `steward/inject_test.go` or
-`steward/gate_test.go`, most of them derived from the commands table so a new command
+isn't enforced — so each of those is a test in `vilice/inject_test.go` or
+`vilice/gate_test.go`, most of them derived from the commands table so a new command
 inherits them.

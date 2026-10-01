@@ -1,6 +1,6 @@
 # Security audit — how the posture is measured
 
-The claim "Steward hardens the box and keeps an honest record" has to be *measured*, not
+The claim "Vilice hardens the box and keeps an honest record" has to be *measured*, not
 asserted. This is how, and why it's shaped the way it is. Settles the "Security
 smoke-tests" thread in `decisions/open/vilice-open-questions.md`.
 
@@ -13,7 +13,7 @@ Security tooling splits into kinds that don't belong together:
 - **Box-posture audit** — `ssh-audit` + `nmap` + `Lynis` against a prepared+hardened
   box. Closes the loop on `harden/` — proves the bash did what it claims. Needs a live
   box; lives in `make audit-box HOST=…`.
-- **Gate audit** — the adversarial tests over Steward's own boundary: `gate_test.go`
+- **Gate audit** — the adversarial tests over Vilice's own boundary: `gate_test.go`
   (who may reach what) and `inject_test.go` (what a value may become once rendered).
   Ordinary `go test`, plus `make fuzz` to run the fuzz targets past their seed corpus.
 
@@ -24,7 +24,7 @@ Keeping them apart matters: different cadence, different "fail" meaning, differe
 The first two measure the **toolchain** and the **box**. Neither measures the **gate** —
 and for a program whose entire claim is un-bypassability, that was the gap that mattered.
 The 2026-08-01 audit found six live findings in a well-tested package precisely there:
-nothing had ever handed Steward a hostile string and checked what it did.
+nothing had ever handed Vilice a hostile string and checked what it did.
 
 The tests are written as **properties over the commands table**, not as cases. "Every
 command whose synopsis takes an `<app>` refuses a traversal name" covers the command
@@ -50,14 +50,14 @@ deliberately slow). A govulncheck finding usually means the **build toolchain is
 
 ## gosec policy: G204 stays on, the perms/path rules don't
 
-Steward's whole job is to shell out (ssh / podman / systemctl / caddy) and to write
+Vilice's whole job is to shell out (ssh / podman / systemctl / caddy) and to write
 system files at deliberate permissions. So gosec's defense-in-depth rules —
 **G301/G302/G304/G306** (dir/file perms, path-from-variable) — fire on choices that are
 correct by design: the record is **world-readable on purpose** (observe is
 zero-privilege, and the record ships off-host), systemd units are conventionally `0644`,
-Caddy's root service reads the fragment, and every "tainted" path is steward's *own*
+Caddy's root service reads the fragment, and every "tainted" path is vilice's *own*
 configured path, never user input. Those four are excluded by policy (documented in
-`steward/Makefile`). The security-critical **subprocess rule G204 stays on** and is
+`vilice/Makefile`). The security-critical **subprocess rule G204 stays on** and is
 annotated per call site with the reason each input is trusted — the annotation is the
 audit.
 
@@ -78,20 +78,20 @@ the claim out loud.
 `ssh-audit` is the obvious tool to "bake in" — and the wrong one to. It's a large Python
 tool wrapped around a continuously-updated cipher/KEX policy database. Reimplementing it
 in Go means chasing that policy forever; shelling out to it adds a **runtime dependency
-Steward doesn't control** and breaks the **single static zero-dep binary** property that
+Vilice doesn't control** and breaks the **single static zero-dep binary** property that
 the whole install story rests on. So the scanners stay external (`make audit-box`), the
 periodic deep audit you fold back into `harden/`.
 
-What *is* in-grain is a **native, dependency-free self-check** of Steward's own hardening
+What *is* in-grain is a **native, dependency-free self-check** of Vilice's own hardening
 contract: `harden --check`, running the generic `harden/check.sh` probe. It's the piece
 that runs forever (the everyday guard), not just at audit time.
 
 ## The privilege split: root writes the fact, observe reads it
 
-`harden --check` needs **root** (authoritative `sshd -T` / `ufw`). Steward Console's observe
-path is the **unprivileged `steward` user**. They don't compose — and we do **not**
+`harden --check` needs **root** (authoritative `sshd -T` / `ufw`). Vilice Console's observe
+path is the **unprivileged `_vilice` user**. They don't compose — and we do **not**
 escalate observe to bridge them. Instead the project's own CQRS pattern applies: the
-privileged side **publishes a fact** (`/var/lib/steward/hardening.json`, root-written,
+privileged side **publishes a fact** (`/var/lib/vilice/hardening.json`, root-written,
 `0644`), and observe **reads** it via `status`. The reader never reaches into root state;
 root state is written down for it. "A stamp can rot" is answered not by a live read
 (impossible at observe privilege) but by **re-publishing on every check**, so the fact
@@ -103,7 +103,7 @@ lane**, not the hash-chained action record. See `dispatch`'s `recordable()` and
 [blueprint/vilice/record.md](../blueprint/vilice/record.md).
 
 And it stays out of `doctor`: `doctor` answers "ready to deploy?" as the unprivileged
-steward user; hardening is optional and needs root. Folding it in would break both
+_vilice user; hardening is optional and needs root. Folding it in would break both
 optionality and the privilege boundary, so `doctor` only prints a pointer to
 `harden --check`.
 
@@ -112,8 +112,8 @@ optionality and the privilege boundary, so `doctor` only prints a pointer to
 - **OpenSCAP** — enterprise compliance machinery (CIS/STIG/PCI), Red Hat-centric, weak
   Ubuntu content. Overkill and against the own-it grain; `Lynis` covers the same ground
   lighter. Revisit only if a formal CIS-Ubuntu profile is ever required.
-- **Trivy / testssl.sh** — deferred, not rejected. Trivy belongs scanning the Steward Console
-  image (no image for the Steward binary); `testssl.sh` needs a real cert and rides with
+- **Trivy / testssl.sh** — deferred, not rejected. Trivy belongs scanning the Vilice Console
+  image (no image for the Vilice binary); `testssl.sh` needs a real cert and rides with
   the DNS-01 / HTTPS work.
 - **A `/etc` "hardened at" timestamp** — rejected. A stored stamp is a claim that drifts
   from reality (re-enable root SSH and the stamp still says "hardened"). The live

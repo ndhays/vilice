@@ -15,15 +15,15 @@
 `ssh` scope bundled two unrelated things:
 
 1. **The rung that mints keys** — the only scope that can run `authorize`/`revoke`.
-2. **An interactive shell as the `steward` user** — an empty `SSH_ORIGINAL_COMMAND` was
+2. **An interactive shell as the `_vilice` user** — an empty `SSH_ORIGINAL_COMMAND` was
    turned into `execShell()`, and the key's `authorized_keys` line carried
    `restrict,pty` instead of plain `restrict`.
 
 The second breaks the one claim. [overview.md](../blueprint/vilice/overview.md) says
 un-bypassability means "there is no path to the box's power that skips a named, scoped,
-recorded invocation." A shell as `steward` is exactly that path. From it you can
+recorded invocation." A shell as `_vilice` is exactly that path. From it you can
 `podman run` directly, hand-write a Quadlet unit and `systemctl --user start` it, and
-rewrite `/etc/caddy/steward/apps.caddy` (the `steward` user owns it) then reload Caddy
+rewrite `/etc/caddy/vilice/apps.caddy` (the `_vilice` user owns it) then reload Caddy
 through its admin API on localhost. None of that writes a record entry. The record shows
 one `action="shell"` line and then nothing.
 
@@ -32,7 +32,7 @@ to *we know a shell was opened at 14:32*.
 
 `ceiling-is-the-machine.md` saw part of this and accepted it, but framed the cost
 narrowly — as "can edit `authorized_keys` out of band" — and reasoned that such an actor
-"already has arbitrary code as `steward`," so key persistence was marginal. That reasoning
+"already has arbitrary code as `_vilice`," so key persistence was marginal. That reasoning
 is sound about *persistence* and misses the bigger point: the unrecorded surface isn't
 just the ledger, it's every action the box can take. The asterisk wasn't on Article IV,
 it was on the headline claim.
@@ -47,40 +47,40 @@ it was on the headline claim.
 - `restrict` on every line, no `pty` exception anywhere.
 
 The result is that un-bypassability holds without qualification: **there is no grant
-Steward can issue that lets its holder act on the box without an entry being written
+Vilice can issue that lets its holder act on the box without an entry being written
 first.** That is a stronger claim than the project could make yesterday, and it is the
 kind of claim that is worth more than the convenience it costs.
 
 A second-order gain: because `grant` no longer implies a shell, it is narrow enough to
 *issue*. A control plane can hold one and enroll keys without also holding the box —
-which is why Steward Console's `Machine` scope enum gains `grant` alongside observe/operate.
+which is why Vilice Console's `Machine` scope enum gains `grant` alongside observe/operate.
 Under the old design that was unthinkable, and the enum said so by omitting `ssh`.
 
 ## What it costs
 
-The ability to get a shell **as `steward`** using a **steward-scoped key**. Two things
+The ability to get a shell **as `_vilice`** using a **vilice-scoped key**. Two things
 that look like losses are not:
 
 - **Breakglass is untouched.** It was never the scoped key. `overview.md` says recovery
-  is "Steward over the operator's own SSH" — the operator's own account, then
-  `sudo -u steward steward …`. `harden` guarantees such an account exists: it only closes
+  is "Vilice over the operator's own SSH" — the operator's own account, then
+  `sudo -u _vilice vilice …`. `harden` guarantees such an account exists: it only closes
   root SSH when a non-root keyed admin is already present, and never leaves a box with no
   key-based login at all.
-- **The `steward` account keeps `/bin/bash`.** It must — sshd runs forced commands
-  through the login shell, which is why `ensureStewardUser` refuses `nologin`. What went
+- **The `_vilice` account keeps `/bin/bash`.** It must — sshd runs forced commands
+  through the login shell, which is why `ensureViliceUser` refuses `nologin`. What went
   away is the `pty` option and the empty-command path, not the shell binary.
 
-The real cost is the escape hatch. `ssh` scope was how you did something Steward has no
+The real cost is the escape hatch. `ssh` scope was how you did something Vilice has no
 command for. Now either the command surface is good enough, or you use your own account.
 We take that trade deliberately: it is pressure in the direction the design already
 wants — every operation becomes a named, recorded command — and where it can't, your own
 account is a *different named actor* with its own sshd and sudo trail, rather than an
-anonymous session wearing the `steward` identity.
+anonymous session wearing the `vilice` identity.
 
 ## What it does not fix
 
-This does not stop a `steward`-user **compromise**. Anyone with code execution as
-`steward` by some other route still bypasses everything, and the original decision was
+This does not stop a `vilice`-user **compromise**. Anyone with code execution as
+`vilice` by some other route still bypasses everything, and the original decision was
 right about that. What changes is that we stop *handing that capability out as a routine
 grant*: it moves from "a scope you can issue" to "a breach you would investigate." A
 meaningfully smaller blast radius, not a new kernel boundary — and worth saying plainly
@@ -116,6 +116,6 @@ as clients are re-authorized. No flag day, and no key silently gains or keeps a 
 
 ## What this answers preemptively
 
-"Can a Steward key ever give me a shell on the box?" — No. Not at any scope, not with any
+"Can a Vilice key ever give me a shell on the box?" — No. Not at any scope, not with any
 argument. If you need a shell, you need an account, and that is a different named actor
 with its own trail. That is the whole point.

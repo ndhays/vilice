@@ -1,7 +1,7 @@
 # The console is layered too — three rings, one app
 
 > **Vocabulary note, 2026-08-10.** This doc argues in terms of *packs*, the plugin layer
-> Steward had at the time. That layer is gone
+> Vilice had at the time. That layer is gone
 > ([`roles-not-packs.md`](roles-not-packs.md)) — one binary, a trust core and an app
 > layer, and the machine view is shaped by the box's **role** rather than by which packs
 > it reports. Read "pack" below as "the app layer": every argument here survives the
@@ -16,7 +16,7 @@
 
 ## The question
 
-Steward split into a core and verb packs, and the console did not follow. It is
+Vilice split into a core and verb packs, and the console did not follow. It is
 currently three things wearing one name, and the fusion shows: **you cannot deploy an
 app without first inventing a client.** `Install belongs_to :project`, required, with
 install names unique per project and installs nested under projects in the routes.
@@ -68,8 +68,8 @@ split would run *through* the shared half rather than along a seam.
 its native idiom. One process, one key store, one record. Mount it or don't:
 
 ```
-on the box    steward-app,        steward-backup      (packs)
-in the web    steward-intentions, steward-projects    (engines)
+on the box    vilice-app,        vilice-backup      (packs)
+in the web    vilice-intentions, vilice-projects    (engines)
 ```
 
 Same prefix and the same "named for what it promises" rule; the only difference is where
@@ -79,7 +79,7 @@ it runs.
 root-authorized, and named in the chain. A Rails engine is none of those. Reusing the
 word would cost the one word that currently means something precise.
 
-**The Rails app stays `steward-console`** — one deployable, one name, exactly like the
+**The Rails app stays `vilice-console`** — one deployable, one name, exactly like the
 binary. Console with no engines mounted *is* the machine view, so "Console is the machine
 view" is true without renaming anything. One name you never have to defend is worth more
 than three you do.
@@ -123,11 +123,11 @@ stands on its own terms and this decision does not disturb it.
 
 ## Roads not taken
 
-- **A second Rails app** ("Steward Projects" as its own deployable). Above: two key
+- **A second Rails app** ("Vilice Projects" as its own deployable). Above: two key
   stores, two record authorities, and the split runs through the shared half. It also
   creates a migration cliff — an operator who starts with two boxes and picks up a client
   should mount an engine, not migrate to a different product.
-- **An engine per pack** (`steward-app` ships its own Rails engine). Rejected for now on
+- **An engine per pack** (`vilice-app` ships its own Rails engine). Rejected for now on
   the same rule as the packs themselves: build it concretely once, and let a real second
   case say what is general. A pack is a Go binary on a box; making it also ship Rails
   would couple two very different release surfaces.
@@ -147,14 +147,14 @@ stands on its own terms and this decision does not disturb it.
 | Piece | State |
 |---|---|
 | Machine view, shaped by what the box reports, stateless deploy | **built** |
-| `steward status` (role) / `actors` — the box's own facts, read live | **built** (`steward packs` existed here until the pack layer was dropped) |
+| `vilice status` (role) / `actors` — the box's own facts, read live | **built** (`vilice packs` existed here until the pack layer was dropped) |
 | Drift as a surfaced, never-closed gap | **built** — `Install#count`, `placement_gap`, and the act that closes it |
 | `Install.project` inversion, installs at `/installs` | **built** — the prerequisite |
 | Exposure — the gate that makes a count above 1 honest | **built** |
-| Balancer — the managed front edge those N boxes sit behind | **built** — `steward route` + the derived table |
+| Balancer — the managed front edge those N boxes sit behind | **built** — `vilice route` + the derived table |
 | `Machine → Project` inversion | **pending** — tenancy's own prerequisite, see below |
-| `steward-intentions` engine | **pending** — the layer works; extracting it does not block anything |
-| `steward-projects` engine | **pending** |
+| `vilice-intentions` engine | **pending** — the layer works; extracting it does not block anything |
+| `vilice-projects` engine | **pending** |
 
 ## Tenancy has a prerequisite too, and it is not packaging
 
@@ -167,7 +167,7 @@ owner (`owner` is already optional), but because the `Machine` class will not lo
 the `Project` constant. The floor depends on the outermost ring, which is exactly the
 inversion this decision says each ring must not require.
 
-That makes `steward-projects` **not** an extraction job yet. The order is: cut `Machine`'s
+That makes `vilice-projects` **not** an extraction job yet. The order is: cut `Machine`'s
 dependence on `Project` first — the same move already made for `Install`, one layer down and
 harder, because ownership and sharing are genuinely tenancy concepts that currently live on
 `Machine` — and only then is mounting-or-not a packaging question.

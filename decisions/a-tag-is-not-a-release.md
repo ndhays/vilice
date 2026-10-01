@@ -56,7 +56,7 @@ feature does not get to quietly reverse that.
 
 So the lookup reaches public registries, anonymously — it requests a `pull` token scoped to
 the one repository being looked at, which obtains nothing anyone else could not. When a
-registry asks for a credential, it stops and says so, naming `steward registry-login` and
+registry asks for a credential, it stops and says so, naming `vilice registry-login` and
 offering the paste-it-yourself path.
 
 Adding a registry credential to the console would be a new class of secret in the

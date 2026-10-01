@@ -26,12 +26,12 @@ project that looks for daylight in it.
 
 **Three parts.**
 
-1. **The Steward core is rewritten by hand, and that rewrite goes to Codeberg.** Not
+1. **The Vilice core is rewritten by hand, and that rewrite goes to Codeberg.** Not
    transcribed — *reimplemented from the blueprint*, which is the distinction that does all
    the work (below).
 2. **Everything else — including this repository as it stands — lives where the clause
    does not apply.** A self-hosted Forgejo was the intended home; the interim is
-   `github.com/ndhays/steward`.
+   `github.com/ndhays/vilice`.
 3. **An LLM may review, never author.** The clause bans code *written by* generative AI. It
    says nothing about using one to critique code a human wrote, and that is the arrangement
    from here: the human writes the test and the implementation, the model reads them and
@@ -73,7 +73,7 @@ Two separate questions hide under "copyright," and the unfamiliar one is the one
 - **Can *we* own it?** The US Copyright Office position is that human authorship is
   required: purely machine-generated output is not protectable, and AI-assisted work is
   protectable in its human-authored parts. **You cannot license what you do not own.** The
-  project offers MIT for Steward and AGPL for the Console, and a copyleft over
+  project offers MIT for Vilice and AGPL for the Console, and a copyleft over
   largely-unownable code is a weak instrument. For a project whose entire pitch is
   sovereignty and capture-resistance, an unenforceable licence is a hole in the thesis, not
   a technicality.
@@ -165,7 +165,7 @@ readable**, because the installer's fetch is unauthenticated
 > keeps the rest of the monorepo off Codeberg. No tension there.
 >
 > **GitHub is now a mirror, for visibility only.** Forgejo push-mirrors to
-> `github.com/ndhays/steward`, force-pushing, with sync-on-commit. Nothing fetches anything
+> `github.com/ndhays/vilice`, force-pushing, with sync-on-commit. Nothing fetches anything
 > security-relevant from it, which is the point: the mirror's token can expire and the
 > mirror can go stale without a single install being affected. Had the key stayed there,
 > mirror lag would have sat on the verification path.
@@ -220,9 +220,9 @@ unchanged — but nothing forces that, and it should not be mistaken for the rea
   the licensing question underneath it: an AGPL over largely machine-written Rails is as
   thin as it was. Whether that matters depends on whether anyone is ever expected to comply
   with it.
-- **Where the release tooling lives** once `steward/` is a separate repo — `Makefile`,
+- **Where the release tooling lives** once `vilice/` is a separate repo — `Makefile`,
   `release/`, and the signing flow currently assume one tree.
-- **The first hand-written verb as a trial.** `steward route` is the candidate: ~200 lines,
+- **The first hand-written verb as a trial.** `vilice route` is the candidate: ~200 lines,
   a written spec section, an existing test suite to hold to, and recent enough to be fresh.
   An evening spent there says more about whether this plan is real than any further
   argument.

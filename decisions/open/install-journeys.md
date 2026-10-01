@@ -1,4 +1,4 @@
-# Steward Console — App Journeys (open build)
+# Vilice Console — App Journeys (open build)
 
 > The app spine (**App → witnessed deploy**, with a Project as optional context),
 > the built front-of-funnel, the machine step, and the **isolation rule** are graduated to
@@ -23,7 +23,7 @@ Neither reading is dangerous today: deletion is already refused while any target
 in practice — forgetting a client must not remove apps from boxes), so only retired
 apps are ever at stake. Destroy loses their rows; nullify leaves dead placements in the
 fleet-wide list forever. The question is which is less misleading, and it wants the
-`steward-projects` engine to answer it — that is when "delete the tenant" gets a real
+`vilice-projects` engine to answer it — that is when "delete the tenant" gets a real
 meaning.
 
 ---
@@ -46,7 +46,7 @@ machine dedicated/shared framing.
 Once hostname + machine are known, run one **Preflight panel** over the real gotchas
 ([`what-could-go-wrong.md`](what-could-go-wrong.md)):
 
-- **Reachability** — can Steward Console SSH the box? (the biggest gotcha is the cloud-provider
+- **Reachability** — can Vilice Console SSH the box? (the biggest gotcha is the cloud-provider
   firewall, not DNS).
 - **DNS** — does the hostname's A record point at this box's IP? If not, show the exact
   record to create.
@@ -93,7 +93,7 @@ composing → awaiting_machine → ready → deploying → running
 - **composing** — being filled out (may not persist until submit).
 - **awaiting_machine** — a dedicated box is provisioning; the page is a live status.
   Provisioning is **un-witnessed setup**.
-- **ready** — the box is live and has authorized Steward Console's operate key; the app sits
+- **ready** — the box is live and has authorized Vilice Console's operate key; the app sits
   at the **witnessed deploy confirm**. Setup was automatic; the deploy stays a ceremony.
 - **deploying → running** — the existing ceremony (pending `Event` → settle).
 - **failed / retired** — provisioning failed, deploy failed, or removed.
@@ -126,7 +126,7 @@ app UI is now **Box × Exposure × scale**, and both halves of the intention are
 after the fact.
 
 **The self-hosted Balancer is built too.** A box takes the role, apps select it, its
-table is derived from those apps, and `steward route` applies it as a witnessed act.
+table is derived from those apps, and `vilice route` applies it as a witnessed act.
 Selecting one stays optional — an operator with their own edge (Cloudflare, a cloud LB)
 just wants the count unlocked, and that is still a supported configuration.
 

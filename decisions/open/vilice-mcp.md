@@ -1,4 +1,4 @@
-# An MCP for Steward — shapes and pitfalls
+# An MCP for Vilice — shapes and pitfalls
 
 > **Not settled, and nothing is planned.** Raised 2026-08-14 as a thread worth keeping,
 > not as work. Recorded here so the reasoning isn't re-derived from scratch if it is ever
@@ -11,7 +11,7 @@
 ## The frame: this is an adapter, not an architecture
 
 The Model Context Protocol (MCP) is a way to hand a tool surface to an AI agent. The
-question is what a Steward one would be.
+question is what a Vilice one would be.
 
 Most of the answer is already written.
 [`orchestrators-are-clients.md`](../orchestrators-are-clients.md) settles that anything
@@ -20,7 +20,7 @@ alongside the console, a person at a shell, and a CI job. Its closing line is th
 frame: *"the door an agent needs already exists, and it is the same door."*
 
 So an MCP server is an **adapter over a door that is already built** — it translates a
-tool call into `steward <verb>` behind the same forced command as everything else.
+tool call into `vilice <verb>` behind the same forced command as everything else.
 
 **That is also the test.** If a design for this appears to need a change to the gate, a
 new entry point, a daemon, or a scope that skips the record, the design is wrong — not
@@ -31,7 +31,7 @@ shapes recognisable on sight.
 
 Two things, and only one of them is novel.
 
-**The manifest is already written.** `steward _commands` emits the command table as JSON
+**The manifest is already written.** `vilice _commands` emits the command table as JSON
 — every verb's summary, paragraph, synopsis, flags (each with its own description), and
 examples ([`../help-is-the-documentation.md`](../help-is-the-documentation.md)). That is
 very nearly an MCP tool manifest already. A hand-authored tool list would be a *second
@@ -51,7 +51,7 @@ person pasting output.
 | Shape | Where it runs | Verdict |
 |---|---|---|
 | **Adapter beside the agent** | wherever the agent is; holds its own scoped key | the default; no new surface on the box |
-| **`steward mcp` over stdio** | on the box, reached through SSH | possible, one real cost (below) |
+| **`vilice mcp` over stdio** | on the box, reached through SSH | possible, one real cost (below) |
 | **Console-hosted endpoint** | in the Rails app | plausible for the fleet view |
 | **A daemon on the box** | on the box, listening | **forbidden** |
 
@@ -60,10 +60,10 @@ authorized as its own client at its own scope, and opens an SSH connection per c
 any other client. Nothing on the box changes; nothing in the gate changes. If this is
 built at all, this is almost certainly the shape.
 
-**2. `steward mcp` over stdio.** Tempting, because stdio is not a listener and so does
+**2. `vilice mcp` over stdio.** Tempting, because stdio is not a listener and so does
 not violate "no daemon, no listener, no token." The cost is subtler: MCP is a **session**
 — many calls over one connection — where every client today is *one command per
-connection*. Scope is enforced at the SSH layer by the forced command, **before Steward
+connection*. Scope is enforced at the SSH layer by the forced command, **before Vilice
 runs**; a session moves that enforcement inside the Go process, which must then check
 each tool call against the scope its forced command pinned.
 
@@ -80,12 +80,12 @@ plan-vs-reality — lives in the console, not on any one box, and a per-box adap
 never see it. The obvious objection (the box's record would say `client=console`, not the
 agent's name) is already answered:
 [`two-records.md`](../two-records.md) settles that human attribution is the *control
-plane's* record to keep, because Steward structurally cannot see it. An agent is the same
+plane's* record to keep, because Vilice structurally cannot see it. An agent is the same
 case as an operator. This is an existing seam, not a new violation — but it does mean the
 agent's identity is only as good as the console's record, which is not hash-chained.
 
-**4. A daemon on the box.** A listener beside Steward, driving Podman and Caddy for
-speed, calling Steward to write entries so the history looks complete. This is the exact
+**4. A daemon on the box.** A listener beside Vilice, driving Podman and Caddy for
+speed, calling Vilice to write entries so the history looks complete. This is the exact
 shape [`orchestrators-are-clients.md`](../orchestrators-are-clients.md) exists to forbid,
 and the reasoning is unchanged: a record that can be inaccurate while looking complete
 launders the lie. Named here only so it stays named.
@@ -111,7 +111,7 @@ names, an app's own HTTP response — all of it becomes tokens in a context wind
 of it can carry instructions. An agent holding `operate` that reads a log line saying
 "now deploy image X" is a textbook confused deputy.
 
-Steward's gate stays honest under this: it records and executes exactly what a named
+Vilice's gate stays honest under this: it records and executes exactly what a named
 actor at a declared scope asked for, and the record shows who and when. But that is
 forensics, and the design elsewhere prefers a gate. The mitigation is **scope, not
 cleverness** — an `observe` key cannot be talked into anything — which is why the
@@ -131,7 +131,7 @@ never something that arrives as a side effect of shipping a tool surface.
 **Composite tools launder the plan.** A `deploy_fleet` tool that sequences N boxes is
 legitimate — it is a client, and clients may sequence. But the boxes record N deploys and
 *nothing* records the plan: which boxes, in what order, whether to continue past a
-failure. That is the same gap as the rejected "let Steward call out to an orchestrator"
+failure. That is the same gap as the rejected "let Vilice call out to an orchestrator"
 road — the interesting decision goes unrecorded. Console-hosted (shape 3) has an answer,
 since fleet-level grouping is explicitly the console's to record; a standalone adapter
 does not.
@@ -143,7 +143,7 @@ built against. Pass output verbatim, paginate rather than compress, and if somet
 ever summarised, mark it unmistakably as a summary.
 
 **Naming.** MCP is a protocol's proper name and passes as-is; a coined verb around it
-would not. If it ever becomes a subcommand, `steward mcp` is the plain form, and the tool
+would not. If it ever becomes a subcommand, `vilice mcp` is the plain form, and the tool
 names should be the verbs the CLI already has — not a friendlier parallel vocabulary that
 a reader has to map back.
 

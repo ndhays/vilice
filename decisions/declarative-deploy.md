@@ -10,14 +10,14 @@ and the roads not taken. Supersedes the earlier "two imperative commands" sketch
 `apply`, no incremental state — **first deploy == Nth deploy**, each self-contained.
 
 - **Full-replace semantics.** The spec is the complete desired state; an omitted field
-  is *removed*. Works because Steward Console's `Install` model always renders the full spec.
-- **Self-contained.** Steward Console resends secret values each deploy (it holds them
+  is *removed*. Works because Vilice Console's `Install` model always renders the full spec.
+- **Self-contained.** Vilice Console resends secret values each deploy (it holds them
   encrypted), so there is no set-once ordering and no dangling secret waiting for an app.
 
 ## The constraint that shapes the transport: argv is recorded, stdin is not
 
 Every command is recorded (append-only, hash-chained, shipped off-host), so **a secret
-must never ride the command line.** Steward is a forced command, so only
+must never ride the command line.** Vilice is a forced command, so only
 `SSH_ORIGINAL_COMMAND` (the arguments) is logged. The seam: the **spec + secret values
 arrive as one JSON envelope on stdin**; `dispatch` records argv only. The recorded entry
 is `deploy <app>` plus the **spec digest** = `sha256(canonical(app))` — the chain commits
@@ -34,13 +34,13 @@ container config; `podman secret ls` is a names-only ledger (mirrors `authorized
 Rotation = `rm`+create, which a redeploy does for free.
 
 - **Secret-at-rest = root-only access control, not encryption.** Root (the ceiling) and
-  the running container can read it; no scoped key, no other container, and no `steward`
+  the running container can read it; no scoped key, no other container, and no `vilice`
   verb ever exposes a value. Encryption-at-rest only defends offline theft and needs an
   off-disk key (TPM / `systemd-creds`) — a later hardening, tied to god-key custody.
-- **Steward stays app-agnostic.** It handles N named secrets; a Rails app declares one
+- **Vilice stays app-agnostic.** It handles N named secrets; a Rails app declares one
   (`RAILS_MASTER_KEY`) and keeps the rest in `credentials.yml.enc` shipped in the image.
 - **No new verb.** Rotation/lifecycle stay redeploy/`restart`; a "rotate" affordance
-  lives on the Steward Console side, not in Steward.
+  lives on the Vilice Console side, not in Vilice.
 - **Env *or* file (`secret_files`).** Same store, same stdin delivery, same never-recorded
   guarantee — only how the unit consumes the secret differs: `type=env,target=NAME` or
   `type=mount,target=/path`. Added for apps configured by a file (a registry's
@@ -59,13 +59,13 @@ Rotation = `rm`+create, which a redeploy does for free.
 
 ## Where the rest lives
 
-**Steward Console now drives this envelope** (Wave 3.2): `Install#deploy_envelope(image:)`
+**Vilice Console now drives this envelope** (Wave 3.2): `Install#deploy_envelope(image:)`
 builds the `{app:{…}}` spec and the mutate ceremony pipes it on scoped-SSH stdin —
 secret values still excluded (that panel is #14). See
 [`open/ui-roadmap.md`](open/ui-roadmap.md) #12.
 
-The Steward Console UI side (secret-by-default Environment panel) is in
-[`console-open-questions.md`](open/console-open-questions.md). Remaining Steward
+The Vilice Console UI side (secret-by-default Environment panel) is in
+[`console-open-questions.md`](open/console-open-questions.md). Remaining Vilice
 slices — `secret ls`/`rm` + status surfacing, backup exclusion + digest tagging,
 encrypted-at-rest driver — stay open in
 [`vilice-open-questions.md`](open/vilice-open-questions.md).

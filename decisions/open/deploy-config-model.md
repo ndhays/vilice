@@ -1,7 +1,7 @@
 # Deploy Config Model — the config is the app
 
 > High-level frame, not settled. What a "deployable app" *is*: **one config object that holds
-> values and references** (to code, data, secrets), so the deploy spec, the Steward Console DB, and
+> values and references** (to code, data, secrets), so the deploy spec, the Vilice Console DB, and
 > the box's stored state all agree on the same object. Refines the mechanism in
 > [`decisions/declarative-deploy.md`](../declarative-deploy.md) upward into a model.
 >
@@ -54,12 +54,12 @@ and goes. The config is what's *in* the slot right now (think socket, mount poin
 a job title). A deploy doesn't change the slot; it seats a new config in it. The slot is already
 physically present in both layers, just unnamed:
 
-- **On the box:** the filename `/var/lib/steward/apps/<name>.json` is the slot; the contents are
+- **On the box:** the filename `/var/lib/vilice/apps/<name>.json` is the slot; the contents are
   the current config. One file per slot.
-- **In Steward Console:** the `App` row is the slot — it should *point at* a series of configs
+- **In Vilice Console:** the `App` row is the slot — it should *point at* a series of configs
   (one marked current), not *be* the config.
 
-What this buys, and why it's the spine of the save/archive + Steward Console work:
+What this buys, and why it's the spine of the save/archive + Vilice Console work:
 
 - **Data and history hang off the slot, not the config.** The volume belongs to the slot's
   continuity, so it survives every config swap (which is *why* data is a reference, not a value).
@@ -80,7 +80,7 @@ let the better word surface as it's built.)
 ## What's in App Config
 
 What varies between apps / deploys — and where it stands today (`appState` in
-`steward/deploy.go`, stored at `/var/lib/steward/apps/<name>.json`):
+`vilice/deploy.go`, stored at `/var/lib/vilice/apps/<name>.json`):
 
 - **hostnames** — routing. ✅ today
 - **env** (non-secret config) — ✅ today, recorded
@@ -90,9 +90,9 @@ What varies between apps / deploys — and where it stands today (`appState` in
 - **health** path — ✅ today (app-owned)
 - **resource limits** (OOM score, memory) — *not yet a field*; Quadlet has a default, the
   per-app override is the open Slice-B item ([quadlet-deploy.md](../quadlet-deploy.md))
-- **replicas / placement** (which machine, how many) — Steward Console's `Placement` carries
+- **replicas / placement** (which machine, how many) — Vilice Console's `Placement` carries
   strategy/position; **not in the box spec**. AppConfig is *scale-free by construction*
-  (Steward only ever converges one box to one config); scale + exposure live on the App
+  (Vilice only ever converges one box to one config); scale + exposure live on the App
   — see [`patterns.md`](../../blueprint/console/patterns.md)
 - **accessories / linked services** (a Redis or Postgres the app needs alongside it) — **in
   scope** (decided 2026-06-24); the missing axis is being built. A new `accessories` block *inside*
@@ -142,7 +142,7 @@ So the release step must live with the code, written as idempotent, forward-conv
 *convergence* (run all that's pending, not "the one step against the assumed predecessor"). The
 box only *invokes* it before cutover — it never authors or hosts it:
 
-- **In the image (chosen lean):** the app defines a release/converge command; Steward runs the
+- **In the image (chosen lean):** the app defines a release/converge command; Vilice runs the
   new image once before the flip. The migration is *the app acting as itself, in its own
   container* — a named actor in its own scope. Correct (only the app knows A→Z) *and*
   ceiling-safe (no host shell). 12-factor's "release phase."
@@ -156,17 +156,17 @@ image-owned converge step, not a host script. The config holds at most a flag or
 
 ## Where the truth lives
 
-Two copies exist: the box's `/var/lib/steward/apps/<name>.json` and (eventually) Steward Console's
+Two copies exist: the box's `/var/lib/vilice/apps/<name>.json` and (eventually) Vilice Console's
 `App` row. Proposed split:
 
-- **Steward Console DB = the source you *edit*** — operator-facing, multi-tenant, where a human
+- **Vilice Console DB = the source you *edit*** — operator-facing, multi-tenant, where a human
   changes the spec.
 - **The box's JSON = the *derivable* copy** — reconstructable from the record + what's
   running; it lets the box stand alone with no off-box brain. A deploy is "render the spec,
   send it, the box persists its own copy."
 
 **Settled (2026-06-24):** authoritative-on-conflict falls out once the config is a digest-addressed
-artifact — **Steward Console owns desire (editing mints a new version), the box owns reality (it runs a
+artifact — **Vilice Console owns desire (editing mints a new version), the box owns reality (it runs a
 digest), and drift is digest ≠ digest.** "Adopt the box's running config" is an explicit witnessed
 act, not a silent overwrite. See [`app-config-is-the-artifact.md`](../app-config-is-the-artifact.md).
 Still open: the box-side ingestion mechanics for the full config (today's observe read mirrors only

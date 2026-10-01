@@ -12,7 +12,7 @@ same terms it gives everyone else.
 
 | What you changed | Licence |
 | --- | --- |
-| `steward/`, `install.sh`, `examples/` | MIT |
+| `vilice/`, `install.sh`, `examples/` | MIT |
 | Everything else, including `console/` | AGPL-3.0-or-later |
 | `blueprint/agora.md` (the constitution text) | CC BY-SA 4.0 |
 
@@ -32,7 +32,7 @@ what you do not own.**
 - **In this repository, say so and it's fine.** If an LLM wrote or substantially drafted the
   change, note it in the pull request. It is not disqualifying — most of this code was
   written that way and the README says so plainly.
-- **The handwritten core is different.** The intention is to rewrite Steward's core by hand
+- **The handwritten core is different.** The intention is to rewrite Vilice's core by hand
   from the same blueprint, because "a human wrote and understands every line of the gate" is
   the claim worth being able to make. Machine-drafted code cannot land there. An LLM as
   reviewer or critic of code a human wrote is fine, and encouraged.
@@ -51,9 +51,9 @@ what you do not own.**
 ## Before you open a pull request
 
 ```bash
-cd steward && make fmt vet test    # Go: format, vet, test
-cd steward && make audit           # govulncheck + gosec (needs network)
-cd steward && make fuzz            # if you touched a parsing or rendering boundary
+cd vilice && make fmt vet test    # Go: format, vet, test
+cd vilice && make audit           # govulncheck + gosec (needs network)
+cd vilice && make fuzz            # if you touched a parsing or rendering boundary
 cd console && bin/ci               # Rails: rubocop, brakeman, gem audit, tests, seeds
 cd site    && npm run build        # docs site still builds
 ```

@@ -1,6 +1,6 @@
 # Private registry credentials — a box credential, not an app field
 
-**Decided 2026-06-15.** How Steward pulls from a private (authenticated) image
+**Decided 2026-06-15.** How Vilice pulls from a private (authenticated) image
 registry, where that credential lives, and how it fails. Companion to
 `decisions/declarative-deploy.md` (secrets) and `blueprint/vilice/deploy.md`.
 
@@ -15,11 +15,11 @@ happens when it's wrong or expired at deploy time?
 **A standing box credential, set by a recorded command, never carried in the deploy
 envelope.**
 
-- `steward registry-login <registry> --username <user>` — **password on stdin**, never
-  argv. Runs `podman login` as the steward user, writing a **persistent** rootless
-  auth file (`~steward/.config/containers/auth.json`, via `REGISTRY_AUTH_FILE` set in
+- `vilice registry-login <registry> --username <user>` — **password on stdin**, never
+  argv. Runs `podman login` as the _vilice user, writing a **persistent** rootless
+  auth file (`~_vilice/.config/containers/auth.json`, via `REGISTRY_AUTH_FILE` set in
   the user-context exec seam so login, pull, and logout all share it across reboots).
-- `steward registry-logout <registry>` — the explicit counterweight.
+- `vilice registry-logout <registry>` — the explicit counterweight.
 - Both are **operate**-scope, so dispatch records them: actor + action +
   `<registry>` + `--username` land in the record; **the password never does** (same
   stdin-not-argv discipline as deploy secret values).
@@ -36,7 +36,7 @@ and outliving any one app. So:
 - **Observable while it lives** (a standing credential nothing surfaces is ambient
   authority — fails the legible-ceiling invariant): `status` lists the registries the
   box is logged into (**host + username, secrets redacted**); `doctor` reports which
-  registries the deployed apps reference and which have a login; Steward Console mirrors
+  registries the deployed apps reference and which have a login; Vilice Console mirrors
   this as an Access-style ledger on the machine page.
 - **Not app-owned.** The app→registry link is *derivable* (image → registry → is the
   box logged in?) and worth surfacing as a warning, but the credential is never a
@@ -56,9 +56,9 @@ surfaces at deploy time, not login time. That's safe by construction:
    with an expired credential** — the credential's blast radius is exactly "introduce a
    *new* image to the box", nothing more.
 3. **Classified, actionable errors.** A pull failure is parsed into a result code:
-   `registry_auth` (401/403/expired → "run `steward registry-login <registry>` and
+   `registry_auth` (401/403/expired → "run `vilice registry-login <registry>` and
    redeploy", retryable), `registry_unreachable` (network, retryable), or
-   `image_not_found` (bad digest, not retryable). Steward Console surfaces the auth case as
+   `image_not_found` (bad digest, not retryable). Vilice Console surfaces the auth case as
    "the box's credential for `<registry>` looks expired → refresh", pointing back at
    the box credential.
 4. **Doctor early-warning.** `doctor` flags app registries with no login before the next

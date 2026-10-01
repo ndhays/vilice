@@ -29,7 +29,7 @@ same week; no compatibility was kept, because nothing outside the repo depended 
 old names.
 
 Two things keep their names because they are formats read elsewhere, not names of these
-models: the deploy envelope's `app` key (Steward reads it) and the Library manifest's
+models: the deploy envelope's `app` key (Vilice reads it) and the Library manifest's
 `apps` key (catalog files carry it).
 
 ## Roads not taken

@@ -7,10 +7,10 @@ and the road not taken.
 
 ## What's locked
 
-The record is a standalone append-only file (`/var/lib/steward/record.log`, `chattr +a`
+The record is a standalone append-only file (`/var/lib/vilice/record.log`, `chattr +a`
 set by `prepare`), one JSON entry per line. Each entry carries `seq`, `time`, `actor`,
 `scope`, `action`, `args`, `prev_hash`, and `hash`, where `hash = sha256(canonical JSON
-of every field except hash)` and `prev_hash` links the entry before it. `steward verify`
+of every field except hash)` and `prev_hash` links the entry before it. `vilice verify`
 (observe scope) walks the chain and reports the first break — a reorder, a broken link, or
 an edited entry — or confirms it intact. This is the 1.0 contract: an outside party can
 verify a chain from the spec alone, without reading the Go.

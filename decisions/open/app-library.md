@@ -1,4 +1,4 @@
-# Steward Console — App Library (open items)
+# Vilice Console — App Library (open items)
 
 > The App Library is **built and graduated**: the operator-facing flow is in
 > [`blueprint/console/journeys.md`](../../blueprint/console/journeys.md), the model
@@ -15,18 +15,18 @@
 
 These are **different features on different layers**, not two answers to one question — and
 keeping them apart is the point. It explains why the allowlist below is a separate, open,
-Steward-side item rather than a property of the (built) library.
+Vilice-side item rather than a property of the (built) library.
 
-- **Steward Console App Library — bookmarking / curation.** Built. A directory the admin curates;
+- **Vilice Console App Library — bookmarking / curation.** Built. A directory the admin curates;
   saved definitions used to install quickly and consistently. A convenience layer. **Not a
   security boundary.**
-- **Steward image allowlist — security.** Separate, simple, maybe later. The box refuses any
+- **Vilice image allowlist — security.** Separate, simple, maybe later. The box refuses any
   image not on an authorized allowlist (`authorized_keys`, but for images) —
-  **un-bypassable**. Its own Steward-side feature + decision. The `apps_library_only`
+  **un-bypassable**. Its own Vilice-side feature + decision. The `apps_library_only`
   setting *may* later be backed by it for real teeth, but the two ship independently.
 
-Convenience lives in Steward Console; un-bypassability lives on the box (the scoped `operate` key
-is the real ceiling today — a key-holder can `steward deploy <any-image>` directly).
+Convenience lives in Vilice Console; un-bypassability lives on the box (the scoped `operate` key
+is the real ceiling today — a key-holder can `vilice deploy <any-image>` directly).
 
 ## Open
 
@@ -57,8 +57,8 @@ is the real ceiling today — a key-holder can `steward deploy <any-image>` dire
   (10 apps) and the integration-test app `examples/harness-rails/` are committed. Paused: a
   **Node twin** (`examples/harness-node/`), a **websocket `/ws` drain** endpoint, **digest-
   pinning** the library images, and a **seed convenience** to load `examples/library.yml`. A
-  Steward gap surfaced: the health gate is HTTP-only, so pure-TCP services (Postgres/Redis)
+  Vilice gap surfaced: the health gate is HTTP-only, so pure-TCP services (Postgres/Redis)
   can't deploy — see
   [`vilice-open-questions.md`](vilice-open-questions.md).
-- **The Steward allowlist itself** — whether/when it lands, and whether
+- **The Vilice allowlist itself** — whether/when it lands, and whether
   `apps_library_only` then drives it.

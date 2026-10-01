@@ -12,7 +12,7 @@
 # Raw output lands in audit/out/ (gitignored). Record the verdict by hand in
 # audit/log.md — that committed ledger is the "v0.1.x was audited" attestation.
 #
-# Usage:  make audit-box HOST=devbox        (or: steward/audit/run.sh devbox)
+# Usage:  make audit-box HOST=devbox        (or: vilice/audit/run.sh devbox)
 # HOST is an ssh-reachable target (a config alias or user@host).
 set -euo pipefail
 

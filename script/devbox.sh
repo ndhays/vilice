@@ -63,7 +63,7 @@ else
 fi
 
 admin()  { ssh -tt "${admin_opts[@]}" "$admin_target" "$@"; }
-# Reach the box exactly as Vilice Console will — as `vilice`, with only the dev key.
+# Reach the box exactly as Vilice Console will — as `_vilice`, with only the dev key.
 scoped() { ssh -i "$KEY" -o IdentitiesOnly=yes -p "$PORT" "${kh[@]}" "_vilice@$HOST" "$@"; }
 
 # Resolve the real hostname + port (from the alias or user@host) for the scoped

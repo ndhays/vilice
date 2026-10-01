@@ -10,7 +10,7 @@ How the numbers are produced:
   build toolchain is behind: bump Go to the latest patch release and re-run.
 - **Box** — `make audit-box HOST=<box>` (ssh-audit + nmap + Lynis against a
   prepared+hardened box). Fold regressions back into `harden/`; the live on-box guard is
-  `steward harden --check`.
+  `vilice harden --check`.
 
 See [`decisions/security-audit.md`](../decisions/security-audit.md) for the why.
 

@@ -1,4 +1,4 @@
-# Steward Console — List Search, Sort & Pagination
+# Vilice Console — List Search, Sort & Pagination
 
 > How the Machines list (and, lighter, the Projects grid) becomes searchable,
 > sortable, and paged. Planned, not built. Graduates into `blueprint/console/`

@@ -1,4 +1,4 @@
-# Steward — Open Questions
+# Vilice — Open Questions
 
 > Not settled. The `blueprint/vilice/` specs stay silent on these until they are
 > decided. When one settles, move the answer into the relevant spec and record the
@@ -18,7 +18,7 @@
   "SQLite + Litestream for the record" sketch is **reconsidered** — keep the record JSONL
   (immutable via `chattr +a`, zero-dep) and stream the log itself.
 - **Off-box queryable read-replica.** Project the shipped append-only log into SQLite
-  **off-box**, so Steward Console's read side gets rich SQL without SSH round-trips (the CQRS
+  **off-box**, so Vilice Console's read side gets rich SQL without SSH round-trips (the CQRS
   "consume the shipped dump" model). The box stays simple; SQLite never lands on it.
 
 ## DNS-01 challenge + Agora-aligned edge/DNS providers
@@ -27,7 +27,7 @@
 CDN (and the only way to get *wildcard* certs). It validates via a DNS TXT record, so it
 needs no inbound `:80`/`:443` reachability and is immune to edge interception. Shape: a
 custom Caddy build carrying the provider's [libdns](https://github.com/libdns) module, plus
-a scoped DNS-API token delivered as a Steward secret. With a valid origin cert, the CDN runs
+a scoped DNS-API token delivered as a Vilice secret. With a valid origin cert, the CDN runs
 in **Full (strict)** mode — the recommended secure topology.
 
 **The tension (worth naming):** the obvious DNS-01 target is Cloudflare, and wiring it in
@@ -55,7 +55,7 @@ picked up:
 
 The backup engine is built and settled ([`backup.md`](../backup.md)). What is left open
 is the complement to it: **continuous replication for mutable app databases**
-(Steward Console-on-box, SQLite apps), where restic's snapshots leave a window. Not the
+(Vilice Console-on-box, SQLite apps), where restic's snapshots leave a window. Not the
 record — that is append-only, and belongs to Off-host shipping above.
 
 ## Secret handling — the slices after the first
@@ -66,7 +66,7 @@ contract in [deploy.md](../../blueprint/vilice/deploy.md)). Two slices remain:
 - **`secret ls` / `secret rm` + `status` surfacing** (names only, never values).
 - **Encrypted-at-rest store driver** (`pass`/`shell`) — lands with god-key custody;
   changes the at-rest defense, not the deploy contract. Would also wrap
-  `/var/lib/steward/secrets/` (the restic password).
+  `/var/lib/vilice/secrets/` (the restic password).
 
 The console's Environment panel is in
 [console-open-questions.md](console-open-questions.md); the higher-level frame — what a
@@ -78,9 +78,9 @@ deployable app *is*, and the hooks question — is in
 Reading it is built — `status` reports the unattended-upgrades window and pending updates,
 and the machine page shows "Maintenance — daily at HH:MM" with an Apply Now. **Changing the
 time is open.** It needs
-a `steward maintenance --at HH:MM [--reboot on|off]` operate command that rewrites
+a `vilice maintenance --at HH:MM [--reboot on|off]` operate command that rewrites
 `/etc/apt/apt.conf.d/52-harden-unattended` — a **root-owned** file, so it needs the narrow
-`sudoers.d/steward` pattern (same as `apply-updates`), recorded + witnessed. A *forced reboot
+`sudoers.d/vilice` pattern (same as `apply-updates`), recorded + witnessed. A *forced reboot
 now* would also bump the **no machine-reboot command** gap (kept off the surface for v1:
 "apply now" patches now; reboot stays on the schedule).
 
@@ -94,7 +94,7 @@ Static registry credentials are built and settled
   different mechanism. v1 is static credentials only. Doctor's coverage check partly
   mitigates (a rotted token reads as "not logged in"), but a *present-but-expired* static
   token still passes presence — an optional per-registry auth probe could close that.
-- **Steward Console side**: a recorded login/logout ceremony + an Access-style credentials
+- **Vilice Console side**: a recorded login/logout ceremony + an Access-style credentials
   ledger on the machine page (#16-adjacent), plus the derived "image is on a registry the
   box isn't logged into" warning. Tracked in
   [console-open-questions.md](console-open-questions.md).
@@ -130,7 +130,7 @@ model below closes.
 
 **The model (mapped from Kamal/Compose, which we already treat as inspiration —
 [`borrowed-substrate.md`](../borrowed-substrate.md)):** a **shared user-defined Podman
-network** that Steward creates-if-not-exists before attaching anything. The app container,
+network** that Vilice creates-if-not-exists before attaching anything. The app container,
 its accessories, and Caddy all join it. On a user-defined network Podman's **aardvark-dns**
 (the netavark backend's resolver) gives container-to-container name resolution — the same
 "reach `redis` by hostname" that Compose and Kamal 2 rely on. Accessories boot with stable
@@ -142,7 +142,7 @@ redeploys** — so shared-network-separate-containers is the right analog, not c
 
 **Two walls to design around:**
 
-1. **Rootless DNS is not guaranteed present.** Steward runs as the unprivileged `steward`
+1. **Rootless DNS is not guaranteed present.** Vilice runs as the unprivileged `vilice`
    user, and rootless container-to-container DNS works *only* if **aardvark-dns is installed
    and netavark is the backend**. On a stripped-down server the DNS helper is sometimes
    missing — and then names silently fail to resolve while IPs still work, which looks exactly
@@ -170,15 +170,15 @@ stable aliases. Folds into [deploy.md](../../blueprint/vilice/deploy.md) once de
 
 ## apt packaging — the inert-package / prepare split
 
-Steward mostly follows Linux convention already (state in `/var/lib/steward`,
+Vilice mostly follows Linux convention already (state in `/var/lib/vilice`,
 validated `sudoers.d` drop-in, system user + subuid/subgid, static signed binary);
 a man page now generates from the commands table (`make man`). What a `.deb` would
 change, and the design insight worth keeping when this is picked up:
 
 > **apt puts bits on disk; `prepare` stays the accountable act that turns them on.**
 
-The package apps an *inert* Steward — binary (`/usr/bin`, not `/usr/local`),
-units shipped in `/usr/lib/systemd/system` (disabled), the `steward` user via
+The package apps an *inert* Vilice — binary (`/usr/bin`, not `/usr/local`),
+units shipped in `/usr/lib/systemd/system` (disabled), the `_vilice` user via
 postinst, deps declared not installed (`Depends: podman (>= 4.4), uidmap`;
 `Recommends: restic`; **caddy availability varies by release — verify, else it
 stays a prepare step**). `prepare` shrinks to the recorded root ceremony: lay the
@@ -186,10 +186,10 @@ floor, configure Caddy routing, enable the timer. Its current `apt-get app`
 steps stay for the curl-install path (already idempotent).
 
 **Interaction with the recorded binary digest** ([`roles-not-packs.md`](../roles-not-packs.md)):
-`prepare` writes this binary's sha256 to `/etc/steward/binary.digest`, and every verb that
+`prepare` writes this binary's sha256 to `/etc/vilice/binary.digest`, and every verb that
 acts checks the running binary against it — so an `apt upgrade` that replaces the binary
 leaves the box refusing every deploy until `prepare` is re-run. Curl-install has the same
-property and the same fix (the upgrade path already says "then `steward prepare`"), but a
+property and the same fix (the upgrade path already says "then `vilice prepare`"), but a
 package manager upgrades unattended, which makes it sharper: the box would go quiet without
 anyone having typed anything. Options when this is picked up: a postinst that re-records
 the digest through the core (so the authorization lands in the chain rather than in a
@@ -197,9 +197,9 @@ packaging script), or accepting the refusal as the correct fail-closed outcome a
 `doctor` say exactly this. **The refusal must not be softened into a warning** — a binary
 nobody authorized running deploys is the thing the check exists to stop.
 
-Mapping that must hold: `apt remove` ≈ `steward uninstall`, `apt purge` ≈ the
+Mapping that must hold: `apt remove` ≈ `vilice uninstall`, `apt purge` ≈ the
 hardware-retirement tier (see Decommissioning above) — with the caveat that a
-conventional `postrm purge` deleting `/var/lib/steward` would shred the record;
+conventional `postrm purge` deleting `/var/lib/vilice` would shred the record;
 purge should archive-or-warn instead (Agora II).
 
 Also needed: `debian/` (control, rules, DEP-5 copyright, changelog), vendored Go
@@ -217,13 +217,13 @@ Article VI. Would retire the old separate `service-mode` verb. Folds into
 ## A self-update scope — an app may redeploy itself
 
 > **Doubt (2026-06-09):** maybe not worth its own scope. Anything with `operate` (e.g. a
-> co-located Steward Console) can already update an app, and
+> co-located Vilice Console) can already update an app, and
 > [deploy-config-model.md](deploy-config-model.md) argues there's no structural
 > image-vs-config boundary — "self-update" collapses into *which fields of the one config a
 > scope may edit*. Kept as a thread, not a plan. The sketch below is the strong form if it
 > ever earns its place.
 
-Generalize the "Steward Console deploys Steward Console" POC
+Generalize the "Vilice Console deploys Vilice Console" POC
 ([console-open-questions.md](console-open-questions.md)) into a first-class grant:
 a scope, narrower than `operate`, that lets a deployed app **redeploy only itself** and
 do nothing else. The named actor is the app; the forced command pins both the *verb*
@@ -231,7 +231,7 @@ do nothing else. The named actor is the app; the forced command pins both the *v
 itself but can't touch another app, read the record, or open a shell. Sits *below* operate
 on the ladder — `observe ⊂ self-update ⊂ operate ⊂ grant` — the smallest useful write.
 
-This is what makes ordinary self-updating apps safe: any app (not just Steward Console) can hold
+This is what makes ordinary self-updating apps safe: any app (not just Vilice Console) can hold
 a key that updates itself, and the blast radius is exactly one install. Mechanism is the
 existing `authorize` forced-command path plus a target argument — likely
 `authorize <pubkey> --client <app> --scope self-update --app <name>`, decoded in the
@@ -247,12 +247,12 @@ fleet delegation below.
 
 The `operate` key is **box-wide** by design: it can `deploy`/`remove`/`status` *any* app
 on the box (small, legible ceiling; no notion of "tenant"). So between two Projects
-sharing a box, the boundary is **not sharing the box** — which is why Steward Console makes
+sharing a box, the boundary is **not sharing the box** — which is why Vilice Console makes
 **dedicated the default** ([install-journeys.md](install-journeys.md)). For that common
-case there is **nothing to build here**; the isolation is Steward Console-side query discipline.
+case there is **nothing to build here**; the isolation is Vilice Console-side query discipline.
 
 The *only* thing that would make per-app isolation **un-bypassable inside a shared box** is
-a Steward-side scope:
+a Vilice-side scope:
 
 - **Scoped observe** — a key that can `status`/`record` for **named apps only**, not the
   whole box. The observe analog of the image allowlist; the read-side sibling of the
@@ -273,11 +273,11 @@ it points at. A container cannot reach another app's published port; it *can* re
 `169.254.169.254`, which on Hetzner carries no credentials but does carry cloud-init
 user-data.
 
-What stays open is whether to block it. The rule would have to reject only the `steward`
+What stays open is whether to block it. The rule would have to reject only the `vilice`
 user's traffic to that address: box-wide, it risks cloud-init's network setup on the next
 boot, which is a worse failure than the disclosure. Against building it: no credentials are
 exposed, and "never put a secret in user-data" is a cheaper rule that holds everywhere.
-Revisit if Steward ever runs somewhere whose metadata service hands out credentials (AWS
+Revisit if Vilice ever runs somewhere whose metadata service hands out credentials (AWS
 IMDS being the obvious one), where this stops being information and becomes a key.
 
 ## Remote reach — NAT'd boxes
@@ -294,9 +294,9 @@ time-boxed, offline-verifiable, per-action ("operator Z may deploy image X to bo
 expires in 5 minutes"). SSH keys are too coarse for this; a capability-token scheme is
 the candidate. Revisit when fleet delegation is real, not before.
 
-## An MCP for Steward — its own doc
+## An MCP for Vilice — its own doc
 
-Handing an AI agent a tool surface over Steward. Nothing planned; the shapes, the one
+Handing an AI agent a tool surface over Vilice. Nothing planned; the shapes, the one
 new threat (prompt injection), and the shapes already forbidden are written up in
 [vilice-mcp.md](vilice-mcp.md). It leans on *time-boxed grants* and *scoped observe*
 above, which is why it is flagged from here.
@@ -311,7 +311,7 @@ and [`audit/log.md`](../../audit/log.md) for the per-version attestation.
 - **`ssh-audit` + `nmap` + `Lynis`** — **wired** as `make audit-box HOST=…`
   (`audit/run.sh`); run against a prepared+hardened box, fold regressions into `harden/`.
 - **`harden --check`** — **built**: a native, dependency-free on-box posture check that
-  publishes its result for `status`/Steward Console to read (the everyday guard between deep
+  publishes its result for `status`/Vilice Console to read (the everyday guard between deep
   audits).
 
 Still open / deferred:
@@ -320,7 +320,7 @@ Still open / deferred:
   baseline (ssh-audit grade, open-port set, Lynis index) and make `audit-box` fail on a
   regression from it. Also: **bump the build toolchain** so `make audit`'s govulncheck is
   clean (the stale Go patch is the current finding).
-- **Trivy** — scan the Steward Console image (no image for the Steward binary); pairs with the
+- **Trivy** — scan the Vilice Console image (no image for the Vilice binary); pairs with the
   registry/image work, not this.
 - **`testssl.sh`** — needs a real cert; rides with the DNS-01 / HTTPS work.
 - **OpenSCAP** — rejected for now (compliance machinery, against the grain); Lynis covers
@@ -357,7 +357,7 @@ Folds into [deploy.md](../../blueprint/vilice/deploy.md) / the Caddy unit once c
 ## Time sync — is chrony in the base image?
 
 TLS validity windows and **audit-log timestamps** (cross-box correlation in the record)
-both assume the box clock is right. Steward's auth is scoped SSH, not bearer tokens, so
+both assume the box clock is right. Vilice's auth is scoped SSH, not bearer tokens, so
 there's **no token-skew dependency** — but a drifting clock still silently breaks cert
 validation and makes audit timestamps useless for ordering events across the fleet. Open:
 is **chrony** (or `systemd-timesyncd`) enabled as part of `prepare`/`harden`, and should
@@ -367,15 +367,15 @@ checks)? Cheap to add, easy to forget. Folds into
 
 ## Decommissioning a retired box — the remaining hardware-retirement gap
 
-**The common case is built:** `steward uninstall` (root ceiling) removes the gate and
+**The common case is built:** `vilice uninstall` (root ceiling) removes the gate and
 the scribe — timer, ledger, sudoers grant, binary — keeps apps running by default
-(explicit opt-in removes them, as the steward user), keeps the record, and surfaces
+(explicit opt-in removes them, as the _vilice user), keeps the record, and surfaces
 the restic repo + password on the way out. Spec in
 [provision.md](../../blueprint/vilice/provision.md); why in
 [`uninstall-removes-the-gate.md`](../uninstall-removes-the-gate.md).
 
 What remains open is **hardware retirement** (sold, returned, wiped): shredding
-`/var/lib/steward/secrets/` and the podman secret store, removing the `steward` user,
+`/var/lib/vilice/secrets/` and the podman secret store, removing the `_vilice` user,
 deciding the record's fate (archive off-box first?), and the **restic repo** decision
 (the encrypted backups outlive the box — keep or destroy). Deliberately not bundled
 into uninstall so the reversible act doesn't carry the irreversible one. Shape open:

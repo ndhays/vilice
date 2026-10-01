@@ -1,4 +1,4 @@
-# The Dogfood Sequence — Steward Console deploys Steward Console
+# The Dogfood Sequence — Vilice Console deploys Vilice Console
 
 > The ordered plan for making the control plane run *itself*, smallest real loop first. Each
 > step is a commit-sized slice with its own blueprint/decisions sweep. This doc is the
@@ -11,9 +11,9 @@
 
 ## Why this order
 
-The goal is **Steward Console-deploys-Steward Console** — the real test of the whole model, because the
+The goal is **Vilice Console-deploys-Vilice Console** — the real test of the whole model, because the
 control plane is just another app it should be able to place, redeploy, and roll back. Getting
-there has a natural dependency order: the config Steward Console mints today is the *stateless,
+there has a natural dependency order: the config Vilice Console mints today is the *stateless,
 secretless* subset of the AppConfig, so the two missing keys in `App#deploy_envelope` —
 `volumes` and `secrets` — are the literal prerequisites, and they fall in that order because
 **state** (a volume) is what a redeploy would otherwise lose, while **secrets** are what any
@@ -30,11 +30,11 @@ reversible.
 (`config.volumes`), validated against the box's `Volume=` format, and surfaced on the new/show
 pages. Closes the "self-hosting needs a volume field on the app" gate in
 [`console-open-questions.md`](console-open-questions.md). The fork it resolved — a
-Steward Console-only special volume vs. a general per-install field — landed on the **general** field.
+Vilice Console-only special volume vs. a general per-install field — landed on the **general** field.
 See [`data-model.md`](../../blueprint/console/data-model.md) (`App`).
 
 *Left as residue, not blockers:* volume-name uniqueness on a shared box, and any extra protection
-for Steward Console's own volume (never pruned on `remove`).
+for Vilice Console's own volume (never pruned on `remove`).
 
 ### 2. Secret / env UI → `deploy_envelope` carries `secrets`
 
@@ -46,14 +46,14 @@ value channel that keeps values off the record (the box's `Secret=type=env` — 
 app**, since almost every app needs at least one secret. Ties to the off-record value channel
 open thread in [`console-open-questions.md`](console-open-questions.md).
 
-### 3. Stand Steward Console up on one box and have it redeploy itself
+### 3. Stand Vilice Console up on one box and have it redeploy itself
 
-The payoff. With volumes + secrets in the envelope, Steward Console is now a fully-expressible app.
+The payoff. With volumes + secrets in the envelope, Vilice Console is now a fully-expressible app.
 App it onto a box, then drive a redeploy of itself *through itself*. This **proves the
 model** end-to-end and flushes the genuinely open gap: **where the observe key really lives** when
 the thing being redeployed is the redeployer (the self-update floor —
-[`console-open-questions.md`](console-open-questions.md) "You never need Steward Console to
-update Steward Console", and genesis of the control plane). Pairs with the Steward floor: a scoped key
+[`console-open-questions.md`](console-open-questions.md) "You never need Vilice Console to
+update Vilice Console", and genesis of the control plane). Pairs with the Vilice floor: a scoped key
 or the console is always the break-glass, so the in-app self-drive is convenience, never a
 dependency.
 
@@ -65,7 +65,7 @@ aliases, accessories outliving app redeploys). Design already in scope —
 [`vilice-open-questions.md`](vilice-open-questions.md) "Accessories" and
 [`deploy-config-model.md`](deploy-config-model.md). This is the step that turns "runs a
 single-container app" into "runs a normal web app", and it comes *after* dogfooding because
-Steward Console itself doesn't need an accessory to stand up.
+Vilice Console itself doesn't need an accessory to stand up.
 
 ---
 

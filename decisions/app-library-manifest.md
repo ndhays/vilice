@@ -52,6 +52,6 @@ data model does it need to be?
 ## Why this is true to the thesis
 
 The library is **convenience + legibility, not a security boundary** (that stays the
-Steward image allowlist + the scoped operate key). A portable, additive, hand-curated
+Vilice image allowlist + the scoped operate key). A portable, additive, hand-curated
 manifest fits that: it makes the easy path easy for assistant admins without pretending to
 be a wall. Pruning is explicit and recorded; merging is cheap and reversible.

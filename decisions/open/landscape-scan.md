@@ -11,7 +11,7 @@
 > compare properly — see [`kamal-audit.md`](kamal-audit.md). It does not answer the
 > question below (Kamal is not the same shape: it deploys *your* app and keeps a
 > convenience log, where this keeps a record). It does find two things worth taking and
-> one place Steward may have chosen wrong.
+> one place Vilice may have chosen wrong.
 
 ## The question
 
@@ -54,7 +54,7 @@ true.
 
 ## What the project is, precisely
 
-**Steward** — a single static Go binary (~4,600 lines of production code, plus
+**Vilice** — a single static Go binary (~4,600 lines of production code, plus
 ~2,500 of tests) that takes a fresh Ubuntu box to a running, routed,
 TLS-terminated app, and keeps a tamper-evident record of every action taken on
 that box.
@@ -68,14 +68,14 @@ at least one:
   exists only while a command runs. Delete the binary and every running app keeps
   running — apps are ordinary systemd units behind an ordinary Caddy config.
 - **Reached over SSH forced commands.** Each authorized key is pinned to
-  `command="steward _exec --client <name> --scope <scope>",restrict` in
+  `command="vilice _exec --client <name> --scope <scope>",restrict` in
   `authorized_keys`, which *is* the rights ledger — `cat` it to see every actor and
   its ceiling. No bespoke auth, no network API of its own.
 - **Three scopes**: observe ⊂ operate ⊂ grant. No scope grants an interactive
   shell; every key resolves to a named command or to nothing.
 - **An accountable record as a first-class product property.** Every
   state-changing action appends a hash-chained JSON line to a plain append-only
-  file (`chattr +a`) *before the action runs*. `steward verify` walks the chain and
+  file (`chattr +a`) *before the action runs*. `vilice verify` walks the chain and
   reports the first break. The design claim is "un-bypassability": there is no path
   to the box's power that skips a named, scoped, recorded invocation.
 - **Borrowed substrate, native idiom.** It drives Podman (rootless Quadlet
@@ -88,7 +88,7 @@ at least one:
   *different host* than the binary.
 - **Scope**: one box. Not a cluster, not a scheduler, not multi-node
   orchestration, no marketplace.
-- A companion web UI (**Steward Console**, a Rails app) exists in-repo but does
+- A companion web UI (**Vilice Console**, a Rails app) exists in-repo but does
   not ship yet. Treat it as a plan, not a product.
 
 Honest weaknesses: Ubuntu-targeted, single-box, and it is not "hands off" — it

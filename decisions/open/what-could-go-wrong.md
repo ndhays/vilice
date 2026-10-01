@@ -12,7 +12,7 @@
 > [`rendered-config-is-a-boundary.md`](../rendered-config-is-a-boundary.md) for what a
 > value may become once written to a config file, and the "gate audit" leg of
 > [`security-audit.md`](../security-audit.md) for how the scope ladder is measured
-> (`steward/gate_test.go`, `steward/inject_test.go`, `make fuzz`). Noticing that the
+> (`vilice/gate_test.go`, `vilice/inject_test.go`, `make fuzz`). Noticing that the
 > adversary view had no home is what prompted the 2026-08-01 audit; keeping the two
 > apart is deliberate, because a pitfall gets a friendlier error while a boundary gets
 > a test.
@@ -20,11 +20,11 @@
 ## Cloud-provider firewall (not just `ufw`)
 
 The biggest gotcha. Hetzner / Vultr / DigitalOcean put their **own** firewall in front
-of the box, separate from `ufw`. If Steward Console can't reach the box over SSH, or an
+of the box, separate from `ufw`. If Vilice Console can't reach the box over SSH, or an
 app's 80/443 are unreachable, **check the provider firewall first** — `ufw` can be
 perfect and the traffic still blocked upstream. (A Hetzner Cloud Firewall attached to
 the server commonly blocks inbound by default.)
-→ A future `doctor`/Steward Console check could probe reachability and say so explicitly.
+→ A future `doctor`/Vilice Console check could probe reachability and say so explicitly.
 
 ## DNS not pointing yet / ACME fails
 
@@ -33,13 +33,13 @@ box and 80/443 are reachable. No DNS (or a proxied "orange-cloud" Cloudflare rec
 → ACME can't validate → the site doesn't serve. For boxes without a real domain, use an
 `http://` hostname in `deploy --hostname`.
 
-## SSH from Steward Console can't connect
+## SSH from Vilice Console can't connect
 
 - The provider firewall (above) is blocking 22.
-- The key wasn't authorized (`steward authorize …`), or you're connecting as the wrong
-  user — scoped keys live in the **`steward`** user's `authorized_keys`, so Steward Console
-  connects as `steward@box`, not `root@`.
-- `ssh -v` from the Steward Console host usually shows which.
+- The key wasn't authorized (`vilice authorize …`), or you're connecting as the wrong
+  user — scoped keys live in the **`vilice`** user's `authorized_keys`, so Vilice Console
+  connects as `_vilice@box`, not `root@`.
+- `ssh -v` from the Vilice Console host usually shows which.
 
 ## Locked out after `harden`
 
@@ -49,12 +49,12 @@ passwords when root has no `authorized_keys`, specifically to prevent this.
 
 ## Control-plane gotchas (the app flow)
 
-These are Steward Console-side, not box/network — they come with the app journeys
+These are Vilice Console-side, not box/network — they come with the app journeys
 ([install-journeys.md](install-journeys.md)). The same value applies: **the failure
 should tell you the fix.**
 
 - **The authorize gap — handled 2026-08-18.** A newly-added machine is unreachable until
-  the operator runs the surfaced `steward authorize …` line on the box, and "Permission
+  the operator runs the surfaced `vilice authorize …` line on the box, and "Permission
   denied (publickey)" reads as though the console did something wrong. It is now said at
   all three points it can bite: the app form's box picker and the *place on a box*
   picker label such a machine **"not yet authorized"**; the mutate ceremony shows a caution
@@ -77,5 +77,5 @@ should tell you the fix.**
 ## "version mismatch" / app 404
 
 The site's `/releases/` must contain the current `VERSION`. Run
-`make -C steward release`, then build + deploy the site. The site build guard catches
+`make -C vilice release`, then build + deploy the site. The site build guard catches
 this locally; a stale upload (missing `/releases/`) shows up as a 404 from `install.sh`.

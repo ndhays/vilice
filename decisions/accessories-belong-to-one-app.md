@@ -8,7 +8,7 @@
 
 ## The problem
 
-A Rails app needs Postgres. An app on Steward is one container plus volumes, and nothing
+A Rails app needs Postgres. An app on Vilice is one container plus volumes, and nothing
 can reach anything else, so the honest answer until now was *use a managed database*. That
 is a real answer, and it is not the only one people need.
 
@@ -32,7 +32,7 @@ longer available without taking the feature away again.
 ]
 ```
 
-Steward creates `steward-<app>`, runs the accessory on it as `<app>-<name>` with the
+Vilice creates `vilice-<app>`, runs the accessory on it as `<app>-<name>` with the
 network alias `<name>`, and joins **both of the app's colors** to the same network. The
 app connects to `db:5432`. Nothing else ever joins that network — so declaring that `web`
 needs a database buys `web → db` and never `anything → db`.

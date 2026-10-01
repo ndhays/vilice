@@ -1,7 +1,7 @@
 # The release command — running migrations without opening a door
 
 > **Proposed 2026-08-19, not built.** A deploy has nowhere to run `db:migrate`, which is
-> the gap that stops an ordinary Rails or Django app from working on Steward at all —
+> the gap that stops an ordinary Rails or Django app from working on Vilice at all —
 > including the console itself, which we dogfood. This settles the shape so the build is
 > reviewable; the parts still genuinely open are marked as such at the end.
 >
@@ -41,13 +41,13 @@ It is part of what the app *is* — curated once in the App Library, carried in 
 envelope, persisted in app-state, and covered by the spec digest, so changing the command
 changes the spec and that change is recorded.
 
-It is **not** a flag on `steward deploy`. A per-invocation string would mean the same image
+It is **not** a flag on `vilice deploy`. A per-invocation string would mean the same image
 deployed twice could behave differently depending on what somebody typed, which breaks the
 one thing the digest pin exists to guarantee.
 
-And it is **not** a general `steward exec`. That would be a standing capability every
+And it is **not** a general `vilice exec`. That would be a standing capability every
 operate key carries forever, untied to any deploy — the thing
-[`orchestrators-are-clients.md`](../orchestrators-are-clients.md) means by "a verb Steward
+[`orchestrators-are-clients.md`](../orchestrators-are-clients.md) means by "a verb Vilice
 does not have is a verb the orchestrator cannot perform."
 
 ### It is argv, never a shell
@@ -66,7 +66,7 @@ An allowlist of *known* commands was considered and rejected. `bin/rails` is not
 migration tool, it is an arbitrary code runner; whoever built the image decides what
 `db:migrate` executes, and you already trusted them completely when you deployed it. The
 allowlist would guard the side door while the front door stood open, break on every
-legitimate multi-step release, and put Steward in the business of knowing about
+legitimate multi-step release, and put Vilice in the business of knowing about
 frameworks — the shape [`provider-boundary.md`](../provider-boundary.md) refused for
 clouds and [`backup.md`](../backup.md) refused for databases.
 
@@ -146,12 +146,12 @@ Closing it means deciding whether `status` merges declared state with observed s
 which is a shape question worth its own change rather than a rider on this one.
 
 Containment is real but partial, and worth stating precisely: the release container is
-rootless, so an escape lands as the `steward` user and not root; it cannot write a Quadlet
+rootless, so an escape lands as the `_vilice` user and not root; it cannot write a Quadlet
 unit, touch Caddy's config, or reach another app's volumes. It **can** do anything the app
 itself can do — read the app's data, use the app's secrets, reach the network — because all
 three are requirements of the feature.
 
-One implementation rule protects the rest: **Steward constructs the container's flags; none
+One implementation rule protects the rest: **Vilice constructs the container's flags; none
 are ever passed through.** The moment anything accepts operator flags, `--privileged` walks
 straight past the boundary.
 

@@ -13,7 +13,7 @@
 
 ## Why Quadlet
 
-Today an app is a bare `podman run` container that Steward starts, renames, and points
+Today an app is a bare `podman run` container that Vilice starts, renames, and points
 Caddy at. That leaves three gaps and blocks two open items — and Quadlet closes all of
 them at once, which is why it's the convergence point, not just one fix:
 
@@ -30,7 +30,7 @@ daemon-reload` turns it into a real `.service` that systemd starts on boot, rest
 crash, and can carry `OOMScoreAdjust=` / `MemoryMax=`. Our Podman secrets carry over
 directly (`Secret=name,type=env,target=VAR`), volumes too (`Volume=…:U`), and the port is
 pinned in the unit (`PublishPort=127.0.0.1:<hp>:<cp>`) so a restart reuses it and the
-Caddyfile stays valid. **Caddy stays the edge**; Steward still flips its reverse-proxy
+Caddyfile stays valid. **Caddy stays the edge**; Vilice still flips its reverse-proxy
 target. **app-state stays authoritative** — the unit file is *generated* from it, never
 hand-edited, so there's no drift.
 
@@ -52,14 +52,14 @@ wide-but-shallow orchestration.
 
 2. **Rootless user units from the start** *(revised 2026-06-08, after
    `decisions/ceiling-is-the-machine.md`).* The earlier "rootful now" is dead: `deploy`,
-   `start`, `stop`, `remove` now run as the unprivileged **`steward` user** and refuse
+   `start`, `stop`, `remove` now run as the unprivileged **`_vilice` user** and refuse
    bare root, so they cannot write `/etc/containers/systemd/` or drive system `systemctl`.
-   Units live in **`~steward/.config/containers/systemd/`** and are managed with
-   **`systemctl --user`** as `steward`. `prepare` already laid the groundwork —
-   subuid/subgid ranges and `loginctl enable-linger steward` (so user units run at boot
+   Units live in **`~_vilice/.config/containers/systemd/`** and are managed with
+   **`systemctl --user`** as `_vilice`. `prepare` already laid the groundwork —
+   subuid/subgid ranges and `loginctl enable-linger vilice` (so user units run at boot
    without a login). So Slice A *completes* the container-user-model migration rather than
-   deferring it; it must also flip the `steward-snapshot` timer to `User=steward` (and read
-   `podman ps` as `steward`) so the recorder sees the now-rootless containers.
+   deferring it; it must also flip the `vilice-snapshot` timer to `User=_vilice` (and read
+   `podman ps` as `_vilice`) so the recorder sees the now-rootless containers.
 
 3. **App-driven drain — no external probing.** See below. We deliberately rejected a
    fixed timer, host socket-counting (`ss`), *and* polling Caddy's
@@ -68,7 +68,7 @@ wide-but-shallow orchestration.
 ## Deploy + drain
 
 ```
-write inactive color's unit (new image, fresh port) to ~steward/.config/containers/systemd/
+write inactive color's unit (new image, fresh port) to ~_vilice/.config/containers/systemd/
   → systemctl --user daemon-reload → start <app>-<color> → health-check
   → flip Caddy (new color gets new traffic)
   → SIGTERM old color (systemctl --user stop)
@@ -78,12 +78,12 @@ write inactive color's unit (new image, fresh port) to ~steward/.config/containe
   → remove old color's unit file → daemon-reload
 ```
 
-(All `systemctl` calls are `--user`, run as the `steward` user.)
+(All `systemctl` calls are `--user`, run as the `_vilice` user.)
 
-**Why app-driven, not external.** Steward is daemonless — there's no resident process for
+**Why app-driven, not external.** Vilice is daemonless — there's no resident process for
 an app to call, so the channel must be pull/observe, not push. The systemd lifecycle we're
 adopting already gives the right one: the app **drains on SIGTERM and signals "done" by
-exiting**, and systemd/Steward observe the state change. The app is the only party that
+exiting**, and systemd/Vilice observe the state change. The app is the only party that
 knows its own connection semantics (especially websockets), so making it authoritative is
 strictly more correct than any probe Caddy or the host can run.
 
@@ -103,11 +103,11 @@ An app that needs longer than the default can use the systemd notify protocol �
 directly in code, no library/gem dependency** (it's a datagram write to `$NOTIFY_SOCKET`):
 
 - `EXTEND_TIMEOUT_USEC=…` — extend its own grace while it finishes draining, **capped** by
-  Steward so a stuck app can't extend forever.
+  Vilice so a stuck app can't extend forever.
 - `STOPPING=1` on entry to drain.
 - clean exit = done.
 
-(An app drain-readiness HTTP endpoint Steward polls is a possible later opt-in for apps
+(An app drain-readiness HTTP endpoint Vilice polls is a possible later opt-in for apps
 that can't simply exit — not baseline.)
 
 ## The app shutdown contract (document for app authors)
@@ -121,10 +121,10 @@ cut at `TimeoutStopSec` — the degraded, but bounded, fallback. This belongs in
 ## Lifecycle = systemd
 
 A systemd-enabled unit restarts on boot even after a `podman stop`, so lifecycle verbs map
-to enable/disable to match operator intent (all `--user`, as `steward`):
+to enable/disable to match operator intent (all `--user`, as `_vilice`):
 
-- `steward start <app>` → `systemctl --user enable --now`
-- `steward stop <app>`  → `systemctl --user disable --now` (stays down across reboot)
+- `vilice start <app>` → `systemctl --user enable --now`
+- `vilice stop <app>`  → `systemctl --user disable --now` (stays down across reboot)
 - `restart` → `systemctl --user restart`
 
 (With linger enabled, a `--user` enabled unit still starts at boot without a login.)
@@ -159,8 +159,8 @@ just hold both colors during overlap — headroom is the lever, not the per-colo
 - `vilice-open-questions.md` → **Further hardening → "App unit hardening: systemd
   Quadlet"** — promoted from someday to this active plan.
 - `vilice-open-questions.md` → **Container user model** — Slice A **closes** the Podman
-  rootless half: units are rootless user units as `steward`, and the `snapshot` timer flips
-  to `User=steward`. (The auth half — scoped keys authenticate as `steward` — was already
+  rootless half: units are rootless user units as `_vilice`, and the `snapshot` timer flips
+  to `User=_vilice`. (The auth half — scoped keys authenticate as `_vilice` — was already
   settled in `ceiling-is-the-machine.md`.)
-- `console-open-questions.md` → **OOM priority** — the Steward half is Slice B's
-  `OOMScoreAdjust`; the Steward Console-as-managed-app case rides the same unit mechanism.
+- `console-open-questions.md` → **OOM priority** — the Vilice half is Slice B's
+  `OOMScoreAdjust`; the Vilice Console-as-managed-app case rides the same unit mechanism.

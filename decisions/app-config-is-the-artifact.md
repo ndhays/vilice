@@ -25,8 +25,8 @@ re-seat a digest. The procedure is reduced to a noun.
 
 ### What follows from that
 
-- **The editor is a producer, not the system.** Steward Console mints the artifact; the
-  [Steward CLI](../blueprint/vilice/overview.md) mints the same artifact from hand-written
+- **The editor is a producer, not the system.** Vilice Console mints the artifact; the
+  [Vilice CLI](../blueprint/vilice/overview.md) mints the same artifact from hand-written
   JSON. Delete either and the system stands, because the unit that moves is the document,
   not the tool. A tool that hoards state nothing else can reconstruct has failed this test;
   ours checkpoints its state into a portable artifact on every change.
@@ -70,7 +70,7 @@ right now. Promoting the config means the slot stops *being* a config and starts
   `apps/<name>/current.json` + `apps/<name>/history/<digest>.json` (the box stays able to
   stand alone — the timeline is reconstructable from the record + what's on disk). This
   replaces today's single `apps/<name>.json` + `prev_image`.
-- **In Steward Console:** the `Install` row is the slot; it points at a series of AppConfig
+- **In Vilice Console:** the `Install` row is the slot; it points at a series of AppConfig
   versions (one current), rather than holding the live config in its `config` jsonb
   column. The jsonb-on-`Install` shape is the *road not taken* (below).
 
@@ -101,9 +101,9 @@ addressable identity.
 The two-records model ([`two-records.md`](two-records.md)) already answers
 authoritative-on-conflict once the config is an addressable artifact:
 
-- **Steward Console owns desire.** The DB is where a human *edits* the spec; editing mints a
+- **Vilice Console owns desire.** The DB is where a human *edits* the spec; editing mints a
   new AppConfig version. This is the source you change.
-- **The box owns reality.** Steward converges one box to one AppConfig and keeps its own
+- **The box owns reality.** Vilice converges one box to one AppConfig and keeps its own
   copy + record; an observe read mirrors *which digest is running*
   ([`observe-reconciliation.md`](observe-reconciliation.md)).
 - **Drift is digest ≠ digest.** When the box runs a digest the slot's current doesn't

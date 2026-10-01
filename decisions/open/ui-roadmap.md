@@ -1,4 +1,4 @@
-# Steward Console — UI Build Roadmap
+# Vilice Console — UI Build Roadmap
 
 > The shape is **settled and graduated**: the canonical interface is in
 > [`blueprint/console/interface.md`](../../blueprint/console/interface.md), and the
@@ -18,15 +18,15 @@ Ordered by dependency. Built items are one line; open items keep their detail.
 1. **Theme/skin system** — BUILT.
 2. **Icon system** (lucide) — BUILT.
 3. **Live observe round trip** (`MachineStatus`, health line, cached scoped-SSH read) — BUILT.
-4. **"You are here" recognition** (`machine_id` in `steward status`, matched to
-   `STEWARD_SELF_MACHINE_ID`) — BUILT.
+4. **"You are here" recognition** (`machine_id` in `vilice status`, matched to
+   `VILICE_SELF_MACHINE_ID`) — BUILT.
 5. **Drop Dispatcher** — BUILT (nav is one-lens; concept retired, see
    [`decisions/ui-shape.md`](../ui-shape.md)).
 
 ### Wave 2 — The record as spine (observe side)
-6. **Ingestion** — *open.* The read+merge half is built (`steward record` verb, the
+6. **Ingestion** — *open.* The read+merge half is built (`vilice record` verb, the
    two-record merge, the chain-integrity line). **Still open:** the *persistent* mirror +
-   Steward Console's own-record schema (whether `Event` becomes Boxcar `Eventable` and persists
+   Vilice Console's own-record schema (whether `Event` becomes Boxcar `Eventable` and persists
    box entries for cross-fleet query — the Boxcar audit), **dedup** in a persisted
    mirror (the machine page already shows a console-issued act once — `Chain.for_machine`
    matches the `Event` to the box entry at display time), and `Snapshot` ingestion
@@ -57,19 +57,19 @@ Ordered by dependency. Built items are one line; open items keep their detail.
     install/redeploy form collects values (env recorded; secret + file values off-record on
     stdin) and `App#deploy_envelope` carries `secrets`/`secret_files`/`secret_values`.
     Direction: **secret-by-default**, one Environment panel, two visibly-distinct modes
-    mapping 1:1 to Steward's two delivery channels. See
+    mapping 1:1 to Vilice's two delivery channels. See
     [`console-open-questions.md`](console-open-questions.md) and
     [`app-library.md`](app-library.md).
-15. **Live-watch transport** — *open.* Stream an act's sub-steps from Steward (held
+15. **Live-watch transport** — *open.* Stream an act's sub-steps from Vilice (held
     connection vs. poll) so the ceremony's settle step is live, not blocking. Needs a
-    Steward sub-step protocol — Steward returns one final JSON result today, so this is a
-    **Steward-side contract change**, planned before built. Ties to the standing-connection
+    Vilice sub-step protocol — Vilice returns one final JSON result today, so this is a
+    **Vilice-side contract change**, planned before built. Ties to the standing-connection
     question.
 
 ### Wave 4 — Trust, access, the client lens
 16. **Access / rights ledger** — **BUILT** (the read half). `/access` lists every box's
     grants — actor, scope, key type, OpenSSH fingerprint — read live through the new
-    `steward actors` verb rather than from anything stored, and leads with keys Steward
+    `vilice actors` verb rather than from anything stored, and leads with keys Vilice
     did not write. Building it surfaced that the box had no way to *read* its own
     ledger: `authorize`/`revoke` wrote `authorized_keys` and nothing reported it, so the
     verb had to come first ([`blueprint/vilice/auth.md`](../../blueprint/vilice/auth.md)).
@@ -91,7 +91,7 @@ Ordered by dependency. Built items are one line; open items keep their detail.
     status page (enforces the no-leak isolation rule —
     [`journeys.md`](../../blueprint/console/journeys.md)).
 19. **Command palette** — *open.* Nav + observe queries only; off the mutate path.
-20. **Steward Console-deploys-Steward Console** — *open.* Localhost as a `Machine` row, self-deploy
+20. **Vilice Console-deploys-Vilice Console** — *open.* Localhost as a `Machine` row, self-deploy
     with the OOM-sensitive caveat surfaced. The proof. See
     [`console-open-questions.md`](console-open-questions.md).
 
@@ -116,7 +116,7 @@ Graduated 2026-08-19, all canonical in the blueprints now:
 - **Whether a gap is closable** — `candidate_machines` / `ready_machines`, surfaced on the
   app and called out once on Status
   ([`data-model.md`](../../blueprint/console/data-model.md)).
-- **Logs** — `steward logs` read on request, uncached, offered even where the key cannot
+- **Logs** — `vilice logs` read on request, uncached, offered even where the key cannot
   act.
 - **Look up digest** ([`a-tag-is-not-a-release.md`](../a-tag-is-not-a-release.md)) and the
   **release command** ([`release-command.md`](release-command.md), still open in parts).
@@ -132,7 +132,7 @@ Every entity page takes the same shape: the name and one live signal, **what it 
 short labelled list, then **Observe** (holds no act) beside **Operate** (every act, the
 ceremony inside it), with the record beneath. **Plain on the surface, exact underneath**:
 the zones interpret; the command and its raw reply live in the preview, the record, and a
-card's raw disclosure. The one bridge on the surface is the command button — the Steward
+card's raw disclosure. The one bridge on the surface is the command button — the Vilice
 mark and the verb.
 
 1. **The machine page in zones** — BUILT. Online pill, a short facts list, Observe |
@@ -152,7 +152,7 @@ pasting (#2b) — is built.
 2a. **Rename: Install → App, App → AppTemplate, InstallTarget → Placement** — BUILT,
    words and code alike (tables, routes, params, the blueprint).
 3. **What a command does on the box** — *open.* Belongs in the record entry, not on the
-   page: what apply-updates ran (its two apt commands) and how to check it. Read from `steward _commands`; where that
+   page: what apply-updates ran (its two apt commands) and how to check it. Read from `vilice _commands`; where that
    lacks the detail it grows in the binary, not the console. Open: how the console gets
    the table — `_commands` is not reachable through `_exec`, so either a build-time copy
    (as the docs site does) or a new observe verb.
@@ -166,7 +166,7 @@ pasting (#2b) — is built.
    SSH call returns, with nothing on screen saying it is running, and the command's
    output is not shown as it arrives. Wants a running state in the ceremony (the entry
    already exists as *pending*, so the record can show it) and, later, streamed output —
-   which is #15's Steward sub-step contract. *The page load half is built:* the machine
+   which is #15's Vilice sub-step contract. *The page load half is built:* the machine
    page renders at once and loads what needs the box into a frame. The Access page
    likewise, with every box read in parallel.
 7. **More observe cards** — BUILT: Backups and Certificates (from new `status` fields),

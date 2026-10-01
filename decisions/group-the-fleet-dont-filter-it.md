@@ -37,7 +37,7 @@ a menu** rather than a column in the row.
 That is the test the floor has to pass: **with tenancy never mounted, this page loses one
 item from a menu and nothing else moves.** A column would have left a hole; a grouping
 leaves a shorter list of groupings. It is the same shape the eventual
-`steward-projects` engine needs, bought early and cheaply.
+`vilice-projects` engine needs, bought early and cheaply.
 
 Nothing else on the page reaches out of layer 1 — no install counts, no project health.
 A test asserts that `owner` is the *only* grouping marked `tenancy`, so the next one
@@ -55,7 +55,7 @@ up a ring again.
 
 **Grouping by role** is the most natural way to group a fleet, and the purest layer-1
 fact there is — the box says what it is for. It is not here, because `role` is not
-persisted: it comes from a live `steward status` read, the fleet list does no per-machine
+persisted: it comes from a live `vilice status` read, the fleet list does no per-machine
 read, and drawing a list must never cost N SSH round trips. It arrives with ingestion
 (#6). Worth noting the irony — the one grouping that is *purely* the floor's own is the
 one blocked, while the one that reaches out of the ring was the easy one.

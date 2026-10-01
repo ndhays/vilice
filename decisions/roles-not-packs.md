@@ -1,6 +1,6 @@
 # Roles, not packs — a box says what it is for
 
-> Decided 2026-08-06. Narrows what Steward claims to be, drops the pack layer, and replaces
+> Decided 2026-08-06. Narrows what Vilice claims to be, drops the pack layer, and replaces
 > it with a role a box declares at `prepare`. **Supersedes** most of
 > [`core-and-packs.md`](core-and-packs.md): the discovery directory, the `$PATH` reasoning,
 > the physical split, and the `execveat` plan. What that decision got right — the internal
@@ -10,7 +10,7 @@
 
 Two questions turned out to be one.
 
-**What is Steward for?** The verb list had drifted into implying general Linux
+**What is Vilice for?** The verb list had drifted into implying general Linux
 administration — `harden` in particular reads like a security product, and an experienced
 admin's first reaction to it is "harden against what?" But of 25 verbs, four touch the OS
 and fifteen are app deployment and lifecycle. The tool was describing itself as something
@@ -22,19 +22,19 @@ deferred the physical split until a real second pack existed. None ever appeared
 
 ## The decision
 
-**Steward hosts web applications on a Linux server.** Not general administration. Cockpit
-does that, does it well, and Steward should point at it rather than compete
+**Vilice hosts web applications on a Linux server.** Not general administration. Cockpit
+does that, does it well, and Vilice should point at it rather than compete
 ([`open/landscape-scan.md`](open/landscape-scan.md)).
 
 **Packs are dropped.** One binary, all verbs, no plugin layer.
 
-**A box declares a role instead** — `steward prepare host` or `steward prepare balancer` —
+**A box declares a role instead** — `vilice prepare host` or `vilice prepare balancer` —
 and what gets installed and which ports open follow from it. See
 [`../blueprint/vilice/provision.md`](../blueprint/vilice/provision.md).
 
 ## Why packs go: two arguments that arrive together
 
-**The seam has nothing on the far side, permanently.** `steward-backup` and `steward-diag`
+**The seam has nothing on the far side, permanently.** `vilice-backup` and `vilice-diag`
 were the hypothetical second and third packs. But once the product is "host web apps,"
 backup and diagnostics *are* the product, not extensions to it. `core-and-packs.md`'s own
 rule — *"a real second use case triggers it, not symmetry"* — now cuts against the thing it
@@ -54,7 +54,7 @@ Neither argument alone would be enough. Together they are.
 
 **Kept — and it earns its keep.** `SelfDigest` is the sha256 of the running binary; `prepare`
 records it; every verb checks the running binary against that record before it runs. If
-someone swaps `/usr/local/bin/steward`, the verb refuses and the refusal is recorded. That
+someone swaps `/usr/local/bin/vilice`, the verb refuses and the refusal is recorded. That
 is real tamper detection on the hot path, and it survives with a plainer name: the file
 records **one binary digest**, not a list of pack authorizations.
 
@@ -66,7 +66,7 @@ a box whose binary was replaced rather than being locked out by the integrity ch
 implementations stay separate files with a documented line between them. That is
 organisation and documentation, not a plugin system; nothing loads anything.
 
-**Gone.** The discovery directory `/usr/libexec/steward/`, which was reserved and always
+**Gone.** The discovery directory `/usr/libexec/vilice/`, which was reserved and always
 empty. The `$PATH`-is-attack-surface reasoning, which was correct and is now moot. The
 `execveat`/`AT_EMPTY_PATH` TOCTOU closure, which was always **prose rather than code**
 because there was never a separate file to race against. The "directory locates, manifest
@@ -143,7 +143,7 @@ best alternative and still not clearly better.
 **A lateral rename costs chain-record continuity and buys nothing**, and `harden` has real
 discovery value — people search for how to harden a server. Kept.
 
-What fixes the underlying problem is not the name but the **frame**: once Steward is
+What fixes the underlying problem is not the name but the **frame**: once Vilice is
 explicitly about hosting web apps, `harden` stops sounding like a competing security product
 and reads as what it is — get the box into a sane state before it serves anything. And the
 answer to the skeptical admin was always `harden --check`, which reads `sshd -T` and `ufw`

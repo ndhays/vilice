@@ -20,8 +20,8 @@ updates). It is the box lens (what's running here), not a place to act on apps.
 
 ## Why
 
-Steward is machine-centric by nature; surfacing app acts on the machine page let
-that model leak up into Steward Console's UI. The operator lives in **app + hostname +
+Vilice is machine-centric by nature; surfacing app acts on the machine page let
+that model leak up into Vilice Console's UI. The operator lives in **app + hostname +
 is-it-green** and treats the machine as plumbing — they should never have to find
 the box their app runs on to manage it. One home for app lifecycle (the project's
 Install) keeps the mental model single and the witnessed ceremony in one place;
@@ -62,7 +62,7 @@ verbs because *"two entry points for one act is redundant."* That was true when 
 Install was the only way to deploy: the machine page offered the same act a second way,
 against a model that wanted one home.
 
-It stopped being true when Steward split into a core and verb packs. The machine view is
+It stopped being true when Vilice split into a core and verb packs. The machine view is
 now the base layer — the view of one box, shaped by the packs that box reports — and it
 does something the Install **cannot**: act on a box with no Project and no stored plan at
 all. The Install does something the machine view cannot: place one app across several

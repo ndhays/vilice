@@ -1,6 +1,6 @@
-# Steward Console — Create Machine (automated onboarding)
+# Vilice Console — Create Machine (automated onboarding)
 
-> The settled bootstrap principle (**Steward Console is never root; the box self-bootstraps and
+> The settled bootstrap principle (**Vilice Console is never root; the box self-bootstraps and
 > authorizes an `operate` key**) graduated to
 > [`decisions/machine-onboarding.md`](../machine-onboarding.md); the built **Add Machine**
 > flow and the isolation rule are in
@@ -53,10 +53,10 @@ Not settled. When it settles, it graduates to `decisions/` and the winning shape
 
 ## Create Machine — Hetzner / cloud-init
 
-Steward Console calls a provider's API (Hetzner Cloud first) to provision a server, passing
-**cloud-init userdata** that apps Steward, runs `prepare` (+ `harden`), and
-`authorize`s Steward Console's pubkey at `operate` scope — so the box boots Steward-ready and
-reachable, **zero manual steps, Steward Console never root** (cloud-init does the local
+Vilice Console calls a provider's API (Hetzner Cloud first) to provision a server, passing
+**cloud-init userdata** that apps Vilice, runs `prepare` (+ `harden`), and
+`authorize`s Vilice Console's pubkey at `operate` scope — so the box boots Vilice-ready and
+reachable, **zero manual steps, Vilice Console never root** (cloud-init does the local
 bootstrap; this satisfies [`../machine-onboarding.md`](../machine-onboarding.md)).
 
 Needs:
@@ -71,7 +71,7 @@ Needs:
 ## Other open edges
 
 - **Scope at bootstrap** — `operate` by default. `ssh` (grant authority) only where you
-  want Steward Console to run the Access ceremony (#16) on that box — recorded per machine in
+  want Vilice Console to run the Access ceremony (#16) on that box — recorded per machine in
   `Machine.scope` (extend the enum with `ssh`). See the two-axis note in
   [`../ceiling-is-the-machine.md`](../ceiling-is-the-machine.md).
 - **Reachability verify + the "connected" state** after authorize (a `status` round trip

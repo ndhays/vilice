@@ -29,7 +29,7 @@ chain rows.**
 
 One definition covers both records, because both can carry samples:
 
-- `Event::STATUS_ACTIONS` names the sample verbs — both spellings, since Steward Console
+- `Event::STATUS_ACTIONS` names the sample verbs — both spellings, since Vilice Console
   writes `observed` and a box record entry says `observe`.
 - `Event.acts` excludes them, and every chain the UI renders goes through it: Status,
   the Record destination, and the per-machine merge.
@@ -42,7 +42,7 @@ retention one.
 
 Alongside it, the seeds stopped fabricating a row shape production never creates. No app
 code has ever written a status `Event`; only `db/seeds/*` did, which is how the confusion
-got on screen in the first place. `Steward::Fake` still emits an `observe` entry, because a
+got on screen in the first place. `Vilice::Fake` still emits an `observe` entry, because a
 real box record genuinely contains them — it now exercises the reject path.
 
 ## What this does *not* settle

@@ -7,10 +7,10 @@ assignment — a contribution ships under the licence of the file it changed.
 
 A permissive substrate under a copyleft application:
 
-- **Steward Console (the control plane) → AGPL-3.0-or-later.** It is the SaaS-able value surface;
+- **Vilice Console (the control plane) → AGPL-3.0-or-later.** It is the SaaS-able value surface;
   AGPL's network clause makes hosted forks share their changes back — Agora's "make
   capture expensive," encoded in the license.
-- **Steward (the substrate) → MIT.** Steward is deliberately *small and not the moat*
+- **Vilice (the substrate) → MIT.** Vilice is deliberately *small and not the moat*
   — the un-bypassable gate that borrows OpenSSH/Caddy. Permissive maximizes adoption
   and trust in the substrate, and AGPL's network clause doesn't fit a CLI anyway (it
   would behave like GPL and only deter embedding). *(Apache-2.0 is the alternative if
@@ -24,7 +24,7 @@ A permissive substrate under a copyleft application:
 `-only` creates friction with anything future-GPL; `-or-later` is also the FSF's own
 recommendation. The cost is real and accepted: it binds the project to terms the FSF has
 not written yet. Judged the smaller risk of the two, because the licence's job here is to
-make hosted capture expensive, not to hedge against its own steward.
+make hosted capture expensive, not to hedge against its own vilice.
 
 ## Why license before the core is handwritten
 
@@ -46,7 +46,7 @@ rewrite deliberately:
 
 ## Open core, private edges
 
-Steward Console is **both** the open project *and* the software the maintainer runs for
+Vilice Console is **both** the open project *and* the software the maintainer runs for
 their own clients. The platform is open; the maintainer's client-specific config,
 secrets, and private integrations are **never in core** — they live as private
 config/plugins/env. Keeping that line clean is what makes "open and proprietary" not a
@@ -68,25 +68,25 @@ proof of concept and cannot land in the handwritten core.
 
 ## Road not taken: an all-AGPL monorepo
 
-Considered one license for everything. Rejected: Steward's value is in being a widely
+Considered one license for everything. Rejected: Vilice's value is in being a widely
 adoptable, auditable substrate, not a moat — MIT serves that better, and the capture
-worth preventing (a proprietary Steward Console SaaS) is already covered by AGPL on
-Steward Console. **Trade-off accepted:** someone could build a competing control plane on
-Steward without sharing; that's fine — the substrate spreading grows the ecosystem.
+worth preventing (a proprietary Vilice Console SaaS) is already covered by AGPL on
+Vilice Console. **Trade-off accepted:** someone could build a competing control plane on
+Vilice without sharing; that's fine — the substrate spreading grows the ecosystem.
 
 ## Mechanics
 
-- root `LICENSE` = AGPL-3.0 verbatim from gnu.org, unmodified (Steward Console + the repo
+- root `LICENSE` = AGPL-3.0 verbatim from gnu.org, unmodified (Vilice Console + the repo
   overall). GPL-family texts are never edited or prefixed — the copyright line lives in
   `README.md` and in per-file notices, so licence detection stays clean.
-- `steward/LICENSE` = MIT.
+- `vilice/LICENSE` = MIT.
 - `examples/LICENSE` = MIT. Examples exist to be copied into someone else's app; inheriting
   the root AGPL would make copying one a trap.
 - `install.sh` = MIT by SPDX header. It sits at the root but installs the substrate, so the
   repo-overall rule would otherwise give it the wrong licence.
 - `blueprint/agora.md` = CC BY-SA 4.0 (noted in the file, which also points readers back to
   the README map).
-- **No blanket SPDX sweep** over `steward/`'s Go or `console/`'s Ruby. The two LICENSE files
+- **No blanket SPDX sweep** over `vilice/`'s Go or `console/`'s Ruby. The two LICENSE files
   draw that boundary already; headers go only where a directory's licence isn't obvious
   from the nearest LICENSE file.
 - `script/`, `audit/`, and the prose in `blueprint/` and `decisions/` stay under the root

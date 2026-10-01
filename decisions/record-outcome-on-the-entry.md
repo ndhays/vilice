@@ -46,7 +46,7 @@ onto the line written 30 seconds ago is, mechanically, an UPDATE.
 
 The append-only guard's purpose is *no rewriting of what happened and no deletion*.
 An outcome is **new knowledge appended to a row**, not a rewrite of a recorded fact —
-and it can only ever move pending → settled, once. Steward Console's record was never
+and it can only ever move pending → settled, once. Vilice Console's record was never
 hash-chained anyway (the box's chain is the external anchor, see
 [two-records.md](two-records.md)); the same-DB guard is hygiene, and this refinement
 keeps that hygiene exact while letting record-before-act tell the truth about

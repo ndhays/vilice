@@ -6,8 +6,9 @@
 > carry over unchanged. **Answers** question 1 of
 > [`open/landscape-scan.md`](open/landscape-scan.md), the collision scan.
 >
-> **Not yet built.** The code, the site, and `install.sh` still say `steward`. The sweep
-> order and the one gate on it are under "Building it" below.
+> **Built, except the installer and the hosts.** The code, the console, the site and the
+> docs say Vilice. `install.sh`, the site's URLs and the repo links still name
+> `steward.agoraforge.org` and `agoraforge/steward`, behind the gate under "Building it".
 
 ## The question
 
@@ -131,9 +132,20 @@ rootless Podman containers, user units and append-only record files is the painf
 and the install base is one dev box. That box is reinstalled, and its record and key go
 with it.
 
-The sweep runs as small commits, each leaving the tree working: the Go binary, its paths
-and env vars; the console; the site, docs and blueprint; then `install.sh` and the release
-host.
+What does not move, on purpose:
+
+- **The signed releases up to `0.3.4`** keep their `steward` names. A version is one set
+  of bytes forever ([`versioning.md`](versioning.md)), and the binary's name is inside the
+  tarball, so the first Vilice binary ships as a new version. Until it does, the site's
+  release guard refuses to build — correctly.
+- **The retired `pack` value `steward-app`** in the pinned historical record entry. Boxes
+  that hold one must still verify.
+- **Past console migrations**, which are history. A new migration renames the column,
+  the stored themes, and the stored ssh users.
+
+What is left, in order: register `get.vilice.org` and the Codeberg `vilice` org; cut the
+first Vilice release; point `install.sh`, the site's URLs and the repo links at the new
+hosts; reinstall the dev box.
 
 **The gate:** `install.sh` does not change until `get.vilice.org` serves the release and
 `codeberg.org/vilice/vilice` serves the key. Point the installer at a path that does not

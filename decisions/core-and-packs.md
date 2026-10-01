@@ -8,7 +8,7 @@
 > split rather than symmetry — which is what finally argued against packs themselves. Gone:
 > the discovery directory, the `$PATH` reasoning, the physical split, and `execveat`.
 >
-> Decided 2026-08-02. Steward splits into a small **core** — the gate, the record, the
+> Decided 2026-08-02. Vilice splits into a small **core** — the gate, the record, the
 > ceiling — and **verb packs** it dispatches to. One binary for now, internally layered.
 > Discovery is one fixed root-owned directory; a root-owned manifest, not the directory,
 > is what authorizes.
@@ -47,17 +47,17 @@ becomes a security property rather than a lack of progress.
 
 ## Discovery: one fixed directory, never `$PATH`
 
-Packs are found in a single root-owned directory (`/usr/libexec/steward/`, the
+Packs are found in a single root-owned directory (`/usr/libexec/vilice/`, the
 FHS-correct home for internal executables), root-owned, `0755`, with no user-writable
-ancestor. **Not configurable** — no flag, no `STEWARD_PACK_PATH`, no config key.
+ancestor. **Not configurable** — no flag, no `VILICE_PACK_PATH`, no config key.
 
 Git discovers `git-foo` on `$PATH` and this is the convention every operator has in
 their fingers, so it is worth saying exactly why we reject it. For git, plugin discovery
 is a convenience feature. Here it is attack surface. `$PATH` is per-user,
 per-environment, and writable by anything that can touch a shell profile or the
-invocation's environment. If the core resolved `steward-backup` through it, anyone who
+invocation's environment. If the core resolved `vilice-backup` through it, anyone who
 could place a binary earlier in the search order would have injected code that runs with
-Steward's privileges **and is recorded in the chain under an innocent verb name**. The
+Vilice's privileges **and is recorded in the chain under an innocent verb name**. The
 chain would faithfully log `backup` while executing something else — worse than no
 chain, because it launders the lie. Un-bypassability would quietly acquire the footnote
 "assuming a trustworthy `$PATH`," and ambient trust of that kind is what the design
@@ -72,7 +72,7 @@ ceiling ([`ceiling-is-the-machine.md`](ceiling-is-the-machine.md)).
 ## The directory locates; the manifest authorizes
 
 Presence on the shelf is not permission. The core execs only what
-`/etc/steward/packs.manifest` — root-owned, at its own fixed path — lists by **name and
+`/etc/vilice/packs.manifest` — root-owned, at its own fixed path — lists by **name and
 SHA-256**. A binary in the right directory with the wrong hash is refused identically to
 one that is not there. This is the `@sha256` image rule ([`quadlet-deploy.md`](quadlet-deploy.md))
 turned on ourselves: we already refuse to run a container image we cannot name by digest,
@@ -112,9 +112,9 @@ discovery properly. Measuring the actual symbol coupling killed that:
 
 File separation is real; symbol separation is not. Splitting them now means exporting a
 wide app-internals API purely so the pieces can call each other across a line that buys
-nothing — the opposite of a boundary. So **v1 has one pack, `steward-app`**, holding
-deploy, quadlet, registry, backup, logs, doctor, and status. `steward-backup` and
-`steward-diag` split out when they are real packs with their own substrate, which is
+nothing — the opposite of a boundary. So **v1 has one pack, `vilice-app`**, holding
+deploy, quadlet, registry, backup, logs, doctor, and status. `vilice-backup` and
+`vilice-diag` split out when they are real packs with their own substrate, which is
 what the catalog always said they were: later ones.
 
 This is the same rule as the physical split, applied one level down — a real second use
@@ -138,7 +138,7 @@ guessed:
    a pack must be able to declare what it has on the box, and what the operator must
    know before it goes.
 
-Note what `uninstall` does *not* need: it already removes apps by invoking Steward's own
+Note what `uninstall` does *not* need: it already removes apps by invoking Vilice's own
 `remove` verb as a subprocess rather than by reaching into deploy internals. The command
 surface was already the boundary there, which is a small piece of evidence that the line
 is in a plausible place.
@@ -184,7 +184,7 @@ machinery before a second plugin is how a small project spends a year on scaffol
   mostly hold, and it makes the trust boundary a filesystem permission that a careless
   `install` or a package manager can widen without anyone noticing. The digest is
   checkable after the fact; a directory mode is not.
-- **Ship `steward pack add` now.** With packs compiled in it cannot act, and verbs are
+- **Ship `vilice pack add` now.** With packs compiled in it cannot act, and verbs are
   forever — minting one into an append-only namespace before it can do anything is a
   name we would be stuck with. It arrives with the physical split.
 - **Keep one fused binary and simply document the layers.** Documentation is not a
