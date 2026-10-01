@@ -1,5 +1,11 @@
 # The names are Steward and Steward Console
 
+> **Superseded, 2026-10-01: the name is now Vilice** —
+> [`the-name-is-vilice.md`](the-name-is-vilice.md). "Steward" collided in the CLI
+> namespace, and "positioning, not a second rename" (below) did not hold: the record
+> carries flat verbs, not the binary name, and there was still no install base. The rules
+> for packs and verbs, and the case against migration code, carry over.
+
 > Decided 2026-08-02. **Hostler → `steward`** (the binary, the account, the state dir,
 > the record) and **Switchyard → Steward Console** (code identity `console`). Verb packs
 > are named `steward-<domain>`.

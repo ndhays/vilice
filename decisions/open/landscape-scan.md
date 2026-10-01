@@ -3,7 +3,7 @@
 > The question that gates everything else, unanswered. The research prompt that would
 > answer it is the appendix — a tool, not the question.
 >
-> **Last touched:** 2026-08-03.
+> **Last touched:** 2026-10-01.
 
 ---
 
@@ -15,7 +15,7 @@
 
 ## The question
 
-Three things need **disconfirming** evidence, and the honest answer to any of them may be
+Two things need **disconfirming** evidence, and the honest answer to any of them may be
 "stop":
 
 1. **Is the shape already shipped?** A single dependency-free binary, agentless and
@@ -29,8 +29,8 @@ Three things need **disconfirming** evidence, and the honest answer to any of th
    transparency log may already be the standard answer and may make an on-box chain
    redundant rather than complementary.
 
-3. **Does the name collide?** Settled on merit
-   ([`../the-names-are-steward.md`](../the-names-are-steward.md)), never scanned.
+The third question — does the name collide? — is answered: it did, and the name is now
+Vilice ([`../the-name-is-vilice.md`](../the-name-is-vilice.md)).
 
 ## What the answers change
 
@@ -38,10 +38,6 @@ Three things need **disconfirming** evidence, and the honest answer to any of th
   conversation about whether to continue.
 - *"The record angle is unoccupied"* → it becomes the headline of the site and the project,
   not a feature on page two.
-- *"The name is muddied"* → a qualifier or a tagline, **not** a second rename: the chains
-  would already carry `steward` verbs, and verbs are forever. The repo name and release
-  host are still in the installer's chain of custody and have deliberately not moved.
-
 ---
 
 ## Appendix: the research prompt
@@ -127,25 +123,12 @@ naming separately because each is adjacent to a *different* layer:
 
 ## Questions, in priority order
 
-1. **The name — collision only.** The name is **settled** on merit
-   ([`../the-names-are-steward.md`](../the-names-are-steward.md)); what is *not*
-   settled is whether it collides. "Steward" is a common English word with plenty
-   of software precedent, which is the trade we accepted for plainness. So: is
-   anyone shipping infrastructure or ops software called **Steward**? Look for
-   Kubernetes/service-catalog components, config-management tools, agent
-   frameworks, and anything with a `steward` CLI on a package index (Homebrew,
-   apt, crates.io, npm, Go module proxy). Is the name muddied to the point that a
-   search for "steward deploy" or "steward audit log" never reaches us? (I own
-   `agoraforge.org`, so a subdomain is always available; this is about collision
-   and findability, not availability.) The retired name was "Hostler" — no need to
-   research it.
-
-2. **Closest prior art.** Who else ships a *single dependency-free binary* that is
+1. **Closest prior art.** Who else ships a *single dependency-free binary* that is
    *agentless and daemonless* and drives an existing box over SSH to deploy
    containers? I care much more about this exact shape than about the PaaS category
    generally. Include small and obscure projects; include Rust and Zig, not just Go.
 
-3. **The record.** This is the part I believe is unusual. Who treats a
+2. **The record.** This is the part I believe is unusual. Who treats a
    **tamper-evident, hash-chained, written-before-the-act audit record** as a
    product property rather than a log file? Look in three places, not one:
    - self-hosting and deploy tools;
@@ -156,16 +139,16 @@ naming separately because each is adjacent to a *different* layer:
      log) — is the transparency-log idea already the standard answer here, and does
      that make an on-box chain redundant or complementary?
 
-4. **Alive or dead.** For every project you name: last commit date, release
+3. **Alive or dead.** For every project you name: last commit date, release
    cadence, maintainer count, and whether it is one person. I want to know which of
    these are real and which are abandoned demos.
 
-5. **Should I be contributing instead of building?** Given the above, name the two
+4. **Should I be contributing instead of building?** Given the above, name the two
    or three projects where this work would land better as a contribution than as a
    separate tool — and say concretely what the contribution would be. If the honest
    answer is "none, they are architecturally incompatible," say that and explain why.
 
-6. **Trends, specifically.** Not a general AI essay. I want:
+5. **Trends, specifically.** Not a general AI essay. I want:
    - Is the self-hosting / "leave the cloud" trend growing or plateauing, with
      evidence (stars, downloads, funding, HN/Reddit volume over time)?
    - Is there a real emerging need for **auditable execution surfaces for AI
@@ -177,7 +160,7 @@ naming separately because each is adjacent to a *different* layer:
      tool: is the bar higher because building is cheap, or is distribution now the
      only thing that matters?
 
-7. **Is there a business here?** Be blunt. Who monetizes in this category, how, and
+6. **Is there a business here?** Be blunt. Who monetizes in this category, how, and
    at what scale? Distinguish "sustainable one-person project with sponsors" from
    "venture-scale company" from "beloved tool that never made money." Which is
    realistically available to a solo developer starting now?
