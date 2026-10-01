@@ -1,7 +1,7 @@
 # The name is Vilice
 
 > Decided 2026-10-01. **Steward → Vilice**, everywhere: the brand, the binary, the
-> account, the state dir, the record, the env prefix, the packs. **Supersedes** the name
+> account (as `_vilice`), the state dir, the record, the env prefix, the packs. **Supersedes** the name
 > in [`the-names-are-steward.md`](the-names-are-steward.md); its rules for packs and verbs
 > carry over unchanged. **Answers** question 1 of
 > [`open/landscape-scan.md`](open/landscape-scan.md), the collision scan.
@@ -46,11 +46,20 @@ One name, everywhere:
 |---|---|---|
 | Brand, product copy | Steward | Vilice |
 | Binary, forced command | `steward` | `vilice` |
-| Unix account, state dir, record | `steward`, `/var/lib/steward` | `vilice`, `/var/lib/vilice` |
+| Unix account | `steward` | `_vilice` |
+| State dir, record | `/var/lib/steward` | `/var/lib/vilice` |
 | Env vars | `STEWARD_*` | `VILICE_*` |
 | Packs | `steward-<domain>` | `vilice-<domain>` |
 | Console product copy | Steward Console | Vilice Console |
 | Console Rails module | `StewardConsole` | `ViliceConsole` (directory stays `console/`) |
+
+**The account is `_vilice`.** It is still the product's name — the box does not
+disagree with itself, the failure the Steward decision rejected in "rename the binary,
+keep the account" — and the underscore marks it as a service account, not a person or a
+command: the convention OpenBSD and macOS use for every daemon (`_sshd`, `_www`) and newer
+Debian system accounts follow (`_apt`, `_chrony`). So `sudo -u _vilice vilice` reads as
+"as the vilice service account, run vilice", where `sudo -u steward steward` read as a
+typo. Directories take no prefix.
 
 The Steward rules carry over as they stand: packs are named by domain, not substrate
 (`vilice-backup`, never `vilice-restic`); verbs stay flat, plain, and forever.
@@ -159,6 +168,13 @@ answer and every install fails its check.
   would make a fitting motto: bounded scope is the whole design.
 - **famulus** — a servant who obeys. A steward holds bounded authority and answers for
   it; that difference is the product.
+- **Another word for the account** (`vilicus`, say). Fixes the `sudo -u x x` stutter
+  by making the box disagree with the product about its own name again.
+- **`sudo vilice …` dropping to the account by itself**, instead of refusing root. Ends
+  the `sudo -u` entirely, but reverses a deliberate choice in
+  [`ceiling-is-the-machine.md`](ceiling-is-the-machine.md): refuse root loudly; a
+  privileged process never quietly becomes something else. A separate question, not
+  part of a rename.
 - **`cli.vilice.org` for the installer.** Names the host after the artifact, not the
   job. The host hands out releases, which may later be more than the CLI. `get.` is
   also the familiar convention.
