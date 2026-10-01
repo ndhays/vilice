@@ -4,7 +4,8 @@ nav: home
 ---
 <div class="hero">
 <h1>Vilice</h1>
-<p class="tagline">A Tool to Help You Host Your Application(s)</p>
+<p class="tagline">To Help You Host Your Own Applications</p>
+<p class="motto"><a href="/horace.html"><span lang="la">Vilice silvarum et mihi me reddentis agelli</span> — Horace, <cite>Epistles</cite> 1.14</a></p>
 </div>
 
 ## Yet Another Hosting Tool?

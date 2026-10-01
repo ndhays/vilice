@@ -87,7 +87,8 @@ which is below AA for the small uppercase labels it is used for.
 
 ## Type
 
-Two families, both Open Font License, both self-hosted. No webfont is load-bearing:
+Two working families, plus two display faces for one place — all Open Font License, all
+self-hosted. No webfont is load-bearing:
 every stack ends in a system fallback, and the page is readable before the fonts
 arrive (`font-display: swap`).
 
@@ -95,10 +96,22 @@ arrive (`font-display: swap`).
 |---|---|
 | `--font-sans` | `"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif` |
 | `--font-mono` | `"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace` |
+| `--font-display` | `"Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif` — the docs home page title only |
+| `--font-inscription` | `"Cinzel", "Trajan Pro", Georgia, serif` — the lines under that title, and the headings of the Horace page |
 
 **IBM Plex Mono is the code face** — it is the one the project already reads code
 in. IBM Plex Sans is its sibling: same designer, same skeleton, so the two sit
 together without argument.
+
+**The display faces are for the home page's hero, and the page it links to.** The name
+in **Bodoni Moda** (after Giambattista Bodoni, Parma, 1798); beneath it in **Cinzel**
+(Roman inscriptional capitals) the tagline, then the motto — the letter's first line,
+quieter in `--ink-faint` and a step smaller, linking to the whole poem (`/horace.html`,
+Latin beside Conington's public-domain English, whose two headings are Cinzel too).
+Italian for the name, Horace's Rome for the steward it comes from
+([`decisions/the-name-is-vilice.md`](../../decisions/the-name-is-vilice.md)). One weight
+each — Bodoni 600, Cinzel 400. Every other heading, the header wordmark, and
+the console stay Plex: a display face used everywhere stops being a display face.
 
 Weights: **400** and **600**, and nothing else. Two weights is enough to build a
 hierarchy, and every extra weight is another file on the wire.

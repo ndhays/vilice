@@ -1,4 +1,4 @@
-// The sitemap. The hand-written pages are listed by hand — there are five, and
+// The sitemap. The hand-written pages are listed by hand — there are six, and
 // they change about once a year. The command pages are walked from the same table
 // that generates them, so adding a verb to the CLI puts it in the sitemap.
 (commands) => `<?xml version="1.0" encoding="UTF-8"?>
@@ -8,6 +8,7 @@
   <url><loc>https://vilice.org/overview.html</loc></url>
   <url><loc>https://vilice.org/console.html</loc></url>
   <url><loc>https://vilice.org/app-library.html</loc></url>
+  <url><loc>https://vilice.org/horace.html</loc></url>
 ${ Tree.map(commands, (cmd) => `  <url><loc>https://vilice.org/commands/${ cmd.name }.html</loc></url>
 `) }</urlset>
 `

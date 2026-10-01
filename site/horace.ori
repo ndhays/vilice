@@ -1,0 +1,28 @@
+// Horace, Epistles 1.14 — the letter Vilice is named from, in Latin and in English.
+// Returns a document for page.ori to wrap. Linked from the home page's motto.
+//
+// Both texts are public domain and kept verbatim in content/horace/: the Latin from
+// The Latin Library, the English from John Conington's 1869 verse translation (Project
+// Gutenberg #5419). They are not line-for-line — Conington rhymes in couplets — so they
+// sit side by side as two whole poems, not as a crib.
+(latin, english) => {
+  title: "Horace, Epistles 1.14"
+  _body: `        <h1>Horace, <cite>Epistles</cite> 1.14</h1>
+        <p class="lead">Horace writes to the <em>vilicus</em> — the steward who runs his
+          Sabine farm. The letter opens with <em lang="la">Vilice</em>...</p>
+        <div class="poem-pair">
+          <section class="poem" lang="la" aria-labelledby="poem-latin">
+            <h2 id="poem-latin">Latin</h2>
+            <div class="poem-text">${ Origami.htmlEscape(latin) }</div>
+            <p class="poem-source">Text: <a href="https://www.thelatinlibrary.com/horace/epist1.shtml">The Latin Library</a>,
+              which writes the consonant <em>v</em> as <em>u</em> — <em>siluarum</em> for <em>silvarum</em>.</p>
+          </section>
+          <section class="poem" lang="en" aria-labelledby="poem-english">
+            <h2 id="poem-english">English</h2>
+            <div class="poem-text">${ Origami.htmlEscape(english) }</div>
+            <p class="poem-source">Translation: John Conington, 1869, via
+              <a href="https://www.gutenberg.org/ebooks/5419">Project Gutenberg</a>. Public domain.</p>
+          </section>
+        </div>
+`
+}

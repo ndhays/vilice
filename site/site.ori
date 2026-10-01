@@ -30,6 +30,9 @@
   app-library.html = page.ori(appLibrary.ori(../examples/library.yml/), versions, help)
   app-library.yml = ../examples/library.yml
 
+  // The letter Vilice is named from, linked from the home page's motto.
+  horace.html = page.ori(horace.ori(content/horace/latin.txt, content/horace/english.txt), versions, help)
+
   // Generated: one page per command, plus the index. `/commands/` serves the index,
   // so the nav links to a folder rather than a file.
   commands = Tree.merge(
@@ -43,13 +46,16 @@
   // Static assets (stylesheets, scripts, the mark) copied as-is to /assets/.
   assets
 
-  // The two typefaces, self-hosted so the site depends on no font CDN. Latin
+  // The typefaces, self-hosted so the site depends on no font CDN: Plex everywhere,
+  // and the two home-page display faces. Latin
   // subsets, regular and semibold only — see blueprint/design/tokens.md.
   fonts = {
     "ibm-plex-sans-400.woff2": node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2
     "ibm-plex-sans-600.woff2": node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2
     "ibm-plex-mono-400.woff2": node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2
     "ibm-plex-mono-600.woff2": node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2
+    "bodoni-moda-600.woff2": node_modules/@fontsource/bodoni-moda/files/bodoni-moda-latin-600-normal.woff2
+    "cinzel-400.woff2": node_modules/@fontsource/cinzel/files/cinzel-latin-400-normal.woff2
   }
 
   // Standard crawl files. The sitemap lists the command pages by walking the same

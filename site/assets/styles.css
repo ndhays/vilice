@@ -546,9 +546,15 @@ main > details > summary {
 .hero {
   margin: var(--space-8) 0 var(--space-12);
 }
+/* The one place the site speaks in display type: the name in Bodoni (Parma, 1798),
+   the line under it in Cinzel's Roman capitals — Italian for the name, Horace's Rome
+   for the steward it comes from. Everything else stays Plex. */
 .hero h1 {
-  font-size: clamp(2.5rem, 9vw, 4rem);
-  letter-spacing: -0.03em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(3.4rem, 12.5vw, 5.75rem);
+  letter-spacing: -0.01em;
+  line-height: 1;
   margin: 0;
 }
 .hero h1::after {
@@ -564,8 +570,29 @@ main > details > summary {
    heading above it. The yellow rule sits between, so this one is spaced off the h1
    rather than hugging it. */
 .hero .tagline {
+  font-family: var(--font-inscription);
   font-size: var(--text-xl);
+  letter-spacing: 0.04em;
+  color: var(--ink);
   margin: var(--space-4) 0 0;
+}
+
+/* The motto: the first line of the letter the name comes from, a step down from the
+   tagline and quieter, and a link to the whole poem. */
+.hero .motto {
+  font-family: var(--font-inscription);
+  font-size: var(--text-sm);
+  letter-spacing: 0.03em;
+  margin: var(--space-2) 0 0;
+}
+.hero .motto a {
+  color: var(--ink-faint);
+  text-decoration: none;
+}
+.hero .motto a:hover {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-decoration-color: var(--brand-yellow);
 }
 
 /* The split: a figure beside the thing you would actually type. Below 640px it
@@ -790,3 +817,31 @@ main h2.section {
 }
 .library-app dt { color: var(--muted); }
 .library-app dd { margin: 0; overflow-wrap: anywhere; }
+
+/* ------------------------------------------------------------------- poem --- */
+
+/* Horace's letter, Latin beside English. Two whole poems rather than a crib — the
+   translation rhymes in couplets, so the lines do not pair — and they stack below
+   the width where two columns of verse would wrap. */
+.poem-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--space-8);
+  margin: var(--space-8) 0;
+}
+.poem h2 {
+  font-family: var(--font-inscription);
+  font-weight: 400;
+  font-size: var(--text-lg);
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--space-4);
+}
+.poem-text {
+  white-space: pre-line;
+  line-height: 1.7;
+}
+.poem-source {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  margin-top: var(--space-6);
+}
