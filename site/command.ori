@@ -1,6 +1,6 @@
 // One command's page. Returns a document for page.ori to wrap.
 //
-// The top of the page is the literal output of `steward <name> --help` — the bytes
+// The top of the page is the literal output of `vilice <name> --help` — the bytes
 // the binary printed, captured by commands.js. Nothing here rewrites, re-typesets,
 // or summarises it. If this page and the terminal ever disagreed, the site would be
 // wrong, and there is no second renderer for it to be wrong with.
@@ -8,18 +8,18 @@
 // Below that, only prose the help page genuinely cannot hold. Most commands have
 // none; see blueprint/design/patterns.md.
 (cmd) => {
-  title: `steward ${ cmd.name }`
+  title: `vilice ${ cmd.name }`
   nav: "commands"
   command: cmd.name
   sidebar: true
-  _body: `        <h1 class="command-title">steward ${ cmd.name }</h1>
+  _body: `        <h1 class="command-title">vilice ${ cmd.name }</h1>
         <p class="lead">${ cmd.summary }.</p>
         <p class="badges">
           <span class="badge scope-${ cmd.scope }">${ cmd.scope }</span>
           <span class="badge">${ cmd.recorded ? `recorded before it runs` : `not recorded — a read` }</span>
         </p>
         <div class="terminal">
-          <div class="terminal-bar">steward ${ cmd.name } --help</div>
+          <div class="terminal-bar">vilice ${ cmd.name } --help</div>
           <pre><code>${ Origami.htmlEscape(cmd.help) }</code></pre>
         </div>
 ${ cmd.notes }

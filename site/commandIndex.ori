@@ -10,10 +10,10 @@
   nav: "commands"
   sidebar: true
   _body: `        <h1>Commands</h1>
-        <p class="lead">Every verb this binary dispatches, in the order <code>steward help</code>
+        <p class="lead">Every verb this binary dispatches, in the order <code>vilice help</code>
         shows them. Each page opens with that command's real <code>--help</code> output.</p>
         <p>The three root commands change the <em>machine</em>, and no scoped key can
-        reach them. Everything else runs as the unprivileged <code>steward</code> user,
+        reach them. Everything else runs as the unprivileged <code>vilice</code> user,
         over SSH, and is recorded before it runs.</p>
 ${ Tree.map(Tree.groupBy(commands, (command) => command.section), (inSection, section) => `        <h2 class="section">${ section }</h2>
 ${ Tree.map(Tree.groupBy(inSection, (command) => command.group), (group, title) => `        <h3>${ title }</h3>

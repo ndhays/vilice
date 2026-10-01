@@ -1,7 +1,7 @@
 // The command reference, read from the binary itself at build time.
 //
-// `steward _commands` emits the whole command table as JSON, and every entry
-// carries the exact page `steward <name> --help` prints — rendered by the CLI's own
+// `vilice _commands` emits the whole command table as JSON, and every entry
+// carries the exact page `vilice <name> --help` prints — rendered by the CLI's own
 // commandHelp, not by anything here. The site prints that text verbatim. So there
 // is no second description of the CLI to keep in step with the first, and no way
 // for a published page to disagree with the terminal.
@@ -15,14 +15,14 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
-const binary = join(root, "steward", "bin", "steward");
+const binary = join(root, "vilice", "bin", "vilice");
 
 if (!existsSync(binary)) {
   // Fail loud rather than publish a site with no command reference in it.
   throw new Error(
-    `steward binary not found at ${binary}\n` +
+    `vilice binary not found at ${binary}\n` +
       `  The docs are generated from the CLI. Build it first:\n` +
-      `    make -C ../steward build`
+      `    make -C ../vilice build`
   );
 }
 
@@ -39,7 +39,7 @@ async function notes(name) {
   return String(await Origami.mdHtml(readFileSync(path, "utf8")));
 }
 
-// Keyed by command name, in the order `steward help` shows them — the binary's
+// Keyed by command name, in the order `vilice help` shows them — the binary's
 // own grouping, so the sidebar and the index cannot invent a taxonomy the CLI
 // does not have.
 const commands = {};

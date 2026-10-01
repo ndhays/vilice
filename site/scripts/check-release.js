@@ -9,12 +9,12 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const version = readFileSync(join(root, "VERSION"), "utf8").trim();
 
-const dir = join(root, "release", "published", "steward", version);
+const dir = join(root, "release", "published", "vilice", version);
 
 // Every architecture install.sh will ask for. It picks by `uname -m`, so a release
 // that published only one of these leaves the other refusing to install — and the
 // site would go on advertising a version those machines cannot get. Keep in step
-// with ARCHES in steward/Makefile and the case statement in install.sh.
+// with ARCHES in vilice/Makefile and the case statement in install.sh.
 const arches = ["amd64", "arm64"];
 
 function die(msg) {
@@ -24,18 +24,18 @@ function die(msg) {
 
 // 1. The signed release for this version must be published, for every architecture.
 const missing = arches.flatMap((arch) => {
-  const tgz = join(dir, `steward-linux-${arch}.tar.gz`);
+  const tgz = join(dir, `vilice-linux-${arch}.tar.gz`);
   return [tgz, tgz + ".sig"].filter((f) => !existsSync(f));
 });
 if (missing.length) {
-  const have = existsSync(join(root, "release", "published", "steward"))
-    ? readdirSync(join(root, "release", "published", "steward")).join(", ") || "none"
+  const have = existsSync(join(root, "release", "published", "vilice"))
+    ? readdirSync(join(root, "release", "published", "vilice")).join(", ") || "none"
     : "none";
   die(
     `Release for v${version} is incomplete.\n` +
       missing.map((f) => `  Missing: ${f.slice(root.length + 1)}`).join("\n") +
       `\n  Published versions: ${have}\n` +
-      `  Run \`make -C steward release\` first.`
+      `  Run \`make -C vilice release\` first.`
   );
 }
 

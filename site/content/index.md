@@ -1,16 +1,16 @@
 ---
-title: Steward
+title: Vilice
 nav: home
 ---
 <div class="hero">
-<h1>Steward</h1>
+<h1>Vilice</h1>
 <p class="tagline">A Tool to Help You Host Your Application(s)</p>
 </div>
 
 ## Yet Another Hosting Tool?
 
-Steward was built with the goal of making web application hosting boring and durable.
-Despite its name, it is not meant to be fancy, but rather safe and predictable. Steward is
+Vilice was built with the goal of making web application hosting boring and durable.
+Despite its name, it is not meant to be fancy, but rather safe and predictable. Vilice is
 also free and open source. While built with purpose, it was built primarily with Anthropic
 Claude LLM vibes — so use it at your own risk. Report concerns and submit contributions to
 help improve it.
@@ -22,39 +22,39 @@ help improve it.
 </div>
 <div class="split-do">
 
-**Install Steward:**
+**Install Vilice:**
 
 ```bash
 curl -fsSL https://steward.agoraforge.org/install.sh | sudo bash -s -- {{version}}
 ```
 
-[View all Steward commands here](/commands/).
+[View all Vilice commands here](/commands/).
 
 </div>
 </div>
 
-Part of Steward's reliability is its controlled access plane: every command is gated by a
+Part of Vilice's reliability is its controlled access plane: every command is gated by a
 scoped SSH key, and every action that changes the box is written to a hash-chained log on
 the machine — *before* it is executed, so nothing happens off the books. Security starts by
 locking down a fresh Ubuntu box with standard commands and tooling, and then preparing that
 machine for its purpose as an app host or a load balancer.
 
-That holds because **no key gets a shell**. Steward is the accountable control plane, not
+That holds because **no key gets a shell**. Vilice is the accountable control plane, not
 your admin access — you still reach the box as yourself, and it sits alongside the tools
 you already use rather than replacing them. See
 [Not Your Admin Access](/overview.html#not-your-admin-access).
 
 ### Dependencies
 
-<p class="tagline">Tools Steward Builds On</p>
+<p class="tagline">Tools Vilice Builds On</p>
 
-Steward writes almost none of this itself. It is a gate and a scribe, and the work is done
+Vilice writes almost none of this itself. It is a gate and a scribe, and the work is done
 by open source tools that already do it well:
 
 <div class="tools">
 
 - [**OpenSSH**](https://www.openssh.com) — the access plane. The key is the identity and the forced command is its scope. No key gets a shell.
-- [**systemd**](https://systemd.io) — residency. Apps are ordinary units and a timer keeps the record ticking, so Steward needs no daemon of its own.
+- [**systemd**](https://systemd.io) — residency. Apps are ordinary units and a timer keeps the record ticking, so Vilice needs no daemon of its own.
 - [**Podman**](https://podman.io) — rootless containers, run as Quadlet units under systemd.
 - [**Caddy**](https://caddyserver.com) — hostname routing and automatic HTTPS.
 - [**restic**](https://restic.net) — encrypted, deduplicated backups to a repo you own.
@@ -65,14 +65,14 @@ by open source tools that already do it well:
 </div>
 
 Everything they write is their own plain config file, readable by an admin who has never
-heard of Steward — and left in place if Steward is removed.
+heard of Vilice — and left in place if Vilice is removed.
 
 ### Inspiration
 
 <p class="tagline">Other Self-Hosting Tools</p>
 
 Kamal (and [Once](https://once.com)) were the inspiration that led to the creation of
-Steward. The reliability of Linux, the ever-worsening-doom-loop of big name tech, cloud
+Vilice. The reliability of Linux, the ever-worsening-doom-loop of big name tech, cloud
 price-gauging, and new tools that made deployment within reach to the average developer,
 all combined to make the actual computer seem a lot less scary. However, there are a lot of
 other great self-hosting tools out there that may be better for your specific needs.
@@ -92,7 +92,7 @@ other great self-hosting tools out there that may be better for your specific ne
 
 ### Proof of Concept
 
-The current version of Steward is a proof of concept, built with significant use of LLM
+The current version of Vilice is a proof of concept, built with significant use of LLM
 tools. The goal is one day to rebuild it by
 hand and host it on [Codeberg](https://codeberg.org), in a way that complies with the
 generative-AI clause of their
@@ -100,6 +100,6 @@ generative-AI clause of their
 Until then the repository is
 [self-hosted](https://git.agoraforge.org/agoraforge/steward) on
 [Forgejo](https://forgejo.org) — the same software Codeberg runs, and built by the same
-people — and deployed with Steward itself.
+people — and deployed with Vilice itself.
 
 </aside>

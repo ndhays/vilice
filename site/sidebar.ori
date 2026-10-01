@@ -1,4 +1,4 @@
-// The command sidebar: every command, sectioned and grouped exactly as `steward
+// The command sidebar: every command, sectioned and grouped exactly as `vilice
 // help` sections and groups them, because both levels come from the binary
 // (core.Groups) rather than from a list kept here. Shown only on /commands/ pages.
 //

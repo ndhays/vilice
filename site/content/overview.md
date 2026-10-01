@@ -6,79 +6,79 @@ title: Overview
 
 **Contents:** [Not Your Admin Access](#not-your-admin-access) &middot; [Roles](#roles) &middot; [Apps](#apps) &middot; [AppConfig](#appconfig) &middot; [Spec](#spec) &middot; [Secrets](#secrets) &middot; [Examples](#examples)
 
-Steward hosts web applications on a Linux server. It is one Go binary — a gate and a
+Vilice hosts web applications on a Linux server. It is one Go binary — a gate and a
 scribe, not a runtime. Every action is a named actor, a declared scope, and a record
 written before it runs, and there is no path to the box's power that skips that.
 
 ## Not Your Admin Access
 
-**Steward is the accountable control plane. It is not how you administer the box.**
+**Vilice is the accountable control plane. It is not how you administer the box.**
 
 No key gets a shell, at any scope — an empty command is refused at every rung. That is
-not a missing feature, it is the mechanism. A shell as the `steward` user could run
+not a missing feature, it is the mechanism. A shell as the `_vilice` user could run
 containers directly, hand-write a unit, or rewrite Caddy's config, and none of it would
 reach the record: the log would show that a session opened at 14:32 and nothing about
 what it did. One unrecorded door is enough to end the claim, so there isn't one.
 
-So Steward offers no route to a database console, a one-off script, or a look around the
+So Vilice offers no route to a database console, a one-off script, or a look around the
 filesystem. You reach those the way you always have — SSH to the box as **yourself**, with
-your own account and your own key, separate from the scoped keys Steward holds.
+your own account and your own key, separate from the scoped keys Vilice holds.
 
-Which means Steward **sits alongside the tools you already use** rather than replacing
-them. Keep your shell, Cockpit, Ansible, your provider's web console. Steward is not
+Which means Vilice **sits alongside the tools you already use** rather than replacing
+them. Keep your shell, Cockpit, Ansible, your provider's web console. Vilice is not
 competing for that job and does not want it. What it adds is that the operations that
 matter — deploy, roll back, start, stop, remove, grant a key — leave a trail naming who
 did them and when.
 
-Reading is different, and is offered: `steward status`, `steward logs`, and
-`steward record` are `observe` scope, because looking changes nothing.
+Reading is different, and is offered: `vilice status`, `vilice logs`, and
+`vilice record` are `observe` scope, because looking changes nothing.
 
 ## Roles
 
-Steward prepares a box for a specific role.
+Vilice prepares a box for a specific role.
 
 <div class="roles">
 <div class="role">
 <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="7" rx="1.5"/><rect x="3" y="13.5" width="18" height="7" rx="1.5"/><line x1="6.5" y1="7" x2="6.5" y2="7"/><line x1="6.5" y1="17" x2="6.5" y2="17"/></svg>
 <h3>host</h3>
 <p>Runs your apps, as rootless containers under systemd. Gets Podman, Caddy and restic.</p>
-<p class="role-cmd"><code>sudo steward prepare host</code></p>
+<p class="role-cmd"><code>sudo vilice prepare host</code></p>
 </div>
 <div class="role">
 <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="5.5" r="2.5"/><circle cx="19" cy="18.5" r="2.5"/><path d="M7.4 11 16.6 6.5"/><path d="M7.4 13 16.6 17.5"/></svg>
 <h3>balancer</h3>
 <p>Fronts other boxes and runs no apps of its own. Gets Caddy alone — a container runtime
 it would never use is only surface to patch.</p>
-<p class="role-cmd"><code>sudo steward prepare balancer</code></p>
+<p class="role-cmd"><code>sudo vilice prepare balancer</code></p>
 </div>
 </div>
 
 ### Note on Roles
 
 A balancer is a separate role precisely because it owns `:80` and `:443` and would not
-function inside a container. Steward CLI also enforces that once a box is prepared for one
+function inside a container. Vilice CLI also enforces that once a box is prepared for one
 role, it cannot be re-prepared as the other — converting a machine is a decision, not a
 typo. (Re-stating the role it already has is idempotent, like the rest of `prepare`.)
 
 ## Apps
 
-An app on Steward is a container image that is defined with a JSON config.
+An app on Vilice is a container image that is defined with a JSON config.
 
-[`steward deploy`](/commands/deploy.html) pulls the app image, brings the new container up
+[`vilice deploy`](/commands/deploy.html) pulls the app image, brings the new container up
 alongside the one already serving, polls it until it answers healthy, and only then moves
 traffic across. If it never answers, the old app is left running and the deploy fails — a
 bad image costs you an error message, not an outage. The image that was serving is
-remembered as last-good, so [`steward rollback`](/commands/rollback.html) is always
+remembered as last-good, so [`vilice rollback`](/commands/rollback.html) is always
 available.
 
 Images are **digest-pinned** (`ref@sha256:…`) so there is never confusion about which
 version of the app is deployed and running.
 
-Steward drives helpful open source hosting tools it did not write —
+Vilice drives helpful open source hosting tools it did not write —
 [Podman](https://podman.io) for rootless containers, [Caddy](https://caddyserver.com) for
 routing and automatic HTTPS, and [restic](https://restic.net) for encrypted backups.
 Everything it writes uses the underlying tool's config, so it is readable by an admin who
-has never heard of Steward, and left in place if Steward is removed.
+has never heard of Vilice, and left in place if Vilice is removed.
 
 ## AppConfig
 
@@ -86,23 +86,23 @@ The AppConfig defines the app. It exists separately from its app code (which mea
 codebase image could be deployed in different configurations to different machines). A
 change in config is necessarily a redeployment.
 
-Here is an example of the AppConfig (Steward Console itself):
+Here is an example of the AppConfig (Vilice Console itself):
 
 ```jsonc
 // console.json — the desired state, recorded by digest on every deploy
 {
-  "image":     "ghcr.io/agoraforge/steward-console@sha256:…",
+  "image":     "ghcr.io/agoraforge/vilice-console@sha256:…",
   "hostnames": ["console.example"],
   "port":      4000,
   "health":    "/up",
   "env":       { "HTTP_PORT": "4000" },
   "secrets":   ["RAILS_MASTER_KEY"],
-  "volumes":   ["steward-console-storage:/rails/storage"],
+  "volumes":   ["vilice-console-storage:/rails/storage"],
   "release":   ["bin/rails", "db:migrate"]
 }
 ```
 
-[`steward deploy`](/commands/deploy.html) reads this as the `app` half of an envelope on
+[`vilice deploy`](/commands/deploy.html) reads this as the `app` half of an envelope on
 stdin. The other half carries the [secret values](#secrets), which the config itself never
 holds.
 
@@ -113,7 +113,7 @@ holds.
 | `image` | string | yes | The container image, **digest-pinned** (`name@sha256:…`). Tags aren't stable; the digest is the code's identity. |
 | `hostnames` | string[] | yes | The hostnames Caddy routes to this app. TLS is issued automatically. Each must be a site address — `app.example.com`, `http://app.example.com`, `*.example.com`, or `host:port`. |
 | `port` | number | yes | The port the app listens on inside its container. |
-| `health` | string | no | HTTP path Steward probes before sending traffic. Defaults to root `/`. |
+| `health` | string | no | HTTP path Vilice probes before sending traffic. Defaults to root `/`. |
 | `env` | object | no | Non-secret environment, as key/value pairs. Recorded in the clear. |
 | `secrets` | string[] | no | **Names** of secrets the box injects as env. Values are supplied at deploy and **never recorded** — see [Secrets](#secrets). |
 | `volumes` | string[] | no | Volume mounts, `name:/path/in/container`. The **declaration**, not the data; volumes survive redeploys. A host path instead of a name is a bind mount, and must live under `/srv`. |
@@ -136,7 +136,7 @@ which is what keeps the config safe to record and safe to keep in version contro
 }
 ```
 
-Steward puts each value in the box's Podman secret store and injects it into the container
+Vilice puts each value in the box's Podman secret store and injects it into the container
 as env. Nothing about it reaches the record or the command line.
 
 ### On Every Deploy
@@ -148,7 +148,7 @@ refused too.
 The plain way is a file, and it needs nothing you do not have:
 
 ```bash
-steward deploy console < envelope.json
+vilice deploy console < envelope.json
 ```
 
 To keep the value out of a second file, build the envelope in the pipe instead. `jq` does
@@ -157,7 +157,7 @@ that in one line, though it is not on a fresh Ubuntu box — `sudo apt install j
 ```bash
 jq --arg key "$RAILS_MASTER_KEY" \
    '{ app: ., secret_values: { RAILS_MASTER_KEY: $key } }' console.json \
-  | steward deploy console
+  | vilice deploy console
 ```
 
 The deploy scripts in
@@ -172,7 +172,7 @@ Three real apps, from the smallest thing that deploys to one that needs a secret
 
 [nginx](https://nginx.org) answers HTTP requests and serves files. This is the smallest
 config that works: the image, the hostname Caddy should route, and the port the app listens
-on inside its container. Everything else takes a default — Steward polls `/` for health.
+on inside its container. Everything else takes a default — Vilice polls `/` for health.
 
 ```jsonc
 // nginx.json

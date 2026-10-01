@@ -1,4 +1,4 @@
-// Steward's documentation site. One site serves the docs, the generated command
+// Vilice's documentation site. One site serves the docs, the generated command
 // reference, AND the signed releases (under /releases/) — no separate release host.
 //
 // Hand-written pages live in content/*.md. The command pages are not hand-written:
@@ -6,14 +6,14 @@
 // build time. See decisions/help-is-the-documentation.md.
 //
 // NOTE: two things must exist before `npm run build`:
-//   steward/bin/steward         — `make -C ../steward build` (npm's prebuild does this)
-//   release/published/steward/  — `make -C ../steward release`
+//   vilice/bin/vilice         — `make -C ../vilice build` (npm's prebuild does this)
+//   release/published/vilice/  — `make -C ../vilice release`
 {
   // The platform version, read from the repo root.
   (versions) = versions.js
 
   // The command table, read from the binary: name, scope, group, summary, and the
-  // verbatim `--help` page for each. Keyed by command name, in `steward help` order.
+  // verbatim `--help` page for each. Keyed by command name, in `vilice help` order.
   (help) = help.js
 
   // Hand-written pages. `versions.fill` replaces `{{version}}` in the body, so a page

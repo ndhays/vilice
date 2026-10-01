@@ -1,6 +1,6 @@
 # site
 
-The Steward documentation site, built with [Web Origami](https://weborigami.org).
+The Vilice documentation site, built with [Web Origami](https://weborigami.org).
 
 ```bash
 npm install
@@ -8,16 +8,16 @@ npm run serve     # local preview
 npm run build     # → dist/  (drag-and-drop deploy)
 ```
 
-Both scripts build the CLI first (`make -C ../steward build`), because the command
+Both scripts build the CLI first (`make -C ../vilice build`), because the command
 pages are generated from it. `build` additionally checks that the signed release for
-the current `VERSION` is published — run `make -C ../steward release` first.
+the current `VERSION` is published — run `make -C ../vilice release` first.
 
 ## How it's wired
 
 - `content/*.md` — the hand-written pages (Markdown + front-matter `title`, `nav`):
   the home page, Overview, and Console.
 - `content/commands/*.md` — optional prose appended to a command's page. Usually absent.
-- `help.js` — **runs `steward _commands` at build time** and returns the command table:
+- `help.js` — **runs `vilice _commands` at build time** and returns the command table:
   name, scope, group, summary, and the verbatim `--help` page for each.
 - `command.ori` / `commandIndex.ori` / `sidebar.ori` / `sitemap.ori` — the generated parts.
 - `page.ori` — the shared HTML layout (banner, header, sidebar, footer).
@@ -35,9 +35,9 @@ the document in the same commit.
 ## The command pages are generated
 
 Every page under `/commands/` opens with the literal output of
-`steward <name> --help`, captured from the binary at build time. **Do not describe a
+`vilice <name> --help`, captured from the binary at build time. **Do not describe a
 command here.** If a page is missing something, the fix is in the CLI's command table
-(`steward/internal/core/dispatch.go`, `steward/internal/app/verbs.go`) — that is
+(`vilice/internal/core/dispatch.go`, `vilice/internal/app/verbs.go`) — that is
 the one source, and `core.CheckDocs` fails the Go build if a verb ships without a
 paragraph, a flag without a description, or a line too wide for the block it lands in.
 See `decisions/help-is-the-documentation.md`.

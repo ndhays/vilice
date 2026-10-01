@@ -1,11 +1,11 @@
 ---
 nav: console
-title: Steward Console
+title: Vilice Console
 ---
-# Steward Console
+# Vilice Console
 
-Steward Console is a GUI-based approach to Steward via a Rails app. It can be deployed with
-Steward itself, or run locally. For more details see the console code inside the
+Vilice Console is a GUI-based approach to Vilice via a Rails app. It can be deployed with
+Vilice itself, or run locally. For more details see the console code inside the
 [monorepo](https://git.agoraforge.org/agoraforge/steward).
 
 It holds no privilege of its own. Each machine is reached over scoped SSH with its own key,
@@ -14,18 +14,18 @@ anywhere, and revoking one box never touches another.
 
 ## Install
 
-Steward Console is an ordinary app with an ordinary AppConfig:
+Vilice Console is an ordinary app with an ordinary AppConfig:
 
 ```jsonc
-// console.json — Steward Console's own AppConfig
+// console.json — Vilice Console's own AppConfig
 {
-  "image":     "ghcr.io/agoraforge/steward-console@sha256:…",
+  "image":     "ghcr.io/agoraforge/vilice-console@sha256:…",
   "hostnames": ["console.example"],
   "port":      4000,
   "health":    "/up",
   "env":       { "HTTP_PORT": "4000" },
   "secrets":   ["RAILS_MASTER_KEY"],
-  "volumes":   ["steward-console-storage:/rails/storage"]
+  "volumes":   ["vilice-console-storage:/rails/storage"]
 }
 ```
 
@@ -46,10 +46,10 @@ one line:
 ```bash
 jq --arg key "$(cat config/master.key)" \
    '{ app: ., secret_values: { RAILS_MASTER_KEY: $key } }' console.json \
-  | steward deploy console
+  | vilice deploy console
 ```
 
-Steward stores the value in the box's Podman secret store and injects it into the container
+Vilice stores the value in the box's Podman secret store and injects it into the container
 as env. It is needed on **every** deploy, not just the first — a deploy that omits it is
 refused. A backup never includes the secret store, so this key is yours to keep: restoring
 onto a fresh box means supplying it again, or the console comes up unable to read its own
@@ -59,7 +59,7 @@ See [Secrets](/overview.html#secrets) for the general rule.
 
 ## Boxcar
 
-Steward Console is built on **[Boxcar](https://boxcar.run)** — a Rails pattern language that
+Vilice Console is built on **[Boxcar](https://boxcar.run)** — a Rails pattern language that
 encodes
 [Agora Constitution](https://git.agoraforge.org/agoraforge/steward/src/branch/main/blueprint/agora.md)
 articles as composable concerns: identity, the accountable record, scoped decisions.
