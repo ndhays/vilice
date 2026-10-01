@@ -337,11 +337,11 @@ details.menu > summary::-webkit-details-marker { display: none; }
 }
 .action-chips .chip.on .chip-count { background: var(--accent-soft); color: var(--accent); }
 
-.access-panel .own-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
-  margin-bottom: 0.9rem; }
-.access-panel .own-label { color: var(--muted); font-size: 0.85rem; }
-.access-panel .own-name { font-weight: 600; }
-.access-panel .inline-form { display: inline-flex; align-items: center; gap: 0.4rem; }
+/* Ownership, said as a sentence: "Owned by project Acme." */
+.own-line { margin: 0 0 0.35rem; font-size: 1rem; }
+.own-line .own-name { font-weight: 600; }
+.settings-section .inline-form { display: inline-flex; align-items: center; gap: 0.4rem;
+  flex-wrap: wrap; margin-top: 0.6rem; }
 
 .sharing-modes { border: 0; padding: 0; margin: 0 0 0.7rem; display: grid; gap: 0.4rem; }
 .sharing-modes .radio { display: grid; grid-template-columns: auto 1fr; gap: 0 0.5rem;
@@ -416,7 +416,12 @@ details.menu > summary::-webkit-details-marker { display: none; }
 .stub-note .icon { color: var(--muted); flex: none; margin-top: 0.1rem; }
 
 .allowlist { margin-top: 0.9rem; }
-.allowlist h3 { font-size: 0.9rem; margin: 0 0 0.4rem; }
-.grant-rows { list-style: none; padding: 0; margin: 0 0 0.6rem; display: grid; gap: 0.3rem; }
-.grant-rows li { display: flex; align-items: center; justify-content: space-between;
-  gap: 0.5rem; padding: 0.3rem 0.5rem; border: 1px solid var(--line); border-radius: 7px; }
+/* The projects a box is shared with, as chips: the name, and an × that stops sharing. */
+.grant-chips { list-style: none; padding: 0; margin: 0 0 0.6rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.grant-chips .chip { display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.15rem 0.2rem 0.15rem 0.65rem; border: 1px solid var(--line); border-radius: 999px;
+  font-size: 0.88rem; }
+.grant-chips .chip form { display: inline; margin: 0; }
+.grant-chips .chip-x { border: 0; background: none; color: var(--muted); cursor: pointer;
+  width: 1.4rem; height: 1.4rem; border-radius: 999px; line-height: 1; font-size: 1rem; }
+.grant-chips .chip-x:hover { color: var(--bad); background: var(--bad-soft); }

@@ -1,0 +1,89 @@
+<% content_for :title, "#{@machine.name} settings — Vilice" %>
+
+<%= breadcrumb [["Machines", machines_path], [@machine.name, machine_path(@machine)], ["Settings", nil]] %>
+
+<%# Machine Settings: what configures the box rather than reports on it. Its own page,
+    so none of it sits in the way of the live view (decisions/machine-settings-is-a-page.md).
+    Each change here is a recorded act (decisions/machine-ownership.md). %>
+<h1 class="settings-title"><%= icon "settings", size: 22 %> <%= @machine.name %> settings</h1>
+
+<%= render "machines/sharing", machine: @machine, projects: @projects %>
+
+<%# Vilice's key for this box, and the line that lets it in. Vilice generates the key
+    (private half encrypted); the operator runs the line on the box once. While the box
+    has never answered, the machine page leads with this same line. %>
+<% if @machine.authorize_command %>
+  <section class="panel settings-section">
+    <h2 class="settings-head"><%= icon "key-round", size: 16 %> Vilice’s key</h2>
+    <p class="note">Vilice reaches this box as <code>_vilice</code>, with its own key, at
+      <strong><%= @machine.scope %></strong> scope. To let it in, run this once on the box:</p>
+    <%= command_block(@machine.authorize_command) %>
+    <p class="note muted">Vilice holds the matching private key, encrypted, and never root.</p>
+  </section>
+<% end %>
+
+<%# ── Danger zone ────────────────────────────────────────────────────────────
+    Moving the box to another project and forgetting it. Both are a deliberate step:
+    transfer sits behind its own click, and every button carries a confirm. %>
+<section class="danger-zone">
+  <h2 class="danger-zone-head"><%= icon "triangle-alert", size: 16 %> Danger zone</h2>
+
+  <% if @machine.owner %>
+    <details class="panel danger-item">
+      <summary>
+        <span class="danger-item-head">Transfer ownership</span>
+        <span class="note muted">Move <%= @machine.name %> to another project, or to none.</span>
+      </summary>
+      <p class="note">Apps already on the box keep running. Who else may use it stays as it is.</p>
+      <%= form_with url: transfer_machine_path(@machine), method: :patch, class: "inline-form",
+            data: { turbo_confirm: "Transfer #{@machine.name} away from project #{@machine.owner.name}?" } do %>
+        <%# Nothing is picked until you pick it, so the button cannot release the box by
+            default. Releasing to no project is a choice you make by name. %>
+        <%= select_tag "machine[owner_id]",
+              options_from_collection_for_select(@projects.reject { |p| p.id == @machine.owner_id }, :id, :name) +
+                options_for_select([ [ "No project — release it", "none" ] ]),
+              prompt: "Choose a project…", class: "select", required: true %>
+        <%= button_tag "Transfer", class: "btn danger sm" %>
+      <% end %>
+    </details>
+  <% end %>
+
+  <%# Remove — forget the box here. The box keeps running. With a grant key the console
+      can revoke its own key first, as a recorded act on the box; below grant scope the
+      revoke is a line to run there. %>
+  <% remove_note = "Forget #{@machine.name} in Vilice?\n\nThe box keeps running — this only forgets it here." %>
+  <% remove_note += "\n\n#{pluralize(@apps.size, 'app')} deployed here will lose their deployment record." if @apps.any? %>
+  <div class="panel danger-item">
+    <span class="danger-item-head">Remove this machine</span>
+    <% if @machine.grant? %>
+      <p class="note">Revoke Vilice’s key on the box, then forget <strong><%= @machine.name %></strong>
+        here. The box keeps running.</p>
+    <% else %>
+      <%# Below grant scope the console cannot revoke itself, so the two halves are two
+          steps, in the order they should happen: cut the key on the box, then forget it
+          here. The button is named for the half it does. %>
+      <ol class="remove-steps">
+        <li><p class="note">Cut Vilice’s key — run this on the box:</p>
+          <%= command_block(@machine.revoke_command) %></li>
+        <li><p class="note">Forget <strong><%= @machine.name %></strong> here. The box keeps running.</p></li>
+      </ol>
+    <% end %>
+    <% if @apps.any? %>
+      <p class="note muted"><%= pluralize(@apps.size, "app") %> deployed here
+        (<%= @apps.map(&:name).join(", ") %>) will lose their deployment record.</p>
+    <% end %>
+    <div class="danger-actions">
+      <% if @machine.grant? %>
+        <%= button_to vilice_verb("revoke"), machine_path(@machine, revoke: 1), method: :delete,
+              class: "btn danger cmd sm",
+              form: { data: { turbo_confirm: "Revoke Vilice’s key on #{@machine.name} and remove it?\n\n" \
+                                             "Runs: vilice #{@machine.revoke_args}\n\nThis is a recorded act on the box." } } %>
+        <%= button_to "Forget without revoking", machine_path(@machine), method: :delete,
+              class: "btn-quiet danger sm", form: { data: { turbo_confirm: remove_note } } %>
+      <% else %>
+        <%= button_to safe_join([ icon("trash-2", size: 14), "Forget" ]), machine_path(@machine),
+              method: :delete, class: "btn danger sm", form: { data: { turbo_confirm: remove_note } } %>
+      <% end %>
+    </div>
+  </div>
+</section>

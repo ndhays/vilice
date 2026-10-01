@@ -122,15 +122,23 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
-  test "the machine page surfaces the authorize line" do
+  # Until the first read lands, the box is waiting on one thing — the authorize line,
+  # run on the box — so the machine page leads with it rather than leaving it in
+  # Settings. The line carries `sudo -u _vilice`: run bare, the box refuses it.
+  test "a box Vilice has never reached leads with its authorize line" do
     sign_in_as @user
     machine = Machine.create!(name: "edge-2", ssh_host: "5.78.1.2", scope: "operate",
                               ssh_public_key: "ssh-ed25519 AAAAKEY console@edge-2")
     offline = { ok: false, error: "unreachable", at: Time.current }
     stub_observe(status: offline, record: offline) { get machine_path(machine) }
     assert_response :success
-    assert_select ".access pre.cmd", /vilice authorize .* --client console --scope operate/
-    assert_select ".access .cmd-block .cmd-copy[aria-label=?]", "Copy command"
+    assert_select ".panel.connect pre.cmd", /\Asudo -u _vilice vilice authorize .* --client console --scope operate\z/
+    assert_select ".panel.connect .cmd-block .cmd-copy[aria-label=?]", "Copy command"
+    assert_select ".panel.connect form[action=?]", refresh_machine_path(machine)
+
+    machine.update!(last_seen_at: Time.current)
+    stub_observe(status: offline, record: offline) { get machine_path(machine) }
+    assert_select ".panel.connect", count: 0
   end
 
   # End-to-end through a real request: with the fake-observe seam on, the machine
@@ -198,34 +206,95 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # Settings configure the box; they do not report on it. They sit apart and closed,
-  # so reaching a destructive control takes a deliberate click.
-  test "machine settings are a closed section, not part of the page's body" do
+  # Settings configure the box; they do not report on it. They have their own page, so
+  # none of it sits in the way of the live view (decisions/machine-settings-is-a-page.md).
+  test "machine settings are their own page, linked from the machine page" do
     sign_in_as @user
-    m = Machine.create!(name: "edge-set", ssh_host: "x", scope: "operate")
+    owner = Project.create!(name: "Acme-set")
+    m = Machine.create!(name: "edge-set", ssh_host: "x", scope: "operate", owner: owner,
+                        ssh_public_key: "ssh-ed25519 AAAAKEY console@edge-set")
     get machine_path(m)
     assert_response :success
-    assert_select "details.page-settings > summary", /Machine Settings/
-    assert_select "details.page-settings[open]", count: 0
-    # The controls are inside it, not loose on the page.
-    assert_select "details.page-settings .access-panel"
-    assert_select "details.page-settings .panel.danger-remove"
-    # Removing is a panel, not a second disclosure: the section is already the gate,
-    # and two nested <details> read as one pattern repeated rather than two things.
-    assert_select "details.danger-remove", count: 0
+    assert_select "a[href=?]", settings_machine_path(m), /Settings/
+    assert_select ".danger-zone", count: 0
+
+    get settings_machine_path(m)
+    assert_response :success
+    assert_select ".own-line", /Owned by project\s+Acme-set/
+    assert_select ".sharing-modes input[type=radio]", 3
+    assert_select ".settings-section pre.cmd", /sudo -u _vilice vilice authorize/
+    assert_select ".danger-zone"
   end
 
-  test "the machine page offers an honest Remove with the revoke line" do
+  # Moving an owned box is a deliberate step: it sits in the danger zone behind its own
+  # click, and nothing is chosen until you choose it — so the button cannot release
+  # the box by default.
+  test "transfer is behind a click, with nothing picked" do
+    sign_in_as @user
+    m = Machine.create!(name: "edge-xf", ssh_host: "x", owner: Project.create!(name: "Acme-xf"))
+    get settings_machine_path(m)
+    assert_select ".danger-zone details.danger-item:not([open]) form[action=?]", transfer_machine_path(m)
+    assert_select ".danger-zone select[required] option[value='']", /Choose a project/
+    assert_select ".danger-zone select option[value=none]", /No project/
+  end
+
+  test "an unowned box can be given an owner outside the danger zone" do
+    sign_in_as @user
+    m = Machine.create!(name: "edge-un", ssh_host: "x")
+    get settings_machine_path(m)
+    assert_select ".own-line", /No project\s+owns this box/
+    assert_select ".settings-section form[action=?]", transfer_machine_path(m)
+    assert_select ".danger-zone form[action=?]", transfer_machine_path(m), count: 0
+  end
+
+  # Below grant scope the console cannot revoke its own key, so Remove forgets the box
+  # and shows the one line to run there.
+  test "Remove below grant scope is two steps: the revoke line, then Forget" do
     sign_in_as @user
     m = Machine.create!(name: "edge-rm", ssh_host: "x", scope: "operate")
-    get machine_path(m)
+    get settings_machine_path(m)
     assert_response :success
-    assert_select ".danger-remove pre.cmd", /vilice revoke console/
+    assert_select ".danger-item pre.cmd", "sudo -u _vilice vilice revoke console"
     # Every command shown is meant to be pasted into a shell, so none has to be
     # selected by hand — the button copies the exact text shown.
-    assert_select ".danger-remove .cmd-block .cmd-copy[data-clipboard-text-value=?]",
-                  "vilice revoke console"
-    assert_select ".danger-remove form[action=?]", machine_path(m)
+    assert_select ".danger-item .cmd-block .cmd-copy[data-clipboard-text-value=?]",
+                  "sudo -u _vilice vilice revoke console"
+    assert_select ".danger-item .remove-steps li", 2
+    assert_select ".danger-item form[action=?] button", machine_path(m), /Forget/
+    assert_select ".danger-item form[action=?]", machine_path(m, revoke: 1), count: 0
+  end
+
+  # With a grant key, Remove is the `revoke` command button: the key is cut on the box
+  # as a recorded act, then the box is forgotten here.
+  test "Remove with a grant key revokes on the box, then forgets it" do
+    sign_in_as @user
+    m = Machine.create!(name: "edge-grant", ssh_host: "x", scope: "grant")
+    get settings_machine_path(m)
+    assert_select ".danger-item form[action=?] button.cmd", machine_path(m, revoke: 1), /revoke/
+
+    called = stub_mutate { delete machine_path(m, revoke: 1) }
+    assert_equal "revoke console", called[:command]
+    assert_equal "revoked", called[:action]
+    assert_not Machine.exists?(m.id)
+    assert_redirected_to machines_path
+    assert_match(/Revoked/, flash[:notice])
+  end
+
+  test "a revoke the box refuses forgets nothing" do
+    sign_in_as @user
+    m = Machine.create!(name: "edge-refused", ssh_host: "x", scope: "grant")
+    stub_mutate(result: { ok: false, error: "unreachable" }) { delete machine_path(m, revoke: 1) }
+    assert Machine.exists?(m.id)
+    assert_redirected_to settings_machine_path(m)
+    assert_match(/Nothing was removed/, flash[:alert])
+  end
+
+  test "a revoke below grant scope is refused before the box is called" do
+    sign_in_as @user
+    m = Machine.create!(name: "edge-norev", ssh_host: "x", scope: "operate")
+    stub_mutate(refuse: true) { delete machine_path(m, revoke: 1) }
+    assert Machine.exists?(m.id)
+    assert_redirected_to settings_machine_path(m)
   end
 
   test "removing a machine records it and redirects to the fleet" do
@@ -251,7 +320,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference [ -> { Machine.count }, -> { Placement.count }, -> { Event.count } ] do
       delete machine_path(m)
     end
-    assert_redirected_to machine_path(m)
+    assert_redirected_to settings_machine_path(m)
     assert_match(/web-rm/, flash[:alert])
   end
 
@@ -443,9 +512,21 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_equal b, m.reload.owner
     assert_equal "transferred", Event.latest.first.action
 
-    patch transfer_machine_path(m), params: { machine: { owner_id: "" } }
+    patch transfer_machine_path(m), params: { machine: { owner_id: "none" } }
     assert m.reload.unowned?
     assert_equal "released", Event.latest.first.action
+  end
+
+  test "a transfer with no project chosen is refused, not read as a release" do
+    sign_in_as @user
+    a = Project.create!(name: "A-blank")
+    m = Machine.create!(name: "blank-box", ssh_host: "x", owner: a)
+
+    assert_no_difference -> { Event.count } do
+      patch transfer_machine_path(m), params: { machine: { owner_id: "" } }
+    end
+    assert_equal a, m.reload.owner
+    assert_redirected_to settings_machine_path(m)
   end
 
   private

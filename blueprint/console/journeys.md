@@ -50,13 +50,16 @@ transiently**. The why (and why the chicken-and-egg is a feature, not a bug) is 
   Decision 1 enforced on the join.
 - **Create Machine** (ahead) — cloud-init / Hetzner-API self-bootstrap, async; see the
   open doc.
-- **Remove Machine** (built) — forgets the box in the control plane only; a recorded
-  `removed machine` act, then back to the fleet. The box keeps running, and Vilice Console's
-  key stays authorized until the operator revokes it *on the box* (`Machine#revoke_command`
-  → `vilice revoke console`, shown in the honest confirm) — removing here never reaches
-  the box. `events: :nullify` keeps the record intact; the join, targets, snapshots, and
-  labels cascade, so any apps on the box are orphaned (kept, target dropped), not
-  deleted. Cutting access on the box is the Access (#16) grant-scope work, still ahead.
+- **Remove Machine** (built) — from Machine Settings' danger zone. Forgets the box in
+  the control plane: a recorded `removed machine` act, then back to the fleet. The box
+  keeps running. **With a grant key**, the console first revokes its own key on the box
+  (`vilice revoke console`, sent like any act and recorded as `revoked`); if the box
+  refuses or cannot be reached, nothing is forgotten, and *Forget without revoking* is
+  there for a box that is gone. **Below grant scope** the console cannot revoke itself,
+  so the panel is two steps: the line to run on the box (`Machine#revoke_command` →
+  `sudo -u _vilice vilice revoke console`), then a **Forget** button that only forgets.
+  `events: :nullify` keeps the record intact; the join, targets, snapshots, and labels
+  cascade, so any apps on the box are orphaned (kept, target dropped), not deleted.
 
 ## The App Library — the front-of-funnel
 

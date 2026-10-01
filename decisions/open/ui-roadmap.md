@@ -84,6 +84,10 @@ Ordered by dependency. Built items are one line; open items keep their detail.
     it belongs in the mutate component (#11) with the record-before-act confirm, and it
     needs the grant-scoped key the console does not hold today — the console reads with
     `observe`. Also open: a per-machine Access panel, versus the fleet roll-up built here.
+    *Partly answered (2026-10-01):* the console revoking **its own** key is built — Remove,
+    on Machine Settings, sends `revoke console` when the machine's key is grant-scope
+    ([`machine-settings-is-a-page.md`](../machine-settings-is-a-page.md)). Revoking *other*
+    actors, and authorizing, from this page is still open.
 17. **Chain-integrity badge** — *open.* Verify + surface `✓ record intact · N entries ·
     unbroken since prepare` (the machine page already shows per-box integrity; this is the
     fleet-level trust signal).

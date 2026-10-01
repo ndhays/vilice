@@ -13,9 +13,9 @@ class MachineGrantsController < ApplicationController
                     machine: @machine, project: project,
                     summary: "#{project.name} on #{@machine.name}")
     end
-    redirect_to @machine, notice: "Allowed #{project.name} on #{@machine.name}."
+    redirect_to settings_machine_path(@machine), notice: "Allowed #{project.name} on #{@machine.name}."
   rescue ActiveRecord::RecordInvalid => e
-    redirect_to @machine, alert: e.message.presence || "Couldn't share that machine."
+    redirect_to settings_machine_path(@machine), alert: e.message.presence || "Couldn't share that machine."
   end
 
   def destroy
@@ -27,7 +27,7 @@ class MachineGrantsController < ApplicationController
                     machine: @machine, project: project,
                     summary: "#{project.name} on #{@machine.name}")
     end
-    redirect_to @machine, notice: "Removed #{project.name} from #{@machine.name}."
+    redirect_to settings_machine_path(@machine), notice: "Removed #{project.name} from #{@machine.name}."
   end
 
   private

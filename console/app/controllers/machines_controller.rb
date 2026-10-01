@@ -1,5 +1,5 @@
 class MachinesController < ApplicationController
-  before_action :set_machine, only: %i[ show live refresh destroy sharing transfer ]
+  before_action :set_machine, only: %i[ show live refresh settings destroy sharing transfer ]
 
   # All Machines — the fleet, and the floor of the three rings. This page is about
   # the *shape* of the fleet, so grouping is the primitive rather than filtering: a
@@ -68,9 +68,16 @@ class MachinesController < ApplicationController
   # needs the box (both zones and the record), loaded into a frame right after, from
   # reads cached for 30s (Decision 3).
   def show
-    @q        = params[:q].to_s.strip
+    @q = params[:q].to_s.strip
+  end
+
+  # ── Settings ───────────────────────────────────────────────────────────────
+  # What configures the box rather than reports on it: ownership, sharing, the key,
+  # transfer and removal. Its own page, so none of it sits in the way of the live
+  # view, and reaching transfer or removal is a deliberate act.
+  def settings
     @apps     = @machine.apps.includes(:project).order(:name) # placements on this box (project optional)
-    @projects = Project.order(:name) # for the ownership / sharing controls
+    @projects = Project.order(:name)
   end
 
   # The chain merges the two records — this machine's Vilice Console events (authored)
@@ -98,10 +105,13 @@ class MachinesController < ApplicationController
   end
 
   # ── Remove ─────────────────────────────────────────────────────────────────
-  # Forget this box in the control plane. The box keeps running; this only deletes
-  # Vilice Console's record of it (its key stays authorized on the box until revoked
-  # there). A recorded own-record act. `events: :nullify` keeps the record intact;
-  # the join, targets, snapshots, and labels cascade.
+  # Forget this box in the control plane. The box keeps running; this deletes Vilice
+  # Console's record of it. A recorded own-record act. `events: :nullify` keeps the
+  # record intact; the join, targets, snapshots, and labels cascade.
+  #
+  # With `revoke`, it first cuts Vilice Console's key on the box — a recorded act on
+  # the box, sent like any other. Only a grant key can: `revoke` sits at the top of
+  # the scope ladder. If the box refuses or cannot be reached, nothing is forgotten.
   def destroy
     # Don't let a box that's still serving apps be forgotten — the apps would keep
     # running with the control plane blind to them (decisions/open/status-signals.md).
@@ -109,8 +119,24 @@ class MachinesController < ApplicationController
     live = @machine.placements.where.not(status: "retired").includes(:app)
     if live.any?
       apps = live.map { |t| t.app.name }.uniq
-      return redirect_to @machine,
+      return redirect_to settings_machine_path(@machine),
         alert: "#{@machine.name} still runs #{apps.to_sentence} — remove #{apps.one? ? "that app" : "those apps"} first."
+    end
+
+    revoked = params[:revoke].present?
+    if revoked
+      unless @machine.grant?
+        return redirect_to settings_machine_path(@machine),
+          alert: "This machine's key cannot revoke itself — that needs grant scope."
+      end
+
+      outcome = Vilice::Mutate.run(@machine, @machine.revoke_args,
+                                   actor: Current.user.email_address, action: "revoked",
+                                   summary: "Vilice Console's key on #{@machine.name}")
+      unless outcome[:result][:ok]
+        return redirect_to settings_machine_path(@machine),
+          alert: "Could not revoke the key on #{@machine.name}: #{outcome[:result][:error]}. Nothing was removed."
+      end
     end
 
     name = @machine.name
@@ -119,11 +145,12 @@ class MachinesController < ApplicationController
       Event.record!(actor: Current.user.email_address, action: "removed",
                     summary: "#{name} from Vilice")
     end
-    redirect_to machines_path,
-                notice: "Removed #{name}. The box keeps running — revoke Vilice’s key on it to cut access."
+    redirect_to machines_path, notice: revoked ?
+      "Revoked Vilice’s key on #{name} and removed it. The box keeps running." :
+      "Forgot #{name}. The box keeps running — revoke Vilice’s key on it to cut access."
   end
 
-  # ── Sharing & ownership (the Access panel) ─────────────────────────────────
+  # ── Sharing & ownership ────────────────────────────────────────────────────
   # Set how the box is shared: dedicated (owner only) / everyone / list (owner +
   # allowlist). A recorded own-record act. machine-ownership.md.
   def sharing
@@ -133,16 +160,24 @@ class MachinesController < ApplicationController
       Event.record!(actor: Current.user.email_address, action: "set",
                     machine: @machine, summary: "#{@machine.name} sharing to #{mode}")
     end
-    redirect_to @machine, notice: "Updated sharing for #{@machine.name}."
+    redirect_to settings_machine_path(@machine), notice: "Updated sharing for #{@machine.name}."
   rescue ActiveRecord::RecordInvalid => e
-    redirect_to @machine, alert: e.message
+    redirect_to settings_machine_path(@machine), alert: e.message
   end
 
   # Transfer ownership to another project, or release to no one (unowned). Never a
   # silent change — always this explicit, recorded act. Releasing is what unblocks
   # deleting the former owner. Existing apps are untouched.
+  #
+  # Releasing is asked for by name (`none`). An empty pick is refused rather than read
+  # as "release", so a form sent without a choice cannot take the owner away.
   def transfer
-    owner = Project.find_by(id: params.dig(:machine, :owner_id).presence)
+    target = params.dig(:machine, :owner_id).to_s
+    if target.blank?
+      return redirect_to settings_machine_path(@machine), alert: "Choose a project to transfer #{@machine.name} to."
+    end
+
+    owner = target == "none" ? nil : Project.find(target)
     Machine.transaction do
       @machine.update!(owner: owner)
       summary = owner ? "#{@machine.name} to #{owner.name}" :
@@ -151,7 +186,7 @@ class MachinesController < ApplicationController
                     action: owner ? "transferred" : "released",
                     machine: @machine, project: owner, summary: summary)
     end
-    redirect_to @machine, notice: owner ? "Transferred to #{owner.name}." : "Released — now unowned."
+    redirect_to settings_machine_path(@machine), notice: owner ? "Transferred to #{owner.name}." : "Released — no project owns it now."
   end
 
   private

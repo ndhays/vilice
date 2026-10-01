@@ -62,6 +62,7 @@ class MachineTest < ActiveSupport::TestCase
     assert_nil new_machine(scope: "operate").authorize_command
     m = new_machine(scope: "operate", ssh_public_key: "ssh-ed25519 AAAAKEY console@box")
     cmd = m.authorize_command
+    assert cmd.start_with?("sudo -u _vilice vilice authorize "), "granting runs as the service account"
     assert_includes cmd, "ssh-ed25519 AAAAKEY console@box"
     assert_includes cmd, "--client console"
     assert_includes cmd, "--scope operate"

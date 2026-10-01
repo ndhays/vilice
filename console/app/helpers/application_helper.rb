@@ -221,17 +221,18 @@ module ApplicationHelper
     tag.span("no owner", class: "badge unowned", title: "Transfer to an owner to use machine")
   end
 
-  # The three sharing modes, as the operator sees them (label + one-line hint).
+  # The three sharing modes, as the operator sees them: who may put apps on the box.
+  # Said from the owner's side, because ownership is the thing sharing widens.
   SHARING_MODES = {
-    "dedicated" => [ "Not shared", "Only the owner can use this box." ],
-    "everyone"  => [ "Shared with everyone", "Any project may pick it up." ],
-    "list"      => [ "Shared with a specific list", "The owner, plus the projects you allow." ]
+    "dedicated" => [ "Owner only", "Only the project that owns it." ],
+    "everyone"  => [ "Any project", "Every project may put apps on it." ],
+    "list"      => [ "Owner and chosen projects", "The owner, plus the projects you add below." ]
   }.freeze
   def sharing_mode_label(mode) = SHARING_MODES.fetch(mode).first
   def sharing_mode_hint(mode)  = SHARING_MODES.fetch(mode).last
 
   # The address Vilice Console dials. Host is what the operator gave (IP or name);
-  # port shows only when it's not the SSH default. The user is always `vilice`
+  # port shows only when it's not the SSH default. The user is always `_vilice`
   # (ceiling-is-the-machine) — noise on screen, so it's dropped here; the
   # connection still uses it.
   def ssh_address(machine)

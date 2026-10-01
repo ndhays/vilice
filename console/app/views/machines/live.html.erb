@@ -74,7 +74,7 @@
     <% if @status.maintenance_known? %>
       <p class="maint-line"><%= icon "stethoscope", size: 15 %>
         <strong>Daily at <%= @status.maintenance_time %></strong></p>
-      <p class="muted maint-note">Security patches app themselves<%=
+      <p class="muted maint-note">Security patches install themselves<%=
         "; the box reboots then if the kernel needs it" if @status.auto_reboot? %>.</p>
     <% else %>
       <p class="maint-line muted"><%= icon "stethoscope", size: 15 %>

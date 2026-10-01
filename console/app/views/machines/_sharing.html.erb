@@ -1,64 +1,70 @@
-<%# Ownership & sharing — who owns the box and which projects may pick it up. The
-    guardrail that stops one client's box landing on another's project lives behind
-    these controls (decisions/machine-ownership.md). Each change is a recorded act. %>
-<div class="panel access-panel">
-  <div class="kicker">Ownership &amp; sharing</div>
-
-  <div class="own-row">
-    <span class="own-label">Owner</span>
-    <% if machine.owner %>
-      <%= link_to machine.owner.name, machine.owner, class: "own-name" %>
-    <% else %>
-      <span class="badge unowned">unowned</span>
-    <% end %>
+<%# Ownership and sharing: which project owns the box, and which projects may put apps
+    on it. The guardrail that stops one client's box landing on another's project lives
+    behind these controls (decisions/machine-ownership.md). Each change is a recorded
+    act. Transfer is not here: moving an owned box sits in the danger zone. %>
+<% owner = machine.owner %>
+<section class="panel settings-section">
+  <h2 class="settings-head"><%= icon "handshake", size: 16 %> Ownership</h2>
+  <% if owner %>
+    <p class="own-line">Owned by project <%= link_to owner.name, owner, class: "own-name" %>.</p>
+    <p class="note muted">The owner can always put apps on this box. Who else can is set below.</p>
+  <% else %>
+    <p class="own-line"><span class="badge unowned">No project</span> owns this box.</p>
+    <p class="note muted">Until a project owns it, only the sharing below lets anyone put apps on it.</p>
+    <%# Giving an unowned box an owner takes nothing from anyone, so it sits here.
+        Moving an owned box is a transfer, and lives in the danger zone. %>
     <%= form_with url: transfer_machine_path(machine), method: :patch, class: "inline-form" do %>
-      <%= select_tag "machine[owner_id]",
-            options_from_collection_for_select(projects, :id, :name, machine.owner_id),
-            include_blank: "— release to no one —", class: "select" %>
-      <%= button_tag "Transfer", class: "btn sm" %>
+      <%= select_tag "machine[owner_id]", options_from_collection_for_select(projects, :id, :name),
+            prompt: "Choose a project…", class: "select", required: true %>
+      <%= button_tag "Make owner", class: "btn sm" %>
     <% end %>
-  </div>
+  <% end %>
+</section>
 
+<section class="panel settings-section">
+  <h2 class="settings-head"><%= icon "library-big", size: 16 %> Who can use it</h2>
+  <%# Each choice saves as you pick it — one click, recorded like any other change. %>
   <%= form_with url: sharing_machine_path(machine), method: :patch, class: "sharing-form" do %>
-    <fieldset class="sharing-modes">
+    <fieldset class="sharing-modes" aria-label="Which projects may put apps on <%= machine.name %>">
       <% Machine.sharings.keys.each do |mode| %>
         <label class="radio <%= "on" if machine.sharing == mode %>">
-          <%= radio_button_tag "machine[sharing]", mode, machine.sharing == mode %>
+          <%= radio_button_tag "machine[sharing]", mode, machine.sharing == mode,
+                onchange: "this.form.requestSubmit()" %>
           <span class="radio-label"><%= sharing_mode_label(mode) %></span>
           <small class="radio-hint"><%= sharing_mode_hint(mode) %></small>
         </label>
       <% end %>
     </fieldset>
-    <%= button_tag "Save sharing", class: "btn sm" %>
+    <noscript><%= button_tag "Save", class: "btn sm" %></noscript>
   <% end %>
 
   <% if machine.sharing_list? %>
     <div class="allowlist">
-      <h3>Allowed projects</h3>
       <% if machine.granted_projects.any? %>
-        <ul class="grant-rows">
+        <ul class="grant-chips">
           <% machine.machine_grants.includes(:project).each do |grant| %>
-            <li>
+            <li class="chip">
               <%= link_to grant.project.name, grant.project %>
               <%= button_to machine_grant_path(machine, grant), method: :delete,
-                    class: "btn-quiet danger sm", form: { data: { turbo_confirm:
-                    "Remove #{grant.project.name} from #{machine.name}?" } } do %>
-                <%= icon "trash-2", size: 13 %>
+                    class: "chip-x", title: "Stop sharing with #{grant.project.name}",
+                    "aria-label": "Stop sharing with #{grant.project.name}",
+                    form: { data: { turbo_confirm: "Stop sharing #{machine.name} with #{grant.project.name}?" } } do %>
+                <span aria-hidden="true">×</span>
               <% end %>
             </li>
           <% end %>
         </ul>
       <% else %>
-        <p class="note muted">No projects allowed yet — only the owner can use this box.</p>
+        <p class="note muted">No projects added yet, so only the owner can use it.</p>
       <% end %>
       <% addable = projects.reject { |p| p.id == machine.owner_id || machine.granted_projects.include?(p) } %>
       <% if addable.any? %>
         <%= form_with url: machine_grants_path(machine), method: :post, class: "inline-form" do %>
           <%= select_tag :project_id, options_from_collection_for_select(addable, :id, :name),
-                prompt: "Allow a project…", class: "select" %>
-          <%= button_tag "Allow", class: "btn sm" %>
+                prompt: "Add a project…", class: "select", onchange: "this.form.requestSubmit()" %>
+          <noscript><%= button_tag "Add", class: "btn sm" %></noscript>
         <% end %>
       <% end %>
     </div>
   <% end %>
-</div>
+</section>

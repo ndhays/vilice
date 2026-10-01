@@ -294,7 +294,9 @@ enough to make a group read as a group.
   91% — running low*), or *Unreachable*. No pills in the header; on the box the console
   runs on, the leading glyph is a location pin that says *you are here* on hover. What
   the box *is* sits beneath as a two-column list, labels left, values right, always in
-  the same order: **Address · Role · Owner · Sharing**. Two more rows appear only when
+  the same order: **Address · Role · Owned by · Used by**. Ownership reads as a sentence
+  fragment — *project Acme*, or *no project* — because a box is owned by a project, not
+  by a person. Two more rows appear only when
   they are news: **Box says** when the hostname the box reports differs from the name
   (the name mirrors the box, so usually it does not), and **Also serves** for clients
   beyond the owner. Access is not listed; the Operate zone says it. A missing owner or an
@@ -389,14 +391,32 @@ enough to make a group read as a group.
   **red**: *Box record unavailable — the entries below are ours alone, and end at the
   last read.* Muted would have read as "nothing to see".
 
-  **Machine Settings is a section behind a click.** Ownership and sharing, the key,
-  and removal configure the box rather than report on it, so they sit below the
-  record in a collapsed section — reaching a destructive control should take a
-  deliberate act, the rule the confirms inside it already follow. It is drawn as a
-  *section header* (caret, title, rule) and not as a card, because the disclosures
-  inside it are cards: a container that looks like its contents reads as one pattern
-  repeated. **Remove** is a panel rather than a nested disclosure for the same
-  reason — the section is already its gate, and the button carries its own confirm.
+  **Machine Settings is its own page** (`/machines/:id/settings`), reached by the
+  **Settings** button beside the labels. Ownership, sharing, the key, transfer and
+  removal configure the box rather than report on it, so none of it sits in the way of
+  the live view ([`machine-settings-is-a-page.md`](../../decisions/machine-settings-is-a-page.md)).
+  In order:
+  - **Ownership**, as a sentence: *Owned by project Acme.* An unowned box says *No
+    project owns this box* and offers **Make owner** right there — giving a box an owner
+    takes nothing from anyone.
+  - **Who can use it**: three choices — *Owner only*, *Any project*, *Owner and chosen
+    projects* — each saved as it is picked. The chosen projects are chips with an ×, and
+    an *Add a project…* picker that saves on pick.
+  - **Vilice's key**: the authorize line, copyable, with the scope it grants.
+  - **Danger zone**, drawn apart in dashed red. **Transfer ownership** is closed until
+    opened, and its picker starts on *Choose a project…*, so pressing Transfer without a
+    choice cannot release the box; releasing is its own named option (*No project —
+    release it*), and the button confirms. **Remove this machine**: with a grant key it
+    is the **`revoke`** command button — the console revokes its own key on the box as a
+    recorded act, then forgets the box, and a refusal forgets nothing; *Remove without
+    revoking* sits beside it for a box that cannot be reached. Below grant scope the
+    console cannot revoke itself, so the panel is two numbered steps — the revoke line to
+    run on the box, then a **Forget** button named for the only half it does.
+
+  **A box Vilice has never reached leads with its authorize line.** Until the first read
+  lands, the box is waiting on one thing — the line run on the box — so a **Connect**
+  panel sits above the live view with that line and a `status` button to read the box
+  once it is run. It goes away on the first successful read.
 
   **A machine-view deploy is stateless in the console.** Paste an AppConfig, it goes to
   the box on stdin, and it is *discarded* — no `App`, no `Project`, no stored spec.

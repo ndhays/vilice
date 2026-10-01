@@ -140,19 +140,24 @@ class Machine < ApplicationRecord
   def machine_option_label = never_reached? ? "#{name} — not yet authorized" : name
 
   # The line to run on the box to let Vilice Console in — authorizes our public key as a
-  # named client at this machine's scope (decisions/open/machine-onboarding.md).
-  # Vilice Console's key is born at observe/operate scope; never root.
+  # named client at this machine's scope (decisions/machine-onboarding.md). Granting
+  # runs as the box's service account, so the line says so: run bare, the box refuses
+  # it and prints this same `sudo -u _vilice` hint. Vilice Console's key is born at
+  # observe/operate scope; never root.
   def authorize_command
     return if ssh_public_key.blank?
 
-    client = ENV.fetch("VILICE_CLIENT_NAME", "console")
-    %(vilice authorize "#{ssh_public_key}" --client #{client} --scope #{scope})
+    %(sudo -u _vilice vilice authorize "#{ssh_public_key}" --client #{console_client} --scope #{scope})
   end
 
-  # The line to run on the box to cut Vilice Console's access — the counterpart to
-  # authorize_command. Removing the Machine here doesn't run this (the box keeps its
-  # authorized key until the operator revokes it on the box itself).
-  def revoke_command
-    "vilice revoke #{ENV.fetch('VILICE_CLIENT_NAME', 'console')}"
-  end
+  # What the console sends to cut its own key, over that key. Only a grant key can —
+  # `revoke` is at the top of the scope ladder.
+  def revoke_args = "revoke #{console_client}"
+
+  # The same act, as a line to run on the box by hand — for a key below grant scope.
+  def revoke_command = "sudo -u _vilice vilice #{revoke_args}"
+
+  private
+
+  def console_client = ENV.fetch("VILICE_CLIENT_NAME", "console")
 end

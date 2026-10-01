@@ -93,8 +93,10 @@ Rails.application.routes.draw do
       # The half of the machine page that needs the box, loaded into a frame after the
       # rest of the page is on screen. A read, and the same cached reads as before.
       get :live
-      # Sharing & ownership (the Access panel) — set the sharing mode, transfer or
-      # release the owner. machine-ownership.md.
+      # Machine Settings: ownership, sharing, the key, transfer and removal — its own
+      # page, apart from the box's live view (decisions/machine-settings-is-a-page.md).
+      get :settings
+      # Set the sharing mode, transfer or release the owner. machine-ownership.md.
       patch :sharing
       patch :transfer
     end

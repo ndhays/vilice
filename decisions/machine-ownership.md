@@ -42,4 +42,6 @@ on the fleet page (inert until re-owned or shared). Every change is a recorded a
 `Machine#permits?` (owner / `everyone` / `list`+grant); `ProjectMachine`
 `machine_permits_project` validation; `ProjectsController#destroy` owner guard;
 `MachinesController#sharing`/`#transfer` + `MachineGrantsController` (each records an
-Event before it acts). Schema: `machines.owner_id`, `machines.sharing`, `machine_grants`.
+Event before it acts). The controls live on Machine Settings
+([`machine-settings-is-a-page.md`](machine-settings-is-a-page.md)); a transfer must name
+its target, and releasing is asked for by name (`none`), never read from an empty pick. Schema: `machines.owner_id`, `machines.sharing`, `machine_grants`.

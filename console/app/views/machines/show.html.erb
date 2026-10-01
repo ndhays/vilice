@@ -3,7 +3,31 @@
 <%= breadcrumb [["Machines", machines_path], [@machine.name, nil]] %>
 
 <%= render "machines/head", machine: @machine, status: nil %>
-<div class="label-row"><%= render "labels/editor", labelable: @machine %></div>
+<div class="label-row with-action">
+  <%= render "labels/editor", labelable: @machine %>
+  <%# What configures the box rather than reports on it lives on its own page
+      (decisions/machine-settings-is-a-page.md). %>
+  <%= link_to safe_join([ icon("settings", size: 15), "Settings" ]), settings_machine_path(@machine), class: "btn sm" %>
+</div>
+
+<%# A box Vilice has never reached is waiting on one thing: the authorize line, run on
+    the box. So until the first read lands, that line leads the page instead of
+    sitting in Settings — the next step goes where you will look for it. %>
+<% if @machine.never_reached? && @machine.authorize_command %>
+  <div class="panel connect">
+    <h2 class="connect-head"><%= icon "key-round", size: 16 %> Connect <%= @machine.name %></h2>
+    <p class="note">Vilice has not reached this box yet. Run this once on the box, from an
+      account that can <code>sudo</code>, to let Vilice in at <strong><%= @machine.scope %></strong> scope:</p>
+    <%= command_block(@machine.authorize_command) %>
+    <div class="connect-foot">
+      <p class="note muted">Vilice holds the matching private key, encrypted, and never root.
+        Then read the box:</p>
+      <%= button_to refresh_machine_path(@machine), class: "btn cmd observe sm", title: "Read the box" do %>
+        <%= vilice_verb "status" %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
 
 <%# Everything that needs the box loads here, after the page is already on screen. The
     placeholder says what is happening in the words it is happening in: the command
@@ -14,51 +38,3 @@
     <p class="muted">Reading <%= @machine.name %> over scoped SSH…</p>
   </div>
 <% end %>
-
-<%# ── Machine settings ────────────────────────────────────────────────────────
-    A different section entirely, and behind a click. Ownership, the key, and removal
-    configure the box — they do not report on it — and they were taking the top of
-    the page. Collapsed by default so that changing anything is a thing you chose to
-    do, the same rule the destructive controls inside already follow. %>
-<details class="page-settings">
-  <summary>
-    <%= icon "chevron-down", size: 16, css_class: "icon settings-caret" %>
-    <%= icon "settings", size: 16 %>
-    <span>Machine Settings</span>
-    <span class="muted">ownership, sharing, the key, and removal</span>
-  </summary>
-
-  <%= render "machines/sharing", machine: @machine, projects: @projects %>
-
-  <%# Vilice's scoped key for this box, and the line to authorize it. Vilice generates
-      the key (private encrypted); the operator runs this on the box once to let it in.
-      See machine-onboarding.md / Access (#16). %>
-  <% if @machine.authorize_command %>
-    <details class="access" <%= "open" if @machine.never_reached? %>>
-      <summary><%= icon "shield", size: 13 %> Vilice’s key · authorize on the box</summary>
-      <p class="note">Run this once on the box (as the operator) to let Vilice in:</p>
-      <%= command_block(@machine.authorize_command) %>
-      <p class="note muted">Vilice holds the matching private key (encrypted) and never root.</p>
-    </details>
-  <% end %>
-
-  <%# Remove — forget this box in the control plane. The box keeps running; this only
-      deletes Vilice's record of it. An honest confirm, no blocking. %>
-  <% remove_note = "Remove #{@machine.name} from Vilice?\n\n" \
-                   "The box keeps running — this only forgets it here, and Vilice’s key " \
-                   "stays authorized until you revoke it on the box." %>
-  <% remove_note += "\n\n#{pluralize(@apps.size, 'app')} deployed here will lose their deployment record." if @apps.any? %>
-  <div class="panel danger-remove">
-    <h3 class="danger-head"><%= icon "trash-2", size: 15 %> Remove this Machine</h3>
-    <p class="note">This only forgets <strong><%= @machine.name %></strong> in Vilice — the box
-      keeps running, and Vilice’s key stays authorized until you revoke it on the box:</p>
-    <%= command_block(@machine.revoke_command) %>
-    <% if @apps.any? %>
-      <p class="note muted"><%= pluralize(@apps.size, "app") %> deployed here
-        (<%= @apps.map(&:name).join(", ") %>) will lose their deployment record.</p>
-    <% end %>
-    <%= button_to safe_join([ icon("trash-2", size: 14), %(Remove "#{@machine.name}") ]),
-          machine_path(@machine), method: :delete, class: "btn danger",
-          data: { turbo_confirm: remove_note } %>
-  </div>
-</details>
