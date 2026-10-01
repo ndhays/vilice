@@ -185,7 +185,7 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     assert_select "form.stack-form > [data-app-form-target=rest] > .field", 0
   end
 
-  test "create apps the app's latest version, then hands off to the deploy ceremony" do
+  test "create installs the app's latest version, then hands off to the deploy ceremony" do
     sign_in_as @user
     assert_difference [ -> { App.count }, -> { Placement.count } ], 1 do
       assert_difference -> { Event.count }, 2 do

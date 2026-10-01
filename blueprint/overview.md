@@ -19,7 +19,7 @@ mechanism — not as documentation.
 
 ## The two programs
 
-- **Vilice** — a Go CLI on every machine. It hardens the box, apps the
+- **Vilice** — a Go CLI on every machine. It hardens the box, installs the
   dependencies, and deploys applications from the machine itself. It owns the
   privilege and is where Agora becomes mechanism. Detailed spec: `blueprint/vilice/`.
 

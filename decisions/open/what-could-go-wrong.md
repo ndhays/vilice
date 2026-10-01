@@ -68,13 +68,13 @@ should tell you the fix.**
 - **Provisioning failure** (automated dedicated). A bad/absent provider token, a quota,
   or the cloud firewall above can stall a Create Machine. The app's `awaiting_machine`
   state must be able to surface **"provisioning failed"** and not hang forever.
-- **Orphans / resumability.** A multi-step app that dies mid-flow must leave a
+- **Orphans / resumability.** A multi-step install that dies mid-flow must leave a
   **resumable** row in an honest state, never a zombie — resume or discard, your choice.
-- **Version drift, said out loud.** An app pins its `Version` at app time; when
+- **Version drift, said out loud.** An app pins its `Version` at install time; when
   the App's *latest* moves, existing apps do **not** silently update. Surface it as an
   offer — *"v1.3 is now latest — re-deploy?"* — not a surprise.
 
-## "version mismatch" / app 404
+## "version mismatch" / install 404
 
 The site's `/releases/` must contain the current `VERSION`. Run
 `make -C vilice release`, then build + deploy the site. The site build guard catches

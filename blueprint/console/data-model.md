@@ -132,7 +132,7 @@ open heartbeat question.
   editing the library later never silently changes what an already-placed app runs on its
   next deploy. That is the same rule the image itself follows: copied from the Version,
   never followed.
-- **Declared inputs — names only, no values** (values are supplied at app). `env` is a
+- **Declared inputs — names only, no values** (values are supplied at install). `env` is a
   list of `{ key, secret }`: a `secret` entry is an env var delivered **off-record** (the
   box mirrors this — env vs `Secret=type=env`), so "secrets are env vars" with one flag.
   `secret_files` is a list of `{ name, path }` — values mounted as files off-record (a
@@ -209,7 +209,7 @@ open heartbeat question.
   app can have none — you are never made to invent a client to place an app. Where
   there is one it comes from the URL (`apps/new?project_id=`) and narrows the machine
   list to that project's boxes; it is never a form field. The App Library is a directory;
-  it has no app action.
+  it has no install action.
 - **No uniqueness on `name`.** The name has to be free *on the box* — that is the
   namespace it lands in — and `Placement` already enforces exactly that, independent
   of any project. A per-project scope would both miss the collision that matters (two
@@ -217,7 +217,7 @@ open heartbeat question.
 - `app_id` (nullable) — the App Library entry it was **installed from**; nil = a custom
   image. Removing the `AppTemplate` nullifies this (the app keeps running).
 - `version_id` (nullable) — the `Version` deployed; nil for custom images. `image` is
-  copied from it at app time.
+  copied from it at install time.
 - `name`, `image` (digest-pinned), `hostname`, `port`, `health`, `config` (jsonb) — `config`
   holds the non-scalar spec: `env` and `volumes` (`App#volumes`), the declarations that
   version with the app, not the data.

@@ -177,12 +177,12 @@ change, and the design insight worth keeping when this is picked up:
 
 > **apt puts bits on disk; `prepare` stays the accountable act that turns them on.**
 
-The package apps an *inert* Vilice — binary (`/usr/bin`, not `/usr/local`),
+The package installs an *inert* Vilice — binary (`/usr/bin`, not `/usr/local`),
 units shipped in `/usr/lib/systemd/system` (disabled), the `_vilice` user via
 postinst, deps declared not installed (`Depends: podman (>= 4.4), uidmap`;
 `Recommends: restic`; **caddy availability varies by release — verify, else it
 stays a prepare step**). `prepare` shrinks to the recorded root ceremony: lay the
-floor, configure Caddy routing, enable the timer. Its current `apt-get app`
+floor, configure Caddy routing, enable the timer. Its current `apt-get install`
 steps stay for the curl-install path (already idempotent).
 
 **Interaction with the recorded binary digest** ([`roles-not-packs.md`](../roles-not-packs.md)):

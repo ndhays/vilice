@@ -49,7 +49,7 @@ open thread in [`console-open-questions.md`](console-open-questions.md).
 ### 3. Stand Vilice Console up on one box and have it redeploy itself
 
 The payoff. With volumes + secrets in the envelope, Vilice Console is now a fully-expressible app.
-App it onto a box, then drive a redeploy of itself *through itself*. This **proves the
+Install it onto a box, then drive a redeploy of itself *through itself*. This **proves the
 model** end-to-end and flushes the genuinely open gap: **where the observe key really lives** when
 the thing being redeployed is the redeployer (the self-update floor —
 [`console-open-questions.md`](console-open-questions.md) "You never need Vilice Console to

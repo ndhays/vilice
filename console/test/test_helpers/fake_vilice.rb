@@ -8,7 +8,7 @@ require "json"
 # records every command Vilice Console issues and answers from a script, so a test can
 # assert *what Vilice Console sent* and *how it handled the reply*, with no ssh and no box.
 #
-# App it with `with_fake_vilice` (see test_helper.rb).
+# Install it with `with_fake_vilice` (see test_helper.rb).
 module FakeVilice
   # Minimal Process::Status stand-in — `read` only asks `success?` / `exitstatus`.
   # The status matters beyond pass/fail: **255 is ssh's own**, meaning it never got

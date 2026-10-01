@@ -63,7 +63,7 @@ transiently**. The why (and why the chicken-and-egg is a feature, not a bug) is 
 
 ## The App Library — the front-of-funnel
 
-A curated directory of apps the admin can app onto machines: saved definitions (name,
+A curated directory of apps the admin can install onto machines: saved definitions (name,
 default port/health, declared env, versions) that make the *first* app easy and
 consistent. It is **bookmarking / curation, not a security boundary** — the un-bypassable
 image allowlist is a separate Vilice-side concern (see
@@ -71,7 +71,7 @@ image allowlist is a separate Vilice-side concern (see
 (`AppTemplate → Version`, the three-tier `AppTemplate → App → Placement`, the manifest import/
 export) is specified in [`data-model.md`](data-model.md).
 
-- The library is a **pure directory** — it has no app action.
+- The library is a **pure directory** — it has no install action.
 - An app may declare **processes** — a worker, a clock — each the app's own image running
   a different command. They ride the app's deploy and rollback, so a worker can never be
   at a different version from the web process
@@ -217,7 +217,7 @@ On a shared box the care is Vilice Console-side discipline — **no Vilice chang
    return *everything* on the box, but the Project page — the shareable client status page
    — renders **only that project's own Apps**, never raw box status. A client viewing
    Project A must never see Project B.
-2. **Uniqueness guards** at app time (built): app **name** and **hostname** are
+2. **Uniqueness guards** at install time (built): app **name** and **hostname** are
    unique **per machine** (`Placement` validation), so two projects can't collide on
    the box's `apps/<name>.json` or hijack each other's route. This is the *only* uniqueness
    rule apps have — it holds across the project boundary and for placements with no

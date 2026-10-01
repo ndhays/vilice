@@ -54,7 +54,7 @@ Not settled. When it settles, it graduates to `decisions/` and the winning shape
 ## Create Machine — Hetzner / cloud-init
 
 Vilice Console calls a provider's API (Hetzner Cloud first) to provision a server, passing
-**cloud-init userdata** that apps Vilice, runs `prepare` (+ `harden`), and
+**cloud-init userdata** that installs Vilice, runs `prepare` (+ `harden`), and
 `authorize`s Vilice Console's pubkey at `operate` scope — so the box boots Vilice-ready and
 reachable, **zero manual steps, Vilice Console never root** (cloud-init does the local
 bootstrap; this satisfies [`../machine-onboarding.md`](../machine-onboarding.md)).

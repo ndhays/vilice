@@ -5,7 +5,7 @@ class App < ApplicationRecord
   belongs_to :project, optional: true
   # The App Library entry this was installed from; nil = a custom image (slice 2b).
   belongs_to :app_template, optional: true
-  # The release deployed; nil for custom images. `image` is copied from it at app.
+  # The release deployed; nil for custom images. `image` is copied from it at install.
   belongs_to :version, optional: true
 
   has_many :placements, dependent: :destroy

@@ -109,7 +109,7 @@ both centred: the figure column is 180px at the page's full width, and the two s
 one line measure 204px — they overhang the card. Stacked they are 145px, and the
 label is still a word, so no meaning is carried by colour alone. It reads as a
 caption on the mark, which is what a version is. Both the badge and the
-app command beside it are filled
+install command beside it are filled
 from `VERSION` at build time (`{{version}}`, replaced by `site/versions.js`); a docs page
 claiming a release that is not the current one is a failure mode worth removing
 rather than remembering.

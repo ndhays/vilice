@@ -77,7 +77,7 @@ the first time? Two shapes, not yet chosen:
   the self-pin) — you install it onto a box like any other app, but you can't misconfigure
   the thing that runs the control plane. Simple, lives entirely Vilice Console-side; the risk is
   a special case in a layer meant to be plain curation ([app-library.md](app-library.md)).
-- **Vilice apps Vilice Console itself.** A Vilice-native bootstrap — `vilice` brings up
+- **Vilice installs Vilice Console itself.** A Vilice-native bootstrap — `vilice` brings up
   its own control plane from the CLI with no Vilice Console in the loop (the chicken-and-egg
   seed). Cleaner for the very first box and for break-glass (stand up the UI from a bare
   prepared box), but it puts knowledge of a specific app into the substrate, which

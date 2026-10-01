@@ -35,7 +35,7 @@ class AppTemplate < ApplicationRecord
   # Health is a URL path Caddy probes — it must start with "/".
   validates :health, format: { with: %r{\A/}, message: "must start with /" }, allow_blank: true
 
-  # The app's declared inputs — *names only*, no values (values are supplied at app).
+  # The app's declared inputs — *names only*, no values (values are supplied at install).
   #   env          : [{ "key" => "PASSWORD", "secret" => true }, …]  — secret? = off-record.
   #   secret_files : [{ "name" => "config", "path" => "/etc/zot/config.json" }, …] — mounted.
   # "secrets are env vars": a secret is just an env entry delivered off-record (the box

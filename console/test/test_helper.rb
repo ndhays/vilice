@@ -64,7 +64,7 @@ module ActiveSupport
       owner.define_singleton_method(name, original)
     end
 
-    # App a scripted, offline Vilice transport for the block (Tier-1 contract
+    # Install a scripted, offline Vilice transport for the block (Tier-1 contract
     # tests). Replaces the `Vilice.ssh` subprocess seam with a FakeVilice::Transport,
     # so the real read/parse/error path runs but nothing touches the network. Yields
     # the fake: script replies with `.on(...)`, then assert with `.issued?`/`.commands`.
