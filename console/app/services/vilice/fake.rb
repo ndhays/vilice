@@ -1,9 +1,9 @@
-# Dev/test-only stand-in for the scoped-SSH read (the bottom of app/services/steward.rb).
+# Dev/test-only stand-in for the scoped-SSH read (the bottom of app/services/vilice.rb).
 #
-# When fake-observe is on, Steward.read returns a canned envelope built from a
+# When fake-observe is on, Vilice.read returns a canned envelope built from a
 # machine's `fake-health` label instead of shelling out to ssh — so a seeded
 # scenario (db/seeds/) renders deterministically with no real box, no network, and
-# no dependency on a reachable host. The envelopes match the real `steward
+# no dependency on a reachable host. The envelopes match the real `vilice
 # status|record|doctor --json` shapes, so the whole observe UI lights up exactly as
 # it would against a box.
 #
@@ -11,25 +11,25 @@
 # transport, and is refused rather than answered — see the note on `ANSWERS`.
 #
 # Off by default. Never active in production: `on?` requires both a dev/test env
-# *and* the STEWARD_FAKE_OBSERVE switch.
+# *and* the VILICE_FAKE_OBSERVE switch.
 #
 #   fake-health label → what the machine reports:
 #     ok      reachable, calm (default when the label is absent)
 #     warn    reachable, memory/disk under pressure
 #     crit    reachable, critically low + hardening drift
 #     offline unreachable (read fails, like a box that's gone)
-module Steward
+module Vilice
   module Fake
     module_function
 
     def on?
-      Rails.env.local? && ENV["STEWARD_FAKE_OBSERVE"].present?
+      Rails.env.local? && ENV["VILICE_FAKE_OBSERVE"].present?
     end
 
     # The read verbs this seam answers, and the whole of what it will answer.
     #
-    # `STEWARD_FAKE_OBSERVE` fakes *observe* — the name is the contract. But the
-    # transport it hooks (`Steward.read`) is shared with `Steward::Mutate`, so
+    # `VILICE_FAKE_OBSERVE` fakes *observe* — the name is the contract. But the
+    # transport it hooks (`Vilice.read`) is shared with `Vilice::Mutate`, so
     # without this list a canned `ok` would come back for a deploy as well. That is
     # the one answer worse than none: `Mutate.run` would settle a witnessed Event as
     # **succeeded** for an act that never reached a box — a record entry asserting
@@ -42,7 +42,7 @@ module Steward
     # could not be read — never as a box where nobody has access.
     ANSWERS = %w[ status record doctor logs ].freeze
 
-    # The {ok:, data:, at:} result Steward.read would return, per verb.
+    # The {ok:, data:, at:} result Vilice.read would return, per verb.
     def envelope(machine, command)
       at   = Time.current
       verb = command.to_s.split.first
@@ -50,7 +50,7 @@ module Steward
       unless ANSWERS.include?(verb)
         return { ok: false, at: at,
                  error: "fake-observe answers #{ANSWERS.join(', ')} only — it will not fake " \
-                        "`#{verb}`. Unset STEWARD_FAKE_OBSERVE to reach a real box." }
+                        "`#{verb}`. Unset VILICE_FAKE_OBSERVE to reach a real box." }
       end
 
       health = health_for(machine)
@@ -189,12 +189,12 @@ module Steward
       { "count" => n, "security" => n, "packages" => pkgs }
     end
 
-    # The box's own (witnessed) record. The chain merge adds Steward Console's authored
+    # The box's own (witnessed) record. The chain merge adds Vilice Console's authored
     # events separately; these stand in for entries written on the box itself —
     # one under our own client (authored) so the merge shows both origins.
     def record_data(machine)
       app = machine.apps.first&.name || "app"
-      client = ENV.fetch("STEWARD_CLIENT_NAME", "console")
+      client = ENV.fetch("VILICE_CLIENT_NAME", "console")
       entries = [
         { "time" => 26.hours.ago.iso8601, "actor" => "ci-deployer",    "action" => "deploy",  "args" => [ app ] },
         { "time" => 90.minutes.ago.iso8601, "actor" => client,         "action" => "restart", "args" => [ app ] },
@@ -209,10 +209,10 @@ module Steward
       label_value(machine, "fake-health") || "ok"
     end
 
-    # Light up "you are here" when a machine is tagged fake-self and Steward Console
+    # Light up "you are here" when a machine is tagged fake-self and Vilice Console
     # knows its own id; otherwise a stable per-machine id.
     def self_id_for(machine)
-      self_id = ENV["STEWARD_SELF_MACHINE_ID"]
+      self_id = ENV["VILICE_SELF_MACHINE_ID"]
       return self_id if self_id.present? && label_value(machine, "fake-self")
       "fake-#{machine.id}"
     end

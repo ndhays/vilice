@@ -38,7 +38,7 @@ class MutationsController < ApplicationController
     return redirect_to(new_machine_mutation_path(@machine, act: @mutation.act.verb,
       app_id: @mutation.app&.id, from: @from)) unless @mutation.composed?
 
-    outcome = Steward::Mutate.run(
+    outcome = Vilice::Mutate.run(
       @machine, @mutation.command,
       actor: Current.user.email_address, action: @mutation.action,
       app: @mutation.app, summary: @mutation.summary, stdin: @mutation.stdin

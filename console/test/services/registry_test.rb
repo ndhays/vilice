@@ -61,7 +61,7 @@ class RegistryTest < ActiveSupport::TestCase
   test "an authenticated registry says so and points at the box" do
     error = assert_raises(Registry::Error) { resolve_against("401 Unauthorized") }
     assert_match(/wants a credential/, error.message)
-    assert_match(/steward registry-login/, error.message)
+    assert_match(/vilice registry-login/, error.message)
     assert_match(/Paste the digest/, error.message)
   end
 

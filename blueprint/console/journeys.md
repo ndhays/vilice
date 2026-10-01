@@ -1,4 +1,4 @@
-# Steward Console — Journeys
+# Vilice Console — Journeys
 
 > How an operator gets from nothing to a running app: register a machine, curate an app,
 > install it onto a box, then drive its lifecycle through the witnessed ceremony. The
@@ -30,17 +30,17 @@ complete, witnessable deploy to the ceremony. A half-assembled app is an honest
 
 ## Onboarding a machine
 
-A box goes from bare → reachable **without ever handing Steward Console root** — the bootstrap
-is done locally and the only thing Steward Console receives is a scoped `operate` key
-authorized during it. Steward Console's key is **born `operate`; it never holds root, even
+A box goes from bare → reachable **without ever handing Vilice Console root** — the bootstrap
+is done locally and the only thing Vilice Console receives is a scoped `operate` key
+authorized during it. Vilice Console's key is **born `operate`; it never holds root, even
 transiently**. The why (and why the chicken-and-egg is a feature, not a bug) is in
 [`decisions/machine-onboarding.md`](../../decisions/machine-onboarding.md).
 
-- **Add Machine** (built) — the box is already Steward-ready. Steward Console generates an
+- **Add Machine** (built) — the box is already Vilice-ready. Vilice Console generates an
   ed25519 keypair (`SshKeypair`; private stored encrypted, never leaves), records an
   `added machine` act, and the machine page surfaces the one line to run on the box:
-  `Machine#authorize_command` → `steward authorize "<pubkey>" --client console --scope
-  <scope>`. Steward Console always connects as the `steward` user (forced, not a form field).
+  `Machine#authorize_command` → `vilice authorize "<pubkey>" --client console --scope
+  <scope>`. Vilice Console always connects as the `_vilice` user (forced, not a form field).
 - **Project-linked Add Machine** (built) — `machines/new?project_id=` carries a project;
   on create the machine links via `ProjectMachine` (Decision 1) and returns to the install.
 - **Attach an existing machine** (built) — a project's machine pool is the staging queue
@@ -51,9 +51,9 @@ transiently**. The why (and why the chicken-and-egg is a feature, not a bug) is 
 - **Create Machine** (ahead) — cloud-init / Hetzner-API self-bootstrap, async; see the
   open doc.
 - **Remove Machine** (built) — forgets the box in the control plane only; a recorded
-  `removed machine` act, then back to the fleet. The box keeps running, and Steward Console's
+  `removed machine` act, then back to the fleet. The box keeps running, and Vilice Console's
   key stays authorized until the operator revokes it *on the box* (`Machine#revoke_command`
-  → `steward revoke console`, shown in the honest confirm) — removing here never reaches
+  → `vilice revoke console`, shown in the honest confirm) — removing here never reaches
   the box. `events: :nullify` keeps the record intact; the join, targets, snapshots, and
   labels cascade, so any apps on the box are orphaned (kept, target dropped), not
   deleted. Cutting access on the box is the Access (#16) grant-scope work, still ahead.
@@ -63,7 +63,7 @@ transiently**. The why (and why the chicken-and-egg is a feature, not a bug) is 
 A curated directory of apps the admin can app onto machines: saved definitions (name,
 default port/health, declared env, versions) that make the *first* app easy and
 consistent. It is **bookmarking / curation, not a security boundary** — the un-bypassable
-image allowlist is a separate Steward-side concern (see
+image allowlist is a separate Vilice-side concern (see
 [`decisions/open/app-library.md`](../../decisions/open/app-library.md)). The catalog model
 (`AppTemplate → Version`, the three-tier `AppTemplate → App → Placement`, the manifest import/
 export) is specified in [`data-model.md`](data-model.md).
@@ -192,7 +192,7 @@ App has a show page that hosts these witnessed verbs per target; the Machine pag
 the same verbs as the sysadmin lens (one shared partial, one return-aware ceremony). A
 successful deploy pins `Placement.desired_image`; `current_image` is reconciled from
 what the box reports, so drift is honest. (`reboot` is deliberately **not** a verb — the
-settled Steward command set has no machine reboot.)
+settled Vilice command set has no machine reboot.)
 
 ## Isolation — the rule the flow rests on
 
@@ -200,7 +200,7 @@ The guarantee: *unless a box is explicitly shared, no Project can be cross-conta
 another.*
 
 **The box is the trust boundary — by design.** The `operate` key is box-wide: it can
-`deploy`/`remove`/`status` any app on that box; Steward has no notion of "tenant"
+`deploy`/`remove`/`status` any app on that box; Vilice has no notion of "tenant"
 (a small, legible ceiling). So isolation between projects is **not** a wall inside a shared
 box — it is **not sharing the box**. That is why **dedicated is the default**
 (`Machine.sharing = dedicated`, owner only), DB-enforced on the join rather than left to
@@ -208,9 +208,9 @@ convention (see [`data-model.md`](data-model.md) Decision 1). Sharing a box (`ev
 or `list` + an allowlist) is an explicit, visible, witnessed opt-in — and bounded to the
 projects the owner allows, so it never reaches another client by accident.
 
-On a shared box the care is Steward Console-side discipline — **no Steward change for v1**:
+On a shared box the care is Vilice Console-side discipline — **no Vilice change for v1**:
 
-1. **The project lens never leaks** (the most important rule). `steward status` / `record`
+1. **The project lens never leaks** (the most important rule). `vilice status` / `record`
    return *everything* on the box, but the Project page — the shareable client status page
    — renders **only that project's own Apps**, never raw box status. A client viewing
    Project A must never see Project B.
@@ -227,7 +227,7 @@ On a shared box the care is Steward Console-side discipline — **no Steward cha
 4. **Decommission asymmetry**: removing a *dedicated* box can tear it down; removing an
    app on a *shared* box leaves the other tenants running.
 
-The only thing that would ever need Steward is *un-bypassable* per-app isolation **inside**
+The only thing that would ever need Vilice is *un-bypassable* per-app isolation **inside**
 a shared box (a scoped-per-app key) — the "separate, simple, maybe later" item in
 [`decisions/open/vilice-open-questions.md`](../../decisions/open/vilice-open-questions.md),
 rarely necessary because dedicated is the default.

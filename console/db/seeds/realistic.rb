@@ -8,24 +8,24 @@ operator!
 
 # The dev box (memory: devbox = root@5.78.218.105). If an observe key is sitting
 # at /tmp/sy_key (the heartbeat proof's key), fold it in so reads work live.
-key_path = ENV.fetch("STEWARD_SSH_KEY", "/tmp/sy_key")
+key_path = ENV.fetch("VILICE_SSH_KEY", "/tmp/sy_key")
 devbox = Machine.find_or_initialize_by(name: "devbox")
 devbox.assign_attributes(
-  ssh_host: ENV.fetch("STEWARD_SSH_HOST", "5.78.218.105"),
-  ssh_user: ENV.fetch("STEWARD_SSH_USER", "root"),
+  ssh_host: ENV.fetch("VILICE_SSH_HOST", "5.78.218.105"),
+  ssh_user: ENV.fetch("VILICE_SSH_USER", "root"),
   scope: "observe"
 )
 devbox.ssh_private_key = File.read(key_path) if File.exist?(key_path) && devbox.ssh_private_key.blank?
 devbox.save!
 
-# A *live* local box, reached over loopback SSH — "Steward Console runs anywhere", so
+# A *live* local box, reached over loopback SSH — "Vilice Console runs anywhere", so
 # localhost is just one more Machine. Present only when the local observe key
 # (set up by the dev harness) exists; this is what makes the round trip real.
 if File.exist?(key_path)
   this_box = Machine.find_or_initialize_by(name: "this-box")
   this_box.assign_attributes(
-    ssh_host: ENV.fetch("STEWARD_LOCAL_HOST", "localhost"),
-    ssh_user: ENV.fetch("STEWARD_LOCAL_USER", ENV.fetch("USER", "root")),
+    ssh_host: ENV.fetch("VILICE_LOCAL_HOST", "localhost"),
+    ssh_user: ENV.fetch("VILICE_LOCAL_USER", ENV.fetch("USER", "root")),
     # operate so the mutate ceremony is demoable locally. The loopback key is only
     # observe-scoped, so a real Confirm settles *failed* — an honest demo. Observe
     # reads are unaffected (scope is our record of the key's rights, not the gate).
@@ -60,7 +60,7 @@ if Event.none?
          app: app, project: acme, summary: "acme-web on devbox", at: 90.minutes.ago)
 end
 
-# A Steward Console-own act on this-box, so its chain shows the *merge*: this authored
+# A Vilice Console-own act on this-box, so its chain shows the *merge*: this authored
 # entry alongside the box's own (witnessed) record read live over the loopback.
 # Also an app on the box, so the mutate ceremony's lifecycle acts have a target.
 if (tb = Machine.find_by(name: "this-box"))
@@ -105,6 +105,6 @@ library_app!("console", image: demo_pin("ghcr.io/console/console"), tag: "v0.1",
                               "secrets" => [ "POSTGRES_PASSWORD" ],
                               "volumes" => [ "console-db:/var/lib/postgresql/data" ] } ],
              port: 3000, health: "/up",
-             description: "Steward Console itself — the self-deploy proof.")
+             description: "Vilice Console itself — the self-deploy proof.")
 
 report!

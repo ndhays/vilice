@@ -129,7 +129,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
   # links on hover — a read must not be something the pointer can trigger.
   test "refresh re-reads and redirects (observe, changes nothing)" do
     sign_in_as @user
-    stub_returning(Steward::Observe, :status, { ok: true, data: {}, at: Time.current }) do
+    stub_returning(Vilice::Observe, :status, { ok: true, data: {}, at: Time.current }) do
       post refresh_machine_path(@observer)
     end
     assert_redirected_to machine_path(@observer)
@@ -170,7 +170,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
   test "mutate records the event pending before it runs, then settles it (Invariant 2)" do
     sign_in_as @user
     # Stub only the transport: the Event must be written even though we don't hit SSH.
-    stub_returning(Steward, :read, { ok: true, data: { "ok" => true }, at: Time.current }) do
+    stub_returning(Vilice, :read, { ok: true, data: { "ok" => true }, at: Time.current }) do
       assert_difference -> { Event.count }, 1 do
         post machine_mutation_path(@operator, act: "apply-updates")
       end
@@ -190,7 +190,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
 
   test "a failed command settles the entry failed with the box's reason" do
     sign_in_as @user
-    stub_returning(Steward, :read, { ok: false, error: "podman: no such app", at: Time.current }) do
+    stub_returning(Vilice, :read, { ok: false, error: "podman: no such app", at: Time.current }) do
       post machine_mutation_path(@operator, act: "apply-updates")
     end
     event = Event.latest.first
@@ -260,7 +260,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     project = Project.create!(name: "Globex")
     app = project.apps.create!(name: "globex-api")
     app.placements.create!(machine: @operator, status: "running")
-    stub_returning(Steward, :read, { ok: true, data: {}, at: Time.current }) do
+    stub_returning(Vilice, :read, { ok: true, data: {}, at: Time.current }) do
       post machine_mutation_path(@operator, act: "restart", app_id: app.id)
     end
     event = Event.latest.first
@@ -290,13 +290,13 @@ class JourneysTest < ActionDispatch::IntegrationTest
     app    = deployable_app
     placement = app.placements.find_by(machine: @operator)
 
-    with_fake_steward do |steward|
-      steward.on(/deploy web/, data: { "ok" => true })
+    with_fake_vilice do |vilice|
+      vilice.on(/deploy web/, data: { "ok" => true })
       assert_difference -> { Event.count }, 1 do
         post machine_mutation_path(@operator, act: "deploy", app_id: app.id,
               image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e")
       end
-      assert_match "@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e", steward.stdin_for(/deploy web/), "envelope on stdin"
+      assert_match "@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e", vilice.stdin_for(/deploy web/), "envelope on stdin"
     end
 
     event = Event.latest.first
@@ -308,7 +308,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
   test "rollback issues the parameterless command and records it" do
     sign_in_as @user
     app = deployable_app
-    stub_returning(Steward, :read, { ok: true, data: {}, at: Time.current }) do
+    stub_returning(Vilice, :read, { ok: true, data: {}, at: Time.current }) do
       post machine_mutation_path(@operator, act: "rollback", app_id: app.id)
     end
     assert_equal "rolled back", Event.latest.first.action
@@ -318,7 +318,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     app    = deployable_app
     placement = app.placements.find_by(machine: @operator)
-    stub_returning(Steward, :read, { ok: true, data: {}, at: Time.current }) do
+    stub_returning(Vilice, :read, { ok: true, data: {}, at: Time.current }) do
       post machine_mutation_path(@operator, act: "remove", app_id: app.id)
     end
     assert_equal "removed", Event.latest.first.action
@@ -366,8 +366,8 @@ class JourneysTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     assert_nil @operator.last_seen_at, "the fixture box has never answered — the case under test"
 
-    with_fake_steward do |steward|
-      steward.on(/apply-updates/, stdout: "Permission denied (publickey).",
+    with_fake_vilice do |vilice|
+      vilice.on(/apply-updates/, stdout: "Permission denied (publickey).",
                  success: false, exit_status: 255)
       assert_difference -> { Event.count }, 1 do
         post machine_mutation_path(@operator, act: "apply-updates")
@@ -376,7 +376,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
 
     # Record before act still holds: we tried, so it is written, and it settled failed.
     assert_equal "failed", Event.latest.first.outcome
-    assert_match(/never answered Steward/, flash[:alert])
+    assert_match(/never answered Vilice/, flash[:alert])
     assert_match(/authorize line/, flash[:alert])
   end
 
@@ -385,8 +385,8 @@ class JourneysTest < ActionDispatch::IntegrationTest
   test "an act the box refused keeps the box's own reason and adds no connection advice" do
     sign_in_as @user
 
-    with_fake_steward do |steward|
-      steward.on(/apply-updates/, stdout: "podman: no such app", success: false)  # exit 1, reached
+    with_fake_vilice do |vilice|
+      vilice.on(/apply-updates/, stdout: "podman: no such app", success: false)  # exit 1, reached
       post machine_mutation_path(@operator, act: "apply-updates")
     end
 
@@ -400,8 +400,8 @@ class JourneysTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     @operator.update!(last_seen_at: 1.hour.ago, status: "unreachable")
 
-    with_fake_steward do |steward|
-      steward.on(/apply-updates/, stdout: "Connection timed out", success: false, exit_status: 255)
+    with_fake_vilice do |vilice|
+      vilice.on(/apply-updates/, stdout: "Connection timed out", success: false, exit_status: 255)
       post machine_mutation_path(@operator, act: "apply-updates")
     end
 
@@ -420,8 +420,8 @@ class JourneysTest < ActionDispatch::IntegrationTest
     get new_machine_mutation_path(@operator, act: "apply-updates")
     assert_response :success
 
-    assert_select ".ceremony-warn", /never answered Steward/
-    assert_select ".ceremony-warn .cmd", /steward authorize/
+    assert_select ".ceremony-warn", /never answered Vilice/
+    assert_select ".ceremony-warn .cmd", /vilice authorize/
     assert_select "form[action=?]", machine_mutation_path(@operator)   # still pressable
 
     # Once the box has answered, the caution has no reason to be there.

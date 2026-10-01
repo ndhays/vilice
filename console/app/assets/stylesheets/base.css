@@ -44,7 +44,7 @@ a:hover { color: var(--accent-bright); text-decoration: underline; }
 .sidebar .brand:hover { text-decoration: none; }
 .sidebar .brand .mark { color: var(--rail-accent); display: flex; }
 
-/* The wordmark — `steward` in mono, lowercase, because that is how you type it
+/* The wordmark — `vilice` in mono, lowercase, because that is how you type it
    (blueprint/design/logo.md). One lockup for the rail and the sign-in card. */
 .wordmark { font-family: var(--font-mono); font-weight: 600; letter-spacing: -0.02em; }
 /* Three bands, divided by a hairline: the spine, the three rings, the surfaces

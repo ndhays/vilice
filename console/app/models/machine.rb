@@ -3,16 +3,16 @@ class Machine < ApplicationRecord
   include Searchable
 
   # Decision 2 — the SSH private key is encrypted at rest. The public half is
-  # `steward authorize`d on the box; revoking one machine never touches another.
+  # `vilice authorize`d on the box; revoking one machine never touches another.
   encrypts :ssh_private_key
 
   # The scope this machine's key carries on the box. observe ⊂ operate ⊂ grant.
   # `grant` mints and revokes keys and nothing else — it is not a shell, so holding one
-  # is not holding the box (decisions/no-key-gets-a-shell.md). Steward Console defaults to
+  # is not holding the box (decisions/no-key-gets-a-shell.md). Vilice Console defaults to
   # observe and is never root.
   enum :scope, { observe: "observe", operate: "operate", grant: "grant" }, default: "observe"
 
-  # Reachability, as last read from Steward's record.
+  # Reachability, as last read from Vilice's record.
   enum :status, { unknown: "unknown", reachable: "reachable", unreachable: "unreachable" },
        default: "unknown", prefix: :seen
 
@@ -126,7 +126,7 @@ class Machine < ApplicationRecord
   # should tell you the fix.
   def connection_hint
     if never_reached?
-      "#{name} has never answered Steward, so its authorize line has most likely not " \
+      "#{name} has never answered Vilice, so its authorize line has most likely not " \
         "been run on the box yet — it is on the machine's own page."
     else
       "#{name} answered before and doesn't now. Check the box is up, and that the " \
@@ -139,20 +139,20 @@ class Machine < ApplicationRecord
   # only when the SSH call fails.
   def machine_option_label = never_reached? ? "#{name} — not yet authorized" : name
 
-  # The line to run on the box to let Steward Console in — authorizes our public key as a
+  # The line to run on the box to let Vilice Console in — authorizes our public key as a
   # named client at this machine's scope (decisions/open/machine-onboarding.md).
-  # Steward Console's key is born at observe/operate scope; never root.
+  # Vilice Console's key is born at observe/operate scope; never root.
   def authorize_command
     return if ssh_public_key.blank?
 
-    client = ENV.fetch("STEWARD_CLIENT_NAME", "console")
-    %(steward authorize "#{ssh_public_key}" --client #{client} --scope #{scope})
+    client = ENV.fetch("VILICE_CLIENT_NAME", "console")
+    %(vilice authorize "#{ssh_public_key}" --client #{client} --scope #{scope})
   end
 
-  # The line to run on the box to cut Steward Console's access — the counterpart to
+  # The line to run on the box to cut Vilice Console's access — the counterpart to
   # authorize_command. Removing the Machine here doesn't run this (the box keeps its
   # authorized key until the operator revokes it on the box itself).
   def revoke_command
-    "steward revoke #{ENV.fetch('STEWARD_CLIENT_NAME', 'console')}"
+    "vilice revoke #{ENV.fetch('VILICE_CLIENT_NAME', 'console')}"
   end
 end

@@ -3,7 +3,7 @@
 # balancer and the boxes those apps are actually serving from, so there is no stored
 # copy to drift from the placements it describes.
 #
-# This is the *plan* half. What the box reports fronting (`steward status` → `routes`) is
+# This is the *plan* half. What the box reports fronting (`vilice status` → `routes`) is
 # the other half, and the gap between them is shown rather than closed — applying the
 # table is a witnessed act like any other
 # (decisions/drift-is-surfaced-never-closed.md).
@@ -37,7 +37,7 @@ class RoutingTable
     end
   end
 
-  # The envelope `steward route` reads on stdin. Struct-to-JSON is deliberate and
+  # The envelope `vilice route` reads on stdin. Struct-to-JSON is deliberate and
   # narrow — the box is told hostnames and upstreams and nothing else about our model.
   def self.envelope(machine)
     { routes: self.for(machine).map { |r| { hostnames: r.hostnames, upstreams: r.upstreams } } }

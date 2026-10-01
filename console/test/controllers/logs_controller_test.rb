@@ -1,6 +1,6 @@
 require "test_helper"
 
-# Reading an app's logs off the box. A read, not an act: `steward logs` is `observe`
+# Reading an app's logs off the box. A read, not an act: `vilice logs` is `observe`
 # scope and a passthrough to `podman logs`, so nothing is recorded and nothing is
 # mirrored into our own columns.
 class LogsControllerTest < ActionDispatch::IntegrationTest
@@ -27,8 +27,8 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     seen_before = @machine.last_seen_at
 
-    with_fake_steward do |steward|
-      steward.on(/logs/, data: { "ok" => true, "message" => "boot ok\nGET / 200" })
+    with_fake_vilice do |vilice|
+      vilice.on(/logs/, data: { "ok" => true, "message" => "boot ok\nGET / 200" })
       assert_no_difference [ -> { Event.count }, -> { App.count } ] do
         get machine_logs_path(@machine, app_id: @app.id)
       end
@@ -42,11 +42,11 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
   test "the box is asked for the app by name, with the tail requested" do
     sign_in_as @user
 
-    with_fake_steward do |steward|
-      steward.on(/logs/, data: { "ok" => true, "message" => "x" })
+    with_fake_vilice do |vilice|
+      vilice.on(/logs/, data: { "ok" => true, "message" => "x" })
       get machine_logs_path(@machine, app_id: @app.id, tail: 1000)
 
-      assert steward.issued?("logs web --tail 1000 --json")
+      assert vilice.issued?("logs web --tail 1000 --json")
     end
     assert_select ".logs-tail.on", text: "1000"
   end
@@ -56,21 +56,21 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
   test "a tail that isn't one of the offered sizes falls back to the default" do
     sign_in_as @user
 
-    with_fake_steward do |steward|
-      steward.on(/logs/, data: { "ok" => true, "message" => "x" })
+    with_fake_vilice do |vilice|
+      vilice.on(/logs/, data: { "ok" => true, "message" => "x" })
       get machine_logs_path(@machine, app_id: @app.id, tail: "999999")
 
-      assert steward.issued?("logs web --tail 200 --json")
+      assert vilice.issued?("logs web --tail 200 --json")
     end
   end
 
-  # The box's own sentence, not our transport's JSON. `steward logs` on an app that
+  # The box's own sentence, not our transport's JSON. `vilice logs` on an app that
   # isn't running exits non-zero with {"code":"not_found","message":…}.
   test "a refusal from the box is shown in the box's words" do
     sign_in_as @user
 
-    with_fake_steward do |steward|
-      steward.on(/logs/, success: false,
+    with_fake_vilice do |vilice|
+      vilice.on(/logs/, success: false,
                  stdout: { "code" => "not_found", "message" => 'no running app "web"' }.to_json)
       get machine_logs_path(@machine, app_id: @app.id)
     end
@@ -86,8 +86,8 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     @machine.update!(scope: "observe")
 
-    with_fake_steward do |steward|
-      steward.on(/logs/, data: { "ok" => true, "message" => "still readable" })
+    with_fake_vilice do |vilice|
+      vilice.on(/logs/, data: { "ok" => true, "message" => "still readable" })
       get machine_logs_path(@machine, app_id: @app.id)
     end
 
@@ -100,9 +100,9 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
     elsewhere = Machine.create!(name: "other", ssh_host: "10.0.0.3", scope: "operate",
                                 ssh_private_key: "k")
 
-    with_fake_steward do |steward|
+    with_fake_vilice do |vilice|
       get machine_logs_path(elsewhere, app_id: @app.id)
-      assert_empty steward.commands, "nothing should be asked of a box it does not run on"
+      assert_empty vilice.commands, "nothing should be asked of a box it does not run on"
     end
 
     assert_response :not_found
@@ -113,7 +113,7 @@ class LogsControllerTest < ActionDispatch::IntegrationTest
   # enforces the charset; this is the seam's own guard, and it is the difference
   # between a bug and a flag injection.
   test "a name outside the box's charset is refused at the seam" do
-    result = Steward::Observe.logs(@machine, "web --tail 999 ; rm -rf /")
+    result = Vilice::Observe.logs(@machine, "web --tail 999 ; rm -rf /")
 
     refute result[:ok]
     assert_match(/not a valid app name/, result[:error])

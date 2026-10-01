@@ -1,4 +1,4 @@
-<% content_for :title, "#{@machine.name} — Steward" %>
+<% content_for :title, "#{@machine.name} — Vilice" %>
 
 <%= breadcrumb [["Machines", machines_path], [@machine.name, nil]] %>
 
@@ -10,7 +10,7 @@
     being run, and a cursor. %>
 <%= turbo_frame_tag "machine-live", src: live_machine_path(@machine, q: @q.presence), target: "_top" do %>
   <div class="reading-box" role="status">
-    <p class="reading-line"><span class="reading-prompt">$</span> steward status --json<span class="reading-cursor" aria-hidden="true"></span></p>
+    <p class="reading-line"><span class="reading-prompt">$</span> vilice status --json<span class="reading-cursor" aria-hidden="true"></span></p>
     <p class="muted">Reading <%= @machine.name %> over scoped SSH…</p>
   </div>
 <% end %>
@@ -30,28 +30,28 @@
 
   <%= render "machines/sharing", machine: @machine, projects: @projects %>
 
-  <%# Steward's scoped key for this box, and the line to authorize it. Steward generates
+  <%# Vilice's scoped key for this box, and the line to authorize it. Vilice generates
       the key (private encrypted); the operator runs this on the box once to let it in.
       See machine-onboarding.md / Access (#16). %>
   <% if @machine.authorize_command %>
     <details class="access" <%= "open" if @machine.never_reached? %>>
-      <summary><%= icon "shield", size: 13 %> Steward’s key · authorize on the box</summary>
-      <p class="note">Run this once on the box (as the operator) to let Steward in:</p>
+      <summary><%= icon "shield", size: 13 %> Vilice’s key · authorize on the box</summary>
+      <p class="note">Run this once on the box (as the operator) to let Vilice in:</p>
       <%= command_block(@machine.authorize_command) %>
-      <p class="note muted">Steward holds the matching private key (encrypted) and never root.</p>
+      <p class="note muted">Vilice holds the matching private key (encrypted) and never root.</p>
     </details>
   <% end %>
 
   <%# Remove — forget this box in the control plane. The box keeps running; this only
-      deletes Steward's record of it. An honest confirm, no blocking. %>
-  <% remove_note = "Remove #{@machine.name} from Steward?\n\n" \
-                   "The box keeps running — this only forgets it here, and Steward’s key " \
+      deletes Vilice's record of it. An honest confirm, no blocking. %>
+  <% remove_note = "Remove #{@machine.name} from Vilice?\n\n" \
+                   "The box keeps running — this only forgets it here, and Vilice’s key " \
                    "stays authorized until you revoke it on the box." %>
   <% remove_note += "\n\n#{pluralize(@apps.size, 'app')} deployed here will lose their deployment record." if @apps.any? %>
   <div class="panel danger-remove">
     <h3 class="danger-head"><%= icon "trash-2", size: 15 %> Remove this Machine</h3>
-    <p class="note">This only forgets <strong><%= @machine.name %></strong> in Steward — the box
-      keeps running, and Steward’s key stays authorized until you revoke it on the box:</p>
+    <p class="note">This only forgets <strong><%= @machine.name %></strong> in Vilice — the box
+      keeps running, and Vilice’s key stays authorized until you revoke it on the box:</p>
     <%= command_block(@machine.revoke_command) %>
     <% if @apps.any? %>
       <p class="note muted"><%= pluralize(@apps.size, "app") %> deployed here

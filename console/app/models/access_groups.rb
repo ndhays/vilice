@@ -29,7 +29,7 @@ class AccessGroups
     # An actor holding `operate` on twelve boxes is a fact about blast radius that no
     # per-box view surfaces.
     Grouping.new(key: "actor", label: "Actor", ring: 1,
-                 of: ->(l) { l.ungated? ? [ 0, "Not written by Steward" ] : [ 1, l.name ] },
+                 of: ->(l) { l.ungated? ? [ 0, "Not written by Vilice" ] : [ 1, l.name ] },
                  within: ->(l) { [ l.reach_order, l.machine.name ] })
   ].freeze
 

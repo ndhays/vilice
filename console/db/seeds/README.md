@@ -35,9 +35,9 @@ clear a production database.)
 ## How health works without a box
 
 Machine health (online/offline, load, memory, disk, hardening) is **not stored** —
-it's read live from `steward status --json` over scoped SSH. To make scenarios
+it's read live from `vilice status --json` over scoped SSH. To make scenarios
 render deterministically with no real box, a dev-only **fake-observe seam**
-(`app/services/steward/fake.rb`) short-circuits `Steward.read` and answers from
+(`app/services/vilice/fake.rb`) short-circuits `Vilice.read` and answers from
 each machine's **`fake-health`** label:
 
 | `fake-health` | Renders as |
@@ -53,18 +53,18 @@ Absent → a small default by band (`ok` 0, `warn` 4, `crit` 9). A **`fake-maint
 label (an `HH:MM`, e.g. `02:30`) sets the automatic-maintenance window shown on the page;
 absent → `04:00` (a drifted `crit` box reports no window, since unattended-upgrades is off).
 
-The seam is **off unless `STEWARD_FAKE_OBSERVE=1`** *and* the env is dev/test —
+The seam is **off unless `VILICE_FAKE_OBSERVE=1`** *and* the env is dev/test —
 it can never act in production. `bin/scenario` sets the flag for you; if you boot
 the server by hand, set it yourself:
 
 ```bash
-STEWARD_FAKE_OBSERVE=1 bin/rails server
+VILICE_FAKE_OBSERVE=1 bin/rails server
 ```
 
 ### It fakes reads, and refuses everything else
 
 The seam answers **`status`, `record`, `doctor`** and nothing more (`Fake::ANSWERS`).
-It hooks `Steward.read`, which `Steward::Mutate` also goes through, so anything else
+It hooks `Vilice.read`, which `Vilice::Mutate` also goes through, so anything else
 — a deploy, a restart, `actors` — comes back as a **failed read** with a message
 telling you to unset the flag.
 

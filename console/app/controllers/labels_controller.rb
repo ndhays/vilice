@@ -1,5 +1,5 @@
 # Adding and removing labels — a control-plane act with no box involved, so it
-# lands only in Steward Console's *own* record (decisions/two-records.md), attributed
+# lands only in Vilice Console's *own* record (decisions/two-records.md), attributed
 # to the signed-in human. The Event and the change are written together in one
 # transaction: no recorded act without the change, no change off the record.
 class LabelsController < ApplicationController

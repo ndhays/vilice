@@ -1,8 +1,8 @@
 # One line of the displayed chain — the merge of the two records
 # (decisions/two-records.md), in a single shape the timeline can render:
 #
-#   - from a Steward Console Event   → an act Steward Console authored (a human behind it),
-#   - from a Steward record entry → a box act; authored if Steward Console's own client
+#   - from a Vilice Console Event   → an act Vilice Console authored (a human behind it),
+#   - from a Vilice record entry → a box act; authored if Vilice Console's own client
 #     issued it, otherwise only witnessed (a direct CLI, the timer, another plane).
 #
 # A presentation value, not persisted.
@@ -13,7 +13,7 @@
 #
 # A box entry is one of three kinds (`kind`), and only one of them is a command:
 #   :command — a verb someone invoked; the command is read straight off the entry
-#   :refusal — Steward refused an attempt (`scope: deny`); `action` is the reason and
+#   :refusal — Vilice refused an attempt (`scope: deny`); `action` is the reason and
 #              the first arg, when present, is the verb that was refused
 #   :step    — a note a command wrote about its own work (`prepare` sets the role and
 #              authorizes the binary; `deploy` records the spec). Not a command anyone
@@ -21,7 +21,7 @@
 ChainItem = Struct.new(:at, :actor, :action, :summary, :origin, :machine, :project,
                        :outcome, :detail, :command, :output, :entry, :kind,
                        :box_entry, :steps, :repeats, :first_at, keyword_init: true) do
-  # The actions Steward writes that are not commands (steward/internal: core.Record
+  # The actions Vilice writes that are not commands (vilice/internal: core.Record
   # call sites outside dispatch). Kept by hand; an unknown action reads as a command,
   # which is what nearly every entry is.
   STEP_ACTIONS = {
@@ -36,14 +36,14 @@ ChainItem = Struct.new(:at, :actor, :action, :summary, :origin, :machine, :proje
       summary: event.summary.presence || event.action,
       origin: :authored, machine: event.machine, project: event.project,
       outcome: event.outcome, detail: event.detail, kind: :command,
-      command: event.raw&.dig("command").presence&.then { |c| "steward #{c}" },
+      command: event.raw&.dig("command").presence&.then { |c| "vilice #{c}" },
       output: event.output,
       entry: event.attributes.except("raw", "output").merge("command" => event.raw&.dig("command")).compact
     )
   end
 
-  # `client` is the name Steward Console's own scoped key records under; an entry under
-  # that name is one Steward Console issued (authored), anything else is witnessed.
+  # `client` is the name Vilice Console's own scoped key records under; an entry under
+  # that name is one Vilice Console issued (authored), anything else is witnessed.
   def self.from_record_entry(entry, client:)
     action, args = entry["action"].to_s, Array(entry["args"])
     base = {
@@ -55,7 +55,7 @@ ChainItem = Struct.new(:at, :actor, :action, :summary, :origin, :machine, :proje
       refused = args.first
       new(**base, kind: :refusal, action: "refused", outcome: "refused",
           summary: [ refused, "— #{action.delete_prefix('deny').delete_prefix(':').tr('-', ' ').presence || 'not authorized'}" ].compact.join(" "),
-          command: refused && "steward #{refused}")
+          command: refused && "vilice #{refused}")
     elsif STEP_ACTIONS.key?(action)
       new(**base, kind: :step, action: action,
           summary: [ STEP_ACTIONS[action], *args.map { |a| abbreviate(a) } ].join(" "))
@@ -65,7 +65,7 @@ ChainItem = Struct.new(:at, :actor, :action, :summary, :origin, :machine, :proje
       # and the box does not record them.)
       new(**base, kind: :command, action: action,
           summary: [ action, *args.map { |a| abbreviate(a) } ].join(" "),
-          command: [ "steward", action, *args ].join(" "))
+          command: [ "vilice", action, *args ].join(" "))
     end
   end
 
@@ -82,13 +82,13 @@ ChainItem = Struct.new(:at, :actor, :action, :summary, :origin, :machine, :proje
   def refusal? = kind == :refusal
   def step? = kind == :step
 
-  # The steward verb the command ran — `apply-updates` — which is what the button that
+  # The vilice verb the command ran — `apply-updates` — which is what the button that
   # sent it said. Nil when nothing was run.
   def verb = command.to_s.split[1]
 
   # How the act reached the box, which is what the entry's stamp shows:
   #   :console — sent by this console (a button was pressed)
-  #   :local   — run on the box itself, not through a scoped key. Steward records a
+  #   :local   — run on the box itself, not through a scoped key. Vilice records a
   #              local invocation under `operator` (core.ActorName) — a person at the
   #              shell, or anything else run there without naming itself.
   #   :key     — another scoped key: CI, an agent, another console
@@ -109,7 +109,7 @@ ChainItem = Struct.new(:at, :actor, :action, :summary, :origin, :machine, :proje
   end
 
   # A routine status sample, from either record — the box's own timer entries
-  # arrive here the same way Steward Console's do. Judged by the same rule as
+  # arrive here the same way Vilice Console's do. Judged by the same rule as
   # `Event.acts`, so one definition covers both streams.
   def status? = Event::STATUS_ACTIONS.include?(action.to_s.downcase)
 

@@ -32,7 +32,7 @@ class Machines::AppsController < ApplicationController
     return render :new, status: :unprocessable_entity unless @deploy.valid?
     return render :preview unless params[:confirm].present?
 
-    outcome = Steward::Mutate.run(
+    outcome = Vilice::Mutate.run(
       @machine, @deploy.command,
       actor: Current.user&.email_address || "console",
       action: "deployed",
@@ -50,7 +50,7 @@ class Machines::AppsController < ApplicationController
 
   def destroy
     name = params[:id].to_s
-    outcome = Steward::Mutate.run(
+    outcome = Vilice::Mutate.run(
       @machine, Mutation.command("remove", @machine, name: name),
       actor: Current.user&.email_address || "console",
       action: "removed",
@@ -82,7 +82,7 @@ class Machines::AppsController < ApplicationController
   # *unknown*, not as *balancer* — we do not take a surface away on a guess. The box
   # is the one that refuses, and it will.
   def require_host_role
-    return unless MachineStatus.from(Steward::Observe.status(@machine)).balancer?
+    return unless MachineStatus.from(Vilice::Observe.status(@machine)).balancer?
 
     redirect_to @machine, alert: "This box is a balancer — it fronts other boxes and runs no apps."
   end

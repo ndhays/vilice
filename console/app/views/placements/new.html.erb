@@ -1,7 +1,7 @@
 <%# "Another" only once there is one — an app may have been created with no box at
     all, in which case this page is closing the gap for the first time, not widening it. %>
 <% placed = @app.live_placements.any? %>
-<% content_for :title, "Place #{@app.name} on #{placed ? 'another' : 'a'} box — Steward" %>
+<% content_for :title, "Place #{@app.name} on #{placed ? 'another' : 'a'} box — Vilice" %>
 
 <%= breadcrumb [ [ "Apps", apps_path ], [ @app.name, app_path(@app) ],
                  [ "Place on a box", nil ] ] %>

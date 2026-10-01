@@ -1,7 +1,7 @@
 <%# The trail follows tenancy when there is any: through the client that owns this
     work, else straight down from Apps. Placement stands on its own — an app
     with no project is not an app missing one (decisions/console-layers.md). %>
-<% content_for :title, [ @app.name, @project&.name, "Steward" ].compact.join(" — ") %>
+<% content_for :title, [ @app.name, @project&.name, "Vilice" ].compact.join(" — ") %>
 
 <% if @project %>
   <%= breadcrumb [["Projects", projects_path], [@project.name, project_path(@project)], [@app.name, nil]] %>

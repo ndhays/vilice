@@ -58,8 +58,8 @@ class ProjectsController < ApplicationController
   end
 
   # Delete a project — guarded. Destroying it cascades to its App/Placement
-  # rows, but those represent apps that may still be running on the boxes (Steward Console
-  # forgetting an app does NOT `steward remove` it). So refuse while any live app
+  # rows, but those represent apps that may still be running on the boxes (Vilice Console
+  # forgetting an app does NOT `vilice remove` it). So refuse while any live app
   # remains — the operator removes them first. The project's events nullify, so the
   # record survives the deletion. Mirrors the detach-machine guard.
   def destroy

@@ -29,19 +29,19 @@ class MachinesController < ApplicationController
   end
 
   # ── Onboarding (Add Machine) ───────────────────────────────────────────────
-  # Register an already-Steward-ready box: generate Steward Console's scoped keypair, then
-  # surface the `steward authorize` line to run on it. See machine-onboarding.md.
+  # Register an already-Vilice-ready box: generate Vilice Console's scoped keypair, then
+  # surface the `vilice authorize` line to run on it. See machine-onboarding.md.
   def new
     @project  = Project.find_by(id: params[:project_id]) # when adding from a project's app flow
     @projects = Project.order(:name) unless @project     # dropdown to pick an owner (optional)
-    @machine  = Machine.new(ssh_user: "steward", ssh_port: 22, scope: "operate")
+    @machine  = Machine.new(ssh_user: "_vilice", ssh_port: 22, scope: "operate")
   end
 
   def create
     @project = Project.find_by(id: params[:project_id])
-    # Steward Console always connects as the steward user (scoped keys authenticate as it),
+    # Vilice Console always connects as the _vilice user (scoped keys authenticate as it),
     # so it's not a form choice.
-    @machine = Machine.new(machine_params.merge(ssh_user: "steward"))
+    @machine = Machine.new(machine_params.merge(ssh_user: "_vilice"))
     # The name isn't typed — it mirrors the box. We can't read the box yet (it hasn't
     # authorized our key), so seed it with the SSH host; the first observe renames it to
     # the box's reported hostname (decisions/machine-name-mirrors-the-box.md).
@@ -73,14 +73,14 @@ class MachinesController < ApplicationController
     @projects = Project.order(:name) # for the ownership / sharing controls
   end
 
-  # The chain merges the two records — this machine's Steward Console events (authored)
+  # The chain merges the two records — this machine's Vilice Console events (authored)
   # with the box record (witnessed). A box that did not answer the status read is not
   # asked twice more: the record and the ledger would wait out the same timeout.
   def live
     @q      = params[:q].to_s.strip
-    @status = MachineStatus.from(Steward::Observe.status(@machine))
-    @record = @status.online? ? Steward::Observe.record(@machine) : { ok: false, error: @status.error }
-    @actors = Steward::Observe.actors(@machine) if @status.online? # who can reach it
+    @status = MachineStatus.from(Vilice::Observe.status(@machine))
+    @record = @status.online? ? Vilice::Observe.record(@machine) : { ok: false, error: @status.error }
+    @actors = Vilice::Observe.actors(@machine) if @status.online? # who can reach it
     @chain  = chain_for(@machine, @record).select { |i| i.matches?(@q) }
     @apps   = @machine.apps.includes(:project).order(:name)
     # The edge table this box should serve, derived rather than stored. Empty for a box
@@ -93,13 +93,13 @@ class MachinesController < ApplicationController
   # Re-read the machine's live status, bypassing the cache. A read: changes
   # nothing on the box.
   def refresh
-    Steward::Observe.status(@machine, refresh: true)
-    redirect_to @machine, notice: "Read #{@machine.name} from Steward."
+    Vilice::Observe.status(@machine, refresh: true)
+    redirect_to @machine, notice: "Read #{@machine.name} from Vilice."
   end
 
   # ── Remove ─────────────────────────────────────────────────────────────────
   # Forget this box in the control plane. The box keeps running; this only deletes
-  # Steward Console's record of it (its key stays authorized on the box until revoked
+  # Vilice Console's record of it (its key stays authorized on the box until revoked
   # there). A recorded own-record act. `events: :nullify` keeps the record intact;
   # the join, targets, snapshots, and labels cascade.
   def destroy
@@ -117,10 +117,10 @@ class MachinesController < ApplicationController
     Machine.transaction do
       @machine.destroy!
       Event.record!(actor: Current.user.email_address, action: "removed",
-                    summary: "#{name} from Steward")
+                    summary: "#{name} from Vilice")
     end
     redirect_to machines_path,
-                notice: "Removed #{name}. The box keeps running — revoke Steward’s key on it to cut access."
+                notice: "Removed #{name}. The box keeps running — revoke Vilice’s key on it to cut access."
   end
 
   # ── Sharing & ownership (the Access panel) ─────────────────────────────────
@@ -187,11 +187,11 @@ class MachinesController < ApplicationController
   end
 
   # Merge the two records into one newest-first timeline: this machine's
-  # Steward Console events (authored) + the box's own record (witnessed, unless our
+  # Vilice Console events (authored) + the box's own record (witnessed, unless our
   # own client issued it). See Chain and decisions/two-records.md.
   def chain_for(machine, record)
     events = machine.events.acts.latest.includes(:project, :app).limit(40)
     Chain.for_machine(events, record.dig(:data, "data", "entries") || [],
-                      client: ENV.fetch("STEWARD_CLIENT_NAME", "console"))
+                      client: ENV.fetch("VILICE_CLIENT_NAME", "console"))
   end
 end

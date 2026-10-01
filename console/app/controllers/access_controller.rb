@@ -1,7 +1,7 @@
 # The Access destination — the rights ledger, fleet-wide. Who may act on which box,
 # at what scope, and with which key.
 #
-# It is read straight off each box through `steward actors`, not from anything we
+# It is read straight off each box through `vilice actors`, not from anything we
 # store: authorized_keys *is* the ledger, and a copy of it in our database would be a
 # second answer to "who can act here" that could quietly disagree with the box. So
 # this page has no model behind it and nothing to keep in sync — it asks.
@@ -19,7 +19,7 @@ class AccessController < ApplicationController
 
   def live
     # One read per box, in parallel, through the 30s observe cache.
-    reads = Steward::Observe.actors_of(Machine.order(:name))
+    reads = Vilice::Observe.actors_of(Machine.order(:name))
 
     # A box we cannot reach keeps a place on the page rather than vanishing from it.
     # A ledger you cannot currently read is not the same as an empty one, and the
@@ -41,7 +41,7 @@ class AccessController < ApplicationController
     @boxes_read  = readable.size
     @ungated     = lines.count(&:ungated?)
     # Where the ledger lives, so an operator can go look for themselves. Collected
-    # rather than assumed: it is derived from the steward user's home on each box.
+    # rather than assumed: it is derived from the _vilice user's home on each box.
     @paths       = readable.values.filter_map { |r| r.dig(:data, "data", "path") }.uniq
 
     lines   = lines.select { |l| l.matches?(@q) }
@@ -54,7 +54,7 @@ class AccessController < ApplicationController
   # same reason machines#refresh is: it opens an SSH connection to every box in the
   # fleet, and a GET must be safe to repeat unasked.
   def refresh
-    Steward::Observe.actors_of(Machine.all, refresh: true)
+    Vilice::Observe.actors_of(Machine.all, refresh: true)
     redirect_to access_path(q: params[:q].presence, group: params[:group].presence)
   end
 

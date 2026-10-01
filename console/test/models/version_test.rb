@@ -18,7 +18,7 @@ class VersionTest < ActiveSupport::TestCase
     assert_equal [ b, a ], @app_template.versions.newest_first.to_a
   end
 
-  # The box refuses an unpinned image (steward/internal/app/deploy.go), so a floating
+  # The box refuses an unpinned image (vilice/internal/app/deploy.go), so a floating
   # tag in the library is a release that looks installable and is rejected at the far
   # end — after someone has built a placement on it. These mirror `validDigestPin`.
   test "an image must be digest-pinned, and the reason says why" do

@@ -5,7 +5,7 @@
 # happened is read back from the box. An app that should be tracked — its intention, its
 # placements, its drift — goes through Apps instead.
 #
-# The envelope is the shape `steward deploy` reads (steward/internal/app/deploy.go,
+# The envelope is the shape `vilice deploy` reads (vilice/internal/app/deploy.go,
 # deployEnvelope): `{ "app" => spec, "secret_values" => { NAME => value } }`. The spec is
 # recorded on the box by digest; secret values ride beside it and are never recorded.
 #

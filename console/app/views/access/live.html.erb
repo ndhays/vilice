@@ -3,7 +3,7 @@
 <%= turbo_frame_tag "access-live", target: "_top" do %>
 <p class="headline">
   <%= pluralize(@total, "key") %> on <%= pluralize(@boxes_read, "box", plural: "boxes") %><%
-    %><% if @ungated.positive? %> · <span class="bad"><%= @ungated %> not written by Steward</span><% end %><%
+    %><% if @ungated.positive? %> · <span class="bad"><%= @ungated %> not written by Vilice</span><% end %><%
     %><% if @unreadable.any? %> · <span class="muted"><%= pluralize(@unreadable.size, "ledger") %> unreadable</span><% end %><%
     %><% if @ungated.zero? && @unreadable.empty? && @total.positive? %> · <span class="ok">every key is scoped</span><% end %>
 </p>
@@ -18,11 +18,11 @@
     and under the Box or Actor axis they are scattered through the list. %>
 <% if @ungated.positive? %>
   <div class="panel mutate">
-    <h2><%= icon "triangle-alert", size: 16 %> <%= pluralize(@ungated, "key") %> not written by Steward</h2>
+    <h2><%= icon "triangle-alert", size: 16 %> <%= pluralize(@ungated, "key") %> not written by Vilice</h2>
     <p>
       These carry no forced command, so whoever holds them reaches the box without
       passing the gate — nothing they do is scoped, and nothing they do is recorded.
-      They were added outside Steward and can only be removed the same way.
+      They were added outside Vilice and can only be removed the same way.
     </p>
   </div>
 <% end %>
@@ -82,6 +82,6 @@
   <% elsif @unreadable.any? %>
     <p class="empty">No ledger could be read, so nothing can be shown here yet.</p>
   <% else %>
-    <p class="empty">No scoped keys anywhere — nobody can reach these boxes through Steward.</p>
+    <p class="empty">No scoped keys anywhere — nobody can reach these boxes through Vilice.</p>
   <% end %>
 <% end %>

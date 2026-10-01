@@ -2,7 +2,7 @@ require "net/http"
 
 # Ask a registry what digest a tag points at *right now*.
 #
-# The box refuses an unpinned image (`steward/internal/app/deploy.go`), and `Version`
+# The box refuses an unpinned image (`vilice/internal/app/deploy.go`), and `Version`
 # mirrors that refusal so it fails where you type it. The only unpleasant part of that
 # rule is finding 64 hex characters by hand, and removing that friction is the console's
 # job — softening the rule is not. So:
@@ -92,7 +92,7 @@ module Registry
     case res
     when Net::HTTPUnauthorized, Net::HTTPForbidden
       raise Error, "#{host} wants a credential for #{repo}. The console holds no registry " \
-                   "logins by design — the box does, via `steward registry-login`. Paste the " \
+                   "logins by design — the box does, via `vilice registry-login`. Paste the " \
                    "digest here instead."
     when Net::HTTPNotFound
       raise Error, "No tag #{tag} at #{host}/#{repo} — check the name and the tag."

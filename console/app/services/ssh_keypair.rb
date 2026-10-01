@@ -2,8 +2,8 @@ require "tmpdir"
 require "open3"
 
 # Generate an ed25519 SSH keypair for a Machine, server-side. The private half is
-# stored encrypted (Machine.encrypts, Decision 2) and never leaves Steward Console; only
-# the public half is shown, to be `steward authorize`d on the box. No gem — shells
+# stored encrypted (Machine.encrypts, Decision 2) and never leaves Vilice Console; only
+# the public half is shown, to be `vilice authorize`d on the box. No gem — shells
 # `ssh-keygen` in a throwaway dir.
 module SshKeypair
   module_function

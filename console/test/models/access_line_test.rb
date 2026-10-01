@@ -1,7 +1,7 @@
 require "test_helper"
 
 # One line of a box's rights ledger. Nothing here is stored — it is assembled from a
-# live `steward actors` read and thrown away — so these pin the reading of that reply.
+# live `vilice actors` read and thrown away — so these pin the reading of that reply.
 class AccessLineTest < ActiveSupport::TestCase
   setup { @machine = Machine.create!(name: "edge-1", ssh_host: "x") }
 
@@ -17,7 +17,7 @@ class AccessLineTest < ActiveSupport::TestCase
     assert_not ranked.last.ungated?
   end
 
-  # Steward parses a comment out only for lines it recognises as grants, so for a
+  # Vilice parses a comment out only for lines it recognises as grants, so for a
   # hand-added key the holder's handle survives nowhere but `raw`. It is the only
   # thing distinguishing one ungated key from another.
   test "an ungated key takes its handle from the raw line's comment" do
@@ -39,7 +39,7 @@ class AccessLineTest < ActiveSupport::TestCase
     assert_equal "unnamed key", l.name
   end
 
-  test "a Steward grant is named by its client, not its comment" do
+  test "a Vilice grant is named by its client, not its comment" do
     l = line(client: "console", scope: "operate", pinned: true, comment: "console@laptop")
     assert_equal "console", l.name
   end

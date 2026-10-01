@@ -1,8 +1,8 @@
-# A read-only view over one Steward `status --json` reply. Turns the raw record
+# A read-only view over one Vilice `status --json` reply. Turns the raw record
 # into the numbers — and the plain-language health line — the observe UI shows.
 #
 # Pure projection: it holds nothing privileged and changes nothing. This is the
-# observe side of the spine made into an object (see app/services/steward.rb).
+# observe side of the spine made into an object (see app/services/vilice.rb).
 class MachineStatus
   # Health thresholds, in percent used. Calm below warn; loud at crit.
   MEM  = { warn: 80, crit: 90 }.freeze
@@ -12,7 +12,7 @@ class MachineStatus
 
   attr_reader :error, :read_at, :raw
 
-  # Build from a Steward.read result: { ok:, data: <envelope>, error:, at: }.
+  # Build from a Vilice.read result: { ok:, data: <envelope>, error:, at: }.
   def self.from(result)
     new(result)
   end
@@ -46,12 +46,12 @@ class MachineStatus
     # reads as unknown, never as a claim that it can do nothing.
     @role = ((result.dig(:data, "data", "role") if @ok) || "").to_s
     # What the box says it fronts for *other* boxes — read off the routing fragment
-    # `steward route` wrote. This is the reality half of the balancer's plan-vs-reality
+    # `vilice route` wrote. This is the reality half of the balancer's plan-vs-reality
     # loop; the plan is Machine#routing_table.
     @routes = (result.dig(:data, "data", "routes") if @ok) || []
     # When each target last backed up, as the box's own `backup` noted it:
     # { configured, targets: { name => { last_ok, last_failed, error } } }. Absent when
-    # the box's steward predates the fact — unknown, so no card, rather than "never".
+    # the box's vilice predates the fact — unknown, so no card, rather than "never".
     @backups = (result.dig(:data, "data", "backups") if @ok)
     # The certificate each served hostname hands out: [{ host, not_after, issuer,
     # valid, error }]. Absent when the box serves no hostname (or predates the check).
@@ -150,8 +150,8 @@ class MachineStatus
     { ok: "green", warn: "yellow", crit: "red", offline: "red" }.fetch(health, "gray")
   end
 
-  # Is this the box Steward Console itself is running on? True only when the live
-  # read carries the same machine-id Steward Console knows itself by — "Steward Console
+  # Is this the box Vilice Console itself is running on? True only when the live
+  # read carries the same machine-id Vilice Console knows itself by — "Vilice Console
   # runs anywhere", so the self case is a recognition, never a special path.
   def here?(self_id)
     self_id.present? && machine_id.present? && machine_id == self_id

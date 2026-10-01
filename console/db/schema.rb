@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_191229) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
   create_table "app_templates", force: :cascade do |t|
     t.json "accessories", default: [], null: false
     t.datetime "created_at", null: false
@@ -106,8 +106,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_191229) do
     t.text "ssh_public_key"
     t.string "ssh_user", default: "root", null: false
     t.string "status", default: "unknown", null: false
-    t.string "steward_version"
     t.datetime "updated_at", null: false
+    t.string "vilice_version"
     t.index ["name"], name: "index_machines_on_name", unique: true
     t.index ["owner_id"], name: "index_machines_on_owner_id"
   end
@@ -191,7 +191,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_191229) do
     t.string "email_address", null: false
     t.string "mode", default: "system", null: false
     t.string "password_digest", null: false
-    t.string "theme", default: "steward", null: false
+    t.string "theme", default: "vilice", null: false
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end

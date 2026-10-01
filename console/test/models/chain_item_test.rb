@@ -1,10 +1,10 @@
 require "test_helper"
 
 # The merge of the two records into one timeline shape (decisions/two-records.md):
-# Steward Console's own acts are authored; box entries are witnessed unless our own
+# Vilice Console's own acts are authored; box entries are witnessed unless our own
 # client issued them.
 class ChainItemTest < ActiveSupport::TestCase
-  test "a Steward Console event becomes an authored item" do
+  test "a Vilice Console event becomes an authored item" do
     e = Event.new(at: Time.current, actor: "alice@x", action: "added",
                   summary: "Added label env=prod on box")
     i = ChainItem.from_event(e)
@@ -49,7 +49,7 @@ class ChainItemTest < ActiveSupport::TestCase
                       outcome: "pending", raw: { command: "apply-updates --json" })
     e.settle!("ok", output: { "ok" => true, "message" => "machine packages updated" })
     i = ChainItem.from_event(e)
-    assert_equal "steward apply-updates --json", i.command
+    assert_equal "vilice apply-updates --json", i.command
     assert_equal "machine packages updated", i.output["message"]
     assert_equal "apply-updates --json", i.entry["command"]
     refute i.entry.key?("output")                  # shown once, under Output
@@ -63,7 +63,7 @@ class ChainItemTest < ActiveSupport::TestCase
   test "a box entry's command is its verb and arguments, read straight off the entry" do
     entry = { "time" => "2026-06-10T00:00:00Z", "actor" => "ci", "action" => "deploy", "args" => [ "app1" ] }
     i = ChainItem.from_record_entry(entry, client: "console")
-    assert_equal "steward deploy app1", i.command
+    assert_equal "vilice deploy app1", i.command
     assert_equal entry, i.entry
   end
 

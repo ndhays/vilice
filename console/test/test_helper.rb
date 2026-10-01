@@ -2,7 +2,7 @@ ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
 require_relative "test_helpers/session_test_helper"
-require_relative "test_helpers/fake_steward"
+require_relative "test_helpers/fake_vilice"
 
 module ActiveSupport
   class TestCase
@@ -16,7 +16,7 @@ module ActiveSupport
 
     # Temporarily replace a singleton method with one returning `value`, then
     # restore it. Used to keep the SSH transport offline in tests.
-    # Stub every Steward observe read at once, offline by default.
+    # Stub every Vilice observe read at once, offline by default.
     #
     # Stubbing verbs one at a time means the day someone adds a fifth read to the
     # machine page, every test that renders it quietly starts making real SSH
@@ -25,14 +25,14 @@ module ActiveSupport
     def stub_observe(**reads)
       offline = { ok: false, error: "stubbed offline" }
       verbs = %i[status record actors doctor]
-      originals = verbs.to_h { |v| [ v, Steward::Observe.method(v) ] }
+      originals = verbs.to_h { |v| [ v, Vilice::Observe.method(v) ] }
       verbs.each do |verb|
         value = reads.fetch(verb, offline)
-        Steward::Observe.define_singleton_method(verb) { |*, **| value }
+        Vilice::Observe.define_singleton_method(verb) { |*, **| value }
       end
       yield
     ensure
-      originals&.each { |verb, m| Steward::Observe.define_singleton_method(verb, m) }
+      originals&.each { |verb, m| Vilice::Observe.define_singleton_method(verb, m) }
     end
 
     # Capture what a mutate would have sent, without sending it. Yields, then
@@ -43,8 +43,8 @@ module ActiveSupport
     # itself a failure, for tests asserting the box is never reached.
     def stub_mutate(result: { ok: true }, refuse: false)
       captured = nil
-      original = Steward::Mutate.method(:run)
-      Steward::Mutate.define_singleton_method(:run) do |machine, command, **kw|
+      original = Vilice::Mutate.method(:run)
+      Vilice::Mutate.define_singleton_method(:run) do |machine, command, **kw|
         raise "the box must not be called" if refuse
         captured = { machine: machine, command: command, stdin: kw[:stdin],
                      app: kw[:app], action: kw[:action] }
@@ -53,7 +53,7 @@ module ActiveSupport
       yield
       captured
     ensure
-      Steward::Mutate.define_singleton_method(:run, original)
+      Vilice::Mutate.define_singleton_method(:run, original)
     end
 
     def stub_returning(owner, name, value)
@@ -64,17 +64,17 @@ module ActiveSupport
       owner.define_singleton_method(name, original)
     end
 
-    # App a scripted, offline Steward transport for the block (Tier-1 contract
-    # tests). Replaces the `Steward.ssh` subprocess seam with a FakeSteward::Transport,
+    # App a scripted, offline Vilice transport for the block (Tier-1 contract
+    # tests). Replaces the `Vilice.ssh` subprocess seam with a FakeVilice::Transport,
     # so the real read/parse/error path runs but nothing touches the network. Yields
     # the fake: script replies with `.on(...)`, then assert with `.issued?`/`.commands`.
-    def with_fake_steward
-      fake = FakeSteward::Transport.new
-      original = Steward.method(:ssh)
-      Steward.define_singleton_method(:ssh) { |machine, command, stdin: nil| fake.ssh(machine, command, stdin: stdin) }
+    def with_fake_vilice
+      fake = FakeVilice::Transport.new
+      original = Vilice.method(:ssh)
+      Vilice.define_singleton_method(:ssh) { |machine, command, stdin: nil| fake.ssh(machine, command, stdin: stdin) }
       yield fake
     ensure
-      Steward.define_singleton_method(:ssh, original)
+      Vilice.define_singleton_method(:ssh, original)
     end
   end
 end

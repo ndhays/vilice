@@ -1,4 +1,4 @@
-# The Record destination — the running record of everything Steward Console has done
+# The Record destination — the running record of everything Vilice Console has done
 # across the fleet (its own authoritative acts). A forensics view: filter by
 # actor / action / project, narrow by time, and search the text of what happened.
 # Each box's own (witnessed) record shows on its machine page; a merged fleet view

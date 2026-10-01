@@ -15,7 +15,7 @@ class ChainTest < ActiveSupport::TestCase
     ]
     items = Chain.for_machine([], entries, client: "console")
     assert_equal 1, items.size
-    assert_equal "steward prepare host --yes", items.first.command
+    assert_equal "vilice prepare host --yes", items.first.command
     assert_equal [ "role set to host", "binary authorized sha256:4a2…cb4f6f" ], items.first.steps.map(&:summary)
   end
 
@@ -35,7 +35,7 @@ class ChainTest < ActiveSupport::TestCase
     refusal = items.first
     assert refusal.refusal?
     assert_equal "snapshot — binary unrecognized", refusal.summary
-    assert_equal "steward snapshot", refusal.command
+    assert_equal "vilice snapshot", refusal.command
     assert_nil refusal.via # nothing ran, so no stamp
     assert_equal 40, refusal.repeats
   end
@@ -58,6 +58,6 @@ class ChainTest < ActiveSupport::TestCase
   test "our key's entry with no event to match still shows" do
     box = entry(41, "2026-09-29T16:00:00Z", "restart", %w[web], actor: "console", scope: "operate")
     items = Chain.for_machine([], [ box ], client: "console")
-    assert_equal [ "steward restart web" ], items.map(&:command)
+    assert_equal [ "vilice restart web" ], items.map(&:command)
   end
 end

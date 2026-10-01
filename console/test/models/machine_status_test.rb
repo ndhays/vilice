@@ -3,7 +3,7 @@ require "test_helper"
 # Projection logic for the observe side. Fixtures use the real `status --json`
 # envelope shape ({ code, data: { machine, apps } }) so the parsing is honest.
 class MachineStatusTest < ActiveSupport::TestCase
-  # Build a Steward.read-style result with the given machine numbers.
+  # Build a Vilice.read-style result with the given machine numbers.
   def reading(mem_total: 4_000_000, mem_avail: 2_000_000,
               disk_total: 100_000_000, disk_free: 40_000_000, load1: 0.2,
               hardening: nil, updates: nil, maintenance: nil)

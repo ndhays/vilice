@@ -86,7 +86,7 @@ class RecordControllerTest < ActionDispatch::IntegrationTest
                         outcome: "pending", raw: { command: "apply-updates --json" })
     act.settle!("ok", output: { "ok" => true, "message" => "machine packages updated" })
     get record_path
-    assert_select ".chain-raw summary .chain-cmd", "steward apply-updates --json"
+    assert_select ".chain-raw summary .chain-cmd", "vilice apply-updates --json"
     # It leads with a stamp of the button that was pressed.
     assert_select ".act-stamp.via-console .cmd-verb", "apply-updates"
     assert_select ".chain-raw .raw-label", "Output"

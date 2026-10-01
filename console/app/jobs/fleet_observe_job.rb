@@ -12,7 +12,7 @@ class FleetObserveJob < ApplicationJob
 
   def perform
     Machine.find_each do |machine|
-      Steward::Observe.status(machine, refresh: true)
+      Vilice::Observe.status(machine, refresh: true)
     rescue => e
       Rails.logger.warn("FleetObserveJob: #{machine.name} read failed: #{e.message}")
     end

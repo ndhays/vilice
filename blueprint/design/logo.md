@@ -71,7 +71,7 @@ an SVG: `og:image`, which every social platform rasterises anyway, and the
 
 ## The lockup
 
-Mark, then a `--space-2` gap, then **`steward` in IBM Plex Mono 600, lowercase**,
+Mark, then a `--space-2` gap, then **`vilice` in IBM Plex Mono 600, lowercase**,
 optically aligned to the box's centre line rather than its bounding box. Lowercase
 because that is how you type it.
 
@@ -80,9 +80,9 @@ wide by the cap height — where the lockup has room to be the page's identity: 
 site header, the README, an `og:image`. Leave it off in tight chrome. It never
 blinks; an animated cursor in a header is a distraction with no information in it.
 
-The wordmark is `steward` alone — and it is now the *only* lockup. The console used
-to set "Steward Console" as the mark plus the words in `--font-sans`; it dropped the
-second word, so the rail and the sign-in card wear this one. "Steward Console" names
+The wordmark is `vilice` alone — and it is now the *only* lockup. The console used
+to set "Vilice Console" as the mark plus the words in `--font-sans`; it dropped the
+second word, so the rail and the sign-in card wear this one. "Vilice Console" names
 the Rails app, and appears nowhere in the UI
 ([`blueprint/console/interface.md`](../console/interface.md)).
 

@@ -1,7 +1,7 @@
-# Steward Console — Core Patterns & Boundaries
+# Vilice Console — Core Patterns & Boundaries
 
 > The handful of patterns the whole system composes from, and the boundaries that keep
-> each piece doing one thing. Read this to understand *what Steward Console is responsible for*
+> each piece doing one thing. Read this to understand *what Vilice Console is responsible for*
 > — and, just as importantly, what it deliberately is not.
 
 **Status:** Canonical **model**. The model is settled; implementation is staged. **Built:**
@@ -16,11 +16,11 @@ in [`one-primitive-composed.md`](../../decisions/one-primitive-composed.md) and
 
 ## Two programs, two purposes
 
-- **Steward — the accountable gate on one box.** It turns a scoped SSH request from a named
+- **Vilice — the accountable gate on one box.** It turns a scoped SSH request from a named
   actor into a recorded, bounded action on *that box*, which keeps its own tamper-evident
   record. Daemonless, no caller-root, **app-agnostic, fleet-agnostic, provider-agnostic.**
   It does not know other boxes exist. *One box, one gate, one record.*
-- **Steward Console — the accountable control plane across boxes.** It lets an operator (or
+- **Vilice Console — the accountable control plane across boxes.** It lets an operator (or
   agent) express intent and act on a fleet, composing the per-box gates into one scoped,
   witnessed, recorded view. It does not provision, route traffic, or run containers — it
   **orchestrates and records.**
@@ -54,7 +54,7 @@ The desired runtime state of **one app instance**: hostnames, env (non-secret), 
 step** — an argv the box runs once from the new image before the new container starts
 (migrations), covered by the same digest as everything else here. Separated from the
 **code** (the image digest) so "update the code" and "change the config" stay distinct,
-separately-witnessed acts. It is Twelve-Factor's *Config*. Steward converges one box to it
+separately-witnessed acts. It is Twelve-Factor's *Config*. Vilice converges one box to it
 (`appState` on the box; `App#deploy_envelope` builds it). See
 [`../../decisions/open/deploy-config-model.md`](../../decisions/open/deploy-config-model.md).
 
@@ -62,11 +62,11 @@ separately-witnessed acts. It is Twelve-Factor's *Config*. Steward converges one
 own digest, where editing mints a new version and the slot (`App` / `apps/<name>` on the box)
 holds a *timeline* of them, one current. This is the grain rollback, restore, drift, and "adopt
 what the box runs" all compose from, and it is distinct from the App Library's `Version` (which
-versions *code*). The artifact is the unit; the box owns reality, Steward Console owns desire, drift is
+versions *code*). The artifact is the unit; the box owns reality, Vilice Console owns desire, drift is
 digest ≠ digest. See [`../../decisions/app-config-is-the-artifact.md`](../../decisions/app-config-is-the-artifact.md).
 *(Principle settled; the version table / box history layout is staged.)*
 
-**AppConfig is scale-free by construction.** Steward only ever converges *one* box to *one*
+**AppConfig is scale-free by construction.** Vilice only ever converges *one* box to *one*
 AppConfig — it has no concept of "how many." So replicating an app is deploying the same
 AppConfig to N boxes; the count lives on the App, never here. The single scale-related
 fact AppConfig carries is **replicable?** — effectively *stateless / no volume*. That's a
@@ -79,9 +79,9 @@ birth/resize and recorded on the resulting Machine for later lifecycle. The mach
 parallel to AppConfig. *(Pending — arrives with the first ProviderAdapter.)*
 
 ### ProviderAdapter — births, kills, resizes substrate
-On request, makes a box **reachable-and-Steward-ready** and returns the four facts (below);
+On request, makes a box **reachable-and-Vilice-ready** and returns the four facts (below);
 optionally tears it down, resizes it, or provisions a managed LB. **Hetzner first; the core
-needs none.** Once a box is Steward-ready the Provider is irrelevant to *operation* — every
+needs none.** Once a box is Vilice-ready the Provider is irrelevant to *operation* — every
 deploy/observe/record runs over SSH and never touches it again, until birth/death/resize. So
 the Provider is a birth-death-resize concern, not an operation concern, and a hand-registered
 bare-SSH box (no Provider) works fully — that is the capture-resistance guarantee. *(Pending.)*
@@ -107,35 +107,35 @@ behind it**. It is a *role over Machine*, not a new primitive, realized two ways
 
 | Realization | What it is | Reconciled via | Recorded in |
 |---|---|---|---|
-| **Self-hosted** | Caddy on a box → a **Machine** (`role: balancer`) | SSH + Steward | the box-witnessed record |
-| **Managed** | a provider LB (e.g. Hetzner) — **no SSH, no Steward** | the Provider API | Steward Console's *authored* record |
+| **Self-hosted** | Caddy on a box → a **Machine** (`role: balancer`) | SSH + Vilice | the box-witnessed record |
+| **Managed** | a provider LB (e.g. Hetzner) — **no SSH, no Vilice** | the Provider API | Vilice Console's *authored* record |
 
 Ownership/sharing is the **Machine model unchanged** ([`machine-ownership.md`](../../decisions/machine-ownership.md)):
 dedicated to one project by default (isolation preserved), shareable to a list ("owned by
-Steward Console, usable by selected projects" = *unowned + sharing=list*). The self-hosted Caddy
+Vilice Console, usable by selected projects" = *unowned + sharing=list*). The self-hosted Caddy
 balancer is the provider-agnostic default and **doubles as the bastion** (next section); the
 managed LB is the opt-out for bought HA, and lives outside the SSH/record spine.
 
 **Self-hosted is built** (2026-08-03). `Machine#balancer` is the role, the table is derived
 by `RoutingTable` from the apps that select it, and applying it is the `route` act —
-`steward route` writing a second Caddy fragment on the box. "Reconciled from the apps
+`vilice route` writing a second Caddy fragment on the box. "Reconciled from the apps
 behind it" means *derived on read*, not converged in the background: the table is computed
 when it is shown and when it is sent, and a person presses Apply
 ([`drift-is-surfaced-never-closed.md`](../../decisions/drift-is-surfaced-never-closed.md)).
 The managed-LB realization is still pending.
 
-## The boundary: what Steward Console must know — and must not care about
+## The boundary: what Vilice Console must know — and must not care about
 
-To do its one job, Steward Console needs exactly **four facts** about a machine, all
+To do its one job, Vilice Console needs exactly **four facts** about a machine, all
 provider-agnostic — and they are the columns `Machine` already has:
 
 1. **how to reach it** — an SSH endpoint (host + port);
 2. **how to be authorized on it** — its scoped key;
 3. **who it is** — a stable identity (machine-id), to tie the record to;
-4. **that the gate is live** — Steward answers.
+4. **that the gate is live** — Vilice answers.
 
 It must **not** care about: how the box was created, its size/CPU/RAM as a *choice* (it
-*observes* actual resources via Steward, never picks them), region, OS image, networking,
+*observes* actual resources via Vilice, never picks them), region, OS image, networking,
 firewalls, snapshots, billing, the managed LB's internals, or how the box is destroyed. All
 of that is behind the Provider. For lifecycle only, a Machine may also hold a thin, **nullable
 provider linkage** (provider name + resource id + the MachineSpec it was born from); null = a
@@ -145,17 +145,17 @@ box you registered and manage yourself.
 
 A backend with no public IP is reached by **jumping through a public box** — `ssh -J <jump>
 <backend>`. The jump is end-to-end: the jump box forwards raw TCP, can't read the session,
-and the scoped key still authenticates to the *backend's* Steward — so the forced command and
+and the scoped key still authenticates to the *backend's* Vilice — so the forced command and
 the record still happen on the backend. **Accountability is preserved; the jump box records
 nothing.** The self-hosted Caddy balancer *is* that public box, so it serves as both the
 traffic edge and the SSH bastion; backends stay fully private. Mechanically a backend Machine
 gains an optional `via: <jump machine>` and the transport adds `-J`; the jump box carries a
 narrow forwarding-only affordance (`permitopen` to the backend subnet), separate from its
-Steward gate. *(Pending — lands with Balancer/fleet.)*
+Vilice gate. *(Pending — lands with Balancer/fleet.)*
 
 Rejected alternatives (see [`provider-boundary.md`](../../decisions/provider-boundary.md)):
-the jump box becoming a sub-Steward Console (a privileged second recorder), and boxes *streaming*
-their state out (the daemon/push model Steward rejects — fine for future *observe*, wrong for
+the jump box becoming a sub-Vilice Console (a privileged second recorder), and boxes *streaming*
+their state out (the daemon/push model Vilice rejects — fine for future *observe*, wrong for
 witnessed *mutate*).
 
 ## Built vs. pending

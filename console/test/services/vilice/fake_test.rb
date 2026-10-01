@@ -1,14 +1,14 @@
 require "test_helper"
 
-# The dev/test fake-observe seam: when on, Steward.read answers from a canned
+# The dev/test fake-observe seam: when on, Vilice.read answers from a canned
 # envelope built off a machine's `fake-health` label — no ssh, no box. Lets seeded
 # scenarios render deterministic health. Off in production by construction.
-class Steward::FakeTest < ActiveSupport::TestCase
+class Vilice::FakeTest < ActiveSupport::TestCase
   def with_fake
-    ENV["STEWARD_FAKE_OBSERVE"] = "1"
+    ENV["VILICE_FAKE_OBSERVE"] = "1"
     yield
   ensure
-    ENV.delete("STEWARD_FAKE_OBSERVE")
+    ENV.delete("VILICE_FAKE_OBSERVE")
   end
 
   def machine(health)
@@ -19,11 +19,11 @@ class Steward::FakeTest < ActiveSupport::TestCase
   end
 
   def status_of(m)
-    MachineStatus.from(Steward::Observe.status(m, refresh: true))
+    MachineStatus.from(Vilice::Observe.status(m, refresh: true))
   end
 
   test "off by default — no env var, no interception" do
-    refute Steward::Fake.on?
+    refute Vilice::Fake.on?
   end
 
   test "an ok box reads online and calm, fully hardened" do
@@ -97,21 +97,21 @@ class Steward::FakeTest < ActiveSupport::TestCase
 
   test "the box record reads back intact" do
     with_fake do
-      rec = Steward::Observe.record(machine("ok"), refresh: true)
+      rec = Vilice::Observe.record(machine("ok"), refresh: true)
       assert rec[:ok]
       assert rec.dig(:data, "data", "intact")
     end
   end
 
-  # The seam hooks Steward.read, which Steward::Mutate shares. Answering a mutate
+  # The seam hooks Vilice.read, which Vilice::Mutate shares. Answering a mutate
   # would settle a witnessed Event as *succeeded* for an act that never reached a
   # box — a record entry asserting something that did not happen.
   test "a mutate is refused, not faked" do
     with_fake do
-      result = Steward.read(machine("ok"), "deploy nginx --image ghcr.io/x@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
+      result = Vilice.read(machine("ok"), "deploy nginx --image ghcr.io/x@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
       assert_not result[:ok], "fake-observe answered a deploy"
       assert_match(/will not fake/, result[:error])
-      assert_match(/STEWARD_FAKE_OBSERVE/, result[:error])
+      assert_match(/VILICE_FAKE_OBSERVE/, result[:error])
     end
   end
 
@@ -122,7 +122,7 @@ class Steward::FakeTest < ActiveSupport::TestCase
       m = machine("ok")
       m.update_columns(scope: "operate")
       assert_difference -> { Event.count }, 1 do
-        Steward::Mutate.run(m, "restart nginx", actor: "alice", action: "restarted")
+        Vilice::Mutate.run(m, "restart nginx", actor: "alice", action: "restarted")
       end
       assert_equal "failed", Event.latest.first.outcome
     end
@@ -133,7 +133,7 @@ class Steward::FakeTest < ActiveSupport::TestCase
   # Access page exists to prevent.
   test "a read it does not model is refused rather than answered empty" do
     with_fake do
-      result = Steward::Observe.actors(machine("ok"), refresh: true)
+      result = Vilice::Observe.actors(machine("ok"), refresh: true)
       assert_not result[:ok]
     end
   end

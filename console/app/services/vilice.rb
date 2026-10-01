@@ -2,25 +2,25 @@ require "open3"
 require "json"
 require "tempfile"
 
-# Steward Console's client to a machine's `steward` CLI over scoped SSH.
+# Vilice Console's client to a machine's `vilice` CLI over scoped SSH.
 #
 # The spine of the whole app — observe vs mutate — lives here as two modules kept
 # apart on purpose. They share only the transport at the bottom of the file.
 #
-#   Steward::Observe — read the record Steward ships. Zero-privilege by
+#   Vilice::Observe — read the record Vilice ships. Zero-privilege by
 #     construction: it only ever runs read commands, caches them, and changes
-#     nothing. Most of Steward Console is this.
+#     nothing. Most of Vilice Console is this.
 #
-#   Steward::Mutate  — issue a named, scoped, recorded command (operate). The
+#   Vilice::Mutate  — issue a named, scoped, recorded command (operate). The
 #     accountable side: every mutation writes an Event *before* it runs, so the
 #     act is witnessed even if it fails (Invariant 2).
 #
 # A Machine carries its own encrypted SSH key (Decision 2); the transport
 # materializes it to a 0600 tempfile only for the length of one call.
-module Steward
+module Vilice
   # ── Observe ──────────────────────────────────────────────────────────────
   # Read-only. Cached in solid_cache (Decision 3). A cache miss just re-reads
-  # Steward — the on-box record (plus its off-host backup) is the source of truth.
+  # Vilice — the on-box record (plus its off-host backup) is the source of truth.
   module Observe
     module_function
 
@@ -31,7 +31,7 @@ module Steward
     TAILS        = [ 50, 200, 1000 ].freeze
 
     # Live machine status, cached per machine. Pass refresh: true to bypass.
-    # A read also reconciles Steward Console's stored *projection* of the box —
+    # A read also reconciles Vilice Console's stored *projection* of the box —
     # reachability + the running image — so the Status page and the drift rollup
     # have something true to read (decisions/observe-reconciliation.md). It stays a
     # read: it mirrors the box into our own columns, it never authors the box's
@@ -39,7 +39,7 @@ module Steward
     # actually talked to the box, not on a cache hit.
     def status(machine, refresh: false)
       cached(machine, "status", refresh: refresh) do
-        Steward.read(machine, "status --json").tap { |result| reconcile(machine, result) }
+        Vilice.read(machine, "status --json").tap { |result| reconcile(machine, result) }
       end
     end
 
@@ -60,7 +60,7 @@ module Steward
 
     # What the box was prepared as, mirrored onto the column the fleet list reads.
     #
-    # The role is **the box's fact, and it is set once**: `steward prepare <role>`
+    # The role is **the box's fact, and it is set once**: `vilice prepare <role>`
     # writes it, and re-preparing into the other role is refused — you take the apps
     # off, uninstall, and prepare again (blueprint/vilice/provision.md). So the
     # console does not get an opinion about it. It used to: a button offered "Make
@@ -103,11 +103,11 @@ module Steward
     end
 
     # The box's rights ledger — who may act on it, at what scope, and any key in
-    # authorized_keys that Steward did not write. A read: it holds no privilege and
+    # authorized_keys that Vilice did not write. A read: it holds no privilege and
     # writes nothing to the chain. See blueprint/vilice/auth.md.
     def actors(machine, refresh: false)
       cached(machine, "actors", refresh: refresh) do
-        Steward.read(machine, "actors --json")
+        Vilice.read(machine, "actors --json")
       end
     end
 
@@ -143,7 +143,7 @@ module Steward
     # Recent doctor check, cached. Same read contract as status.
     def doctor(machine, refresh: false)
       cached(machine, "doctor", refresh: refresh) do
-        Steward.read(machine, "doctor --json")
+        Vilice.read(machine, "doctor --json")
       end
     end
 
@@ -151,12 +151,12 @@ module Steward
     # half of the chain (decisions/two-records.md); a read, changes nothing.
     def record(machine, refresh: false)
       cached(machine, "record", refresh: refresh) do
-        Steward.read(machine, "record --json")
+        Vilice.read(machine, "record --json")
       end
     end
 
-    # An app's log tail, straight off the box. `steward logs` is a passthrough to
-    # `podman logs` — the container is the source of truth and Steward stores nothing —
+    # An app's log tail, straight off the box. `vilice logs` is a passthrough to
+    # `podman logs` — the container is the source of truth and Vilice stores nothing —
     # so this is the one read that owns no projection: it mirrors nothing into our
     # columns and answers only the question that was just asked.
     #
@@ -173,11 +173,11 @@ module Steward
       return { ok: false, reached: true, error: "#{app.inspect} is not a valid app name." } unless
         app.to_s.match?(App::NAME_FORMAT)
 
-      Steward.read(machine, "logs #{app} --tail #{Integer(tail)} --json")
+      Vilice.read(machine, "logs #{app} --tail #{Integer(tail)} --json")
     end
 
     def cached(machine, verb, refresh:)
-      key = "steward:observe:#{verb}:#{machine.id}"
+      key = "vilice:observe:#{verb}:#{machine.id}"
       Rails.cache.delete(key) if refresh
       Rails.cache.fetch(key, expires_in: CACHE_TTL) { yield }
     end
@@ -185,8 +185,8 @@ module Steward
 
   # ── Mutate ───────────────────────────────────────────────────────────────
   # Witnessed, accountable writes. Records an Event before issuing the command,
-  # so nothing happens off the record. Steward holds the authoritative,
-  # hash-chained record; this Event is Steward Console's local mirror of the intent.
+  # so nothing happens off the record. Vilice holds the authoritative,
+  # hash-chained record; this Event is Vilice Console's local mirror of the intent.
   module Mutate
     module_function
 
@@ -202,7 +202,7 @@ module Steward
         summary: summary || machine.name,
         outcome: "pending", raw: { command: command }
       )
-      result = Steward.read(machine, command, stdin: stdin)
+      result = Vilice.read(machine, command, stdin: stdin)
       event.settle!(result[:ok] ? "ok" : "failed", detail: result[:ok] ? nil : result[:error],
                     output: result[:ok] ? result[:data] : result[:output].presence || result[:error],
                     exit_status: result[:exit_status])
@@ -214,13 +214,13 @@ module Steward
   module_function
 
   # Run a command over scoped SSH and parse its JSON reply. Used by both sides;
-  # the scope ceiling is enforced on the box by Steward, not here. `stdin` carries
+  # the scope ceiling is enforced on the box by Vilice, not here. `stdin` carries
   # a payload piped to the remote command — the deploy envelope (secret values ride
   # here, never the recorded command line); nil for everything else.
   def read(machine, command, stdin: nil)
     # Dev/test only: when fake-observe is on, answer from a canned envelope instead
     # of touching the network, so seeded scenarios render with no box (Fake.on?
-    # is false in production by construction). See app/services/steward/fake.rb.
+    # is false in production by construction). See app/services/vilice/fake.rb.
     return Fake.envelope(machine, command) if Fake.on?
 
     out, st = ssh(machine, command, stdin: stdin)
@@ -229,7 +229,7 @@ module Steward
     else
       # **`reached` is not `ok`.** ssh exits 255 when *ssh itself* could not get through —
       # an unauthorized key, a refused connection, a box that is not there. Any other
-      # status is the remote command's own, which means we did reach the box and Steward
+      # status is the remote command's own, which means we did reach the box and Vilice
       # answered badly. Two different problems with two different fixes, and the merged
       # output names neither, so the caller gets told which one this was.
       { ok: false, reached: st.exitstatus != 255,
@@ -243,7 +243,7 @@ module Steward
     { ok: false, reached: false, error: e.message, at: Time.current }
   end
 
-  # A refusal from Steward is a `Result` — `{"code":…,"message":…}` on stdout, and the
+  # A refusal from Vilice is a `Result` — `{"code":…,"message":…}` on stdout, and the
   # CLI exits non-zero for any code but `ok`. Handing the operator that JSON was showing
   # them our transport instead of their answer, so the sentence inside it wins when there
   # is one. Anything else (ssh's own complaints, a bare exit) is passed through as it came.
@@ -280,7 +280,7 @@ module Steward
   def with_key(machine)
     raise "machine #{machine.name} has no ssh key on file" if machine.ssh_private_key.blank?
 
-    file = Tempfile.new([ "steward_key_", "" ])
+    file = Tempfile.new([ "vilice_key_", "" ])
     file.write(machine.ssh_private_key)
     file.write("\n") unless machine.ssh_private_key.end_with?("\n")
     file.close

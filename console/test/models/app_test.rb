@@ -1,7 +1,7 @@
 require "test_helper"
 
 # An app's name/port/health are deployed verbatim, so they're validated against the
-# box's rules (steward validateState/validClient) — fail here, before the act.
+# box's rules (vilice validateState/validClient) — fail here, before the act.
 class AppTest < ActiveSupport::TestCase
   setup { @project = Project.create!(name: "Acme") }
 

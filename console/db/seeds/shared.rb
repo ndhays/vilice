@@ -4,7 +4,7 @@
 # builds a whole, self-consistent world through these helpers. Health (online/
 # load/mem/disk) isn't stored — it's served at request time by the fake-observe
 # seam from each machine's `fake-health` label, so `machine!(… health: "crit")`
-# is all it takes to make a box read critical. Boot with STEWARD_FAKE_OBSERVE=1.
+# is all it takes to make a box read critical. Boot with VILICE_FAKE_OBSERVE=1.
 module Scenario
   module_function
 
@@ -35,8 +35,8 @@ module Scenario
   def machine!(name, health: "ok", labels: {}, **attrs)
     m = Machine.find_or_initialize_by(name: name)
     m.assign_attributes({
-      ssh_host: "#{name}.fake", ssh_user: "steward", scope: "observe",
-      last_seen_at: Time.current, status: "reachable", steward_version: PlatformVersion
+      ssh_host: "#{name}.fake", ssh_user: "_vilice", scope: "observe",
+      last_seen_at: Time.current, status: "reachable", vilice_version: PlatformVersion
     }.merge(attrs))
     m.save!
     label!(m, "fake-health", health) if health
@@ -167,7 +167,7 @@ module Scenario
     puts "Seeded [#{name}]: #{Project.count} projects, #{Machine.count} machines, " \
          "#{App.count} apps, #{AppTemplate.count} apps, #{Event.count} events."
     puts "Sign in: operator@console.test / password"
-    puts "Boot with STEWARD_FAKE_OBSERVE=1 for live health (or use bin/scenario)."
+    puts "Boot with VILICE_FAKE_OBSERVE=1 for live health (or use bin/scenario)."
   end
 
   # The platform VERSION, read once (the repo-root single source of truth).

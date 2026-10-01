@@ -13,7 +13,7 @@ class App < ApplicationRecord
   has_many :events, dependent: :nullify
 
   # This name is the one the box actually uses — `apps/<name>.json`, volumes, the unit.
-  # Steward rejects anything outside [A-Za-z0-9_-] (auth.go `validClient`) and won't
+  # Vilice rejects anything outside [A-Za-z0-9_-] (auth.go `validClient`) and won't
   # dash-case it, so validate here (matching AppTemplate's rule) to fail before the act. Port
   # and health are deployed verbatim too, so they mirror the box's bounds like AppTemplate's.
   NAME_FORMAT = /\A[A-Za-z0-9][A-Za-z0-9_-]*\z/
@@ -50,12 +50,12 @@ class App < ApplicationRecord
 
   # A volume is `<source>:<container-path>[:opts]` — a named volume (`storage`) or a host
   # path (`/srv/x`), then an absolute mount path. Mirrors the box's `Volume=` line
-  # (steward/quadlet.go) and backup's `volumeSource` split, so a malformed mount fails here,
+  # (vilice/quadlet.go) and backup's `volumeSource` split, so a malformed mount fails here,
   # before the act, like name/port/health above.
   VOLUME_FORMAT = %r{\A([A-Za-z0-9_.-]+|/[^:\s]+):/[^:\s]+(:[A-Za-z,]+)?\z}
 
   # A host path is confined to /srv, mirroring the box's `bindRoots`. This is not a
-  # tidiness rule: a bind mount of host root hands an operate key ~steward/.ssh, and with
+  # tidiness rule: a bind mount of host root hands an operate key ~_vilice/.ssh, and with
   # it a grant — the box's own `TestBindMountsAreConfinedToTheDataRoot` calls it "the
   # escalation that was live". The box refuses it either way; refusing it here means you
   # find out where you typed it rather than at the far end, after building on it.
@@ -240,8 +240,8 @@ class App < ApplicationRecord
       .or(where(id: joins(placements: :machine).where("machines.name LIKE ?", like).select(:id)))
   end
 
-  # The desired-state envelope Steward's `deploy` reads on stdin
-  # (steward/deploy.go `deployEnvelope`/`appSpec`). The App *is* the spec; a
+  # The desired-state envelope Vilice's `deploy` reads on stdin
+  # (vilice/deploy.go `deployEnvelope`/`appSpec`). The App *is* the spec; a
   # deploy just pins a new `image` digest, with hostname/port/health overridable
   # from the compose form. Secret *values* never live here — that's #14's
   # off-record channel — so `secret_values` is omitted.

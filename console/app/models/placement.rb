@@ -4,7 +4,7 @@ class Placement < ApplicationRecord
 
   enum :strategy, { single: "single", replica: "replica" }, default: "single", prefix: true
 
-  # Where this placement stands. desired_image is what we asked Steward to run;
+  # Where this placement stands. desired_image is what we asked Vilice to run;
   # current_image is what it reports running.
   enum :status,
        { pending: "pending", deploying: "deploying", running: "running",

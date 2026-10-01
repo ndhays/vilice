@@ -13,7 +13,7 @@ class Version < ApplicationRecord
 
   private
 
-  # The box refuses an unpinned image (`steward/internal/app/deploy.go`: "image must
+  # The box refuses an unpinned image (`vilice/internal/app/deploy.go`: "image must
   # be digest-pinned"), so a floating tag in the library is a release that looks
   # installable and is then rejected at the far end, after someone has built a
   # placement on it. Refuse it here, where it is typed.

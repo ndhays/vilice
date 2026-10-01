@@ -16,7 +16,7 @@
     <%= machine_status_icon(machine) %>
     <%= link_to machine.name, machine, class: "row-name" %>
     <% if local_machine?(machine) %>
-      <%= icon_tip "map-pin", "This box — the machine Steward runs on",
+      <%= icon_tip "map-pin", "This box — the machine Vilice runs on",
             size: 15, css_class: "self-pin" %>
     <% end %>
     <%# Which edge fronts this box. A fact about this one row, so it holds under every

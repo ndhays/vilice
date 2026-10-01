@@ -22,25 +22,25 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
   test "appearance saves theme and mode without writing to the record" do
     sign_in_as @user
     assert_no_difference -> { Event.count } do
-      patch settings_appearance_path, params: { theme: "steward", mode: "dark" }
+      patch settings_appearance_path, params: { theme: "vilice", mode: "dark" }
     end
     assert_equal "dark", @user.reload.mode
-    assert_equal "steward", @user.theme
+    assert_equal "vilice", @user.theme
   end
 
   # The rail's toggle knows only the mode; it must not blank the theme by omission.
   test "the rail toggle sends mode alone and leaves the theme intact" do
     sign_in_as @user
-    @user.update!(theme: "steward", mode: "light")
+    @user.update!(theme: "vilice", mode: "light")
     patch settings_appearance_path, params: { mode: "dark" }
     assert_equal "dark", @user.reload.mode
-    assert_equal "steward", @user.theme
+    assert_equal "vilice", @user.theme
   end
 
   test "an unknown theme is refused rather than reaching the layout" do
     sign_in_as @user
     patch settings_appearance_path, params: { theme: "switchyard" }
-    assert_equal "steward", @user.reload.theme
+    assert_equal "vilice", @user.reload.theme
   end
 
   # The theme is in the first byte — there is no stored copy in the browser that
@@ -50,7 +50,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     @user.update!(mode: "dark")
     get settings_path
     assert_response :success
-    assert_select "html[data-theme=?][data-mode=?]", "steward", "dark"
+    assert_select "html[data-theme=?][data-mode=?]", "vilice", "dark"
   end
 
   test "change password with the correct current password" do

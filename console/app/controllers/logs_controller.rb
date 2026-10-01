@@ -1,6 +1,6 @@
 # An app's logs, read off the box on request.
 #
-# **A read, not an act.** Nothing is recorded, because nothing happened: `steward logs`
+# **A read, not an act.** Nothing is recorded, because nothing happened: `vilice logs`
 # is `observe` scope and a passthrough to `podman logs`
 # (decisions/a-sample-is-not-an-act.md — an act reports that something happened, and
 # looking is not that). It is also the only observe read that mirrors nothing into our
@@ -13,13 +13,13 @@ class LogsController < ApplicationController
   def show
     @machine = Machine.find(params[:machine_id])
     @app = App.find(params[:app_id])
-    @tail    = Steward::Observe::TAILS.include?(params[:tail].to_i) ? params[:tail].to_i
-                                                                   : Steward::Observe::DEFAULT_TAIL
+    @tail    = Vilice::Observe::TAILS.include?(params[:tail].to_i) ? params[:tail].to_i
+                                                                   : Vilice::Observe::DEFAULT_TAIL
     # The app is only readable where it was actually placed. Asking box B for app A's
     # logs when A lives on C would fail on the box anyway; refusing here says why.
     @placement = @app.placements.find_by(machine: @machine)
     return render :absent, status: :not_found unless @placement
 
-    @result = Steward::Observe.logs(@machine, @app.name, tail: @tail)
+    @result = Vilice::Observe.logs(@machine, @app.name, tail: @tail)
   end
 end

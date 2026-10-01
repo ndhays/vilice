@@ -12,7 +12,7 @@ Rails.application.routes.draw do
   get "record", to: "record#index"
 
   # Access — the rights ledger: who may act on which box, at what scope. Read
-  # straight from each box's authorized_keys through `steward actors`.
+  # straight from each box's authorized_keys through `vilice actors`.
   get "access", to: "access#index"
   # The ledgers themselves, read from every box and loaded into the page after it renders.
   get "access/live", to: "access#live", as: :live_access

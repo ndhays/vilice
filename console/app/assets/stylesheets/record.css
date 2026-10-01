@@ -386,7 +386,7 @@
 .act-button { flex: none; }
 .act-button form { margin: 0; }
 
-/* A button that sends a steward command: the mark and the verb, filled (inverse) so
+/* A button that sends a vilice command: the mark and the verb, filled (inverse) so
    it cannot pass for a link or a plain button. Violet for acts, blue for a read, red
    for one that takes something away. An inert one (nothing to do) keeps its place. */
 .btn.cmd {
@@ -480,7 +480,7 @@ h1 .health-line.crit { font-size: 1rem; }
   font-size: 0.95rem; margin: 0 0 0.6rem;
 }
 
-/* A refusal: Steward said no. Red words, not a stamp — nothing ran. */
+/* A refusal: Vilice said no. Red words, not a stamp — nothing ran. */
 .chain-act.refused { color: var(--bad); display: inline-flex; align-items: center; gap: 0.25rem; vertical-align: -0.1em; }
 .chain-entry.is-refused .chain-dot { color: var(--bad); }
 .tag.repeats { color: var(--muted); margin-left: 0.4rem; }

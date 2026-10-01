@@ -1,6 +1,6 @@
 # Design — Overview
 
-> The canonical picture of how Steward's surfaces look and why. Start here, then
+> The canonical picture of how Vilice's surfaces look and why. Start here, then
 > `tokens.md` for the values, `logo.md` for the mark, `patterns.md` for the parts.
 
 **Status:** Canonical. Last touched 2026-08-09.
@@ -12,7 +12,7 @@
 One design system, answered to by two surfaces:
 
 - **The documentation site** (`site/`) — a static Web Origami build.
-- **Steward Console** (`console/`) — a Rails app.
+- **Vilice Console** (`console/`) — a Rails app.
 
 They share a foundation: the same mark, the same two typefaces, the same neutrals,
 the same yellow, the same focus ring. A reader who moves between them should feel
@@ -28,7 +28,7 @@ If a third surface appears, extract the file then.
 
 ## What it is for
 
-Steward's whole argument is that you can check it by eye: a small ceiling, a legible
+Vilice's whole argument is that you can check it by eye: a small ceiling, a legible
 ledger, a record you can `cat`. A design that asks to be admired argues against
 that. So the target is a page that gets out of the way — legible, quiet, obviously
 unfashionable, and still there in five years.
@@ -54,7 +54,7 @@ Tone in copy follows the same line, and is set out in `site/README.md` and
 
 ## Black and yellow, honestly
 
-The accent is Linux yellow on near-black — the palette of the terminal Steward
+The accent is Linux yellow on near-black — the palette of the terminal Vilice
 lives in. It comes with one hard constraint, and the system is shaped around it:
 
 **`#F2C200` is 1.7:1 on white.** It fails every contrast threshold there is. So:

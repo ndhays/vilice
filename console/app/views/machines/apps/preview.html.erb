@@ -39,14 +39,14 @@
   <p class="ceremony-intro">It will be recorded, then run:</p>
   <%= render "events/chain", items: [ ChainItem.new(at: Time.current, actor: Current.user&.email_address || "console",
         action: "deployed", summary: "#{@deploy.name} on #{@machine.name}", origin: :authored,
-        machine: @machine, outcome: "pending", kind: :command, command: "steward #{@deploy.command}") ] %>
+        machine: @machine, outcome: "pending", kind: :command, command: "vilice #{@deploy.command}") ] %>
 
   <p class="ceremony-runs">Runs over scoped SSH, with the spec on stdin:</p>
-  <%= command_block("steward #{@deploy.command}") %>
+  <%= command_block("vilice #{@deploy.command}") %>
 
   <details class="raw-output">
     <summary>Raw spec</summary>
-    <p class="raw-cmd">stdin → steward <%= @deploy.command %></p>
+    <p class="raw-cmd">stdin → vilice <%= @deploy.command %></p>
     <pre class="raw"><%= JSON.pretty_generate(@deploy.shown_envelope) %></pre>
   </details>
 
@@ -56,7 +56,7 @@
     <% end %>
     <div class="ceremony-actions">
       <%= button_tag name: "confirm", value: "1", class: "btn mutate cmd" do %>
-        <%= steward_verb "deploy" %>
+        <%= vilice_verb "deploy" %>
       <% end %>
       <%= button_tag "Edit", name: "edit", value: "1", class: "btn-quiet" %>
     </div>

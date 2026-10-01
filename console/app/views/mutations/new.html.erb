@@ -53,7 +53,7 @@
     <%# The full command, flags and all — the button said only its name. Copyable, so
         the same act can be run by hand, or handed to anyone else holding a key. %>
     <p class="ceremony-runs">Runs over scoped SSH<%= ", with the spec on stdin" if @mutation.stdin %>:</p>
-    <%= command_block("steward #{@mutation.command}") %>
+    <%= command_block("vilice #{@mutation.command}") %>
 
     <%# Said before the press, not after the failure — and a warning, never a block. A box
         authorized a minute ago has not been observed yet and would read exactly like this,
@@ -62,7 +62,7 @@
     <% if @machine.never_reached? && @machine.authorize_command %>
       <div class="ceremony-warn">
         <p class="note"><%= icon "triangle-alert", size: 14 %>
-          <strong><%= @machine.name %> has never answered Steward.</strong> If its
+          <strong><%= @machine.name %> has never answered Vilice.</strong> If its
           authorize line hasn't been run on the box yet, this act will fail to connect.
           Run it there first:</p>
         <%= command_block(@machine.authorize_command) %>
@@ -76,7 +76,7 @@
           leave the ceremony for the whole page — the settled record and the notice
           belong to the page, and on the machine page the ceremony sits inside a frame
           the box's reply fills in, which the reply to this cannot land in. %>
-      <%= button_to steward_verb(@mutation.act.verb), machine_mutation_path(@machine), method: :post,
+      <%= button_to vilice_verb(@mutation.act.verb), machine_mutation_path(@machine), method: :post,
             class: "btn mutate cmd", params: confirm, form: { data: { turbo_frame: "_top" } } %>
       <%= link_to "Cancel", @return_path, class: "btn-quiet", data: { turbo_frame: "_top" } %>
     </div>

@@ -2,7 +2,7 @@
 # the single allowlist — a verb never comes from raw input; it's looked up here.
 # Each act knows its past-tense fact for the record, whether it targets the whole
 # machine or one app (App), whether it needs a compose step, and how to build
-# the steward command. This is the one seam future acts (reboot, …) extend.
+# the vilice command. This is the one seam future acts (reboot, …) extend.
 #
 # A Mutation instance binds an act to a machine/app/actor (+ any compose
 # params) and can produce the exact record line the ceremony previews — so
@@ -140,6 +140,6 @@ class Mutation
   def preview_item
     ChainItem.new(at: Time.current, actor: actor, action: action, summary: summary,
                   origin: :authored, machine: machine, project: app&.project,
-                  outcome: "pending", command: "steward #{command}")
+                  outcome: "pending", command: "vilice #{command}")
   end
 end

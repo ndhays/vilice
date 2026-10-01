@@ -1,7 +1,7 @@
-# Steward Console — Data Model
+# Vilice Console — Data Model
 
 > The domain in tables. Three decisions are settled inline (tenant boundary, key
-> custody, read strategy). **Steward is always the source of truth for observe data** —
+> custody, read strategy). **Vilice is always the source of truth for observe data** —
 > these tables are the control plane's own state plus a re-derivable lens over the record.
 
 **Status:** Built (first cut) + the `Label` table. Last touched 2026-08-19.
@@ -16,14 +16,14 @@ decisions are enforced and tested:
   Project is on its allowlist.
 - `encrypts :ssh_private_key` keeps key material ciphertext at rest (Decision 2).
 - Observe reads run live over scoped SSH and cache in solid_cache (Decision 3) — see
-  `app/services/steward.rb`, split into `Steward::Observe` and `Steward::Mutate`. A read
+  `app/services/vilice.rb`, split into `Vilice::Observe` and `Vilice::Mutate`. A read
   also **reconciles the stored projection** (`Machine#status`/`last_seen_at`,
   `Placement#current_image`) so the Status page and the drift rollup read something
   true; `FleetObserveJob` runs the read fleet-wide on a cadence
   (→ [observe-reconciliation.md](../../decisions/observe-reconciliation.md)).
-- **`Steward::Observe.logs` is the exception to both halves**, and deliberately.
-  `steward logs` is a passthrough to `podman logs` — the container is the source of
-  truth and Steward stores nothing — so there is no projection to reconcile. And it is
+- **`Vilice::Observe.logs` is the exception to both halves**, and deliberately.
+  `vilice logs` is a passthrough to `podman logs` — the container is the source of
+  truth and Vilice stores nothing — so there is no projection to reconcile. And it is
   **not cached**: a status is a projection you compare over time, a log tail is a stream
   someone asked for *now*, usually while watching a deploy, and answering that with a
   30-second-old tail would be a lie in the shape of a feature. Every tail is therefore
@@ -33,9 +33,9 @@ decisions are enforced and tested:
   reaches a command line.
 
 Partly wired: **ingestion**. The live projection above is reconciled on every read, but
-the *historical* index isn't: nothing yet writes `Snapshot` rows from Steward's
-`status.jsonl`, and `Event` is populated only by Steward Console's own mutations
-(record-before-run) — not yet mirrored from Steward's audit chain. That history is the
+the *historical* index isn't: nothing yet writes `Snapshot` rows from Vilice's
+`status.jsonl`, and `Event` is populated only by Vilice Console's own mutations
+(record-before-run) — not yet mirrored from Vilice's audit chain. That history is the
 open heartbeat question.
 
 ---
@@ -51,12 +51,12 @@ open heartbeat question.
   project); has_many `machines, through: project_machines` (M:N)
 - has_many `labels` (polymorphic) — see `Label`
 
-### `Machine` — a Steward box
+### `Machine` — a Vilice box
 - `name` (unique) — **mirrors the box, not typed**: seeded from `ssh_host` at Add (we
   can't read the box yet), then renamed to the box's reported hostname on the first
   observe (→ [machine-name-mirrors-the-box.md](../../decisions/machine-name-mirrors-the-box.md))
 - `ssh_host`, `ssh_port` (default 22), `ssh_user`
-- `steward_version`, `last_seen_at`, `status` (`unknown`/`reachable`/`unreachable` enum)
+- `vilice_version`, `last_seen_at`, `status` (`unknown`/`reachable`/`unreachable` enum)
   — `status` + `last_seen_at` are **reconciled from each observe read**, not the live
   cache: a successful read sets `reachable` + stamps `last_seen_at`, a failed one sets
   `unreachable` (→ [observe-reconciliation.md](../../decisions/observe-reconciliation.md))
@@ -82,8 +82,8 @@ open heartbeat question.
   surface as balanced apps with no balancer, a visible problem rather than a silent
   disappearance.
 - `ssh_private_key` — **encrypted** (Active Record Encryption) → see decision 2
-- `ssh_public_key` — the authorized half (not secret). Steward Console generates the keypair at
-  onboarding (`SshKeypair`); the operator `steward authorize`s this pubkey on the box.
+- `ssh_public_key` — the authorized half (not secret). Vilice Console generates the keypair at
+  onboarding (`SshKeypair`); the operator `vilice authorize`s this pubkey on the box.
   `Machine#authorize_command` renders that line. See
   `../../decisions/open/create-machine.md`.
 - has_many `projects, through: project_machines`; has_many `granted_projects, through:
@@ -138,8 +138,8 @@ open heartbeat question.
   `secret_files` is a list of `{ name, path }` — values mounted as files off-record (a
   config, an htpasswd). Names follow the box's env rule (`[A-Za-z_][A-Za-z0-9_]*`); a name
   can't be both an env var and a file. Edited on the App page; carried in the manifest.
-- **Validations mirror the box** (`steward` `validateState`/`validClient`), so a bad
-  value fails in Steward Console — before the act — not cryptically at deploy: `name` is
+- **Validations mirror the box** (`vilice` `validateState`/`validClient`), so a bad
+  value fails in Vilice Console — before the act — not cryptically at deploy: `name` is
   box-safe `[A-Za-z0-9_-]` starting with a letter or digit (it seeds the app name,
   which becomes `apps/<name>.json`
   + volumes + unit on the box; **not** dash-cased for you); `port` is 1024–65535 or blank
@@ -150,7 +150,7 @@ open heartbeat question.
   (a deployment into a Project) → `Placement` (per machine)** — and itself the head of
   its release history (**`AppTemplate` → `Version`**). Curating it is a recorded own-record act.
   `has_many :labels` (polymorphic, generic metadata). Not a security boundary — the
-  un-bypassable image allowlist is a separate Steward-side concern.
+  un-bypassable image allowlist is a separate Vilice-side concern.
 - **Portable as a manifest** (`Library`, `apps#export`/`import`). The whole library
   exports to a YAML manifest (apps + versions, **labels omitted** — they're local
   organization, not the app's official definition) and imports back **additively**,
@@ -179,7 +179,7 @@ open heartbeat question.
   credential lives on the box
   ([`registry-credentials.md`](../../decisions/registry-credentials.md)) precisely so the
   console never holds pull access to your images. A registry that asks for authentication
-  gets a sentence pointing at `steward registry-login` and an invitation to paste the
+  gets a sentence pointing at `vilice registry-login` and an invitation to paste the
   digest — not a field to put a password in.
 
 ### `App` — a deployed app
@@ -273,16 +273,16 @@ open heartbeat question.
     spec means the gate can never disagree with the spec the way a flag could. A stateful
     app is refused a count above 1 at validation, not merely discouraged in the form.
 - **Validated against the box, since these deploy verbatim** (same as `AppTemplate`, mirroring
-  `steward` `validateState`): `name` is box-safe `[A-Za-z0-9_-]`, first character
+  `vilice` `validateState`): `name` is box-safe `[A-Za-z0-9_-]`, first character
   alphanumeric — it's the box's own
   identifier (`apps/<name>.json`, volumes, unit), prefilled from the app name and not
   dash-cased; `port` 1024–65535 or blank; `health` starts with `/` or blank. Each `volumes`
-  entry mirrors the box's `Volume=` line (`steward/internal/app/quadlet.go`): `source:/container-path[:opts]`
+  entry mirrors the box's `Volume=` line (`vilice/internal/app/quadlet.go`): `source:/container-path[:opts]`
   where `source` is a named volume or host path and the mount path is absolute — a malformed
   mount fails here, before the act.
 - has_many `placements`
 - **The App *is* the deploy spec.** `App#deploy_envelope(image:)` builds the
-  JSON envelope Steward's `deploy` reads on stdin (`{app:{image,hostnames,port,health,
+  JSON envelope Vilice's `deploy` reads on stdin (`{app:{image,hostnames,port,health,
   env,volumes}}`) — secret *values* never live here (#14's off-record channel). A deploy through
   the mutate ceremony just pins a new `image` digest (compose step).
 
@@ -296,7 +296,7 @@ open heartbeat question.
   Project clobbering another's app or hijacking its route on a shared box — the
   control-plane guardrail above the box's own boundary. See the isolation rule in
   [`journeys.md`](journeys.md).
-- A successful deploy pins `desired_image` (what we asked Steward to run); `current_image`
+- A successful deploy pins `desired_image` (what we asked Vilice to run); `current_image`
   is reconciled from what the box reports (observe), not written by the deploy — so
   `in_sync?` is honest drift, not an assumption.
 - **The intention is editable; the spec is not, here.** `apps#edit`/`update` reach
@@ -334,13 +334,13 @@ open heartbeat question.
 
 ### `Snapshot` — status over time
 - `machine_id`, `captured_at`, `reachable`, `metrics` (load/mem/disk), `raw` (jsonb)
-- ingested from Steward's `status.jsonl` / live reads. **Re-derivable.**
+- ingested from Vilice's `status.jsonl` / live reads. **Re-derivable.**
 
-## The record — Steward Console's own, plus a Steward mirror
+## The record — Vilice Console's own, plus a Vilice mirror
 
 ### `Event`
 - `machine_id` / `app_id` / `project_id`, `at`, `actor`, `action`, `summary`, `raw`
-  (`raw["command"]`: the steward command sent, for an act that sent one)
+  (`raw["command"]`: the vilice command sent, for an act that sent one)
 - **Outcome lifecycle** — `outcome` (nil → `pending` → `ok`/`failed`), `finished_at`,
   `detail`. A witnessed act is recorded `pending` *before* it runs (record-before-act),
   then **settled once** on the same row when it returns. Instantaneous acts (a label
@@ -351,22 +351,22 @@ open heartbeat question.
   the facts but permits this single pending→settled transition — see
   [`../../decisions/record-outcome-on-the-entry.md`](../../decisions/record-outcome-on-the-entry.md).
 - **Two roles, kept distinct** (see [`../../decisions/two-records.md`](../../decisions/two-records.md)):
-  - *Steward Console's own acts* — control-plane mutations with no box (created / linked /
+  - *Vilice Console's own acts* — control-plane mutations with no box (created / linked /
     labelled), **human attribution**, fleet-level groupings, the intent + outcome of
     issued commands (incl. **refused/failed**, which never reach a box), access events.
     **Authoritative; not re-derivable.**
-  - *A mirror of Steward's record* — box acts pulled over scoped SSH for unified
+  - *A mirror of Vilice's record* — box acts pulled over scoped SSH for unified
     display/search (the "fancy Sentry"). **Re-derivable cache.**
-- The displayed timeline (the "chain") merges the two; **authored** (Steward Console ran it,
+- The displayed timeline (the "chain") merges the two; **authored** (Vilice Console ran it,
   human behind it) vs **witnessed** (it appeared in the box record from elsewhere) falls
   out by layer.
-- **Not hash-chained.** Steward's on-box chain is the external anchor — anything
+- **Not hash-chained.** Vilice's on-box chain is the external anchor — anything
   box-touching is cross-checkable against it; a same-DB self-anchored chain would be
   theater. See the decision.
 
 ## Auth
-- `User`, `Session` — operators who log into Steward Console (Boxcar / Rails 8 auth).
-  Steward Console's own **web** auth; distinct from the scoped-SSH keys it holds per Machine.
+- `User`, `Session` — operators who log into Vilice Console (Boxcar / Rails 8 auth).
+  Vilice Console's own **web** auth; distinct from the scoped-SSH keys it holds per Machine.
 
 ---
 
@@ -383,21 +383,21 @@ or release ownership (an unowned box is inert, surfaced on the fleet page). The 
 `../../decisions/machine-ownership.md`.
 
 ### 2. Key custody — Active Record Encryption, per machine
-Each Machine holds the SSH **private** key whose public half is `steward authorize`d on
+Each Machine holds the SSH **private** key whose public half is `vilice authorize`d on
 the box, stored with Rails **Active Record Encryption** (`encrypts :ssh_private_key`).
 Per-machine keypairs, so revoking one box never touches another. This is the
 best-practice default; **no external secret manager** (Bitwarden CLI, etc.) — that would
 solve a problem we don't have yet.
 
-### 3. Reads — live from Steward, cached in `solid_cache`
-Steward's on-box append-only record is the **source of truth for box data** (status,
-the audit chain); Steward Console never authors it. (Off-host shipping, to make the record
-survive the box, is still open — see Steward's open questions.) Steward Console reads on
+### 3. Reads — live from Vilice, cached in `solid_cache`
+Vilice's on-box append-only record is the **source of truth for box data** (status,
+the audit chain); Vilice Console never authors it. (Off-host shipping, to make the record
+survive the box, is still open — see Vilice's open questions.) Vilice Console reads on
 demand over scoped SSH and **caches in `solid_cache`** (DB-backed, shared across
 requests, TTL'd) — *not* browser memory, *not* tmp files. `Snapshot` and the **mirror**
-half of `Event` are this re-derivable cache; a miss just re-reads Steward.
+half of `Event` are this re-derivable cache; a miss just re-reads Vilice.
 
-This is **not** the whole story: Steward Console also keeps its **own** authoritative record
+This is **not** the whole story: Vilice Console also keeps its **own** authoritative record
 of control-plane acts that no box can see (Article II at its layer). See
 [`../../decisions/two-records.md`](../../decisions/two-records.md) — the two-record model,
-and why Steward Console's record is **not** hash-chained.
+and why Vilice Console's record is **not** hash-chained.

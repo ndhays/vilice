@@ -1,5 +1,5 @@
 <%# The witnessed app verbs for one app on one machine. Rendered by both the
-    machine page (the box / sysadmin lens) and the app page (the app / Steward Console
+    machine page (the box / sysadmin lens) and the app page (the app / Vilice Console
     lens) — see decisions/install-the-app-actions-home.md. `from` tells the ceremony
     where to return ("app" → the app page; anything else → the machine page).
     Each link fills the page's #ceremony frame with the preview. Locals: app,
@@ -12,21 +12,21 @@
     targets across boxes of mixed reachability, so the gate lives here. %>
 <% unless machine.seen_unreachable? %>
 <span class="acts-app-verbs">
-  <%# Each verb is named for the steward command it sends — mono, lowercase, the same
+  <%# Each verb is named for the vilice command it sends — mono, lowercase, the same
       word you would type. The full command is in the preview. %>
-  <%= link_to steward_verb("deploy"),
+  <%= link_to vilice_verb("deploy"),
         new_machine_mutation_path(machine, act: "deploy", app_id: app.id, from: from),
         class: "btn mutate cmd sm deploy-verb", data: { turbo_frame: "ceremony" } %>
-  <%= link_to steward_verb("rollback"),
+  <%= link_to vilice_verb("rollback"),
         new_machine_mutation_path(machine, act: "rollback", app_id: app.id, from: from),
         class: "btn mutate cmd sm deploy-verb", data: { turbo_frame: "ceremony" } %>
   <span class="verb-sep"></span>
   <% Mutation::LIFECYCLE.each do |verb| %>
-    <%= link_to steward_verb(verb),
+    <%= link_to vilice_verb(verb),
           new_machine_mutation_path(machine, act: verb, app_id: app.id, from: from),
           class: "btn mutate cmd sm", data: { turbo_frame: "ceremony" } %>
   <% end %>
-  <%= link_to steward_verb("remove"),
+  <%= link_to vilice_verb("remove"),
         new_machine_mutation_path(machine, act: "remove", app_id: app.id, from: from),
         class: "btn danger cmd sm", data: { turbo_frame: "ceremony" } %>
 </span>

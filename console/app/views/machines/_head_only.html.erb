@@ -1,12 +1,12 @@
 <%# The name and its one live signal. Locals: machine, status (nil until read). %>
 <h1 class="machine-head" id="machine-head">
-  <%# On the box Steward runs on, lead with a location pin — "you are here" at a
+  <%# On the box Vilice runs on, lead with a location pin — "you are here" at a
       glance, said in words on hover. Otherwise the glyph is the role. %>
   <% if you_are_here?(status) %>
-    <%# NOTE: acting on the self box is the OOM-sensitive path (Steward deploying its
+    <%# NOTE: acting on the self box is the OOM-sensitive path (Vilice deploying its
         own box) — the mutate ceremony will need self-aware handling here (warn/guard)
         before #20 self-deploy. See decisions/open/ui-shape.md. %>
-    <%= icon_tip "map-pin", "You are here — the box Steward runs on", size: 22 %>
+    <%= icon_tip "map-pin", "You are here — the box Vilice runs on", size: 22 %>
   <% else %>
     <%= icon machine_role_icon_name(machine, status), size: 22 %>
   <% end %>

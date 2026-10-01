@@ -51,7 +51,7 @@ class RoutingTableTest < ActiveSupport::TestCase
   end
 
   # A hostname with nowhere to send traffic is worse than an absent route — the box
-  # would answer and 502. Steward refuses such a table anyway; we don't build one.
+  # would answer and 502. Vilice refuses such a table anyway; we don't build one.
   test "an app with no serving box produces no route at all" do
     balanced_app("web", "app.example.com")
     assert_empty RoutingTable.for(@edge)
@@ -73,7 +73,7 @@ class RoutingTableTest < ActiveSupport::TestCase
     assert_equal 1, RoutingTable.for(other).size
   end
 
-  # The envelope is exactly what `steward route` reads on stdin — hostnames and
+  # The envelope is exactly what `vilice route` reads on stdin — hostnames and
   # upstreams, nothing else about our model.
   test "the envelope is the shape the box parses" do
     app = balanced_app("web", "app.example.com")
@@ -85,7 +85,7 @@ class RoutingTableTest < ActiveSupport::TestCase
   end
 
   # An empty table is meaningful: it tells the box to front nothing, which is how a
-  # balancer leaves service. Steward accepts it.
+  # balancer leaves service. Vilice accepts it.
   test "a balancer with nothing behind it renders an empty table, not nil" do
     assert_equal({ routes: [] }, RoutingTable.envelope(@edge))
   end

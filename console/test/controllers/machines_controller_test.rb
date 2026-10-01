@@ -1,6 +1,6 @@
 require "test_helper"
 
-# Onboarding (Add Machine): register a box, generate Steward Console's scoped keypair,
+# Onboarding (Add Machine): register a box, generate Vilice Console's scoped keypair,
 # and surface the authorize line (decisions/open/machine-onboarding.md).
 class MachinesControllerTest < ActionDispatch::IntegrationTest
   setup { @user = users(:one) }
@@ -10,7 +10,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
   end
 
-  test "new renders the form (no SSH user field — always steward)" do
+  test "new renders the form (no SSH user field — always vilice)" do
     sign_in_as @user
     get new_machine_path
     assert_response :success
@@ -95,7 +95,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     end
     machine = Machine.find_by(ssh_host: "5.78.1.1")
     assert_equal "5.78.1.1", machine.name               # seeded from the host until the first read
-    assert_equal "steward", machine.ssh_user            # forced, not a form choice
+    assert_equal "_vilice", machine.ssh_user            # forced, not a form choice
     assert machine.ssh_private_key.present?, "private key generated + stored"
     assert_match(/\Assh-ed25519 /, machine.ssh_public_key)
     assert_equal "added", Event.latest.first.action
@@ -129,7 +129,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     offline = { ok: false, error: "unreachable", at: Time.current }
     stub_observe(status: offline, record: offline) { get machine_path(machine) }
     assert_response :success
-    assert_select ".access pre.cmd", /steward authorize .* --client console --scope operate/
+    assert_select ".access pre.cmd", /vilice authorize .* --client console --scope operate/
     assert_select ".access .cmd-block .cmd-copy[aria-label=?]", "Copy command"
   end
 
@@ -220,11 +220,11 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     m = Machine.create!(name: "edge-rm", ssh_host: "x", scope: "operate")
     get machine_path(m)
     assert_response :success
-    assert_select ".danger-remove pre.cmd", /steward revoke console/
+    assert_select ".danger-remove pre.cmd", /vilice revoke console/
     # Every command shown is meant to be pasted into a shell, so none has to be
     # selected by hand — the button copies the exact text shown.
     assert_select ".danger-remove .cmd-block .cmd-copy[data-clipboard-text-value=?]",
-                  "steward revoke console"
+                  "vilice revoke console"
     assert_select ".danger-remove form[action=?]", machine_path(m)
   end
 
@@ -503,22 +503,22 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
   test "the machine page renders without reading the box, and loads the live half after" do
     sign_in_as @user
     box = Machine.create!(name: "slow-box", ssh_host: "x", scope: "operate")
-    stub_returning(Steward, :read, nil) do
-      Steward.define_singleton_method(:read) { |*| raise "the shell must not read the box" }
+    stub_returning(Vilice, :read, nil) do
+      Vilice.define_singleton_method(:read) { |*| raise "the shell must not read the box" }
       get machine_path(box)
     end
     assert_response :success
     assert_select "h1 .health-line.reading", /Reading/
     assert_select "turbo-frame#machine-live[src=?][target=_top]", live_machine_path(box)
-    assert_select "turbo-frame#machine-live .reading-line", /steward status --json/
+    assert_select "turbo-frame#machine-live .reading-line", /vilice status --json/
   end
 
   test "an unreachable box is asked once, not three times" do
     sign_in_as @user
     box = Machine.create!(name: "gone-box3", ssh_host: "x", scope: "operate")
     reads = []
-    stub_returning(Steward, :read, nil) do
-      Steward.define_singleton_method(:read) { |_m, cmd, **| reads << cmd; { ok: false, error: "timed out", at: Time.current } }
+    stub_returning(Vilice, :read, nil) do
+      Vilice.define_singleton_method(:read) { |_m, cmd, **| reads << cmd; { ok: false, error: "timed out", at: Time.current } }
       get live_machine_path(box)
     end
     assert_response :success
@@ -527,10 +527,10 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
   end
 
   def with_fake_observe
-    ENV["STEWARD_FAKE_OBSERVE"] = "1"
+    ENV["VILICE_FAKE_OBSERVE"] = "1"
     yield
   ensure
-    ENV.delete("STEWARD_FAKE_OBSERVE")
+    ENV.delete("VILICE_FAKE_OBSERVE")
   end
   # ── The machine view is shaped by the box's role ─────────────────────────
   # Sections exist because the box says what it is for, not because we assumed.

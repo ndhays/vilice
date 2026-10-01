@@ -2,7 +2,7 @@
 # (decisions/open/app-library.md). The catalog/bookmarking layer: what *can* be
 # installed. The top of the three-tier model — AppTemplate → App → Placement — and
 # itself the head of its own release history (AppTemplate → Version). Bookmarking, not
-# security: the un-bypassable image allowlist is a separate Steward-side concern.
+# security: the un-bypassable image allowlist is a separate Vilice-side concern.
 class AppTemplate < ApplicationRecord
   include Searchable
 
@@ -13,21 +13,21 @@ class AppTemplate < ApplicationRecord
   has_many :labels, as: :labelable, dependent: :destroy
 
   # The name seeds the app name, which the box uses for its files, volumes, and
-  # unit (`apps/<name>.json`). Steward rejects anything outside [A-Za-z0-9_-], and
+  # unit (`apps/<name>.json`). Vilice rejects anything outside [A-Za-z0-9_-], and
   # refuses a leading dash besides — a name is handed to systemctl and podman as an
   # argument, and one starting with a dash reads as a flag. It does not dash-case for
   # you either, so enforce both here, box-safe end to end, rather than failing
   # cryptically at deploy.
   NAME_FORMAT = /\A[A-Za-z0-9][A-Za-z0-9_-]*\z/
   # Env var / secret / secret-file names follow shell rules — the box uses them verbatim
-  # (steward validEnvName). Validate here so a bad name fails in the library, not at deploy.
+  # (vilice validEnvName). Validate here so a bad name fails in the library, not at deploy.
   ENV_NAME = /\A[A-Za-z_][A-Za-z0-9_]*\z/
 
   validates :name, presence: true, uniqueness: true,
                    format: { with: NAME_FORMAT, message: "must start with a letter or digit, then letters, digits, dashes, and underscores" }
 
   # Port and health are the app's defaults, carried into the app form. Mirror
-  # what the box enforces (steward validateState) so a bad value fails here — with a
+  # what the box enforces (vilice validateState) so a bad value fails here — with a
   # clear message, before the act — not cryptically at deploy time. Both optional:
   # blank means "no app default", and the box falls back (port 8080, health "/").
   validates :port, numericality: { only_integer: true, greater_than_or_equal_to: 1024,
@@ -50,7 +50,7 @@ class AppTemplate < ApplicationRecord
   def env = self[:env] || []
   def secret_files = self[:secret_files] || []
 
-  # The command Steward runs once from the new image before the new container starts —
+  # The command Vilice runs once from the new image before the new container starts —
   # `bin/rails db:migrate` and its cousins. **argv, not a shell string**: the box execs it
   # directly, so a multi-step release belongs in a script inside the image, where the
   # image digest covers what it does (blueprint/vilice/deploy.md, "The Release Step").
@@ -74,7 +74,7 @@ class AppTemplate < ApplicationRecord
   # volumes**, running a different command; only the command differs, and that is the
   # point. A worker deployed separately could land on a different digest from the web
   # process, and a worker running yesterday's code against today's enqueued jobs is a
-  # failure the record cannot describe (steward/internal/app/process.go).
+  # failure the record cannot describe (vilice/internal/app/process.go).
   #
   # `command` is argv — the box execs it, so it never meets a shell.
   def processes = self[:processes] || []
@@ -243,7 +243,7 @@ class AppTemplate < ApplicationRecord
       errors.add(:secret_files, "#{f["name"]} is listed twice") if seen.include?(f["name"])
       seen << f["name"]
     end
-    # A name can't be both an env var and a file — mirrors the box (steward validateState).
+    # A name can't be both an env var and a file — mirrors the box (vilice validateState).
     (seen & env_keys).each { |n| errors.add(:secret_files, "#{n} is both an env var and a file") }
   end
 end

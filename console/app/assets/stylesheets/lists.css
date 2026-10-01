@@ -375,7 +375,7 @@
 .badge.reach-grant, .badge.reach-operate { color: var(--mutate); }
 .badge.reach-observe { color: var(--observe); }
 
-/* A key Steward did not write. It is the reason this page exists, so the row is
+/* A key Vilice did not write. It is the reason this page exists, so the row is
    marked in the ink of the thing it is — not left to a glyph alone. */
 .rows.access-rows .row.ungated { background: var(--bad-soft); }
 .rows.access-rows .row.ungated:hover { background: var(--bad-soft); }

@@ -33,14 +33,14 @@ class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".ceremony .facts dd", /a\.example\.com, www\.a\.example\.com/
     assert_select ".ceremony .facts dd", "SECRET_KEY_BASE"
-    assert_select ".cmd-block pre.cmd", "steward deploy web --json"
+    assert_select ".cmd-block pre.cmd", "vilice deploy web --json"
     # The raw spec shows the envelope the box reads, with the secret value masked.
     assert_select ".raw-output pre.raw", /"secret_values"/
     assert_select ".raw-output pre.raw", text: /hunter2/, count: 0
   end
 
   # The acceptance test for the whole layer: a deploy that touches no Project and
-  # leaves no App behind, sending the envelope `steward deploy` reads.
+  # leaves no App behind, sending the envelope `vilice deploy` reads.
   test "confirming deploys with no project, stores nothing, and sends the box's envelope" do
     sign_in_as @user
     called = stub_mutate do

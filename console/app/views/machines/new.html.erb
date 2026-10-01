@@ -3,12 +3,12 @@
     on the submit. This one is the smallest complete example, so it is where the shape
     is set and `apps/new` follows it rather than the other way round
     (blueprint/console/interface.md, "The form pattern"). %>
-<% content_for :title, "Add Machine — Steward" %>
+<% content_for :title, "Add Machine — Vilice" %>
 
 <%= breadcrumb [ [ "Machines", machines_path ], [ "Add Machine", nil ] ] %>
 <h1>Add Machine</h1>
 
-<p class="addr">The box is already Steward-ready. This records how to reach it and
+<p class="addr">The box is already Vilice-ready. This records how to reach it and
   generates a scoped key — it changes nothing on the box, and you authorize the key there
   yourself.</p>
 
@@ -33,7 +33,7 @@
     </div>
     <%# The wrong-user mistake is the second entry in what-could-go-wrong.md, and this
         is the only screen where it can be pre-empted rather than explained afterwards. %>
-    <p class="muted form-note">The console always connects as <span class="mono">steward</span>,
+    <p class="muted form-note">The console always connects as <span class="mono">vilice</span>,
       never <span class="mono">root</span> — scoped keys live in that user's
       <span class="mono">authorized_keys</span>. It is forced, not a field.</p>
   </fieldset>

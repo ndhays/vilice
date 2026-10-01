@@ -1,5 +1,5 @@
 # The App Library — the admin's curated directory of installable app definitions
-# (decisions/open/app-library.md). Curating the library is a Steward Console own-record
+# (decisions/open/app-library.md). Curating the library is a Vilice Console own-record
 # act, so each change is attributed and recorded in the same transaction (the
 # record is append-only; mirrors projects#star and the label editor).
 class AppTemplatesController < ApplicationController
@@ -48,7 +48,7 @@ class AppTemplatesController < ApplicationController
   end
 
   # The library as a portable manifest — a YAML file to share, version, or seed
-  # another Steward Console from. The DB stays the store; this is the interchange shape.
+  # another Vilice Console from. The DB stays the store; this is the interchange shape.
   def export
     send_data Library.export.to_yaml, filename: "console-library.yml",
               type: "application/x-yaml", disposition: "attachment"

@@ -13,11 +13,11 @@ release:      ; $(MAKE) -C vilice release
 site-build:   ; cd site && npm run build
 clean:        ; $(MAKE) -C vilice clean
 
-# --- Steward Console image (registry: ghcr.io to start; override IMAGE) ---
+# --- Vilice Console image (registry: ghcr.io to start; override IMAGE) ---
 # NOTE: Boxcar is a local path gem, which a plain build context can't see. A
 # deployable image needs Boxcar in-context (podman build --build-context, a git
 # source, or vendor-at-build). See decisions/open/console-open-questions.md.
-IMAGE ?= ghcr.io/agoraforge/steward-console
+IMAGE ?= ghcr.io/agoraforge/vilice-console
 TAG   ?= $(shell cat VERSION)
 
 image:        ; podman build -t $(IMAGE):$(TAG) -t $(IMAGE):latest console

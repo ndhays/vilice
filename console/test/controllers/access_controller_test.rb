@@ -1,7 +1,7 @@
 require "test_helper"
 
 # The Access destination: the rights ledger, read off the box rather than stored.
-# The half that matters is the ungated key — a line in authorized_keys that Steward
+# The half that matters is the ungated key — a line in authorized_keys that Vilice
 # did not write, whose holder reaches the box without passing the gate.
 class AccessControllerTest < ActionDispatch::IntegrationTest
   setup do
@@ -10,7 +10,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
     @machine = Machine.create!(name: "edge-1", ssh_host: "10.0.0.1", scope: "observe")
   end
 
-  def ledger(actors, path: "/home/steward/.ssh/authorized_keys")
+  def ledger(actors, path: "/home/_vilice/.ssh/authorized_keys")
     { ok: true, at: Time.current,
       data: { "data" => { "path" => path, "actors" => actors } } }
   end
@@ -18,7 +18,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
   GRANT = {
     "client" => "console", "scope" => "operate", "key_type" => "ssh-ed25519",
     "fingerprint" => "SHA256:abc123", "comment" => "console@laptop",
-    "command" => "/usr/local/bin/steward _exec --client console --scope operate",
+    "command" => "/usr/local/bin/vilice _exec --client console --scope operate",
     "pinned" => true
   }.freeze
 
@@ -36,11 +36,11 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
 
   # Answer the ledger read with a block, per box, and put the real one back after.
   def answering_actors(answer)
-    original = Steward::Observe.method(:actors)
-    Steward::Observe.define_singleton_method(:actors) { |machine, **| answer.call(machine) }
+    original = Vilice::Observe.method(:actors)
+    Vilice::Observe.define_singleton_method(:actors) { |machine, **| answer.call(machine) }
     yield
   ensure
-    Steward::Observe.define_singleton_method(:actors, original)
+    Vilice::Observe.define_singleton_method(:actors, original)
   end
 
   def headings = css_select(".group-head .group-name").map(&:text)
@@ -59,7 +59,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", /Access/
     assert_select "turbo-frame#access-live[src=?][target=_top]", live_access_path(group: "reach")
-    assert_select "turbo-frame#access-live .reading-line", /steward actors --json/
+    assert_select "turbo-frame#access-live .reading-line", /vilice actors --json/
   end
 
   # Every box is read, in parallel, and each answer lands against its own box.
@@ -77,7 +77,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
 
   test "lists each key with actor, box, scope and fingerprint" do
     sign_in_as @user
-    stub_returning(Steward::Observe, :actors, ledger([ GRANT ])) do
+    stub_returning(Vilice::Observe, :actors, ledger([ GRANT ])) do
       get live_access_path
       assert_response :success
       assert_select "turbo-frame#access-live"
@@ -93,10 +93,10 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
   # which puts it *above* grant rather than beside it. Most reach first.
   test "the default grouping orders every key by how far it reaches" do
     sign_in_as @user
-    stub_returning(Steward::Observe, :actors, ledger([ WATCHER, GRANT, UNPINNED, ADMIT ])) do
+    stub_returning(Vilice::Observe, :actors, ledger([ WATCHER, GRANT, UNPINNED, ADMIT ])) do
       get live_access_path
       assert_response :success
-      assert_equal [ "Not written by Steward — no ceiling at all",
+      assert_equal [ "Not written by Vilice — no ceiling at all",
                      "Grant — can admit other keys",
                      "Operate — can act on the box",
                      "Observe — read-only" ], headings
@@ -104,16 +104,16 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "a key steward did not write is called out, not listed quietly" do
+  test "a key vilice did not write is called out, not listed quietly" do
     sign_in_as @user
-    stub_returning(Steward::Observe, :actors, ledger([ UNPINNED, GRANT ])) do
+    stub_returning(Vilice::Observe, :actors, ledger([ UNPINNED, GRANT ])) do
       get live_access_path
       assert_response :success
       assert_select ".access-rows .row.ungated"
-      assert_select "h2", /not written by Steward/
+      assert_select "h2", /not written by Vilice/
       # It must say what it means, not just flag it.
       assert_match(/without\s+passing the gate/, response.body)
-      assert_select ".headline .bad", /1 not written by Steward/
+      assert_select ".headline .bad", /1 not written by Vilice/
     end
   end
 
@@ -121,7 +121,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
   test "grouping by actor shows where one actor reaches" do
     sign_in_as @user
     other = Machine.create!(name: "node-9", ssh_host: "10.0.0.2")
-    stub_returning(Steward::Observe, :actors, ledger([ GRANT ])) do
+    stub_returning(Vilice::Observe, :actors, ledger([ GRANT ])) do
       get live_access_path(group: "actor")
       assert_response :success
       # One actor, holding the same key on both boxes.
@@ -135,7 +135,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
 
   test "grouping by box is the old per-machine view, as one axis of several" do
     sign_in_as @user
-    stub_returning(Steward::Observe, :actors, ledger([ GRANT, UNPINNED ])) do
+    stub_returning(Vilice::Observe, :actors, ledger([ GRANT, UNPINNED ])) do
       get live_access_path(group: "box")
       assert_equal [ "edge-1" ], headings
       # Ungated leads within the box too, for the same reason it leads the page.
@@ -145,7 +145,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
 
   test "search narrows by actor, box or fingerprint" do
     sign_in_as @user
-    stub_returning(Steward::Observe, :actors, ledger([ GRANT, WATCHER ])) do
+    stub_returning(Vilice::Observe, :actors, ledger([ GRANT, WATCHER ])) do
       get live_access_path(q: "ci-deployer")
       assert_equal [ "ci-deployer" ], actors
 
@@ -161,7 +161,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
 
   test "an unreachable box reads as unknown, not as nobody" do
     sign_in_as @user
-    stub_returning(Steward::Observe, :actors, { ok: false, error: "connection refused" }) do
+    stub_returning(Vilice::Observe, :actors, { ok: false, error: "connection refused" }) do
       get live_access_path
       assert_response :success
       assert_select ".panel.readonly", /could not be read/
@@ -185,8 +185,8 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
     replies = { @machine => { ok: false, error: "no ssh key on file" },
                 other    => { ok: false, error: "no ssh key on file" },
                 odd      => { ok: false, error: "connection refused" } }
-    original = Steward::Observe.method(:actors)
-    Steward::Observe.define_singleton_method(:actors) { |m, **| replies[m] }
+    original = Vilice::Observe.method(:actors)
+    Vilice::Observe.define_singleton_method(:actors) { |m, **| replies[m] }
     begin
       get live_access_path
       assert_response :success
@@ -197,16 +197,16 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
         assert_select ".unreadable-boxes a[href=?]", machine_path(m), text: m.name
       end
     ensure
-      Steward::Observe.define_singleton_method(:actors, original)
+      Vilice::Observe.define_singleton_method(:actors, original)
     end
   end
 
   test "a box with an empty ledger says so plainly" do
     sign_in_as @user
-    stub_returning(Steward::Observe, :actors, ledger([])) do
+    stub_returning(Vilice::Observe, :actors, ledger([])) do
       get live_access_path
       assert_response :success
-      assert_match(/nobody can reach these boxes through Steward/, response.body)
+      assert_match(/nobody can reach these boxes through Vilice/, response.body)
     end
   end
 
@@ -217,7 +217,7 @@ class AccessControllerTest < ActionDispatch::IntegrationTest
     get "/access/refresh"
     assert_response :not_found
 
-    stub_returning(Steward::Observe, :actors, ledger([ GRANT ])) do
+    stub_returning(Vilice::Observe, :actors, ledger([ GRANT ])) do
       post refresh_access_path(group: "box")
       assert_redirected_to access_path(group: "box")
     end

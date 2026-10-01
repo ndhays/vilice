@@ -5,7 +5,7 @@
     script below turns it into a concrete mode before paint. %>
 <html data-theme="<%= current_theme.name %>" data-mode="<%= current_mode %>">
   <head>
-    <title><%= content_for(:title) || "Steward" %></title>
+    <title><%= content_for(:title) || "Vilice" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%# Turbo 8 prefetches a link on hover. Off here, because in this app a page
         view is not free: a machine page reads the box over SSH, and /access reads
@@ -27,7 +27,7 @@
       })();
     </script>
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Steward">
+    <meta name="application-name" content="Vilice">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>

@@ -32,18 +32,18 @@ Three uses, one component:
 
 ## The command page
 
-One page per command, and its top is the literal output of `steward <name> --help`.
+One page per command, and its top is the literal output of `vilice <name> --help`.
 Not a description of it, not a table derived from it: the bytes, from the binary,
-captured at build time by `steward _commands`. If the page and the terminal ever
+captured at build time by `vilice _commands`. If the page and the terminal ever
 disagree, the site is wrong, and it cannot be — there is only one renderer.
 
 The shape:
 
-1. **`steward <name>`** as the `h1`, in `--font-mono`.
+1. **`vilice <name>`** as the `h1`, in `--font-mono`.
 2. The summary line as a lead paragraph, `--text-lg`, `--ink-soft`.
 3. Two badges: the scope, and whether the command is recorded. The scope badge
    carries the yellow bar; recorded/not-recorded is a word, not a colour.
-4. **The terminal block** with the whole help page, headed `steward <name> --help`
+4. **The terminal block** with the whole help page, headed `vilice <name> --help`
    in a title bar so a reader knows what they are looking at.
 5. Any hand-written prose, under `## Notes`. Most commands have none — that is the
    point. Prose here is for what the help page genuinely cannot hold: a caveat, a
@@ -57,12 +57,12 @@ the CLI first.
 ## The command index
 
 `/commands/` lists every command, sectioned, grouped and ordered exactly as
-`steward help` does — both levels come from the same `core.Groups`, so the site
+`vilice help` does — both levels come from the same `core.Groups`, so the site
 cannot invent a taxonomy the binary does not have. Each row is the name in mono and
 the summary in sans. Nothing else; the detail is one click away.
 
 **Two levels, two questions.** The **section** answers *who runs this* — root, the
-steward user, systemd — and is the coarser thing a reader arrives with. The
+_vilice user, systemd — and is the coarser thing a reader arrives with. The
 **group** answers *how far it reaches*. A section is `h2`, upper-cased and quiet in
 `--ink-faint`, labelling a run of groups rather than competing with them; a group is
 `h3` in ordinary weight. Sections upper-case in CSS, never in the stored string, so
@@ -116,14 +116,14 @@ rather than remembering.
 
 **The tool list.** Other people's projects, one per row on a hairline. Each line is
 the name and a plain sentence saying what the tool is *for* — never how it compares
-to Steward. A comparison table would be a claim about software we do not maintain.
+to Vilice. A comparison table would be a claim about software we do not maintain.
 
 Indented one step (`--space-6`, and `--space-4` below `640px`), so the run of rows
 reads as a block belonging to the sentence above it rather than as more prose at the
 same left edge. The indent is padding inside `--measure`, so the block still ends
 where the paragraphs do: inset, not pushed out.
 
-The page uses it twice, and the same rule holds both times: once for what Steward
+The page uses it twice, and the same rule holds both times: once for what Vilice
 **stands on** (*Dependencies* — OpenSSH, systemd, Podman, Caddy, restic, and the
 hardening tools), and once for what a reader might **choose instead**
 (*Inspiration*). Each run gets its own `h3` **and a tagline**, so the two lists are
@@ -137,7 +137,7 @@ these writes its own plain config that outlives us.
 border. Dashed because that is how scaffolding has read since long before the web,
 and the card's own heading says the same thing in words — the shape and the words
 both carry it, never the border alone. It is for what is true now and meant to stop
-being true; today, that Steward is a proof of concept. **When the thing it describes
+being true; today, that Vilice is a proof of concept. **When the thing it describes
 is no longer provisional, the card goes** — this pattern has no settled variant, on
 purpose.
 

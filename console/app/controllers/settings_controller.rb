@@ -5,7 +5,7 @@ class SettingsController < ApplicationController
     @project_count = Project.count
     @machine_count = Machine.count
     @shared_count  = Machine.shared.count
-    @version       = StewardConsole::VERSION
+    @version       = ViliceConsole::VERSION
   end
 
   # Toggle fleet policy — a recorded control-plane act.

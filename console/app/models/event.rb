@@ -1,9 +1,9 @@
 class Event < ApplicationRecord
-  # Steward Console's record. Two roles, kept distinct (decisions/two-records.md):
-  #   - Steward Console's *own* acts — control-plane mutations a box never sees
+  # Vilice Console's record. Two roles, kept distinct (decisions/two-records.md):
+  #   - Vilice Console's *own* acts — control-plane mutations a box never sees
   #     (created/linked/labelled…), attributed to the responsible human.
   #     Authoritative.
-  #   - A re-derivable *mirror* of Steward's box record, for unified display.
+  #   - A re-derivable *mirror* of Vilice's box record, for unified display.
   # `actor` is the responsible party; `action` is the past-tense fact.
   belongs_to :machine, optional: true
   belongs_to :app, optional: true
@@ -19,7 +19,7 @@ class Event < ApplicationRecord
   # continuous health is a *status series*, and `Snapshot` is where it belongs.
   # A routine sample is not an act — it reports that we looked, not that anything
   # happened — so it never enters the chain. Matched on the exact verb, both
-  # spellings: Steward Console writes "observed", a box record entry says "observe".
+  # spellings: Vilice Console writes "observed", a box record entry says "observe".
   STATUS_ACTIONS = %w[ observe observed ].freeze
 
   scope :acts, -> { where.not(action: STATUS_ACTIONS) }
@@ -80,7 +80,7 @@ class Event < ApplicationRecord
   # edited or deleted through the app. The one exception is an act's outcome,
   # which settles **once** — a witnessed act is recorded `pending` (record before
   # act), then stamped ok/failed on the same row when it finishes. Not
-  # hash-chained — Steward's on-box chain is the external anchor; this guard is
+  # hash-chained — Vilice's on-box chain is the external anchor; this guard is
   # hygiene. (dependent: :nullify uses update_all and bypasses these, as intended.)
   SETTLE_COLUMNS = %w[outcome finished_at detail output exit_status updated_at].freeze
 
@@ -104,8 +104,8 @@ class Event < ApplicationRecord
             output: output, exit_status: exit_status)
   end
 
-  # Write one entry. Used for Steward Console's own acts (with a human actor), for
-  # mirroring Steward's record, and to open a witnessed act (outcome: "pending").
+  # Write one entry. Used for Vilice Console's own acts (with a human actor), for
+  # mirroring Vilice's record, and to open a witnessed act (outcome: "pending").
   def self.record!(actor:, action:, at: Time.current, **attrs)
     create!(actor: actor, action: action, at: at, **attrs)
   end

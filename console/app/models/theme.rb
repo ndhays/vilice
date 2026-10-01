@@ -13,11 +13,11 @@ Theme = Data.define(:name, :label, :blurb)
 # Reopened rather than declared in a `Data.define` block: constants assigned inside
 # that block take their lexical scope from the file and would land at top level.
 class Theme
-  # `steward` is the default and the reference implementation: near-black on
+  # `vilice` is the default and the reference implementation: near-black on
   # near-white with the one yellow accent, matching the docs site. Its dark mode is
   # where the palette is allowed some voltage.
   ALL = [
-    new(name: "steward", label: "Steward",
+    new(name: "vilice", label: "Vilice",
         blurb: "Black and yellow, the way the docs site reads. Neon in the dark.")
   ].freeze
 

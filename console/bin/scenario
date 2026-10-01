@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Load a Steward Console demo scenario and, with --serve, boot the server with the
+# Load a Vilice Console demo scenario and, with --serve, boot the server with the
 # fake-observe seam on — so machine health renders without a real box.
 #
 #   bin/scenario --list              list the scenarios
@@ -18,12 +18,12 @@ fi
 
 scenario="$1"; shift || true
 export SCENARIO="$scenario"
-export STEWARD_FAKE_OBSERVE=1
+export VILICE_FAKE_OBSERVE=1
 
 echo "Loading scenario: $scenario"
 bin/rails db:seed
 
 if [[ "${1:-}" == "--serve" ]]; then
-  echo "Booting with fake-observe on (STEWARD_FAKE_OBSERVE=1)…"
+  echo "Booting with fake-observe on (VILICE_FAKE_OBSERVE=1)…"
   exec bin/rails server -b 0.0.0.0
 fi

@@ -1,6 +1,6 @@
 require "test_helper"
 
-# Labels are a control-plane act with no box, so they land in Steward Console's own
+# Labels are a control-plane act with no box, so they land in Vilice Console's own
 # record, attributed to the signed-in human, and recorded together with the change.
 class LabelsControllerTest < ActionDispatch::IntegrationTest
   setup do

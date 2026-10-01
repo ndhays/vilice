@@ -6,7 +6,7 @@
     read **Add App**, and the act is `added app` — it had four names between them.
     The project rides the crumb, not the heading, the same way Add Machine leaves its owner
     to the Owner step instead of restating it up top. %>
-<% content_for :title, [ "Add App", @project&.name, "Steward" ].compact.join(" — ") %>
+<% content_for :title, [ "Add App", @project&.name, "Vilice" ].compact.join(" — ") %>
 
 <% if @project %>
   <%= breadcrumb [ [ "Projects", projects_path ], [ @project.name, project_path(@project) ], [ "Add App", nil ] ] %>

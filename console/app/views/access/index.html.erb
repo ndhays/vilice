@@ -1,4 +1,4 @@
-<% content_for :title, "Access — Steward" %>
+<% content_for :title, "Access — Vilice" %>
 
 <%= page_header "Access" do %>
   <%# Re-reads every box. A POST: it opens an SSH connection per machine, and a GET
@@ -15,7 +15,7 @@
       headline, the search and the list all come with it: each is about what was read. %>
   <%= turbo_frame_tag "access-live", src: live_access_path(q: @q.presence, group: @group), target: "_top" do %>
     <div class="reading-box" role="status">
-      <p class="reading-line"><span class="reading-prompt">$</span> steward actors --json<span class="reading-cursor" aria-hidden="true"></span></p>
+      <p class="reading-line"><span class="reading-prompt">$</span> vilice actors --json<span class="reading-cursor" aria-hidden="true"></span></p>
       <p class="muted">Reading the ledger on <%= pluralize(Machine.count, "box", plural: "boxes") %> over scoped SSH…</p>
     </div>
   <% end %>

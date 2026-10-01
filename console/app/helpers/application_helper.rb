@@ -5,7 +5,7 @@ module ApplicationHelper
   def current_theme = Theme.find(Current.user&.theme)
   def current_mode  = Current.user&.mode || "system"
 
-  # Reachability badge — observe-side, reflects the last read from Steward.
+  # Reachability badge — observe-side, reflects the last read from Vilice.
   def status_badge(machine)
     label = machine.status.sub("unknown", "not yet seen")
     tag.span(label, class: "badge #{machine.status}")
@@ -33,7 +33,7 @@ module ApplicationHelper
   end
 
   # What the box is *for*, as a single trailing glyph beside the scope marker.
-  # Today that is only the balancer role, which is the one role Steward Console
+  # Today that is only the balancer role, which is the one role Vilice Console
   # stores (decisions/one-primitive-composed.md: a role over Machine). The role the
   # box itself reports needs ingestion before it can appear in a list — see
   # decisions/open/ui-roadmap.md — so this says what we actually know.
@@ -64,7 +64,7 @@ module ApplicationHelper
 
   # ── The box's role ──────────────────────────────────────────────────────────
   # What a box was prepared as — `host` (runs apps) or `balancer` (fronts others).
-  # It is the box's own fact and it is **set once**: `steward prepare <role>` writes
+  # It is the box's own fact and it is **set once**: `vilice prepare <role>` writes
   # it, and re-preparing into the other role is refused (blueprint/vilice/provision.md).
   # So it renders as a statement, never a control — the console used to offer a "Make
   # this a balancer" button, which wrote a column the box had never agreed to.
@@ -97,7 +97,7 @@ module ApplicationHelper
       # Reached it, and it named no role: it has never been prepared. A different
       # fact from never having reached it, and it has a fix the operator can run.
       return tag.span("not prepared", class: "badge role-unprepared",
-                      title: "This box has no role — run `steward prepare <role>` on it")
+                      title: "This box has no role — run `vilice prepare <role>` on it")
     elsif role.nil?
       return tag.span("role unknown", class: "badge role-unknown",
                       title: "Not read yet, so what this box was prepared as is unknown")
@@ -108,15 +108,15 @@ module ApplicationHelper
              class: "badge role-#{role}", title: "#{ROLE_BADGE.dig(role, :word)}#{stale}")
   end
 
-  # A button's label when it sends a steward command: the mark, then the verb. The
-  # mark says "this is a call into Steward" before you read the word; the word is the
+  # A button's label when it sends a vilice command: the mark, then the verb. The
+  # mark says "this is a call into Vilice" before you read the word; the word is the
   # one you would type. Filled (inverse) by `.btn.cmd` so it cannot pass for a link.
-  def steward_verb(verb)
+  def vilice_verb(verb)
     safe_join([ render("shared/mark", size: 18), tag.span(verb, class: "cmd-verb") ])
   end
 
-  # The stamp an entry leads with: the steward verb it ran, drawn like the button that
-  # sends it (`steward_verb`) but flat — a record of a press, not a thing to press.
+  # The stamp an entry leads with: the vilice verb it ran, drawn like the button that
+  # sends it (`vilice_verb`) but flat — a record of a press, not a thing to press.
   def act_stamp(item)
     mark = item.via == :local ? icon("terminal", size: 14) : render("shared/mark", size: 16)
     tag.span(safe_join([ mark, tag.span(item.verb, class: "cmd-verb") ]),
@@ -138,7 +138,7 @@ module ApplicationHelper
       stale = status&.online? ? "" : " (last known)"
       tag.span("#{role}#{stale}", title: ROLE_BADGE.dig(role, :word))
     elsif status&.online?
-      tag.span("not prepared", class: "fact-gap", title: "This box has no role — run `steward prepare <role>` on it")
+      tag.span("not prepared", class: "fact-gap", title: "This box has no role — run `vilice prepare <role>` on it")
     else
       tag.span("unknown", class: "muted", title: "Not read yet, so what this box was prepared as is unknown")
     end
@@ -162,7 +162,7 @@ module ApplicationHelper
 
   # A command to run, with a copy button. Every command the console shows is meant to
   # be pasted into a shell on a box, so none of them should have to be selected by
-  # hand — a `steward authorize` line carries a whole public key, and a half-selected
+  # hand — a `vilice authorize` line carries a whole public key, and a half-selected
   # one fails in a way that is tedious to diagnose.
   #
   # The same shape as the docs site's blocks (blueprint/design/patterns.md): a real
@@ -230,8 +230,8 @@ module ApplicationHelper
   def sharing_mode_label(mode) = SHARING_MODES.fetch(mode).first
   def sharing_mode_hint(mode)  = SHARING_MODES.fetch(mode).last
 
-  # The address Steward Console dials. Host is what the operator gave (IP or name);
-  # port shows only when it's not the SSH default. The user is always `steward`
+  # The address Vilice Console dials. Host is what the operator gave (IP or name);
+  # port shows only when it's not the SSH default. The user is always `vilice`
   # (ceiling-is-the-machine) — noise on screen, so it's dropped here; the
   # connection still uses it.
   def ssh_address(machine)
@@ -308,23 +308,23 @@ module ApplicationHelper
     digest ? "@#{digest[0, 12]}" : image.to_s
   end
 
-  # The machine-id Steward Console knows itself by. In a real deployment Steward
-  # injects STEWARD_SELF_MACHINE_ID when it deploys Steward Console (robust even
+  # The machine-id Vilice Console knows itself by. In a real deployment Vilice
+  # injects VILICE_SELF_MACHINE_ID when it deploys Vilice Console (robust even
   # in a container that can't see the host's /etc/machine-id); on a co-resident
-  # dev box we fall back to reading it directly. Blank when Steward Console runs off-box.
+  # dev box we fall back to reading it directly. Blank when Vilice Console runs off-box.
   def self_machine_id
     return @self_machine_id if defined?(@self_machine_id)
-    @self_machine_id = ENV["STEWARD_SELF_MACHINE_ID"].presence ||
+    @self_machine_id = ENV["VILICE_SELF_MACHINE_ID"].presence ||
       (File.read("/etc/machine-id").strip rescue nil)
   end
 
-  # "You are here" — the live read says this is the box Steward Console runs on.
+  # "You are here" — the live read says this is the box Vilice Console runs on.
   def you_are_here?(status)
     status.respond_to?(:here?) && status.here?(self_machine_id)
   end
 
   # A cheap self check for the fleet list (no per-machine live read): the box
-  # Steward Console reaches over loopback is itself. The machine page confirms it
+  # Vilice Console reaches over loopback is itself. The machine page confirms it
   # authoritatively by machine-id; here we just hint with a pin.
   LOOPBACK_HOSTS = %w[localhost 127.0.0.1 ::1 0.0.0.0].freeze
 
@@ -452,7 +452,7 @@ module ApplicationHelper
       when_t = Time.zone.parse(status.hardening_checked_at) rescue nil
       parts << tag.span("· checked #{time_ago_in_words(when_t)} ago", class: "muted") if when_t
     end
-    tip = "Posture is read from what the box published — refreshing it needs root: run `steward harden --check` on the box."
+    tip = "Posture is read from what the box published — refreshing it needs root: run `vilice harden --check` on the box."
     tag.div(safe_join(parts, " "), class: "hardening-line", title: tip)
   end
 

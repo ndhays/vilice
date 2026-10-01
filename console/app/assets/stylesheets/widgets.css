@@ -106,7 +106,7 @@ pre.raw { background: var(--raw-bg); color: var(--raw-ink); padding: 1rem; borde
    be duplicated here, and this copy — loaded later — quietly won. */
 .hardening-line .muted { opacity: 0.75; }
 
-/* "You are here" — the box Steward Console itself runs on (identity, not observe). */
+/* "You are here" — the box Vilice Console itself runs on (identity, not observe). */
 .badge.self { color: var(--accent); border-style: dashed; }
 
 /*

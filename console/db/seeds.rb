@@ -8,7 +8,7 @@
 #
 # Every scenario but `realistic` wipes domain data first (they're contradictory
 # worlds) and leans on the fake-observe seam for health — boot with
-# STEWARD_FAKE_OBSERVE=1, or just use `bin/scenario <name>`, which sets the
+# VILICE_FAKE_OBSERVE=1, or just use `bin/scenario <name>`, which sets the
 # flags for you. See db/seeds/README.md.
 require_relative "seeds/shared"
 

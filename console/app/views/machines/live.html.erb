@@ -27,12 +27,12 @@
     <div class="panel-head">
       <div class="kicker">Unreachable</div>
       <%= button_to refresh_machine_path(@machine), class: "btn cmd observe sm panel-action", title: "Read the box again" do %>
-        <%= steward_verb "status" %>
+        <%= vilice_verb "status" %>
       <% end %>
     </div>
     <p class="unreachable-line">
       <%= icon "circle-cut", size: 18 %>
-      Steward could not reach <strong><%= @machine.name %></strong><%
+      Vilice could not reach <strong><%= @machine.name %></strong><%
         %><% if @machine.last_seen_at %>, last heard from <%= time_ago_in_words(@machine.last_seen_at) %> ago<% end %>.
     </p>
     <pre class="raw"><%= @status.error %></pre>
@@ -47,7 +47,7 @@
       <%# A POST, not a link: it opens an SSH connection to the box, so it must not be
           something a hover or a prefetch can fire. A read, so it lives on this side. %>
       <%= button_to refresh_machine_path(@machine), class: "btn cmd observe sm panel-action", title: "Read the box again" do %>
-        <%= steward_verb "status" %>
+        <%= vilice_verb "status" %>
       <% end %>
     </div>
 
@@ -62,7 +62,7 @@
     <%# What the cards above are read from: the command, then exactly what it returned. %>
     <details class="raw-output">
       <summary>Raw status output</summary>
-      <p class="raw-cmd">steward status --json</p>
+      <p class="raw-cmd">vilice status --json</p>
       <pre class="raw"><%= JSON.pretty_generate(@status.raw) %></pre>
     </details>
   </div>

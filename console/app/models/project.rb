@@ -2,7 +2,7 @@ class Project < ApplicationRecord
   include Boxcar::Identifiable
   include Searchable
 
-  # Article I — Identity. A Project IS the client entity Steward Console acts for.
+  # Article I — Identity. A Project IS the client entity Vilice Console acts for.
   identifies :entity
 
   has_many :project_machines, dependent: :destroy

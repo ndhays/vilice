@@ -10,7 +10,7 @@
         <%# The tail is the whole control surface. `podman logs` is a passthrough, so
             these are the box's own lines and there is nothing to filter here that
             `grep` would not do better on the far side. %>
-        <% Steward::Observe::TAILS.each do |n| %>
+        <% Vilice::Observe::TAILS.each do |n| %>
           <%= link_to n, machine_logs_path(@machine, app_id: @app.id, tail: n),
                 class: "logs-tail#{' on' if n == @tail}",
                 data: { turbo_frame: "logs" }, title: "Last #{n} lines" %>
@@ -31,9 +31,9 @@
         <pre class="logs-body"><%= body %></pre>
       <% end %>
       <p class="note muted">Last <%= @tail %> lines, read just now — nothing is cached and
-        nothing was recorded. The container is the source of truth; Steward stores no copy.</p>
+        nothing was recorded. The container is the source of truth; Vilice stores no copy.</p>
     <% else %>
-      <%# The box's own sentence, not our transport's. `Steward.read` unwraps the
+      <%# The box's own sentence, not our transport's. `Vilice.read` unwraps the
           `Result` message, so "no running app" arrives as those words. %>
       <p class="empty"><%= icon "circle-x", size: 14 %> <%= @result[:error] %></p>
       <% if @result[:reached] == false %>

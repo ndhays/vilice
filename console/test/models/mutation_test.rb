@@ -51,7 +51,7 @@ class MutationTest < ActiveSupport::TestCase
     m = build("deploy", image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e", hostname: "staging.example", port: "9090")
     env = JSON.parse(m.stdin)
     assert_equal [ "staging.example" ], env.dig("app", "hostnames")
-    assert_equal 9090, env.dig("app", "port") # coerced to an integer for Steward's appSpec
+    assert_equal 9090, env.dig("app", "port") # coerced to an integer for Vilice's appSpec
   end
 
   test "rollback is parameterless — no compose, no stdin" do

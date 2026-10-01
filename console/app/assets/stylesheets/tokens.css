@@ -1,5 +1,5 @@
 /*
- * Steward Console — the human interface to the platform.
+ * Vilice Console — the human interface to the platform.
  *
  * The spine is observe vs mutate, and the UI is built to make that line visible:
  *   .observe  — neutral, calm. Reading the record changes nothing.
@@ -42,13 +42,13 @@
  * Two axes, both stored on the user and rendered onto <html> by the layout
  * (app/models/theme.rb):
  *
- *   data-theme="<name>"   the token set    — `steward` is the default
+ *   data-theme="<name>"   the token set    — `vilice` is the default
  *   data-mode="light|dark" which half of it — resolved from the OS when the
  *                          operator's preference is `system`
  *
  * Adding a theme is two steps and touches nothing else: one entry in `Theme::ALL`,
  * one pair of blocks here. Every theme must declare *every* name below — a theme
- * that omits one inherits the steward light value and will look broken in dark.
+ * that omits one inherits the vilice light value and will look broken in dark.
  * Nothing outside this file learns a theme's name.
  *
  * The palette has three jobs, kept apart on purpose:
@@ -100,7 +100,7 @@
 }
 
 /*
- * ── steward (default) ─────────────────────────────────────────────────────────
+ * ── vilice (default) ─────────────────────────────────────────────────────────
  * Light: near-black on near-white with the one yellow accent — the docs site's
  * palette, and the canonical values in blueprint/design/tokens.md. Yellow stays
  * graphic; the interactive colour is ink, so links and buttons carry contrast on
@@ -108,7 +108,7 @@
  * focus halo). That is what makes it read clean rather than branded-at.
  */
 :root,
-[data-theme="steward"] {
+[data-theme="vilice"] {
   /* neutrals — the site's paper stack */
   --ink: #121212;          /* 17.9:1 on --bg */
   --muted: #565451;        /*  7.2:1 — AA */
@@ -170,7 +170,7 @@
  * language survives the change of mood. Blue stays blue: observe means the same
  * thing in both modes, and a mode that re-assigns meaning is a different theme.
  */
-[data-theme="steward"][data-mode="dark"] {
+[data-theme="vilice"][data-mode="dark"] {
   --ink: #e8e6e1;
   --muted: #9aa0a8;        /* 6.2:1 on --bg — AA */
   --line: #262a31;

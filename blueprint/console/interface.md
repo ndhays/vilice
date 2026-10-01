@@ -1,6 +1,6 @@
-# Steward Console — Interface
+# Vilice Console — Interface
 
-> How Steward Console looks and behaves: the record is the spine, observe and mutate are
+> How Vilice Console looks and behaves: the record is the spine, observe and mutate are
 > kept apart, and every screen is a lens on the one record. The *why* — and the shapes
 > rejected — is in [`decisions/ui-shape.md`](../../decisions/ui-shape.md).
 
@@ -12,10 +12,10 @@ roadmap and the screens still ahead live in
 
 ## What it calls itself
 
-**"Steward Console" is the Rails app's name, not a product name.** The UI says
-**Steward** and nothing else: one product, one name, the same one you type at a
+**"Vilice Console" is the Rails app's name, not a product name.** The UI says
+**Vilice** and nothing else: one product, one name, the same one you type at a
 shell. The chrome wears the canonical wordmark from
-[`blueprint/design/logo.md`](../design/logo.md) — the mark, then `steward` in mono,
+[`blueprint/design/logo.md`](../design/logo.md) — the mark, then `vilice` in mono,
 lowercase — in the rail and on the sign-in card alike. Prose that has to name this
 surface calls it *the console*, lowercase, the way you'd say *the CLI*.
 
@@ -33,17 +33,17 @@ follows from that choice.
 Every screen surfaces **what it's for** — the answer, the most relevant state — not the
 inputs you typed to make it. One level down from "the record is the protagonist." It is
 what justifies showing a machine row's address as plain truth (the SSH user is always
-`steward`, so `steward@host:22` is noise — drop it) and showing the box's reported name
+`vilice`, so `_vilice@host:22` is noise — drop it) and showing the box's reported name
 plainly rather than guarding it with a match/mismatch check (the SSH connection is already
 verified; a wrong box surfaces on its own).
 
 ## The spine in two halves: observe vs mutate
 
-Everything Steward Console does is one of two things, kept apart on purpose — Steward's scope
+Everything Vilice Console does is one of two things, kept apart on purpose — Vilice's scope
 ladder surfaced in both the UI and the architecture (see
-[`overview.md`](overview.md) and `app/services/steward.rb`):
+[`overview.md`](overview.md) and `app/services/vilice.rb`):
 
-- **Observe** — read the record Steward ships. Zero-privilege: holds no key on the read
+- **Observe** — read the record Vilice ships. Zero-privilege: holds no key on the read
   path, changes nothing. Calm, blue. **Most of the app is this.**
 - **Mutate** — issue a named, scoped, **recorded** command over SSH. Bordered, violet,
   labelled "witnessed." Every mutation writes its `Event` before it runs.
@@ -65,7 +65,7 @@ transitions** ("went critical 03:12", "recovered 03:40").
 **The acts half is enforced; the transitions half is not built yet.** A routine
 sample reports that we *looked*, not that anything *happened*, so it is not an act
 and never enters a chain. `Event::STATUS_ACTIONS` names the sample verbs and
-`Event.acts` excludes them — one definition, applied to both records: Steward
+`Event.acts` excludes them — one definition, applied to both records: Vilice
 Console's own rows through the scope, and a box's own timer entries through
 `ChainItem#status?`, which the machine-page merge rejects. Nothing is deleted; the
 samples stay recorded, they just aren't chain rows. Every chain the UI renders goes
@@ -255,7 +255,7 @@ enough to make a group read as a group.
   What the box is **for** trails on the right beside the scope marker, where the quiet
   markers live, and it says what the box *carries*, not merely what kind it is — `Host —
   3 apps`, `Load Balancer — 4 hosts`, or a plain `Host` when it carries nothing. Today it
-  distinguishes only a **balancer** from an ordinary box, the one role Steward Console
+  distinguishes only a **balancer** from an ordinary box, the one role Vilice Console
   stores; the role the box itself reports needs ingestion first. Both counts read
   preloaded associations, because a list must not ask the database once per row any more
   than it may ask the *boxes* once per row.
@@ -270,21 +270,21 @@ enough to make a group read as a group.
   must never cost N SSH round trips, so it waits on the reported role being persisted —
   ingestion (#6).
 - **Machines → Machine** — the box lens, and it is **shaped by the box's role**:
-  sections exist because the box says what it was prepared for (`steward status`
+  sections exist because the box says what it was prepared for (`vilice status`
   reports `role`), not because the console assumed it. A `balancer` shows no Apps
   section — not greyed out, absent, because that box has no container runtime and
   would refuse a deploy by name. A box that reports no role has never been prepared,
   and an unreachable one reports what runs there as **unknown, not none** — neither
   loses the section, because we do not take a surface away on a guess.
 
-  **The role is a statement, never a control.** `steward prepare <role>` writes it
+  **The role is a statement, never a control.** `vilice prepare <role>` writes it
   once and refuses to convert a prepared box into the other role — you take its apps
   off, uninstall, and prepare again (`blueprint/vilice/provision.md`). So the console
   reports it and offers no way to change it. It used to offer a "Make this a balancer"
   button, which wrote a column the box had never agreed to: a `host` so marked would
   accept balanced apps and then be refused by its own box. The column survives as
   our **mirror of the last read** — the fleet list cannot do a live read per row — and
-  `Steward::Observe.reconcile` is what writes it. It reads in three states, which are
+  `Vilice::Observe.reconcile` is what writes it. It reads in three states, which are
   not the same thing: the box said so; the box said nothing (**not prepared**, and
   there is a command to fix that); we could not ask (**unknown**, falling back to the
   last read).
@@ -307,11 +307,11 @@ enough to make a group read as a group.
 
   **Plain on the surface, exact underneath.** The zones interpret; the command and its
   raw reply are one step down — in the preview, the record, and a card's raw disclosure.
-  The one bridge on the surface is the button: **a command button carries the Steward
+  The one bridge on the surface is the button: **a command button carries the Vilice
   mark and the verb** — `status`, `apply-updates`, `route`, `deploy`, `remove` (and on
   the App, `deploy` `rollback` `start` `stop` `restart` `remove`) — mono, lowercase,
   **filled**: violet for an act, blue for a read, red for one that takes something away.
-  Nothing that does not call Steward looks like it. A plain sentence beside it says why
+  Nothing that does not call Vilice looks like it. A plain sentence beside it says why
   you would press it. The full command, flags and all, is shown in the preview, copyable,
   before anything runs.
 
@@ -321,11 +321,11 @@ enough to make a group read as a group.
     and the updates waiting, by name); the apps the box reports; **Backups** — each app
     and the record, last backed up when, or *never*, or *last attempt failed* with the
     reason, and *Nothing on this box is backed up* when no repo is set (from `status`'s
-    `backups`; absent when the box's steward predates it); **Certificates** — each served
+    `backups`; absent when the box's vilice predates it); **Certificates** — each served
     hostname, valid and days to expiry, amber inside 14 days, red when not served or not
     trusted (from `status`'s `certs`); the edge table on a balancer; the **Record** card
     (chain intact, entry count, last entry); and beneath the cards, as a list rather than
-    a card, **Who can reach this box** — its ledger via `steward actors`, the Access
+    a card, **Who can reach this box** — its ledger via `vilice actors`, the Access
     page's rows, and *Could not read the ledger* rather than an empty list when unread.
   - **Operate lists every act the box can take**, each a sentence and a button:
     `apply-updates`, `route` on a balancer, `deploy` (below), and `remove`
@@ -348,7 +348,7 @@ enough to make a group read as a group.
   name, the facts, labels and settings, everything we hold ourselves — rendered at once,
   with the header saying *Reading…* rather than a last-known state that could read as
   current. Where the zones and record go, a frame loads `live`, and until it answers it
-  shows what it is waiting on in the words it is waiting on: `$ steward status --json`
+  shows what it is waiting on in the words it is waiting on: `$ vilice status --json`
   and a cursor. When `live` arrives it fills both zones and the record, and replaces the
   header and facts with the live ones. A box that does not answer the status read is not
   asked for its record and ledger too, so an unreachable box costs one timeout, not
@@ -371,7 +371,7 @@ enough to make a group read as a group.
   `NAME=value` lines — and leaves the rest (the digest pin, port range, volume paths)
   to the box, which refuses at its render boundary. **Preview** sends nothing: it shows
   the plain reading, the record line it will write, the command, and under *Raw spec*
-  the exact envelope `steward deploy` reads — `{ "app": spec, "secret_values": … }` —
+  the exact envelope `vilice deploy` reads — `{ "app": spec, "secret_values": … }` —
   with every secret value masked. The `deploy` button there is the act.
 
   **An unreachable box does not lay out cards that apologise.** Live status, apps,
@@ -417,14 +417,14 @@ enough to make a group read as a group.
   validates at the render boundary and refuses what it cannot render, and a second copy
   of those rules here would drift from the first.
 - **Access** — the rights ledger: who can touch what, at which rung
-  (`observe ⊂ operate ⊂ grant`). Read straight off each box through `steward actors`,
+  (`observe ⊂ operate ⊂ grant`). Read straight off each box through `vilice actors`,
   never from a stored copy — `authorized_keys` *is* the ledger, and a mirror of it here
   would be a second answer to "who can act on this box" that could quietly disagree
   with the box. So the page has no model behind it and nothing to keep in sync.
   **The page never waits on the fleet.** The shell renders at once; the ledgers load
-  into a frame (`AccessController#live`) that shows `$ steward actors --json` and a
+  into a frame (`AccessController#live`) that shows `$ vilice actors --json` and a
   cursor until they arrive. Every box is read in parallel, four at a time
-  (`Steward::Observe.actors_of`), so the page costs about the slowest box rather than
+  (`Vilice::Observe.actors_of`), so the page costs about the slowest box rather than
   the sum of them — one unreachable box is one timeout, not one added to everyone
   else's wait. **Re-read** refreshes the same way.
 
@@ -433,7 +433,7 @@ enough to make a group read as a group.
 
   - **Reach** (the default) — one ordered ladder, most reach first. An ungated line
     is not a rung: a key with no forced command has **no ceiling at all**, which puts
-    it *above* `grant` rather than beside it. So the keys Steward did not write lead
+    it *above* `grant` rather than beside it. So the keys Vilice did not write lead
     the page **by construction**, not as a banner someone has to look behind.
   - **Box** — who can act on this machine. What the page used to be, now one axis.
   - **Actor** — where does this actor reach? An actor holding `operate` on twelve
@@ -456,7 +456,7 @@ enough to make a group read as a group.
   The fingerprint is the field to check a key by — the same string `ssh-keygen -lf`
   prints. Key material is never reproduced. For a hand-added key the holder's handle
   survives nowhere but the raw line, so it is read out of there — but only when the
-  line begins with the key type Steward reported, because guessing at a position would
+  line begins with the key type Vilice reported, because guessing at a position would
   be inventing an owner for the most dangerous row on the page.
 
   Observe only. Granting and revoking are acts, and they happen where acts happen.
@@ -466,7 +466,7 @@ enough to make a group read as a group.
   [`journeys.md`](journeys.md)).
 
   **A release must be digest-pinned.** The box refuses an unpinned image
-  (`steward/internal/app/deploy.go`), so a floating tag in the library is a release
+  (`vilice/internal/app/deploy.go`), so a floating tag in the library is a release
   that *looks* installable and is rejected at the far end, after someone has built a
   placement on it — the same shape as the balancer toggle that wrote a column the box
   never agreed to. `Version` mirrors `validDigestPin` exactly, doubled-prefix case
@@ -580,12 +580,12 @@ silently (`updated` had fallen out of it, so apply-updates drew as an observe). 
 are gone; nothing replaced them.
 
 **An entry reads at three levels.** The plain line — what happened, by whom, where,
-when — is the reading. An act that ran a steward command leads it with a **stamp** of
+when — is the reading. An act that ran a vilice command leads it with a **stamp** of
 that command's verb — the button that was pressed, drawn flat (square corners, no hover,
 no pointer) so it reads as a record of a press and never as a thing to press. The door
 the act came through sets the stamp (`ChainItem#via`): **filled** violet with the mark
 when this console sent it; **dashed yellow with a terminal glyph**, tagged *on the box
-itself*, when it ran there rather than through a scoped key (Steward records a local run
+itself*, when it ran there rather than through a scoped key (Vilice records a local run
 under `operator`); **outlined**, tagged *witnessed*, for any other key. An act recorded
 here that sent nothing keeps its plain past-tense verb.
 
@@ -603,8 +603,8 @@ outcome, the reply) carrying the box's own entry for it (matched on verb, within
 minutes) — and a **run of the same entry** (a timer refused every minute) is one line
 with a count, *× 40 · since 2 days ago*.
 
-Beneath the plain line, the **command that ran**, in bold mono: `steward apply-updates
---json` for an act the console sent (from `Event.raw["command"]`), `steward deploy app1`
+Beneath the plain line, the **command that ran**, in bold mono: `vilice apply-updates
+--json` for an act the console sent (from `Event.raw["command"]`), `vilice deploy app1`
 for a box entry (its verb and arguments, read straight off the entry). An act recorded
 here that sent nothing to a box says *recorded here · no command sent to a box*. The
 command opens to the **raw**: *Also recorded* (its steps), *Output* (`Event.output`; on a
@@ -734,7 +734,7 @@ surprise. And it is still recorded either way: we tried, so it is written, and i
 
 > **Live "watch" is still ahead** (a deploy currently blocks until it settles). Streaming
 > an act's sub-steps in place — pull → start color → health → flip → drain — needs a
-> Steward sub-step protocol; tracked in the open roadmap.
+> Vilice sub-step protocol; tracked in the open roadmap.
 
 ## Principles to hold
 
@@ -761,7 +761,7 @@ lucide icon set; **mono = machine truth** (raw box values render monospaced).
 Appearance has **two axes**, both stored on the `User` and rendered onto `<html>` by the
 layout:
 
-- **Theme** — a named set of token values (`Theme::ALL`). `steward` is the default and
+- **Theme** — a named set of token values (`Theme::ALL`). `vilice` is the default and
   the reference: near-black on near-white with the one yellow accent, the docs site's
   palette from [`blueprint/design/tokens.md`](../design/tokens.md). Yellow stays graphic
   on light — the interactive colour is ink, and yellow marks position (the active rail
@@ -793,6 +793,6 @@ distinct from the system's status/scope badges — see
 The shape above is settled. What is realized vs. still ahead — ingestion (#6), the
 generic focus/pin lens (#10), the secret/env panel (#14), live-watch (#15), Access (#16),
 the chain-integrity badge (#17), the shareable client view (#18), the command palette
-(#19), and Steward Console-deploys-Steward Console (#20) — is tracked wave by wave in
+(#19), and Vilice Console-deploys-Vilice Console (#20) — is tracked wave by wave in
 [`decisions/open/ui-roadmap.md`](../../decisions/open/ui-roadmap.md). When a screen lands and
 settles, its canonical description moves here.
