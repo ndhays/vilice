@@ -6,9 +6,9 @@
 > carry over unchanged. **Answers** question 1 of
 > [`open/landscape-scan.md`](open/landscape-scan.md), the collision scan.
 >
-> **Built; not yet published.** The code, the console, the site, the docs and
-> `install.sh` all say Vilice and point at the new homes. What is left is publishing:
-> the first release, the key on Codeberg, the two hosts — in the order under "Building it".
+> **Built and published, 2026-10-02.** `0.4.0` is the first Vilice release, installable
+> from `get.vilice.org` and verified against the key on Codeberg. What is left is under
+> "Building it": the dev box, and retiring the old names.
 
 ## The question
 
@@ -153,19 +153,24 @@ What does not move, on purpose:
 - **Past console migrations**, which are history. A new migration renames the column,
   the stored themes, and the stored ssh users.
 
-What is left, in order:
+**Published.** `0.4.0` is signed and served from `get.vilice.org`; the key is at the root
+of `codeberg.org/vilice/vilice`; `vilice.org` serves the docs and the App Library. A run
+of the live installer with no overrides fetched the key from Codeberg, verified the
+release, and installed it. `vilice.com`, `www.vilice.com` and `www.vilice.org` redirect
+to `https://vilice.org/` — a fixed target, not path-preserving, so no URL on them can
+resolve to an installer. A hostname that only redirects carries a proxied record to
+`192.0.2.1`, an address reserved for documentation that never routes.
 
-1. **The release.** Move the signing key to `~/.keys/vilice-release-key.pem` and run
-   `make release` for `0.4.0`.
-2. **The key.** Publish `vilice/release-key.pub` as `release-key.pub` at the root of
-   `codeberg.org/vilice/vilice`, publicly readable.
-3. **The hosts.** `npm run build` in `site/` writes `dist/` (for `vilice.org`) and
-   `dist-get/` (for `get.vilice.org`). `vilice.com` redirects to `vilice.org`.
-4. **The dev box**, reinstalled from `get.vilice.org`.
+**Still to do:**
 
-**The gate:** `get.vilice.org` does not go live until the key answers at its Codeberg
-path, and the docs site does not go live before `get.vilice.org` — the install line it
-prints must work the moment someone copies it. An installer pointed at a path that does
+1. **The dev box**, reinstalled from `get.vilice.org` — the first install outside a test.
+2. **Retire the old names.** `steward.agoraforge.org` no longer resolves; its Cloudflare
+   project goes, and `codeberg.org/agoraforge/steward` (the old key) is archived.
+3. **HSTS preload** for `vilice.org`, once the subdomains have settled.
+
+**The gate, for every publish:** `get.vilice.org` does not go live until the key answers
+at its Codeberg path, and the docs site does not go live before `get.vilice.org` — the
+install line it prints must work the moment someone copies it. An installer pointed at a path that does
 not answer fails every install.
 
 ## Roads not taken
