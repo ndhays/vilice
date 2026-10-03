@@ -810,9 +810,9 @@ distinct from the system's status/scope badges — see
 
 ## Build state
 
-The shape above is settled. What is realized vs. still ahead — ingestion (#6), the
-generic focus/pin lens (#10), the secret/env panel (#14), live-watch (#15), Access (#16),
-the chain-integrity badge (#17), the shareable client view (#18), the command palette
-(#19), and Vilice Console-deploys-Vilice Console (#20) — is tracked wave by wave in
+The shape above is settled. What is still ahead — ingestion (#6), the generic focus/pin
+lens (#10), the rest of secret/env (#14), live-watch (#15), Access's write half (#16), the
+chain-integrity badge (#17), the shareable client view (#18), the command palette (#19),
+and Vilice Console-deploys-Vilice Console (#20) — is tracked in
 [`decisions/open/ui-roadmap.md`](../../decisions/open/ui-roadmap.md). When a screen lands and
 settles, its canonical description moves here.

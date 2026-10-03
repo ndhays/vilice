@@ -105,9 +105,8 @@ land with Create Machine.
 
 The App declares its environment as a small schema so the app form is mostly prefilled —
 `required + public` blocks on a blank field; `optional` is prefilled + under Advanced;
-`secret` is masked, off-record (the #14 channel). The declaration half is built (names only);
-the value half and the `required?`/`default` fields are the open #14-B work in
-[`app-library.md`](app-library.md).
+`secret` is masked, off-record (the #14 channel). Declarations and values are built; the
+`required?`/`default` fields are still open, in [`app-library.md`](app-library.md).
 
 ## Replicas / scale — the build, not the model
 

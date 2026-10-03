@@ -4,7 +4,6 @@
 > decided. When one settles, move the answer into the relevant spec and record the
 > reasoning in `decisions/`.
 
-**Last touched:** 2026-09-19.
 
 ---
 
@@ -109,64 +108,21 @@ container, e.g. `pg_isready` / `redis-cli ping`). Surfaced while authoring
 `examples/library.yml`. Folds into [deploy.md](../../blueprint/vilice/deploy.md) once
 chosen.
 
-These pure-TCP services are also exactly the **accessories** an app runs alongside it — so
-this health mode is a prerequisite for the accessory model below.
+These pure-TCP services are also exactly the **accessories** an app runs alongside it, so
+an accessory wants this mode too.
 
-## Accessories — multi-container apps on a shared network
+## Accessories — what the build left open
 
-**In scope (decided 2026-06-24) — build toward this.** The model below is settled; what remains is
-the design + build. Accessories land as a new `accessories` block **inside the AppConfig artifact**
-(so they version with the config — see
-[`app-config-is-the-artifact.md`](../app-config-is-the-artifact.md)), rendered as their own Quadlet
-units on a shared network with stable aliases.
+Accessories are built: an app's companion containers on its own network, reached by a
+stable alias ([`accessories-belong-to-one-app.md`](../accessories-belong-to-one-app.md),
+[`deploy.md`](../../blueprint/vilice/deploy.md)). Two things the design called for are not:
 
-Every app today is **one container** behind Caddy: `deploy` publishes it to a loopback port
-(`PublishPort=127.0.0.1:<port>:<port>` in `quadlet.go`) and Caddy routes there. There is no
-way to run an app *with* a companion service — a Rails app that needs Redis or Postgres, the
-common case. Kamal calls these **accessories**. The deploy spec
-([deploy-config-model.md](deploy-config-model.md)) has no field for "this app also needs these
-services," and nothing on the box yet lets one container reach another by name — the two gaps the
-model below closes.
-
-**The model (mapped from Kamal/Compose, which we already treat as inspiration —
-[`borrowed-substrate.md`](../borrowed-substrate.md)):** a **shared user-defined Podman
-network** that Vilice creates-if-not-exists before attaching anything. The app container,
-its accessories, and Caddy all join it. On a user-defined network Podman's **aardvark-dns**
-(the netavark backend's resolver) gives container-to-container name resolution — the same
-"reach `redis` by hostname" that Compose and Kamal 2 rely on. Accessories boot with stable
-names; the app's connection string points at the name; Caddy joins the network for the same
-reason kamal-proxy must live on the kamal network — to route to the app. Accessories are
-separate, long-lived containers, **not** a Podman pod: a pod shares one netns (reach on
-`localhost:port`) but couples lifecycles, and we want accessories to **outlive app
-redeploys** — so shared-network-separate-containers is the right analog, not co-location.
-
-**Two walls to design around:**
-
-1. **Rootless DNS is not guaranteed present.** Vilice runs as the unprivileged `vilice`
-   user, and rootless container-to-container DNS works *only* if **aardvark-dns is installed
-   and netavark is the backend**. On a stripped-down server the DNS helper is sometimes
-   missing — and then names silently fail to resolve while IPs still work, which looks exactly
-   like a bug. So `prepare` must install/verify aardvark-dns and `doctor` must **check it is
-   present** (a real verify step, like the existing Podman ≥ 4.4 assert), never assume it.
-   Folds into [provision.md](../../blueprint/vilice/provision.md).
-
-2. **Discovery must not ride a churning container name.** Kamal hands accessories a clean
-   `<service>-<accessory>` name but suffixes role/server containers with a digest, which makes
-   them unreachable by a predictable name — fixed with an explicit **network-alias**. We carry
-   the same hazard already: blue/green names every app container `<name>-a` / `-b` (`otherColor`
-   in `quadlet.go`), and any digest/tag in a name would churn every deploy. **Rule: every
-   container something else reaches by name gets a deliberate, digest-free network-alias** (e.g.
-   `console-redis`) that stays constant across redeploys; connection strings point at the
-   alias, never the container name. The digest/color can churn; the alias is the stable contract.
-
-**Lifecycle:** the network and the accessories **persist across app redeploys** — don't tear
-the network down or reap an accessory on app churn (they're shared and longer-lived, like the
-registry login). This makes accessories the natural home for the **pure-TCP services** the
-HTTP-only health gate currently excludes (Redis, Postgres — see above): an accessory wants the
-TCP/exec health mode, not an HTTP `GET`. Where it lands: a new `accessories` block in the
-deploy envelope (the missing axis in [deploy-config-model.md](deploy-config-model.md)'s "what's
-in App Config"), rendered as their own Quadlet `.container` units on the shared network with
-stable aliases. Folds into [deploy.md](../../blueprint/vilice/deploy.md) once designed.
+- **`prepare` / `doctor` do not verify aardvark-dns.** Rootless container-to-container
+  name resolution works only when aardvark-dns is installed and netavark is the backend.
+  On a stripped-down server it is sometimes missing — and then names silently fail to
+  resolve while IPs still work, which looks exactly like a bug. `prepare` should install
+  or verify it, and `doctor` should check it is present (like the Podman ≥ 4.4 assert).
+- **TCP/exec health** for accessories like Postgres and Redis — the section above.
 
 ## apt packaging — the inert-package / prepare split
 
@@ -216,7 +172,7 @@ Article VI. Would retire the old separate `service-mode` verb. Folds into
 
 ## A self-update scope — an app may redeploy itself
 
-> **Doubt (2026-06-09):** maybe not worth its own scope. Anything with `operate` (e.g. a
+> **Doubt:** maybe not worth its own scope. Anything with `operate` (e.g. a
 > co-located Vilice Console) can already update an app, and
 > [deploy-config-model.md](deploy-config-model.md) argues there's no structural
 > image-vs-config boundary — "self-update" collapses into *which fields of the one config a
@@ -303,18 +259,12 @@ above, which is why it is flagged from here.
 
 ## Security smoke-tests — industry-standard tools
 
-**Mostly built** — see [`decisions/security-audit.md`](../security-audit.md) for the why
-and [`audit/log.md`](../../audit/log.md) for the per-version attestation.
+Built: `make audit` (govulncheck + gosec, gating `release`), `make audit-box`
+(ssh-audit + nmap + Lynis), and `harden --check` — see
+[`decisions/security-audit.md`](../security-audit.md) and
+[`audit/log.md`](../../audit/log.md).
 
-- **`govulncheck` + `gosec`** — **wired** as `make audit` (gates `release`). gosec's
-  perms/path rules are excluded by policy; G204 stays on, annotated per site.
-- **`ssh-audit` + `nmap` + `Lynis`** — **wired** as `make audit-box HOST=…`
-  (`audit/run.sh`); run against a prepared+hardened box, fold regressions into `harden/`.
-- **`harden --check`** — **built**: a native, dependency-free on-box posture check that
-  publishes its result for `status`/Vilice Console to read (the everyday guard between deep
-  audits).
-
-Still open / deferred:
+Still open:
 
 - **First real run + baseline.** Run `make audit-box` against the devbox, capture the
   baseline (ssh-audit grade, open-port set, Lynis index) and make `audit-box` fail on a
@@ -328,18 +278,17 @@ Still open / deferred:
 
 ## Further hardening (later)
 
-Carried over from the original draft; none are near-term:
+None are near-term:
 
 - **Secrets at rest** — age / SOPS for app secrets.
 - **God-key custody** — `systemd-creds` / TPM for the root signing/bootstrap key.
-- **App unit hardening** — systemd Quadlet for container units plus a default
-  `OOMScoreAdjust` are **built** (see [`../quadlet-deploy.md`](../quadlet-deploy.md)).
-  What remains is a per-app override (`OOMScoreAdjust`/`MemoryMax` in the deploy spec).
+- **Per-app resource limits** — an `OOMScoreAdjust` / `MemoryMax` override in the deploy
+  spec, on top of the default in [`../quadlet-deploy.md`](../quadlet-deploy.md).
 
 ---
 
-> The three threads below came out of a 2026-06-18 review pass. **Suggested topics,
-> nothing decided** — raised here so the gaps aren't lost, not endorsed as work.
+> The threads below are **suggested topics, nothing decided** — raised so the gaps
+> aren't lost, not endorsed as work.
 
 ## Caddy certificate state — does it survive a redeploy?
 
@@ -384,7 +333,7 @@ the Access (#16) grant-scope work already flagged in journeys.
 
 ## Is "run on the box" provable from the record?
 
-**Raised 2026-09-30**, building the record's stamps. The console marks a box entry *on
+Raised while building the record's stamps. The console marks a box entry *on
 the box itself* when its actor is `operator` — the name `core.ActorName` gives any local
 invocation. Two ways that name misleads:
 
