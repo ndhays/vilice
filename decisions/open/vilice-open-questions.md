@@ -124,6 +124,18 @@ stable alias ([`accessories-belong-to-one-app.md`](../accessories-belong-to-one-
   or verify it, and `doctor` should check it is present (like the Podman ≥ 4.4 assert).
 - **TCP/exec health** for accessories like Postgres and Redis — the section above.
 
+## The subuid range is fixed, and can overlap
+
+`prepare` gives `_vilice` the range `100000:65536`, always. Ubuntu cloud images give
+their login user (`ubuntu`) the same one, so the two overlap: a container user under
+`_vilice` and one under `ubuntu` can map to the same host uid. Containers work, and the
+`ubuntu` user rarely runs any — but two accounts' "unprivileged" users being the same
+uid is a weaker boundary than the design means to offer
+([`what-a-container-can-reach.md`](../what-a-container-can-reach.md)). Open: pick the next
+free range instead (what `useradd` does for a non-system user), and what to do about a
+box already prepared with the fixed one — changing a range under existing containers
+needs `podman system migrate`.
+
 ## apt packaging — the inert-package / prepare split
 
 Vilice mostly follows Linux convention already (state in `/var/lib/vilice`,

@@ -151,3 +151,24 @@ func TestGhostContainerCheck(t *testing.T) {
 		}
 	}
 }
+
+// The range has to be for the account that runs the containers. 0.4.0 wrote it for
+// `vilice` while the account is `_vilice`, so the name must match whole, not by prefix.
+func TestSubidCheckWantsARangeForThisAccount(t *testing.T) {
+	const good = "ubuntu:100000:65536\n_vilice:165536:65536\n"
+	if c := subidCheck("_vilice", good, good); !c.OK {
+		t.Errorf("a range for the account should pass: %+v", c)
+	}
+
+	const stray = "ubuntu:100000:65536\nvilice:100000:65536\n"
+	c := subidCheck("_vilice", stray, good)
+	if c.OK {
+		t.Fatal("a range for `vilice` is not a range for `_vilice`")
+	}
+	if !strings.Contains(c.Note, "/etc/subuid") || strings.Contains(c.Note, "/etc/subgid") {
+		t.Errorf("the note should name only the file that lacks it: %q", c.Note)
+	}
+	if !strings.Contains(c.Note, "run prepare") {
+		t.Errorf("the note should say how to fix it: %q", c.Note)
+	}
+}

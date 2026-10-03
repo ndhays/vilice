@@ -97,7 +97,12 @@ exactly two things a box does here; a third arrives when a third is real, not fo
   not incidental packages. Quadlet needs **Podman ≥ 4.4**
   (`doctor` asserts it); `doctor` also checks restic is present.
 - **The `_vilice` user:** created here, with subuid/subgid ranges and `enable-linger` so
-  its rootless containers and `systemctl --user` units run at boot without a login. Apps
+  its rootless containers and `systemctl --user` units run at boot without a login. The
+  ranges are written for the account by name (`doctor` checks that one exists for the
+  user it runs as: without it rootless Podman cannot map an image's users, and a pull
+  fails far from the cause). Its `~/.ssh` is made here too, `0700` and its own — the
+  rights ledger's directory — so a box that is prepared and not yet granted to anyone is
+  a whole floor, and `doctor` passes on it. Apps
   deploy as this user, not root — see [auth.md](auth.md) and
   [`ceiling-is-the-machine.md`](../../decisions/ceiling-is-the-machine.md).
 - **Caddy routing:** the system Caddy (its own `caddy` user, on :80/:443) is pointed at a

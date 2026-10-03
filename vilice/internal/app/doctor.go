@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -61,6 +62,14 @@ func doctorCmd(args []string) core.Result {
 	checks = append(checks, diskCheck(diskUsedPercent(), unref, totalImages))
 	if _, err := exec.LookPath("caddy"); err == nil {
 		checks = append(checks, caddyAdminCheck(dialCaddyAdmin()))
+	}
+	// Only where there are containers to map: a balancer has no Podman and needs no range.
+	if _, err := exec.LookPath("podman"); err == nil {
+		if u, uerr := user.LookupId(strconv.Itoa(os.Geteuid())); uerr == nil {
+			subuid, _ := os.ReadFile("/etc/subuid")
+			subgid, _ := os.ReadFile("/etc/subgid")
+			checks = append(checks, subidCheck(u.Username, string(subuid), string(subgid)))
+		}
 	}
 
 	failed := 0
@@ -221,6 +230,34 @@ func ghostContainerCheck(psOut string, selfUID int) check {
 	sort.Strings(parts)
 	return check{Name: name, OK: false,
 		Note: "ghost containers (" + strings.Join(parts, ", ") + ") — was vilice run as the wrong user?"}
+}
+
+// subidCheck says whether the account running the containers has subordinate uid and gid
+// ranges. Without them rootless Podman cannot map an image's users, and the first pull
+// fails on a file not owned by root — far from here, and not looking like this. subuid
+// and subgid are the contents of /etc/subuid and /etc/subgid.
+func subidCheck(account, subuid, subgid string) check {
+	const name = "subuid/subgid range"
+	has := func(body string) bool {
+		for _, line := range strings.Split(body, "\n") {
+			if strings.HasPrefix(line, account+":") {
+				return true
+			}
+		}
+		return false
+	}
+	var missing []string
+	if !has(subuid) {
+		missing = append(missing, "/etc/subuid")
+	}
+	if !has(subgid) {
+		missing = append(missing, "/etc/subgid")
+	}
+	if len(missing) > 0 {
+		return check{Name: name, OK: false,
+			Note: "no range for " + account + " in " + strings.Join(missing, " or ") + " (run prepare)"}
+	}
+	return check{Name: name, OK: true, Note: account}
 }
 
 // caddyAdminCheck says whether Caddy's admin API is where prepare put it: on the socket,

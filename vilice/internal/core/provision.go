@@ -164,14 +164,44 @@ func ensureViliceUser() error {
 		return err
 	}
 	// Subuid/subgid ranges let rootless Podman map container users.
-	if err := Sh(`
-grep -q '^vilice:' /etc/subuid || echo 'vilice:100000:65536' >> /etc/subuid
-grep -q '^vilice:' /etc/subgid || echo 'vilice:100000:65536' >> /etc/subgid
-`); err != nil {
+	if err := Sh(subidScript(ViliceUser)); err != nil {
+		return err
+	}
+	// The rights ledger's directory. `authorize` would make it on first use, but a box
+	// that has been prepared and not yet granted to anyone is a normal state, and
+	// `doctor` should find the floor whole in it.
+	if err := Sh(ledgerDirScript(ViliceUser)); err != nil {
 		return err
 	}
 	// Linger lets the _vilice user's services run without an active login.
 	return Sh("loginctl enable-linger " + ViliceUser)
+}
+
+// subidScript gives the account its subordinate uid/gid ranges. `useradd --system`
+// allocates none, and without one rootless Podman cannot map an image's users — a pull
+// fails on the first file not owned by root.
+//
+// The account name is a parameter, never a literal: 0.4.0 wrote the range for `vilice`
+// while the account is `_vilice`, so the account that runs the containers had none. The
+// last line takes that stray entry back out, unless a real `vilice` user owns it.
+func subidScript(account string) string {
+	return fmt.Sprintf(`
+set -euo pipefail
+for f in /etc/subuid /etc/subgid; do
+  grep -q '^%[1]s:' "$f" || echo '%[1]s:100000:65536' >> "$f"
+  id vilice >/dev/null 2>&1 || sed -i '/^vilice:100000:65536$/d' "$f"
+done
+`, account)
+}
+
+// ledgerDirScript makes the account's ~/.ssh, owned by it and closed to everyone else —
+// sshd ignores an authorized_keys whose directory anyone else could write.
+func ledgerDirScript(account string) string {
+	return fmt.Sprintf(`
+set -euo pipefail
+home="$(getent passwd %[1]s | cut -d: -f6)"
+install -d -m 0700 -o %[1]s -g %[1]s "$home/.ssh"
+`, account)
 }
 
 func ensureFloor() error {
