@@ -72,6 +72,17 @@ func statusCmd(args []string) core.Result {
 	if u := collectUpdates(); u != nil {
 		data["updates"] = u
 	}
+	// Whether the box is waiting on a restart to finish an update — the kernel, libc,
+	// and the like only take effect then. Always present: "no restart needed" is a fact
+	// worth stating, and an absent key would read as "unknown".
+	reboot := collectReboot(rebootRequiredPath)
+	data["reboot"] = reboot
+	if reboot.Required {
+		msg += "\n\nRestart required"
+		if len(reboot.Packages) > 0 {
+			msg += " — for " + strings.Join(reboot.Packages, ", ")
+		}
+	}
 	// When each app and the record last backed up, as `backup` noted it — never a live
 	// query of the repo (see backups.go).
 	data["backups"] = collectBackups()
@@ -223,6 +234,36 @@ func collectUpdates() map[string]any {
 		return nil
 	}
 	return map[string]any{"count": count, "security": len(security), "packages": security}
+}
+
+// rebootRequiredPath is the flag file Debian and Ubuntu packages leave when an update
+// only takes effect after a restart. Its sibling, `<path>.pkgs`, lists who asked.
+const rebootRequiredPath = "/run/reboot-required"
+
+type rebootStatus struct {
+	Required bool     `json:"required"`
+	Packages []string `json:"packages,omitempty"` // which packages asked for it, deduplicated
+}
+
+// collectReboot reads the flag. World-readable, so observe can report it; Vilice never
+// restarts a box — there is no such verb — so this only says the restart is owed.
+func collectReboot(flag string) rebootStatus {
+	if _, err := os.Stat(flag); err != nil {
+		return rebootStatus{}
+	}
+	r := rebootStatus{Required: true}
+	body, err := os.ReadFile(flag + ".pkgs") // #nosec G304 -- a fixed system path
+	if err != nil {
+		return r
+	}
+	seen := map[string]bool{}
+	for _, ln := range strings.Split(string(body), "\n") {
+		if p := strings.TrimSpace(ln); p != "" && !seen[p] {
+			seen[p] = true
+			r.Packages = append(r.Packages, p)
+		}
+	}
+	return r
 }
 
 // collectMaintenance reads the box's automatic-maintenance window — the unattended-upgrades

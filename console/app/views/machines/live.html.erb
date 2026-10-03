@@ -92,6 +92,24 @@
     <% else %>
       <p class="muted updates-current"><%= icon "circle-check", size: 15 %> <strong>Up to date.</strong></p>
     <% end %>
+    <%# A restart the box owes itself — what the terminal says as "System restart
+        required". Said with what happens next, because Vilice has no restart verb: either
+        the box does it at its window, or a person does it on the box. %>
+    <% if @status.reboot_required? %>
+      <p class="maint-pending maint-reboot" title="<%= @status.reboot_packages.join("\n") %>">
+        <%= icon "rotate-cw", size: 15 %>
+        <strong>Restart required</strong>
+      </p>
+      <p class="muted maint-note">
+        <% if @status.reboot_packages.any? %>To finish updating
+          <span class="mono"><%= @status.reboot_packages.join(" ") %></span>.<% end %>
+        <% if @status.reboots_itself? %>
+          The box restarts itself at <%= @status.maintenance_time %>.
+        <% else %>
+          Restart it on the box — <code>sudo reboot</code>. Vilice has no restart command.
+        <% end %>
+      </p>
+    <% end %>
   </div>
 
   <%# ── Apps ──────────────────────────────────────────────────────────────────

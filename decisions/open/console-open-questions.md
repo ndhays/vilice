@@ -8,6 +8,25 @@
 
 ---
 
+## Host keys — whose memory, and who forgets
+
+The console trusts a box's SSH host key on first connect (`StrictHostKeyChecking=
+accept-new`) and remembers it in the `known_hosts` of whatever user it runs as. Three
+things follow, none decided:
+
+- **The memory is not the console's.** It lives in a file outside the database, so it is
+  not backed up with the machines, and in a container it is gone on every redeploy — at
+  which point every box is trusted afresh, silently. That is trust-on-*every*-use.
+- **First trust is not an act.** Nothing records that a key was accepted, or which.
+- **A rebuilt box needs a shell.** The console names the problem and the command, but
+  forgetting the old key means `ssh-keygen -R` on the console's host.
+
+The shape this points at: pin the host key **on the `Machine`**, record accepting it and
+record replacing it, and offer *Trust the new key* on Machine Settings as a witnessed act
+that shows both fingerprints. Open: whether the first key is accepted on connect or
+shown for confirmation alongside the authorize line, which already has the operator on
+the box and able to read its fingerprint.
+
 ## Vilice Console deploys Vilice Console — the self-update POC
 
 The sharpest proof of the whole model: **Vilice Console updates itself by SSHing into the

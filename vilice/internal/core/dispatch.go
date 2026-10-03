@@ -522,12 +522,31 @@ func Dispatch(cmd Command, args []string, actorName string, jsonOut bool) int {
 			return 1
 		}
 	}
-	res := cmd.Run(args)
+	res := runQuietly(cmd, args, jsonOut)
 	emit(withUsage(cmd, res), jsonOut)
 	if res.Code != "ok" {
 		return 1
 	}
 	return 0
+}
+
+// runQuietly runs the command and, under --json, keeps stdout for the reply alone.
+//
+// A verb drives other tools — apt, podman, caddy, systemctl — and hands them this
+// process's stdout so a person at a shell sees them work. A machine reading --json
+// wants one JSON document on stdout and nothing else, and it was getting apt's whole
+// transcript in front of it: `apply-updates` succeeded on the box and failed to parse in
+// the console, every time. So for the length of the run, stdout *is* stderr: the tools'
+// output still arrives, on the stream meant for it, and the reply is the only thing on
+// stdout. The contract a caller can rely on is "stdout is the Result; stderr is the log".
+func runQuietly(cmd Command, args []string, jsonOut bool) Result {
+	if !jsonOut {
+		return cmd.Run(args)
+	}
+	reply := os.Stdout
+	os.Stdout = os.Stderr
+	defer func() { os.Stdout = reply }()
+	return cmd.Run(args)
 }
 
 // normalizeAliases rewrites a command's declared short flags to their long names,

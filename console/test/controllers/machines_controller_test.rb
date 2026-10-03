@@ -189,6 +189,36 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # "System restart required" on the box's terminal is a fact the console must show:
+  # a new kernel is not in force until then. It says what happens next, because Vilice
+  # has no restart verb — the box does it at its window, or a person does it there.
+  test "a box that owes itself a restart says so, and says who will do it" do
+    with_fake_observe do
+      sign_in_as @user
+      box = Machine.create!(name: "kernel-box", ssh_host: "x", scope: "operate")
+      box.labels.create!(key: "fake-health", value: "ok")
+      box.labels.create!(key: "fake-reboot", value: "linux-image-6.8.0-45-generic libc6")
+
+      get live_machine_path(box)
+      assert_response :success
+      assert_select ".maint-reboot", /Restart required/
+      assert_select ".maint-note", /To finish updating\s+linux-image-6.8.0-45-generic libc6/
+      # The fake's unattended-upgrades reboots at its window, so the box does it.
+      assert_select ".maint-note", /restarts itself at 04:00/
+      assert_select ".maint-note", text: /sudo reboot/, count: 0
+    end
+  end
+
+  test "a box that owes no restart says nothing about one" do
+    with_fake_observe do
+      sign_in_as @user
+      box = Machine.create!(name: "calm-box", ssh_host: "x", scope: "operate")
+      box.labels.create!(key: "fake-health", value: "ok")
+      get live_machine_path(box)
+      assert_select ".maint-reboot", count: 0
+    end
+  end
+
   test "an operate box with no updates shows the window and Up to date, no act" do
     with_fake_observe do
       sign_in_as @user

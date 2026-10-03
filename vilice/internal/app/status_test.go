@@ -1,6 +1,11 @@
 package app
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"reflect"
+	"testing"
+)
 
 func TestParseMaintenance(t *testing.T) {
 	dump := `APT::Architecture "amd64";
@@ -83,5 +88,32 @@ func TestHumanBytes(t *testing.T) {
 		if got := humanBytes(n); got != want {
 			t.Errorf("humanBytes(%d) = %q, want %q", n, got, want)
 		}
+	}
+}
+
+// A restart is owed when the flag file exists, and the packages that asked are named
+// once each. No flag is "not required" — stated, not omitted.
+func TestCollectRebootReadsTheFlag(t *testing.T) {
+	dir := t.TempDir()
+	flag := filepath.Join(dir, "reboot-required")
+
+	if r := collectReboot(flag); r.Required || len(r.Packages) != 0 {
+		t.Errorf("no flag file should mean no restart owed: %+v", r)
+	}
+
+	if err := os.WriteFile(flag, []byte("*** System restart required ***\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if r := collectReboot(flag); !r.Required || len(r.Packages) != 0 {
+		t.Errorf("the flag alone is enough, with no packages named: %+v", r)
+	}
+
+	pkgs := "linux-image-6.8.0-45-generic\nlibc6\nlinux-image-6.8.0-45-generic\n\n"
+	if err := os.WriteFile(flag+".pkgs", []byte(pkgs), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r := collectReboot(flag)
+	if want := []string{"linux-image-6.8.0-45-generic", "libc6"}; !reflect.DeepEqual(r.Packages, want) {
+		t.Errorf("packages = %v, want %v", r.Packages, want)
 	}
 }

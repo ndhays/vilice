@@ -36,7 +36,7 @@
       <%# The box's own sentence, not our transport's. `Vilice.read` unwraps the
           `Result` message, so "no running app" arrives as those words. %>
       <p class="empty"><%= icon "circle-x", size: 14 %> <%= @result[:error] %></p>
-      <% if @result[:reached] == false %>
+      <% if @result[:reached] == false && !@result[:host_key_changed] %>
         <p class="note muted"><%= @machine.connection_hint %></p>
       <% end %>
     <% end %>

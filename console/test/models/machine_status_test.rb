@@ -6,7 +6,7 @@ class MachineStatusTest < ActiveSupport::TestCase
   # Build a Vilice.read-style result with the given machine numbers.
   def reading(mem_total: 4_000_000, mem_avail: 2_000_000,
               disk_total: 100_000_000, disk_free: 40_000_000, load1: 0.2,
-              hardening: nil, updates: nil, maintenance: nil)
+              hardening: nil, updates: nil, maintenance: nil, reboot: nil)
     inner = {
       "machine" => {
         "hostname" => "ubuntu-dev", "uptime_sec" => 81_135, "load1" => load1,
@@ -18,6 +18,7 @@ class MachineStatusTest < ActiveSupport::TestCase
     inner["hardening"] = hardening if hardening
     inner["updates"] = updates if updates
     inner["maintenance"] = maintenance if maintenance
+    inner["reboot"] = reboot if reboot
     { ok: true, at: Time.current, data: { "code" => "ok", "retryable" => false, "data" => inner } }
   end
 
@@ -69,6 +70,28 @@ class MachineStatusTest < ActiveSupport::TestCase
     assert s.maintenance_known?
     assert_equal "04:00", s.maintenance_time
     assert s.auto_reboot?
+  end
+
+  test "reads a restart the box owes itself, and whether the box will do it" do
+    s = MachineStatus.from(reading(reboot: { "required" => true, "packages" => %w[linux-image libc6] }))
+    assert s.reboot_required?
+    assert_equal %w[linux-image libc6], s.reboot_packages
+    refute s.reboots_itself?, "no window means nobody restarts it but a person"
+
+    s = MachineStatus.from(reading(reboot: { "required" => true },
+                                   maintenance: { "reboot_time" => "04:00", "auto_reboot" => true }))
+    assert s.reboots_itself?
+    assert_equal [], s.reboot_packages
+  end
+
+  test "a box too old to report a restart reads as unknown, not as none owed" do
+    s = MachineStatus.from(reading)
+    refute s.reboot_known?
+    refute s.reboot_required?
+
+    s = MachineStatus.from(reading(reboot: { "required" => false }))
+    assert s.reboot_known?
+    refute s.reboot_required?
   end
 
   test "no maintenance window reported reads as unknown" do

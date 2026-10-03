@@ -109,6 +109,77 @@ class ViliceTest < ActiveSupport::TestCase
     end
   end
 
+  # ── The reply and the log are two streams ─────────────────────────────────
+  # stdout is the JSON reply; whatever the box's tools printed while they worked is on
+  # stderr. Merged, apt's transcript sat in front of the JSON and a successful
+  # `apply-updates` was reported as a failure.
+  test "what the box's tools print does not break the reply, and is kept as the log" do
+    apt = "Hit:1 https://mirror.example/ubuntu resolute InRelease\nReading package lists...\n3 upgraded."
+    with_fake_vilice do |vilice|
+      vilice.on(/apply-updates/, stderr: apt,
+                 data: { "code" => "ok", "message" => "machine packages updated" })
+
+      out = Vilice::Mutate.run(machine, "apply-updates --json", actor: "alice", action: "updated")
+
+      assert out[:result][:ok], "a succeeded act must read as one"
+      assert_equal "machine packages updated", out[:result][:data]["message"]
+      assert_equal apt, out[:result][:log]
+      # The entry keeps both: the reply first, then what apt said it did.
+      assert_equal "ok", out[:event].outcome
+      assert_match(/"message": "machine packages updated"/, out[:event].output)
+      assert_match(/3 upgraded\./, out[:event].output)
+      assert out[:event].output.index("machine packages updated") < out[:event].output.index("Hit:1")
+    end
+  end
+
+  test "an act with nothing on stderr keeps the reply as it was" do
+    with_fake_vilice do |vilice|
+      vilice.on(/restart/, data: { "code" => "ok" })
+      out = Vilice::Mutate.run(machine, "restart web --json", actor: "alice", action: "restarted")
+      assert_equal({ "code" => "ok" }, out[:event].output)
+    end
+  end
+
+  test "ssh's own complaint is read from stderr" do
+    with_fake_vilice do |vilice|
+      vilice.on(/status/, stdout: "", stderr: "Permission denied (publickey).",
+                 success: false, exit_status: 255)
+      res = Vilice::Observe.status(machine, refresh: true)
+      refute res[:reached]
+      assert_equal "Permission denied (publickey).", res[:error]
+    end
+  end
+
+  # ── A changed host key ────────────────────────────────────────────────────
+  # ssh refuses, rightly, and says so in forty lines of capitals. The console says what
+  # happened, the one command for the innocent case, and that the other case exists.
+  test "a changed host key is named, with the command that forgets the old one" do
+    banner = "@@@@@@@@@@@\n@ WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED! @\n@@@@@@@@@@@\n" \
+             "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!\nHost key verification failed."
+    with_fake_vilice do |vilice|
+      vilice.on(/status/, stdout: "", stderr: banner, success: false, exit_status: 255)
+
+      res = Vilice::Observe.status(machine, refresh: true)
+
+      refute res[:ok]
+      refute res[:reached]
+      assert res[:host_key_changed]
+      assert_match(/different SSH host key/, res[:error])
+      assert_match(/ssh-keygen -R 10\.0\.0\.1/, res[:error])
+      assert_match(/something else is answering/, res[:error])
+      refute_match(/NASTY/, res[:error])
+      assert_match(/NASTY/, res[:output], "ssh's own words are kept, underneath")
+    end
+  end
+
+  test "the forget command names the port when it is not 22" do
+    box = Machine.create!(name: "odd-port", ssh_host: "10.0.0.9", ssh_port: 2222)
+    with_fake_vilice do |vilice|
+      vilice.on(/status/, stdout: "", stderr: "Host key verification failed.", success: false, exit_status: 255)
+      assert_match(/ssh-keygen -R \[10\.0\.0\.9\]:2222/, Vilice::Observe.status(box, refresh: true)[:error])
+    end
+  end
+
   # ── Mutate: records before it acts (Invariant 2) ──────────────────────────
 
   test "a mutation records an Event, then issues the command" do

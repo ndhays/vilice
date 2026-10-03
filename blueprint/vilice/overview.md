@@ -147,6 +147,21 @@ tested against the assembled binary in `cmd/vilice`:
 A flag a command doesn't declare is a hard error carrying the synopsis, never
 silently dropped; `--help` never falls through to the action it asks about.
 
+## The reply — what a caller can rely on
+
+Every verb answers the same way, so a console, a script or an agent never scrapes text.
+
+- **`--json` puts one document on stdout and nothing else**: the `Result` —
+  `code` (`ok`, or a named failure), `retryable`, `message`, and `data` for reads.
+- **Everything else is on stderr.** A verb drives other tools — apt, Podman, Caddy,
+  systemctl — and what they print while they work is the log, not the reply. For the
+  length of the run the binary's stdout *is* its stderr (`runQuietly`), so no tool can
+  put a line in front of the JSON. A caller reads the two streams apart. Without
+  `--json`, a person is watching and the tools print where they always did.
+- **The exit status is `0`, `1` or `2`**: done, failed (the `code` says how, and
+  `retryable` says whether to try again), or called wrong. Over scoped SSH a `255` is
+  ssh's own and means the box was never reached.
+
 ## Open questions
 
 What is not yet decided is kept out of this folder, in

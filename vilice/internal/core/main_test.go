@@ -1,6 +1,11 @@
 package core
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 )
@@ -178,6 +183,62 @@ func TestRecordable(t *testing.T) {
 		}
 		if got := recordable(cmd, c.args); got != c.want {
 			t.Errorf("recordable(%q, %v) = %v, want %v", c.name, c.args, got, c.want)
+		}
+	}
+}
+
+// Under --json, stdout is the reply and nothing else. A verb hands its child processes
+// this process's stdout, so apt's transcript used to arrive in front of the JSON and the
+// console could not parse a run that had succeeded. The noise must land on stderr.
+func TestJSONReplyIsAloneOnStdout(t *testing.T) {
+	noisy := Command{Name: "noisy", Scope: ScopeObserve, SkipBinaryCheck: true,
+		Run: func([]string) Result {
+			fmt.Println("printed by the verb")
+			c := exec.Command("sh", "-c", "echo from a child; echo child stderr >&2")
+			c.Stdout, c.Stderr = os.Stdout, os.Stderr
+			if err := c.Run(); err != nil {
+				return Result{Code: "io_error", Message: err.Error()}
+			}
+			return OK("done")
+		}}
+
+	capture := func(jsonOut bool) (stdout, stderr string, code int) {
+		t.Helper()
+		outR, outW, _ := os.Pipe()
+		errR, errW, _ := os.Pipe()
+		savedOut, savedErr := os.Stdout, os.Stderr
+		os.Stdout, os.Stderr = outW, errW
+		code = Dispatch(noisy, nil, "ci", jsonOut)
+		os.Stdout, os.Stderr = savedOut, savedErr
+		outW.Close()
+		errW.Close()
+		o, _ := io.ReadAll(outR)
+		e, _ := io.ReadAll(errR)
+		return string(o), string(e), code
+	}
+
+	stdout, stderr, code := capture(true)
+	if code != 0 {
+		t.Fatalf("exit %d, want 0", code)
+	}
+	var res Result
+	if err := json.Unmarshal([]byte(stdout), &res); err != nil {
+		t.Fatalf("stdout is not one JSON document: %v\n%s", err, stdout)
+	}
+	if res.Code != "ok" || res.Message != "done" {
+		t.Errorf("reply = %+v, want ok/done", res)
+	}
+	for _, want := range []string{"printed by the verb", "from a child", "child stderr"} {
+		if !strings.Contains(stderr, want) {
+			t.Errorf("stderr lost %q:\n%s", want, stderr)
+		}
+	}
+
+	// Without --json a person is watching, and the tools' output stays where it was.
+	stdout, _, _ = capture(false)
+	for _, want := range []string{"printed by the verb", "from a child", "done"} {
+		if !strings.Contains(stdout, want) {
+			t.Errorf("human stdout lost %q:\n%s", want, stdout)
 		}
 	}
 }

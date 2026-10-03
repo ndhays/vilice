@@ -29,7 +29,7 @@ module FakeVilice
   end
 
   # Records issued commands and replies from a script. `ssh` matches the real
-  # `Vilice.ssh` shape: it returns `[combined_output, status]` (Open3.capture2e).
+  # `Vilice.ssh` shape: it returns `[stdout, stderr, status]` (Open3.capture3).
   class Transport
     attr_reader :calls
 
@@ -44,9 +44,10 @@ module FakeVilice
     # `exit_status:` scripts the exact status — pass 255 for "ssh never got through".
     # Spelled out rather than `exit:`, which would shadow `Kernel#exit` and make every
     # reader stop and check.
-    def on(pattern, data: nil, stdout: nil, success: true, exit_status: nil)
-      @replies << { pattern: pattern, data: data, stdout: stdout, success: success,
-                    exit_status: exit_status }
+    # `stderr:` is what the box's tools — or ssh itself — said beside the reply.
+    def on(pattern, data: nil, stdout: nil, stderr: nil, success: true, exit_status: nil)
+      @replies << { pattern: pattern, data: data, stdout: stdout, stderr: stderr,
+                    success: success, exit_status: exit_status }
       self
     end
 
@@ -57,7 +58,7 @@ module FakeVilice
       @calls << { machine: machine, command: command, stdin: stdin }
       reply = @replies.find { |r| matches?(r[:pattern], command) } || { success: true, data: {} }
       out = reply[:stdout] || JSON.generate(reply[:data] || {})
-      [ out, Status.new(reply[:success], reply[:exit_status]) ]
+      [ out, reply[:stderr].to_s, Status.new(reply[:success], reply[:exit_status]) ]
     end
 
     def commands

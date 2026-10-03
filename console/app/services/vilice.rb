@@ -204,9 +204,18 @@ module Vilice
       )
       result = Vilice.read(machine, command, stdin: stdin)
       event.settle!(result[:ok] ? "ok" : "failed", detail: result[:ok] ? nil : result[:error],
-                    output: result[:ok] ? result[:data] : result[:output].presence || result[:error],
+                    output: result[:ok] ? settled_output(result) : result[:output].presence || result[:error],
                     exit_status: result[:exit_status])
       { event: event, result: result }
+    end
+
+    # What the entry keeps of a successful act: the box's reply, and under it whatever
+    # its tools printed — for `apply-updates` that is apt's own account of what changed,
+    # which is the part worth reading. The reply leads, so a long log is what gets cut.
+    def settled_output(result)
+      return result[:data] if result[:log].blank?
+
+      "#{JSON.pretty_generate(result[:data])}\n\n#{result[:log].strip}"
     end
   end
 
@@ -223,22 +232,29 @@ module Vilice
     # is false in production by construction). See app/services/vilice/fake.rb.
     return Fake.envelope(machine, command) if Fake.on?
 
-    out, st = ssh(machine, command, stdin: stdin)
+    out, err, st = ssh(machine, command, stdin: stdin)
     if st.success?
-      { ok: true, reached: true, data: JSON.parse(out), at: Time.current }
+      # stdout is the reply and nothing else; what the box's tools printed while it
+      # worked — apt, podman, caddy — arrives on stderr and is kept as the log.
+      { ok: true, reached: true, data: JSON.parse(out), log: err.presence, at: Time.current }
     else
       # **`reached` is not `ok`.** ssh exits 255 when *ssh itself* could not get through —
       # an unauthorized key, a refused connection, a box that is not there. Any other
       # status is the remote command's own, which means we did reach the box and Vilice
-      # answered badly. Two different problems with two different fixes, and the merged
+      # answered badly. Two different problems with two different fixes, and the raw
       # output names neither, so the caller gets told which one this was.
-      { ok: false, reached: st.exitstatus != 255,
-        error: failure_message(out, st), output: out.to_s, exit_status: st.exitstatus,
-        at: Time.current }
+      reached = st.exitstatus != 255
+      changed = !reached && host_key_changed?(err)
+      { ok: false, reached: reached, host_key_changed: changed,
+        error: changed ? host_key_message(machine) : failure_message(out, err, st),
+        output: transcript(out, err), exit_status: st.exitstatus, at: Time.current }
     end
   rescue JSON::ParserError
-    # A reply we could not read is still a reply: something answered.
-    { ok: false, reached: true, error: "unparseable reply: #{out.to_s.strip.truncate(200)}", at: Time.current }
+    # A reply we could not read is still a reply: something answered. The exit status
+    # goes with it, because "exit 0, unreadable" and "exit 1, unreadable" are different
+    # news — the first is a box that says it succeeded.
+    { ok: false, reached: true, exit_status: st&.exitstatus, output: transcript(out, err),
+      error: "unparseable reply: #{out.to_s.strip.truncate(200)}", at: Time.current }
   rescue => e
     { ok: false, reached: false, error: e.message, at: Time.current }
   end
@@ -246,15 +262,37 @@ module Vilice
   # A refusal from Vilice is a `Result` — `{"code":…,"message":…}` on stdout, and the
   # CLI exits non-zero for any code but `ok`. Handing the operator that JSON was showing
   # them our transport instead of their answer, so the sentence inside it wins when there
-  # is one. Anything else (ssh's own complaints, a bare exit) is passed through as it came.
-  def failure_message(out, status)
-    text = out.to_s.strip
-    parsed = JSON.parse(text) rescue nil
+  # is one. Otherwise it is whatever was said on stderr — ssh's own complaints land
+  # there — then stdout, then the bare exit status.
+  def failure_message(out, err, status)
+    parsed = JSON.parse(out.to_s) rescue nil
     if parsed.is_a?(Hash) && parsed["message"].present?
       parsed["message"].to_s.strip
     else
-      text.presence || "ssh exited #{status.exitstatus}"
+      err.to_s.strip.presence || out.to_s.strip.presence || "ssh exited #{status.exitstatus}"
     end
+  end
+
+  # Everything that came back, for the record entry: the reply, then the log.
+  def transcript(out, err)
+    [ out, err ].map { |s| s.to_s.strip }.reject(&:blank?).join("\n\n").presence
+  end
+
+  # ssh refuses to connect when a host answers with a different key than the one it
+  # remembered. That is the right refusal — it is what a machine-in-the-middle looks
+  # like — and also exactly what a rebuilt box looks like.
+  def host_key_changed?(err)
+    err.to_s.match?(/REMOTE HOST IDENTIFICATION HAS CHANGED|Host key verification failed/)
+  end
+
+  # ssh's own text for this is forty lines of capitals. Say what happened, the one
+  # command that fixes the innocent case, and that the other case exists.
+  def host_key_message(machine)
+    host = machine.ssh_port.to_i == 22 ? machine.ssh_host : "[#{machine.ssh_host}]:#{machine.ssh_port}"
+    "#{machine.name} answered with a different SSH host key than the one Vilice Console " \
+      "remembered, so it refused to connect. If you rebuilt the box, forget the old key — " \
+      "run `ssh-keygen -R #{host}` as the user the console runs as — and read it again. " \
+      "If you did not, something else is answering at that address."
   end
 
   def ssh(machine, command, stdin: nil)
@@ -272,7 +310,9 @@ module Vilice
         "-p", machine.ssh_port.to_s,
         "#{machine.ssh_user}@#{machine.ssh_host}", command
       ]
-      stdin ? Open3.capture2e(*cmd, stdin_data: stdin) : Open3.capture2e(*cmd)
+      # stdout and stderr apart: the reply is JSON on stdout, and everything else the
+      # box says — its tools' output, ssh's own errors — is on stderr.
+      stdin ? Open3.capture3(*cmd, stdin_data: stdin) : Open3.capture3(*cmd)
     end
   end
 

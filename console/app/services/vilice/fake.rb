@@ -126,6 +126,7 @@ module Vilice
       }.tap do |d|
         (m = maintenance_for(machine, health)) and d["maintenance"] = m
         (u = updates_for(machine, health)) and d["updates"] = u
+        d["reboot"] = reboot_for(machine)
         d["backups"] = backups_for(machine, d["apps"], health)
         (c = certs_for(machine, health)) and d["certs"] = c
       end
@@ -187,6 +188,16 @@ module Vilice
       return nil if n <= 0
       pkgs = UPDATE_POOL.first([ n, UPDATE_POOL.size ].min)
       { "count" => n, "security" => n, "packages" => pkgs }
+    end
+
+    # Whether the box owes itself a restart. A real box always answers this; the fake
+    # says "no" unless a `fake-reboot` label names the packages that asked (space
+    # separated), or is present with any other value.
+    def reboot_for(machine)
+      raw = label_value(machine, "fake-reboot")
+      return { "required" => false } if raw.blank?
+
+      { "required" => true, "packages" => raw.split.grep(/\A[a-z0-9][a-z0-9.+-]+\z/) }
     end
 
     # The box's own (witnessed) record. The chain merge adds Vilice Console's authored

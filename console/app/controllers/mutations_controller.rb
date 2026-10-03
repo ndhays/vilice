@@ -59,9 +59,14 @@ class MutationsController < ApplicationController
   # transport error does not say is *which* failure this was: a box that refused the act
   # and a box we never got to look nothing alike and are fixed nowhere near each other.
   # When ssh itself could not get through, the box's own diagnosis is appended.
+  #
+  # A changed host key is the exception: its message already says what happened and what
+  # to do, and "check the box is up" beside it would point the wrong way.
   def failure_alert(result)
     base = "#{@mutation.act.label} failed: #{result[:error]}"
-    result[:reached] == false ? "#{base} — #{@machine.connection_hint}" : base
+    return base if result[:reached] != false || result[:host_key_changed]
+
+    "#{base} — #{@machine.connection_hint}"
   end
 
   def set_machine

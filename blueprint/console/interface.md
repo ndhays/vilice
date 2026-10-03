@@ -322,7 +322,9 @@ enough to make a group read as a group.
   - **Observe holds no act.** Live status, with when it was read beneath its title
     (*Read 2 minutes ago · cached*), a `status` button to read again, and **Raw status
     output** at its foot — the command in bold, then the JSON it returned; maintenance (the window,
-    and the updates waiting, by name); the apps the box reports; **Backups** — each app
+    the updates waiting, by name, and **Restart required** when the box owes itself one —
+    with the packages that asked and what happens next: *the box restarts itself at 04:00*,
+    or *restart it on the box*, since Vilice has no restart command); the apps the box reports; **Backups** — each app
     and the record, last backed up when, or *never*, or *last attempt failed* with the
     reason, and *Nothing on this box is backed up* when no repo is set (from `status`'s
     `backups`; absent when the box's vilice predates it); **Certificates** — each served
@@ -740,7 +742,16 @@ record-as-spine model avoids becoming two apps.
 got to the box" and "the box answered and refused" are different failures with different
 fixes, and the raw SSH output names neither. `ssh` exits **255** when ssh itself could not
 get through; any other non-zero status is the remote command's own, and an unreadable
-reply is still a reply. A failed act that never reached its box has `Machine#connection_hint`
+reply is still a reply. The two streams are read apart: **stdout is the reply**, JSON and
+nothing else, and **stderr is the log** — what the box's tools printed, and ssh's own
+complaints. A settled entry keeps both, the reply first, so `apply-updates` shows what
+apt did.
+
+**A changed host key is named.** ssh refuses a host that answers with a different key
+than it remembered — rightly: that is a machine in the middle, and also a rebuilt box.
+Its own message is forty lines of capitals, so the console says what happened, gives the
+one command for the innocent case (`ssh-keygen -R <host>`, as the user the console runs
+as), and says the other case exists. No "check the box is up" hint is added to it. A failed act that never reached its box has `Machine#connection_hint`
 appended to the alert — *the authorize line has most likely not been run* for a box that has
 never answered, *check the box and the provider's own firewall* for one we had and lost.
 That firewall is the biggest gotcha in

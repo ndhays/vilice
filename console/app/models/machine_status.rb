@@ -41,6 +41,9 @@ class MachineStatus
     @updates = (result.dig(:data, "data", "updates") if @ok) || {}
     # The automatic-maintenance window the box reports: { reboot_time, auto_reboot }.
     @maintenance = (result.dig(:data, "data", "maintenance") if @ok) || {}
+    # Whether the box is waiting on a restart to finish an update: { required, packages }.
+    # Absent on a box too old to report it, which reads as unknown, not as "no".
+    @reboot = (result.dig(:data, "data", "reboot") if @ok)
     # What this box was prepared as: "host" (runs apps) or "balancer" (fronts others).
     # Blank when the box has never been prepared, or when we can't reach it — which
     # reads as unknown, never as a claim that it can do nothing.
@@ -184,6 +187,14 @@ class MachineStatus
   def maintenance_known? = @maintenance["reboot_time"].present?
   def maintenance_time = @maintenance["reboot_time"]
   def auto_reboot? = !!@maintenance["auto_reboot"]
+
+  # A restart the box owes itself — a new kernel or libc only takes effect then. Vilice
+  # reports it and never performs it: there is no restart verb.
+  def reboot_known? = @reboot.is_a?(Hash)
+  def reboot_required? = reboot_known? && @reboot["required"] == true
+  def reboot_packages = reboot_known? ? Array(@reboot["packages"]) : []
+  # Will the box restart itself? Only when unattended-upgrades is told to, at its window.
+  def reboots_itself? = auto_reboot? && maintenance_known?
 
   def update_count = @updates["count"].to_i
   def security_count = @updates["security"].to_i
