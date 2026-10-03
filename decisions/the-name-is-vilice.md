@@ -1,9 +1,8 @@
 # The name is Vilice
 
 > Decided 2026-10-01. **Steward → Vilice**, everywhere: the brand, the binary, the
-> account (as `_vilice`), the state dir, the record, the env prefix, the packs. **Supersedes** the name
-> in [`the-names-are-steward.md`](the-names-are-steward.md); its rules for packs and verbs
-> carry over unchanged. **Answers** question 1 of
+> account (as `_vilice`), the state dir, the record, the env prefix, the unit names.
+> Replaces Steward, which replaced Hostler. **Answers** the name question in
 > [`open/landscape-scan.md`](open/landscape-scan.md), the collision scan.
 >
 > **Built and published, 2026-10-02.** `0.4.0` is the first Vilice release, installable
@@ -50,7 +49,7 @@ One name, everywhere:
 | Unix account | `steward` | `_vilice` |
 | State dir, record | `/var/lib/steward` | `/var/lib/vilice` |
 | Env vars | `STEWARD_*` | `VILICE_*` |
-| Packs | `steward-<domain>` | `vilice-<domain>` |
+| Units, networks, timers | `steward-<name>` | `vilice-<name>` |
 | Console product copy | Steward Console | Vilice Console |
 | Console Rails module | `StewardConsole` | `ViliceConsole` (directory stays `console/`) |
 
@@ -62,8 +61,14 @@ Debian system accounts follow (`_apt`, `_chrony`). So `sudo -u _vilice vilice` r
 "as the vilice service account, run vilice", where `sudo -u steward steward` read as a
 typo. Directories take no prefix.
 
-The Steward rules carry over as they stand: packs are named by domain, not substrate
-(`vilice-backup`, never `vilice-restic`); verbs stay flat, plain, and forever.
+Two naming rules carry over from Steward, because the record makes names permanent:
+
+- **Name by domain, not substrate.** `vilice-backup`, never `vilice-restic`: the name
+  promises backups happen and are recorded; restic is today's implementation, and the
+  substrate can change without a rename. The core already works this way — the verb is
+  `deploy`, not `podman-flip`.
+- **Verbs stay flat, plain, and forever.** The record is append-only, so every verb ever
+  invoked is permanent history. `vilice deploy` must mean the same thing in 2032.
 
 ## Why a coined word passes, here
 
@@ -122,10 +127,10 @@ docs, README and site names `get.vilice.org` and nothing else, so there is one a
 paste.
 
 **The key stays on a second provider.** The binary comes from `get.vilice.org`, the key
-from Codeberg — two providers, as before, so no one server can hand you a matching key
-and binary. The Codeberg repo must be publicly readable (see the superseded note in
-[`the-names-are-steward.md`](the-names-are-steward.md)): `install.sh` fetches the key
-with an unauthenticated `curl`.
+from Codeberg — two providers, so no one account can hand you a matching key and binary
+([`the-core-is-handwritten.md`](the-core-is-handwritten.md) has the rule). The Codeberg
+repo must be publicly readable: `install.sh` fetches the key with an unauthenticated
+`curl`, on a stranger's box, and a private repo answers 404.
 
 **The domains are in the trust path**, so the registrar account has two-factor auth,
 transfer lock and auto-renew. Once the subdomains are settled, `vilice.org` goes on the
@@ -135,10 +140,11 @@ install itself). It commits every subdomain to HTTPS, which is why it waits.
 
 ## Building it
 
-Full rename, reinstall required — no migration code, for the reason given in
-[`the-names-are-steward.md`](the-names-are-steward.md): renaming a live account that owns
-rootless Podman containers, user units and append-only record files is the painful case,
-and the install base is one dev box. That box is reinstalled, and its record and key go
+Full rename, reinstall required — no migration code. Renaming a live account that owns
+rootless Podman containers, user units and append-only record files is the painful case:
+a half-finished migration leaves a healthy-looking ghost install, the failure
+[`one-vilice-per-box.md`](one-vilice-per-box.md) exists to prevent. Migration code would
+be written once, carried forever, and exercised against an install base of one dev box. That box is reinstalled, and its record and key go
 with it.
 
 What does not move, on purpose:
@@ -176,6 +182,9 @@ not answer fails every install.
 
 ## Roads not taken
 
+- **The earlier names.** Hostler, with Switchyard for the console: railway terms that
+  paired with each other and needed a paragraph of explanation each. Steward said what
+  the thing is in one word, and collided for the same reason.
 - **Keep Steward and add a qualifier.** Fixes findability, not the clash: a tagline
   cannot free a name on `PATH` or a unix account.
 - **VOLIO** — Malvolio, the steward in *Twelfth Night*, minus the "ill". Short and easy

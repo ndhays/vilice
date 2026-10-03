@@ -1,16 +1,11 @@
 # The console is layered too — three rings, one app
 
-> **Vocabulary note, 2026-08-10.** This doc argues in terms of *packs*, the plugin layer
-> Vilice had at the time. That layer is gone
-> ([`roles-not-packs.md`](roles-not-packs.md)) — one binary, a trust core and an app
-> layer, and the machine view is shaped by the box's **role** rather than by which packs
-> it reports. Read "pack" below as "the app layer": every argument here survives the
-> rename, including the one that matters most — *the console's engines are not that
-> thing and must not be called it*, because they run in the control plane and are not
-> digest-pinned on a box.
->
-> Decided 2026-08-03. The console has the same seam the binary had before
-> [`core-and-packs.md`](core-and-packs.md): a small generic layer fused to one domain's
+> Decided 2026-08-03. *Pack*, below, is the plugin layer Vilice had then; it is gone
+> ([`roles-not-packs.md`](roles-not-packs.md)), so read it as "the app layer" — every
+> argument survives, including the one that matters most: the console's engines are not
+> that thing and must not be called it, because they run in the control plane and are not
+> digest-pinned on a box. The console has the same seam the binary has between its core and
+> its verbs ([`roles-not-packs.md`](roles-not-packs.md)): a small generic layer fused to one domain's
 > UI. Same call, one level up — draw the line, keep one deployable, split physically
 > only when something real demands it.
 
@@ -35,11 +30,11 @@ different thing** — which is why they don't collapse into "which one is right?
 | **Placement** (intentions) | what was *asked for*, across N boxes | no |
 | **Tenancy** (projects) | whose work it is | no |
 
-- **Machine view** — one box, shaped by what that box reports about itself (its role,
-  since [`roles-not-packs.md`](roles-not-packs.md); the packs it ran, before that).
+- **Machine view** — one box, shaped by what that box reports about itself: its role
+  ([`roles-not-packs.md`](roles-not-packs.md)).
   Stateless in the console: a deploy sends an AppConfig and discards it, and the box's
-  record is the only record. This is the floor, not a lens you rarely visit —
-  [`install-the-app-actions-home.md`](install-the-app-actions-home.md) "What changed".
+  record is the only record. This is the floor, not a lens you rarely visit
+  ([`install-the-app-actions-home.md`](install-the-app-actions-home.md)).
 - **Placement** — one app across several boxes: count, exposure, targets. The model is
   settled in [`one-primitive-composed.md`](one-primitive-composed.md); what this decision
   adds is that it is a *layer*, not the spine, and that the gap between it and reality is

@@ -47,15 +47,6 @@ case for shipping `verify` in 1.0.
 
 ## The schema grows additively, or not at all
 
-Added 2026-08-03, when `pack` and `digest` joined the entry
-([`core-and-packs.md`](core-and-packs.md)).
-
-> **Still the rule, 2026-08-10.** `pack` is retired — the layer that wrote it is gone
-> ([`roles-not-packs.md`](roles-not-packs.md)) — but the field stays in the wider
-> payload and nothing sets it. Removing it from the hash would have been the same
-> mistake in reverse: every entry on every box that carries one would report a break.
-> **A field can stop being written; it cannot stop being hashed.**
-
 The hash covers every field, and `verify` recomputes it. So a field added to the
 payload for *all* entries changes the hash of every entry ever written, and the first
 thing an upgraded binary does is report that the chain broke at entry 1 — the record
@@ -65,6 +56,12 @@ accusing itself of tampering because the software changed. On an append-only fil
 The rule: **an entry that does not carry the new field hashes exactly as it always
 did.** Only an entry that carries it commits to the wider payload. Two shapes, chosen
 on whether the field is present.
+
+The same rule runs in reverse. `pack`, added with `digest`, is retired — the layer that
+wrote it is gone ([`roles-not-packs.md`](roles-not-packs.md)) — but the field stays in the
+wider payload and nothing sets it. Removing it from the hash would break every entry on
+every box that carries one. **A field can stop being written; it cannot stop being
+hashed.**
 
 The cost, stated plainly: an entry with no `pack` is indistinguishable from one whose
 `pack` was stripped, because both hash under the narrow shape. That is inside root's

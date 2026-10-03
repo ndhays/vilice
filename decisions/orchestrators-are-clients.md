@@ -1,7 +1,6 @@
 # Anything that orchestrates is a client
 
-> Decided 2026-08-02, before building the core/pack split
-> ([`core-and-packs.md`](core-and-packs.md)). Nothing sequences work on a box from
+> Decided 2026-08-02. Nothing sequences work on a box from
 > beside the door: an orchestrator holds a scoped key and comes through Vilice's
 > command surface like every other actor.
 

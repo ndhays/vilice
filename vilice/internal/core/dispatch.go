@@ -31,7 +31,7 @@ const (
 	// survives for *input* only — a runbook or script that still types `--scope ssh`.
 	// It no longer rescues old keys: a line written before the renames names the
 	// `hostler` or `steward` binary, which are gone, so it fails closed either way. See
-	// decisions/the-names-are-steward.md and decisions/the-name-is-vilice.md.
+	// decisions/the-name-is-vilice.md.
 	retiredScopeSSH Scope = "ssh"
 )
 

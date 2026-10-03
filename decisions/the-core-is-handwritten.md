@@ -1,9 +1,7 @@
 # The core is handwritten, and hosted apart
 
 > Decided 2026-08-05, after Codeberg's members voted to amend the Terms of Use. Splits the
-> project across two hosts on purpose and changes how the core gets written. **Supersedes**
-> the "start a new repo with this one as reference" road-not-taken in
-> [`core-and-packs.md`](core-and-packs.md), whose premise no longer holds.
+> project across hosts on purpose and changes how the core gets written.
 
 ## The question
 
@@ -29,38 +27,23 @@ project that looks for daylight in it.
 1. **The Vilice core is rewritten by hand, and that rewrite goes to Codeberg.** Not
    transcribed — *reimplemented from the blueprint*, which is the distinction that does all
    the work (below).
-2. **Everything else — including this repository as it stands — lives where the clause
-   does not apply.** A self-hosted Forgejo was the intended home; the interim is
-   `github.com/ndhays/steward`.
+2. **Everything else lives where the clause does not apply** — today
+   `github.com/ndhays/vilice`. What is on Codeberg must be the rewrite, not a promise of
+   one, so the repository as it stands cannot be there. Both the README and the docs site
+   say so outright: what is published is a proof of concept, most of it machine-written,
+   with the handwritten core as the stated intention. A reader should not have to infer
+   provenance from commit trailers.
 3. **An LLM may review, never author.** The clause bans code *written by* generative AI. It
    says nothing about using one to critique code a human wrote, and that is the arrangement
    from here: the human writes the test and the implementation, the model reads them and
    argues. Nothing it produces enters the repo.
 
-> **Amended 2026-08-06.** The original plan kept the current repository on Codeberg and
-> moved only the console. That was wrong on its own terms: the repository *as it exists
-> today* is the thing the clause describes, so it cannot stay there while the handwritten
-> core is still hypothetical. What is on Codeberg must be the rewrite, not a promise of
-> one. So the whole monorepo moves to GitHub now, and Codeberg receives the core when it
-> is written by hand. Self-hosted Forgejo remains the intended destination for everything
-> that is not the core; GitHub is the interim, chosen for being immediate rather than
-> for being right.
->
-> The two-provider property in `install.sh` survives the move — the key comes from
-> `raw.githubusercontent.com` and the binary from `steward.agoraforge.org`, still
-> different providers — and the repository **must stay publicly readable**, which is the
-> constraint the earlier private-repo detour taught.
->
-> Both the README and the documentation site now say this outright: what is published is a
-> proof of concept, most of it machine-written, with the handwritten core as the stated
-> intention. A reader should not have to infer provenance from commit trailers.
+## Why a rewrite, when one had already been rejected
 
-## Why a rewrite, when we had already rejected one
-
-[`core-and-packs.md`](core-and-packs.md) rejected starting a new repo with this one as
-reference, and it was right *on its premise*: a rewrite "re-derives exactly the code least
-worth re-deriving … for no gain." **The operative words were "for no gain."** There are now
-three, and the first is the one that would still matter if the vote were reversed tomorrow.
+An earlier design rejected starting a new repo with this one as reference, and it was right
+*on its premise*: a rewrite "re-derives exactly the code least worth re-deriving … for no
+gain." **The operative words were "for no gain."** There are now three, and the first is the
+one that would still matter if the vote were reversed tomorrow.
 
 ### Copyright — the real driver
 
@@ -91,8 +74,8 @@ looked. It is also the durable reason: hosting terms change, and this does not.
 
 One clause, and it is not about economy: *"un-bypassability lives in the absence of paths,
 which does not port."* A reimplementation can reintroduce a path the current code does not
-have. This is the thing to watch, not a veto — 3,400 lines of Go tests, `audit/`, gosec, and
-the verb-surface guard all exist to catch exactly that, and they carry over as the
+have. This is the thing to watch, not a veto — the Go tests, `audit/`, gosec, and the
+verb-surface guard all exist to catch exactly that, and they carry over as the
 specification of what must remain absent.
 
 ## Transcribing versus reimplementing — the distinction the plan rests on
@@ -102,8 +85,8 @@ legal: the provenance is unchanged, and independent creation is hard to claim ab
 something you were looking at.
 
 Reimplementing from `blueprint/` is a different act, and this project is unusually well
-placed for it. The blueprint is **6,908 lines of prose that is canonical and came first** —
-the doc model's own words are "code is a projection of this." So writing Go from it is not
+placed for it. The blueprint is prose that is canonical and came first — the doc model's
+own words are "code is a projection of this." So writing Go from it is not
 reverse-engineering an implementation; it is re-projecting from the authoritative source.
 That is about as clean as a solo reimplementation gets.
 
@@ -125,71 +108,46 @@ rest was considered and dropped — several decisions genuinely span both halves
 ([`one-primitive-composed.md`](one-primitive-composed.md),
 [`console-layers.md`](console-layers.md)), and cross-links would break.
 
-So the spec stays whole, on the Forgejo, with the console. **The handwritten core is the
-only thing that leaves**, and it is the one piece whose spec section
+So the spec stays whole, with the console. **The handwritten core is the only thing that
+leaves**, and it is the one piece whose spec section
 ([`../blueprint/vilice/`](../blueprint/vilice/)) is self-contained enough to work from at
 a distance. The cost is real and accepted: a behaviour change in the Go and its blueprint
 update land in two commits in two repos rather than one, and nothing but discipline keeps
 them together.
 
-## The release key travels with the repo, and the two-provider rule is what matters
+## The rule for the release key is about providers
 
-`install.sh` fetches the release public key from the source repo **on purpose, from a
-different host than the release server**, so no single compromised server hands you a
-matching key and binary ([`the-names-are-steward.md`](the-names-are-steward.md)).
+`install.sh` fetches the release public key from a **different provider than the one that
+serves the binary**, so no single compromised account hands you a matching key and binary.
+The rule is not "the key lives on Codeberg" — it is **different providers**, and a shared
+control plane counts as a shared provider: two hostnames on separate servers but under one
+DNS zone and one Cloudflare account can be re-pointed together by one credential.
 
-Self-hosting everything would have collapsed that: key and binary both from
-`agoraforge.org`. The rule to hold is **not** "the key lives on Codeberg" — it is that the
-key and the binary come from **different providers**. That survives the move to GitHub
-(`raw.githubusercontent.com` and `agoraforge.org`) and it would survive a later move to a
-self-hosted Forgejo only if the key were served from somewhere that is not `agoraforge.org`.
+Today the key is the only thing on Codeberg (`codeberg.org/vilice/vilice`), the binary
+comes from `get.vilice.org`, and the source is on GitHub — three providers, with nothing an
+install fetches coming from GitHub ([`the-name-is-vilice.md`](the-name-is-vilice.md)). **A
+public key is not AI-written code**, so a repo holding one is outside the clause. The repo
+must stay **publicly readable**: the installer's fetch is unauthenticated and runs on a
+stranger's box.
 
-The one hard requirement carries over wherever the repo lands: it must stay **publicly
-readable**, because the installer's fetch is unauthenticated
-([`the-names-are-steward.md`](the-names-are-steward.md)).
+**The failure modes, stated plainly.** Compromise Codeberg alone and installs get a wrong
+key, so verification fails and nothing installs — denial of service, not a bad binary.
+Compromise the release host alone and the signature does not match. An attacker needs both,
+across two organisations. `PUBKEY_FILE` is the documented way past a Codeberg outage, and
+it is the only way past, on purpose.
 
-> **Settled 2026-08-11 — the move above happened, and the key went to Codeberg.** The
-> monorepo now lives on the self-hosted Forgejo at `git.agoraforge.org`, exactly the case
-> this section anticipated, and `install.sh` fetches the key from
-> `codeberg.org/agoraforge/steward` instead.
->
-> **Why not the self-hosted forge.** Measured rather than assumed: `steward.agoraforge.org`
-> is a Cloudflare Worker (no origin of ours), `git.agoraforge.org` is Cloudflare in front of
-> our own Caddy. The *origins* are genuinely independent, so "no single compromised server"
-> still held. What did not hold is a level up — one DNS zone and one Cloudflare account
-> govern both hostnames, and that is a single credential that can re-point them together.
-> The rule this section states is about **providers**, not servers, and a shared control
-> plane is a shared provider.
->
-> **A public key is not AI-written code**, so a repo holding one is outside the clause that
-> keeps the rest of the monorepo off Codeberg. No tension there.
->
-> **GitHub is now a mirror, for visibility only.** Forgejo push-mirrors to
-> `github.com/ndhays/steward`, force-pushing, with sync-on-commit. Nothing fetches anything
-> security-relevant from it, which is the point: the mirror's token can expire and the
-> mirror can go stale without a single install being affected. Had the key stayed there,
-> mirror lag would have sat on the verification path.
->
-> **Failure mode, stated plainly.** Compromise Codeberg alone and installs get a wrong key,
-> so verification fails and nothing installs — denial of service, not a bad binary.
-> Compromise the release host alone and the signature does not match. An attacker needs
-> both, across two organisations. `PUBKEY_FILE` is the documented way past a Codeberg
-> outage, and it is the only way past, on purpose.
-
-When the handwritten core reaches Codeberg, the key can move there and the property holds
-unchanged — but nothing forces that, and it should not be mistaken for the reason.
+When the handwritten core reaches Codeberg, the key is already there and the property holds
+unchanged — but that is a coincidence, and should not be mistaken for the reason.
 
 ## What it costs
 
-- **Time**, and it is the honest objection. The Go is 5,748 lines of production code plus
-  3,424 of tests. Written test-first, which is the chosen method, it is a sustained project
-  rather than a weekend.
-- **The console is not rewritten**, and its provenance is unchanged. It moves to a host
-  where the clause does not govern rather than being cleaned up. That is a deliberate
-  deferral, not a claim that the Rails half is fine — see below.
-- **Two hosts to manage**, one of them ours to keep alive and backed up.
-- **No drive-by contributors** on the self-hosted half. Cheap at an install base of roughly
-  one; a real cost if that ever changes.
+- **Time**, and it is the honest objection. The Go is several thousand lines of production
+  code plus its tests. Written test-first, which is the chosen method, it is a sustained
+  project rather than a weekend.
+- **The console is not rewritten**, and its provenance is unchanged. It lives where the
+  clause does not govern rather than being cleaned up. That is a deliberate deferral, not a
+  claim that the Rails half is fine — see below.
+- **Two hosts to keep in step** once the core moves.
 
 ## Roads not taken
 
@@ -200,37 +158,35 @@ unchanged — but nothing forces that, and it should not be mistaken for the rea
   the best of these — no such clause, atproto identity is portable rather than the
   platform's, and self-hostable "knots" for the git storage. Rejected for now because it is
   VC-funded, which is precisely the capture risk this project exists to argue against;
-  terms follow funding. GitHub solves the rule and contradicts the thesis.
+  terms follow funding. GitHub solves the rule and contradicts the thesis, which is why it
+  holds the source and nothing an install depends on.
+- **Serve the key from a self-hosted forge.** The origins would be independent of the
+  release host, but one DNS zone and one Cloudflare account would govern both — a shared
+  provider by the rule above.
+- **Serve the key from GitHub, beside the source.** One account could then change both what
+  a release is built from and the key that vouches for it, and a stale mirror or an expired
+  token would sit on the verification path.
 - **Keep the code on Codeberg and host the *test suite* elsewhere**, on the reasoning that
   tests are tooling rather than the code itself. Rejected on two counts. Technically it
-  cannot work: all 28 test files are internal (`package core` / `package app` / `package
+  cannot work: the test files are internal (`package core` / `package app` / `package
   main`) and test unexported identifiers — `renderRoutes`, `validateTable`, `pickPort`,
   `usedPorts` — so Go requires them beside the source, and moving them means converting to
   black-box tests and losing the cheapest, sharpest coverage we have. And in principle, the
   core's claim is that it is small enough for one person to audit; the test suite is the
   proof of that claim, and a trust core published without it is a worse artifact than the
   one the rule objected to.
-- **Rewrite the Rails console too.** ~6,400 lines of production code plus 3,400 of tests and
-  1,100 of CSS, most of it views. It buys the same copyright improvement, at triple the cost,
-  on the half nobody has to trust. Deferred, not refused.
+- **Rewrite the Rails console too.** Several thousand lines of production code plus tests
+  and CSS, most of it views. It buys the same copyright improvement, at triple the cost, on
+  the half nobody has to trust. Deferred, not refused.
 
 ## Still open
 
-- **The console's own provenance.** Moving it to a permissive host resolves the rule and not
-  the licensing question underneath it: an AGPL over largely machine-written Rails is as
-  thin as it was. Whether that matters depends on whether anyone is ever expected to comply
-  with it.
+- **The console's own provenance.** Hosting it where the clause does not apply resolves the
+  rule and not the licensing question underneath it: an AGPL over largely machine-written
+  Rails is as thin as it was. Whether that matters depends on whether anyone is ever
+  expected to comply with it.
 - **Where the release tooling lives** once `vilice/` is a separate repo — `Makefile`,
   `release/`, and the signing flow currently assume one tree.
 - **The first hand-written verb as a trial.** `vilice route` is the candidate: ~200 lines,
-  a written spec section, an existing test suite to hold to, and recent enough to be fresh.
-  An evening spent there says more about whether this plan is real than any further
-  argument.
-
-> **Superseded in part, 2026-10-01 — the hosts moved again, with the rename.** The source
-> is now `github.com/ndhays/vilice`, the main repository rather than a mirror. Only the
-> release key is on Codeberg, at `codeberg.org/vilice/vilice`: a key is not code, so the
-> generative-AI clause does not reach it. The binary comes from `get.vilice.org`. The rule
-> above still holds — key and binary from different providers — and now the source is on
-> a third. See [`the-name-is-vilice.md`](the-name-is-vilice.md).
-
+  a written spec section, an existing test suite to hold to. An evening spent there says
+  more about whether this plan is real than any further argument.

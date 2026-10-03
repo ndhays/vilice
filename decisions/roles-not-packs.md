@@ -1,10 +1,10 @@
 # Roles, not packs — a box says what it is for
 
 > Decided 2026-08-06. Narrows what Vilice claims to be, drops the pack layer, and replaces
-> it with a role a box declares at `prepare`. **Supersedes** most of
-> [`core-and-packs.md`](core-and-packs.md): the discovery directory, the `$PATH` reasoning,
-> the physical split, and the `execveat` plan. What that decision got right — the internal
-> seam and the binary integrity check — is kept and named below.
+> it with a role a box declares at `prepare`. The pack design it replaces split the binary
+> into a small trust core — the gate, the record, the ceiling — and verb packs dispatched
+> through a root-owned manifest. What that design got right — the internal seam and the
+> binary integrity check — is kept and named below.
 
 ## The question
 
@@ -16,7 +16,7 @@ admin's first reaction to it is "harden against what?" But of 25 verbs, four tou
 and fifteen are app deployment and lifecycle. The tool was describing itself as something
 broader than it is, and paying for the difference.
 
-**Where does the pack boundary go?** `core-and-packs.md` split the binary into a trust core
+**Where does the pack boundary go?** The pack design split the binary into a trust core
 and verb packs so a skeptical reader could audit the core rather than the whole thing. It
 deferred the physical split until a real second pack existed. None ever appeared.
 
@@ -36,7 +36,7 @@ and what gets installed and which ports open follow from it. See
 
 **The seam has nothing on the far side, permanently.** `vilice-backup` and `vilice-diag`
 were the hypothetical second and third packs. But once the product is "host web apps,"
-backup and diagnostics *are* the product, not extensions to it. `core-and-packs.md`'s own
+backup and diagnostics *are* the product, not extensions to it. The pack design's own
 rule — *"a real second use case triggers it, not symmetry"* — now cuts against the thing it
 created. A boundary that will never be crossed is scaffolding.
 
@@ -64,7 +64,13 @@ a box whose binary was replaced rather than being locked out by the integrity ch
 
 **Kept — free, and worth having.** The internal code seam. `internal/core/` and the verb
 implementations stay separate files with a documented line between them. That is
-organisation and documentation, not a plugin system; nothing loads anything.
+organisation and documentation, not a plugin system; nothing loads anything. Drawing the
+line showed the three places the core knows about apps, and they are where to look first
+when the seam blurs: **`prepare`**, which installs the app layer's substrate; **`status` /
+`doctor`**, which report container and route state; and **`uninstall`**, which needs the
+app list to plan, and the backup settings to warn the operator before a restic password
+is lost. `uninstall` removes apps by running Vilice's own `remove` as a subprocess rather
+than reaching into deploy internals — the command surface was already the boundary there.
 
 **Gone.** The discovery directory `/usr/libexec/vilice/`, which was reserved and always
 empty. The `$PATH`-is-attack-surface reasoning, which was correct and is now moot. The

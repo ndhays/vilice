@@ -5,11 +5,8 @@
 > in a doc about something else and had argued both sides of it. Follows from
 > [`orchestrators-are-clients.md`](orchestrators-are-clients.md).
 >
-> **Built 2026-08-03.** `Install#count` is the intention, `serving_count` is what the boxes
-> report, and `placement_gap` is the signed distance between them. The gap is rendered as
-> two halves that never merge, and `POST /installs/:id/targets` is the act that closes it.
 > The schema is in [`../blueprint/console/data-model.md`](../blueprint/console/data-model.md);
-> how it renders is in [`../blueprint/console/interface.md`](../blueprint/console/interface.md).
+> how the gap renders is in [`../blueprint/console/interface.md`](../blueprint/console/interface.md).
 
 ## The question
 

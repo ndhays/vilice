@@ -6,9 +6,8 @@
 > scope, `execShell` is deleted, and `forcedLine` writes plain `restrict` with no
 > exception.
 >
-> **Supersedes** the "cost we accept" section of
-> [ceiling-is-the-machine.md](ceiling-is-the-machine.md), which accepted that cost. We
-> no longer do.
+> Reverses an earlier acceptance of that cost in
+> [ceiling-is-the-machine.md](ceiling-is-the-machine.md).
 
 ## The bite
 

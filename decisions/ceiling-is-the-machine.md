@@ -52,28 +52,22 @@ record floor** — not the rights ledger:
   itself stays *below* Vilice (systemd + the god-key bootstrap), never through it.
 - **Record** — the append-only floor (`chattr +a`) refuses even the `_vilice` user; it
   can only be appended to.
-- **Rights ledger** — vilice's own file, governed by the ladder. `ssh`-scope sits at
-  its top (Article IV: rights declared and inspectable, granted by the top rung).
+- **Rights ledger** — vilice's own file, governed by the ladder. `grant` sits at its top
+  (Article IV: rights declared and inspectable, granted by the top rung).
 
-## The cost we accept — ✗ **later declined** (2026-08-02)
+## What a compromised account can still do
 
-> **Superseded by [no-key-gets-a-shell.md](no-key-gets-a-shell.md).** The reasoning
-> below is sound about *persistence* and wrong about *scale*: the unrecorded surface a
-> shell opens is not just the rights ledger, it is every action the box can take, which
-> put an asterisk on un-bypassability itself. The top rung kept its job and lost the
-> shell. What remains true is the last bullet — the record floor and the machine ceiling
-> stay out of reach — and the `vilice`-user *compromise* case, which no scope change
-> can fix. Kept here as written, because a declined cost is worth reading.
+Code running as `_vilice` — a compromise of the account itself — can edit
+`authorized_keys` directly, out of band and unrecorded. No scope change can fix that,
+because the account owns its own rights ledger. What bounds the damage is that the two
+things that matter stay out of its reach: the record floor (append-only, refused even to
+`_vilice`) and the machine ceiling (root-only, no key reaches it).
 
-A shell-as-`vilice` actor (an `ssh`-scope grant, or a `vilice`-user compromise) can
-edit `authorized_keys` directly — out of band, unrecorded by Vilice. We accept this:
-
-- `ssh`-scope already means "near-total, recorded as a *shell grant*, not per-keystroke."
-  This is not a new exposure; it is what `--scope ssh` always meant.
-- Such an actor already has arbitrary code as `_vilice` **and** lingering user services,
-  so key-based persistence is marginal on top of what they can already do.
-- The two things that actually bound blast radius — the record floor and the machine
-  ceiling — stay out of reach.
+No *key* opens that door on purpose: no scope grants a shell
+([no-key-gets-a-shell.md](no-key-gets-a-shell.md)). An earlier version of this decision
+accepted a shell at the top rung, reasoning that key persistence was marginal next to
+arbitrary code; it was sound about persistence and wrong about scale — the unrecorded
+surface a shell opens is every action the box can take, not just the ledger.
 
 ## Corollaries
 
