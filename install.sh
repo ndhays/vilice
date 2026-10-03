@@ -82,3 +82,21 @@ if [ -f "$TMP/vilice.1" ]; then
   install -D -m 0644 "$TMP/vilice.1" /usr/local/share/man/man1/vilice.1
 fi
 echo "• installed: $("$INSTALL_PATH" version)  →  $INSTALL_PATH"
+
+# Say what comes next, because installing is half of it. On a box that is already
+# prepared this was an upgrade, and the new binary is on disk but not yet in force:
+# every verb refuses a binary the box has not approved, until root runs prepare again.
+# The role is printed only if it is one we know — this line suggests a root command,
+# so it never echoes a file's contents back unchecked.
+ROLE_FILE="${ROLE_FILE:-/var/lib/vilice/role}"
+role=""
+[ -r "$ROLE_FILE" ] && role="$(tr -d '[:space:]' < "$ROLE_FILE")"
+case "$role" in
+  host | balancer)
+    echo "• next, to put it in force:  sudo vilice prepare $role"
+    ;;
+  *)
+    echo "• next:  sudo vilice harden          (optional, and first)"
+    echo "         sudo vilice prepare host    (or: balancer)"
+    ;;
+esac

@@ -155,15 +155,20 @@ After `prepare`, the box can accept scoped keys ([auth.md](auth.md)) and run dep
 
 ## Upgrading an installed Vilice
 
-There is no `vilice upgrade`, deliberately (see [Why this is the ceiling](#why-this-is-the-ceiling)).
+There is no `vilice upgrade`, deliberately
+([`upgrading-is-install-then-prepare.md`](../../decisions/upgrading-is-install-then-prepare.md)).
 An upgrade is the two steps that already exist, run as root on the box:
 
 1. **Replace the binary through the signed channel** — `install.sh <version>`, which
    verifies an ed25519 signature *before* installing and fetches the public key from a
    different host than the binary, so no single server hands you both. It overwrites in
    place safely, even while a command is running.
-2. **`vilice prepare`** — idempotent, so it converges whatever the new version added
-   (units, the sudoers grant, directory modes) and skips what is already right.
+2. **`vilice prepare <role>`** — idempotent, so it converges whatever the new version
+   added (units, the sudoers grant, directory modes) and skips what is already right. It
+   also approves the new binary: until it runs, every verb that acts on apps refuses the
+   changed binary. `install.sh` ends by printing this line with the box's recorded role,
+   so the second step is not left to memory (on a fresh box it prints `harden` and
+   `prepare` instead).
 
 **Install to the same path.** The binary's absolute path is baked into two places: the
 snapshot unit's `ExecStart`, and the forced command of *every* scoped key. Step 2

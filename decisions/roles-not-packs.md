@@ -58,8 +58,8 @@ someone swaps `/usr/local/bin/vilice`, the verb refuses and the refusal is recor
 is real tamper detection on the hot path, and it survives with a plainer name: the file
 records **one binary digest**, not a list of pack authorizations.
 
-Note the deliberate asymmetry worth preserving: `verify`, `record` and `authorize` still
-work when the digest record is missing or mismatched, so an operator can inspect and repair
+Note the deliberate asymmetry worth preserving: `verify`, `record`, `actors`, `authorize`
+and `revoke` still work when the digest record is missing or mismatched, so an operator can inspect and repair
 a box whose binary was replaced rather than being locked out by the integrity check itself.
 
 **Kept — free, and worth having.** The internal code seam. `internal/core/` and the verb
