@@ -13,19 +13,19 @@ the one below.
 Neither reached the rail. It stayed a flat sidebar of **eight visually identical items**:
 
 ```
-Status · Projects · Machines · Installs · Record · Access · App Library · Settings
+Status · Projects · Machines · Apps · Record · Access · App Library · Settings
 ```
 
 Two things were wrong with that. The items are three different *kinds* of thing — chain
 lenses, rings, and cross-cutting surfaces — rendered as peers. And the rings ran
 **outermost-first**: Projects, the most optional ring, sat above Machines, the floor.
 
-The layering work was real, but it landed in the models and routes — `Install.project` made
-optional, installs given their own home — and its entire visual footprint was *one extra nav
+The layering work was real, but it landed in the models and routes — `App.project` made
+optional, apps given their own home — and its entire visual footprint was *one extra nav
 item*. So the architecture said three rings and the rail said admin panel. That drift is
 what makes someone look at a shipped console and see the old product.
 
-[`interface.md`](../blueprint/console/interface.md) also claimed "Installs sits between
+[`interface.md`](../blueprint/console/interface.md) also claimed "Apps sits between
 Machines and the rest **on purpose**" — a purpose no reader could see, because nothing
 distinguished it from its neighbours.
 
@@ -35,12 +35,12 @@ distinguished it from its neighbours.
 
 ```
 Status · Record                      the spine
-Machines · Installs · Projects       the rings, floor first
+Machines · Apps · Projects           the rings, floor first
 Access · App Library · Settings      the surfaces that serve them
 ```
 
 The floor comes first and tenancy comes last, so the rail reads in the order the rings are
-actually built — and the "Installs sits between" claim becomes visibly true rather than
+actually built — and the "Apps sits between" claim becomes visibly true rather than
 merely asserted.
 
 ## Roads not taken

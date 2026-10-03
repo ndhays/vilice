@@ -19,7 +19,7 @@ to the signed-in user so Boxcar's accountability fallback works when we reach fo
 
 Boxcar is loaded and Vilice Console is "built on" it, but in this cut only **`Identifiable`
 on `Project`** (`identifies :entity` — Article I: a Project *is* the client entity) is
-wired. `Stateful` (on `InstallTarget`), `Eventable` (broadcasting into `Event`), and
+wired. `Stateful` (on `Placement`), `Eventable` (broadcasting into `Event`), and
 the `View` recording stack are **deferred**, not rejected.
 
 Why: Boxcar's own rule — *if you cannot point to the article that requires a line, it

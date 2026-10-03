@@ -151,12 +151,12 @@ open heartbeat question.
   its release history (**`AppTemplate` → `Version`**). Curating it is a recorded own-record act.
   `has_many :labels` (polymorphic, generic metadata). Not a security boundary — the
   un-bypassable image allowlist is a separate Vilice-side concern.
-- **Portable as a manifest** (`Library`, `apps#export`/`import`). The whole library
+- **Portable as a manifest** (`Library`, `app_templates#export`/`import`). The whole library
   exports to a YAML manifest (apps + versions, **labels omitted** — they're local
   organization, not the app's official definition) and imports back **additively**,
   from an uploaded file **or a URL** (`Library.fetch` — the marketplace path): apps
   upsert by name, versions by tag, nothing is deleted. Two libraries can be imported
-  and coexist. Pruning is the deliberate counterweight — `apps#remove_selected`
+  and coexist. Pruning is the deliberate counterweight — `app_templates#remove_selected`
   bulk-deletes, recorded as one act. The DB stays the store; the manifest is the
   interchange shape (the form a marketplace would publish).
 
@@ -237,8 +237,8 @@ open heartbeat question.
   what was asked for, never a reading of what is. Nothing reconciles it
   (→ [drift-is-surfaced-never-closed.md](../../decisions/drift-is-surfaced-never-closed.md)):
   the gap it opens is closed by a named act or it stays open.
-  - `App#serving_count` is the other half — targets the **box** reports running, on a
-    machine we can still reach. A target we placed but that isn't up yet does not count,
+  - `App#serving_count` is the other half — placements the **box** reports running, on a
+    machine we can still reach. A placement we made but that isn't up yet does not count,
     and neither does one on an unreachable box.
   - `App#placement_gap` is `serving − count`, signed: negative is short, positive is
     more than asked for. `in_step?` is the zero case, `short?` the negative one.
@@ -251,7 +251,7 @@ open heartbeat question.
     **the single definition**, read by the picker, by the page that offers the act, and by
     Status. Three copies of that rule would drift, the way `added` and `placed` did.
   - `App#ready_machines` narrows candidates to boxes we have **heard from**
-    (`Machine#reached?`). Placing works on any candidate — it reaches nothing, the target
+    (`Machine#reached?`). Placing works on any candidate — it reaches nothing, the placement
     sits `pending` — but the deploy that follows cannot connect to a box that never
     authorized us. So *ready* means ready to **finish**, not merely ready to record, and
     `ready_to_place?` is `short? && ready_machines.any?`.
@@ -291,7 +291,7 @@ open heartbeat question.
 - `strategy` (single | replica…), `position`, `desired_image`, `current_image`, `status`
 - the old Dispatcher app decision points (one machine vs. replica set) live here.
 - **Isolation guard** — validates the app's `name` and `hostname` are unique **per
-  machine** (a non-retired target on the same box may not share either). Apps share a
+  machine** (a non-retired placement on the same box may not share either). Apps share a
   box's namespace (`apps/<name>.json`, one Caddy, named volumes), so this stops one
   Project clobbering another's app or hijacking its route on a shared box — the
   control-plane guardrail above the box's own boundary. See the isolation rule in
@@ -303,14 +303,14 @@ open heartbeat question.
   `count` and `exposure` and nothing else, recorded as a `restated intention` act with
   human attribution and no outcome to settle. Restating is not a deploy and not a removal:
   asking for more opens a gap, asking for fewer closes one **without touching a box** —
-  targets keep running, and taking an app off a box stays the witnessed `remove` verb. A
+  placements keep running, and taking an app off a box stays the witnessed `remove` verb. A
   cascade of destructive calls whose only trace is a changed number is exactly what
   [drift-is-surfaced-never-closed.md](../../decisions/drift-is-surfaced-never-closed.md)'s
   first corollary refuses.
-- **Creating a target is the act that closes a placement gap** (`PlacementsController`,
-  `POST /installs/:id/targets`): a person picks a box, the placement is recorded, and the
+- **Creating a placement is the act that closes a placement gap** (`PlacementsController`,
+  `POST /apps/:id/placements`): a person picks a box, the placement is recorded, and the
   deploy follows through the ordinary witnessed ceremony. Placing alone does **not** close
-  the gap — the target starts `pending`, and the gap narrows only when the box reports it
+  the gap — the placement starts `pending`, and the gap narrows only when the box reports it
   serving. There is no scale-*down* action here on purpose: taking an app off a box is the
   existing `remove` verb, already witnessed.
 

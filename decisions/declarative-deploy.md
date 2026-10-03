@@ -10,7 +10,7 @@ and the roads not taken. Supersedes the earlier "two imperative commands" sketch
 `apply`, no incremental state — **first deploy == Nth deploy**, each self-contained.
 
 - **Full-replace semantics.** The spec is the complete desired state; an omitted field
-  is *removed*. Works because Vilice Console's `Install` model always renders the full spec.
+  is *removed*. Works because Vilice Console's `App` model always renders the full spec.
 - **Self-contained.** Vilice Console resends secret values each deploy (it holds them
   encrypted), so there is no set-once ordering and no dangling secret waiting for an app.
 
@@ -59,7 +59,7 @@ Rotation = `rm`+create, which a redeploy does for free.
 
 ## Where the rest lives
 
-**Vilice Console now drives this envelope** (Wave 3.2): `Install#deploy_envelope(image:)`
+**Vilice Console now drives this envelope** (Wave 3.2): `App#deploy_envelope(image:)`
 builds the `{app:{…}}` spec and the mutate ceremony pipes it on scoped-SSH stdin —
 secret values still excluded (that panel is #14). See
 [`open/ui-roadmap.md`](open/ui-roadmap.md) #12.

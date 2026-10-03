@@ -10,10 +10,10 @@
 reply (Decision 3). The cache made reads cheap — but it was *all* the read did. The
 persisted columns that exist precisely to project box truth into the control plane —
 `machine.status` (the `unknown`/`reachable`/`unreachable` enum), `machine.last_seen_at`,
-and `install_target.current_image` — were **never written by the read path**. They were
+and `placement.current_image` — were **never written by the read path**. They were
 declared and then only ever set at deploy time (`desired_image`) or not at all.
 
-So the Status page, the install `drift` rollup, and the unreachable-machine signal were
+So the Status page, the app `drift` rollup, and the unreachable-machine signal were
 reading a projection that nothing updated: `machine.status` sat at `unknown` forever and
 `current_image` stayed nil. The page was correct; the inputs were dead.
 
@@ -25,7 +25,7 @@ On a successful `status` read:
 
 - `machine.status = reachable`, `machine.last_seen_at = now`.
 - For each app the box reports (`data.apps[] = { name, image }`), the live
-  `InstallTarget` for that install on that machine gets its `current_image` set — the
+  `Placement` for that app on that machine gets its `current_image` set — the
   exact input `in_sync?`/`drift` needs.
 
 On a failed read: `machine.status = unreachable`. `last_seen_at` is **left alone** — it
@@ -68,7 +68,7 @@ on demand and on a timer.
   already model the projection; persisting into them keeps one shape. The cross-fleet,
   queryable `Snapshot` history is still a real future item, but it's an *addition* for
   forensics, not the path that lights up the Status page.
-- **Marking the target `failed` on a failed deploy.** Per
+- **Marking the placement `failed` on a failed deploy.** Per
   [deploy.md](../blueprint/vilice/deploy.md) a failed pull leaves the running app
   untouched, so the truthful state is "still on the old image," not "dead." A genuine
   `failed` needs the box to report per-app container state, which `status --json` doesn't

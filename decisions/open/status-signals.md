@@ -15,9 +15,9 @@ the stored projection the Status page reads. So:
 
 - `machine.status` stayed `unknown` forever (never `reachable`/`unreachable`), and
   `last_seen_at` was never stamped → the "Unreachable machines" section could not fire.
-- `install_target.current_image` was never populated from a read (only `desired_image`,
+- `placement.current_image` was never populated from a read (only `desired_image`,
   set at deploy) → `drift` could not be detected.
-- A failed deploy settles the *Event* `failed` but never marks the `install_target`
+- A failed deploy settles the *Event* `failed` but never marks the `placement`
   `failed` → the app "failed" rollup stayed latent.
 
 Four threads come out of that, below.

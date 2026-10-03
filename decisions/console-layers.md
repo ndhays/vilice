@@ -13,8 +13,8 @@
 
 Vilice split into a core and verb packs, and the console did not follow. It is
 currently three things wearing one name, and the fusion shows: **you cannot deploy an
-app without first inventing a client.** `Install belongs_to :project`, required, with
-install names unique per project and installs nested under projects in the routes.
+app without first inventing a client.** `App belongs_to :project`, required, with
+app names unique per project and apps nested under projects in the routes.
 
 That is not a console with a Projects feature. It is a Projects app with some console
 views inside it.
@@ -35,7 +35,7 @@ different thing** — which is why they don't collapse into "which one is right?
   Stateless in the console: a deploy sends an AppConfig and discards it, and the box's
   record is the only record. This is the floor, not a lens you rarely visit
   ([`install-the-app-actions-home.md`](install-the-app-actions-home.md)).
-- **Placement** — one app across several boxes: count, exposure, targets. The model is
+- **Placement** — one app across several boxes: count, exposure, placements. The model is
   settled in [`one-primitive-composed.md`](one-primitive-composed.md); what this decision
   adds is that it is a *layer*, not the spine, and that the gap between it and reality is
   never closed automatically
@@ -45,7 +45,7 @@ different thing** — which is why they don't collapse into "which one is right?
 
 Evidence they are genuinely separate: *"deploy app X to boxes A, B, C behind balancer L"*
 is coherent with no client anywhere. *"Client Acme owns boxes A and B"* is coherent with
-no installs. Today's schema welds the second to the first for no reason but history.
+no apps. Today's schema welds the second to the first for no reason but history.
 
 Worth noting that **tenancy has no unix analogue at all.** A machine view is `cockpit`;
 placement is what Ansible does — desired state driven from a client with no agent on the
@@ -79,30 +79,30 @@ binary. Console with no engines mounted *is* the machine view, so "Console is th
 view" is true without renaming anything. One name you never have to defend is worth more
 than three you do.
 
-## The prerequisite: invert `Install → Project` — done
+## The prerequisite: invert `App → Project` — done
 
 An engine you can decline has to be the thing that *depends*, not the thing depended on.
-While `Install` requires `Project`, tenancy is load-bearing and no amount of file-moving
+While `App` requires `Project`, tenancy is load-bearing and no amount of file-moving
 makes it optional.
 
 The inversion was nearly free, because the constraint that actually matters was already in
-the right place — `InstallTarget` enforces `install_name_free_on_machine` and
+the right place — `Placement` enforces `app_name_free_on_machine` and
 `hostname_free_on_machine`, which is uniqueness *on the box*, independent of any project.
-So `Install.project` is optional, the per-project name index is gone in favour of the
-per-machine rule that already existed, and installs have their own home at `/installs`
+So `App.project` is optional, the per-project name index is gone in favour of the
+per-machine rule that already existed, and apps have their own home at `/apps`
 with a nav entry between Machines and Record.
 
-A project is now **optional context in the URL** (`installs/new?project_id=`), the shape
+A project is now **optional context in the URL** (`apps/new?project_id=`), the shape
 `machines/new` already used — with one, the machine list narrows to that project's boxes;
 with none, the whole operate-scoped fleet is offered. It is deliberately not a form field:
 a dropdown would put tenancy back in the middle of the flow, one step short of requiring it.
 
 The acceptance test is one sentence: **can you deploy an app to a box without creating a
-Project?** Yes, both ways now — the machine view sidesteps `Install` entirely, and
-placement goes through `Install` with `project_id` null, into the same witnessed ceremony.
+Project?** Yes, both ways now — the machine view sidesteps `App` entirely, and
+placement goes through `App` with `project_id` null, into the same witnessed ceremony.
 
-What the inversion did **not** change: deleting a Project still destroys its installs
-(`dependent: :destroy`), guarded by the refusal to delete a project with any live target.
+What the inversion did **not** change: deleting a Project still destroys its apps
+(`dependent: :destroy`), guarded by the refusal to delete a project with any live placement.
 Whether a placement should instead *survive* its client, becoming untenanted, is left
 open — see [`open/install-journeys.md`](open/install-journeys.md).
 
@@ -143,8 +143,8 @@ stands on its own terms and this decision does not disturb it.
 |---|---|
 | Machine view, shaped by what the box reports, stateless deploy | **built** |
 | `vilice status` (role) / `actors` — the box's own facts, read live | **built** (`vilice packs` existed here until the pack layer was dropped) |
-| Drift as a surfaced, never-closed gap | **built** — `Install#count`, `placement_gap`, and the act that closes it |
-| `Install.project` inversion, installs at `/installs` | **built** — the prerequisite |
+| Drift as a surfaced, never-closed gap | **built** — `App#count`, `placement_gap`, and the act that closes it |
+| `App.project` inversion, apps at `/apps` | **built** — the prerequisite |
 | Exposure — the gate that makes a count above 1 honest | **built** |
 | Balancer — the managed front edge those N boxes sit behind | **built** — `vilice route` + the derived table |
 | `Machine → Project` inversion | **pending** — tenancy's own prerequisite, see below |
@@ -153,7 +153,7 @@ stands on its own terms and this decision does not disturb it.
 
 ## Tenancy has a prerequisite too, and it is not packaging
 
-`Install` no longer depends on `Project`, but **`Machine` still does** — `belongs_to :owner,
+`App` no longer depends on `Project`, but **`Machine` still does** — `belongs_to :owner,
 class_name: "Project"`, `has_many :projects`, `granted_projects`, `permits?(project)`, plus
 `ProjectMachine` and `MachineGrant`, which are entirely Project-shaped.
 
@@ -163,6 +163,6 @@ the `Project` constant. The floor depends on the outermost ring, which is exactl
 inversion this decision says each ring must not require.
 
 That makes `vilice-projects` **not** an extraction job yet. The order is: cut `Machine`'s
-dependence on `Project` first — the same move already made for `Install`, one layer down and
+dependence on `Project` first — the same move already made for `App`, one layer down and
 harder, because ownership and sharing are genuinely tenancy concepts that currently live on
 `Machine` — and only then is mounting-or-not a packaging question.

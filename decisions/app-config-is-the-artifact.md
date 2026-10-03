@@ -45,7 +45,7 @@ re-seat a digest. The procedure is reduced to a noun.
 The AppConfig is the unit the whole system turns on. It gets **golden-statue status**:
 it is a **first-class artifact with its own identity, addressed by its own digest, and
 versioned on its own accord** — not a throwaway blob that happens to hang off an
-`Install` row. It can still change; a change just **mints a new version**, it does not
+`App` row. It can still change; a change just **mints a new version**, it does not
 mutate the old one.
 
 The same inviolable rule the binary already lives under
@@ -70,9 +70,9 @@ right now. Promoting the config means the slot stops *being* a config and starts
   `apps/<name>/current.json` + `apps/<name>/history/<digest>.json` (the box stays able to
   stand alone — the timeline is reconstructable from the record + what's on disk). This
   replaces today's single `apps/<name>.json` + `prev_image`.
-- **In Vilice Console:** the `Install` row is the slot; it points at a series of AppConfig
+- **In Vilice Console:** the `App` row is the slot; it points at a series of AppConfig
   versions (one current), rather than holding the live config in its `config` jsonb
-  column. The jsonb-on-`Install` shape is the *road not taken* (below).
+  column. The jsonb-on-`App` shape is the *road not taken* (below).
 
 A deploy is then one sentence unchanged: *seat an AppConfig (which names its code, data,
 and secrets) in a slot at time T, and record it.* Rollback / restore-config = re-seat a
@@ -87,7 +87,7 @@ word for two things is the failure):
 | Timeline | What it versions | Whose | Lives |
 |---|---|---|---|
 | App Library **`Version`** | the **code** (an image digest) a catalog app releases | the publisher's | the App Library / manifest |
-| AppConfig **artifact** | the **whole deploy spec** (image is one field of it) | the operator's, per slot | the slot's timeline (box + `Install`) |
+| AppConfig **artifact** | the **whole deploy spec** (image is one field of it) | the operator's, per slot | the slot's timeline (box + `App`) |
 
 The image digest is just *one field inside* an AppConfig. A library `Version` bump is one
 reason an operator mints a new AppConfig; a config-only edit (a hostname, an env value) is
@@ -115,7 +115,7 @@ authoritative-on-conflict once the config is an addressable artifact:
 
 ## Roads not taken
 
-- **Config as a mutable jsonb blob on `Install` (today's shape).** It makes "the current
+- **Config as a mutable jsonb blob on `App` (today's shape).** It makes "the current
   config" cheap but has no identity, no timeline, and no honest drift signal — rollback
   has to reconstruct, restore is special-cased, and a box edit is invisible. Promoting the
   artifact pays a small modeling cost (a version table / box history dir) and collapses
@@ -132,7 +132,7 @@ authoritative-on-conflict once the config is an addressable artifact:
 
 - The box layout moves from `apps/<name>.json` + `prev_image` to a per-slot timeline
   (`current.json` + `history/`); folds into [`../blueprint/vilice/deploy.md`](../blueprint/vilice/deploy.md).
-- `Install` gains a config-version timeline rather than a live `config` jsonb; folds into
+- `App` gains a config-version timeline rather than a live `config` jsonb; folds into
   [`../blueprint/console/data-model.md`](../blueprint/console/data-model.md) when
   built. Until then those docs describe today's shape — this decision is the direction,
   not yet the schema.

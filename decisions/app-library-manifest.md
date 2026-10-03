@@ -13,12 +13,12 @@ data model does it need to be?
 
 ## What we chose
 
-**A YAML manifest (`Library` PORO + `apps#export`/`import`), one SQLite database.**
+**A YAML manifest (`Library` PORO + `app_templates#export`/`import`), one SQLite database.**
 
 - **Export** flattens apps + their versions to a manifest Hash → YAML.
 - **Import is additive**: apps upsert by `name`, versions by `tag` (image refreshed);
   nothing is deleted. Two vendor libraries (`abc.yml`, `acme.yml`) merge and coexist.
-- **Bulk remove** (`apps#remove_selected`, multi-select on the list) is the deliberate
+- **Bulk remove** (`app_templates#remove_selected`, multi-select on the list) is the deliberate
   counterweight to additive import — the only way the library shrinks, recorded as one
   act.
 - The DB stays the runtime store; the manifest is the **interchange** shape — the form a
@@ -28,7 +28,7 @@ data model does it need to be?
 ## Roads not taken
 
 - **A separate SQLite database** for the library (Rails multiple-databases). *Feasible* —
-  `Install` already references the library only through **nullable, snapshot** links
+  `App` already references the library only through **nullable, snapshot** links
   (`app_id`/`version_id`, `dependent: :nullify`, with the image digest copied at install
   time), so the library is already detachable at runtime. **Rejected** because the cost
   outweighs the win: `Label` is polymorphic (shared with Machine/Project), so it can't

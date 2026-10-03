@@ -1,9 +1,9 @@
-# One primitive, composed — Install is intent, the fleet is reconciled
+# One primitive, composed — App is intent, the fleet is reconciled
 
-> Decided 2026-06-17. The simplification pass over the Install / Machine / Fleet /
+> Decided 2026-06-17. The simplification pass over the App / Machine / Fleet /
 > load-balancer model. Graduates and supersedes the framing scattered across
 > [`open/console-open-questions.md`](open/console-open-questions.md) *(Replica /
-> deploy strategy; Migrate an install)* and
+> deploy strategy; Migrate an app)* and
 > [`open/install-journeys.md`](open/install-journeys.md) *(Replicas / scale)* — those
 > keep the **build** detail; the **model** is settled here. Extends
 > [`declarative-deploy.md`](declarative-deploy.md) one level up. The canonical *what* now
@@ -17,8 +17,8 @@
 
 Vilice's `deploy` is a declarative upsert — *here is the full desired state, converge
 the box to it* ([declarative-deploy.md](declarative-deploy.md)). The control-plane knot
-(does Install or Machine come first? how does a fleet go 4→5?) comes from that thinking
-stopping at the box. **Extend it:** an `Install` is desired state for a *slice of the
+(does App or Machine come first? how does a fleet go 4→5?) comes from that thinking
+stopping at the box. **Extend it:** an `App` is desired state for a *slice of the
 fleet*, and a reconciler closes the gap between that plan and what's actually running.
 
 You author **intent**; the gap between it and reality is made visible, and closing that
@@ -34,10 +34,10 @@ than the compromise, is now its own decision:
 
 | Noun | Is | Role |
 |---|---|---|
-| **Install** | the **intent** — the full desired spec (`Install#deploy_envelope`), now incl. *how many* and *where* | the front door; what the operator manages |
+| **App** | the **intent** — the full desired spec (`App#deploy_envelope`), now incl. *how many* and *where* | the front door; what the operator manages |
 | **Machine** | the **authority + substrate** — a scoped key, a scope, an owner, pointed at a box | a reconciled resource + the read-only box lens |
-| **InstallTarget** | the **placement** — where intent meets substrate | carries plan-vs-reality *per box* |
-| **Balancer** | a Machine in a **balancer role** — Caddy with a routing table reconciled from the installs behind it | the (optional) shared public edge; its own page (*see below*) |
+| **Placement** | the **placement** — where intent meets substrate | carries plan-vs-reality *per box* |
+| **Balancer** | a Machine in a **balancer role** — Caddy with a routing table reconciled from the apps behind it | the (optional) shared public edge; its own page (*see below*) |
 
 The Balancer is the one addition — a *role over Machine*, not a fourth primitive (*"The
 edge is a Balancer"*, below).
@@ -52,8 +52,8 @@ box.
 
 ## The chicken-and-egg, dissolved
 
-Neither Install nor Machine is a prerequisite. **Intent is authored first; substrate is
-converged to match.** In the install flow, "where it runs" is a *step inside the Install*,
+Neither App nor Machine is a prerequisite. **Intent is authored first; substrate is
+converged to match.** In the app flow, "where it runs" is a *step inside the App*,
 not a thing you build beforehand:
 
 - **existing box** — pick one already on the project;
@@ -66,7 +66,7 @@ alternate entry that writes the *same* records, not the foundation.
 
 ## Fleet is not a noun — exposure is
 
-There is no Fleet object and no "single vs fleet" mode. An Install has an **exposure**, and
+There is no Fleet object and no "single vs fleet" mode. An App has an **exposure**, and
 when balanced, a **count**:
 
 - **On the Edge (public).** The box faces the internet and terminates its own TLS; DNS
@@ -76,12 +76,12 @@ when balanced, a **count**:
   and the box can be private (no public IP / firewalled to the balancer). Scaling is now
   free — **count 1…N** is just more upstreams.
 
-"Scale a fleet 4→5" is: change the Install's count, which opens a gap; closing it
+"Scale a fleet 4→5" is: change the App's count, which opens a gap; closing it
 provisions a backend, deploys, and the balancer picks it up — each step an act, not a
 background convergence. **The public/private choice is what unlocks scale.**
 
 Exposure is `edge` | `balanced` (default `edge`), and it gates `count` at validation:
-without the gate, an install on the edge could ask for three boxes and get three boxes all
+without the gate, an app on the edge could ask for three boxes and get three boxes all
 claiming one hostname that DNS points at once. Restating it is a recorded `restated
 intention` act that reaches no box. Selecting a balancer stays *optional* even when
 balanced: an operator running their own edge only wants the count unlocked.
@@ -96,8 +96,8 @@ behind a balancer; "On the Edge" is for apps that will always be one box.
 
 A **Balancer** is a Machine with a balancer role, running a Caddy that **Vilice Console
 configures**, whose **routing table is derived, not hand-authored** — reconciled from the
-installs that select it. Add an install behind it → regenerate its config → reload; scale an
-install → update upstreams → reload. Same plan-vs-reality loop (below), applied to the edge;
+apps that select it. Add an app behind it → regenerate its config → reload; scale an
+app → update upstreams → reload. Same plan-vs-reality loop (below), applied to the edge;
 the **Balancers** page is where you see that table and the edge's health.
 
 This is a deliberate, narrow exception to "no new noun": a Balancer earns first-class status
@@ -109,7 +109,7 @@ not a competing primitive.
 Machine and a parallel model would duplicate address, key, scope and ownership and then
 have to be kept in step. `RoutingTable` derives the table; applying it is the `route` act.
 
-**"Reconciled from the installs behind it" means derived on read, not converged in the
+**"Reconciled from the apps behind it" means derived on read, not converged in the
 background** — the table is computed when shown and again when sent, and a person presses
 Apply ([`drift-is-surfaced-never-closed.md`](drift-is-surfaced-never-closed.md)). And
 **only boxes actually serving are upstreams**: a placed-but-not-running or unreachable box
@@ -129,7 +129,7 @@ point is that the gap stays visible.
   operator-level) fronting several small projects. "Owned by Vilice Console, usable by selected
   projects" is just *unowned + sharing=list* — no new ownership or isolation model.
 
-**The Install's machine configuration, then:**
+**The App's machine configuration, then:**
 
 ```
 Box       → Existing box | New box (Hetzner)
@@ -137,17 +137,17 @@ Exposure  → On the Edge (public)        → count 1
           → Behind a Balancer (private) → pick a balancer → count 1…N
 ```
 
-So there is still **one primitive — an Install placed on substrate** — plus a Balancer role
+So there is still **one primitive — an App placed on substrate** — plus a Balancer role
 that is itself that primitive, made visible because it is shared and long-lived.
 
 **The constraint that keeps it safe: replication is stateless-only.** A volume is data on
 *that box's* disk; N replicas = N diverging datasets. So the count control only appears for
 apps the App Library marks **replicable**; a stateful app (declares a volume) is
 single-placement, full stop. That one flag removes a decision from the operator *and*
-closes the footgun. The flag is *derived rather than stored*: an install is replicable
+closes the footgun. The flag is *derived rather than stored*: an app is replicable
 when it declares no volumes. A stored flag would be a promise *about* the spec, and it
-could disagree with the spec it describes; deriving it from the volumes the install
-actually declares cannot. The gate is a validation, so a stateful install is refused a
+could disagree with the spec it describes; deriving it from the volumes the app
+actually declares cannot. The gate is a validation, so a stateful app is refused a
 count above 1 rather than merely discouraged in the form.
 
 ## Plan vs reality is the UI
@@ -155,7 +155,7 @@ count above 1 rather than merely discouraged in the form.
 Every entity has a **desired** state and an **observed** state; the page's job is to show
 the gap and offer to close it. Both halves now exist — the observe reconciliation
 ([observe-reconciliation.md](observe-reconciliation.md)) supplies reality (`current_image`,
-reachability, K-of-N up) against the Install's plan. `failed` / `drift` / `unreachable`
+reachability, K-of-N up) against the App's plan. `failed` / `drift` / `unreachable`
 are all "reality ≠ plan," and the gap *is* the action — offered, never taken
 automatically. This half of the decision was always right, and is what the auto-converge
 language above contradicted.
@@ -174,7 +174,7 @@ Converging *containers* is cheap and reversible; converging *boxes* is not.
 
 ## What this settles vs. leaves open
 
-- **Settled:** the *model* — one primitive, Install-as-intent, the machine view as the
+- **Settled:** the *model* — one primitive, App-as-intent, the machine view as the
   floor beneath it; exposure
   (Edge / Behind-a-Balancer) replaces "single vs fleet"; the **Balancer** is a first-class
   managed resource (a Machine running reconciled Caddy), **dedicated to a project by
@@ -188,9 +188,9 @@ Converging *containers* is cheap and reversible; converging *boxes* is not.
   networking** (how a backend is reachable only by its balancer); and **HA for the balancer**
   (pair + floating IP) — all in
   [`open/console-open-questions.md`](open/console-open-questions.md). The
-  **migrate-an-install** verb is now clearly "blue/green across machines" — the same
+  **migrate-an-app** verb is now clearly "blue/green across machines" — the same
   primitive relocating one placement.
-- **Build status (UI):** the install placement step currently ships an **interim
+- **Build status (UI):** the app placement step currently ships an **interim
   Single / Fleet stub** (machine-first, with new-box and fleet as previews). The settled
   shape above — **Box × Exposure (Edge / Behind a Balancer) × scale**, plus a **Balancers**
   page — is the next UI rework; the stub predates this refinement.
@@ -198,10 +198,10 @@ Converging *containers* is cheap and reversible; converging *boxes* is not.
 ## Roads not taken
 
 - **Fleet as a first-class object** (a named machine set you target). Rejected: a second
-  noun and a separate scaling path for what is just count + exposure on an Install.
-- **Edge per fleet** (auto-create an LB when an install scales). Rejected: it couples the
-  edge to one install's lifecycle, so DNS churns on every scale and the 1↔2 boundary is a
-  cutover. The Balancer decouples the edge from any one install.
+  noun and a separate scaling path for what is just count + exposure on an App.
+- **Edge per fleet** (auto-create an LB when an app scales). Rejected: it couples the
+  edge to one app's lifecycle, so DNS churns on every scale and the 1↔2 boundary is a
+  cutover. The Balancer decouples the edge from any one app.
 - **Edge per project, invisible** (a hidden shared box each project gets). Superseded by the
   **Balancer** — same DNS/scaling wins, but *visible and manageable* (its own page) and
   *optionally shared across projects*, not an invisible per-project box.

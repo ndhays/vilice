@@ -194,7 +194,7 @@ enough to make a group read as a group.
   is asking; the row says why instead.
 
   **One state word, defined on the placement and folded by the app.**
-  `Placement#state` is the ladder; `App#state` is the worst of them. A target
+  `Placement#state` is the ladder; `App#state` is the worst of them. A placement
   row used to badge its raw `status`, which knows nothing about the box being
   unreachable or the image having drifted, so a row could read *running* under a
   header that said *unreachable*.

@@ -58,8 +58,8 @@ transiently**. The why (and why the chicken-and-egg is a feature, not a bug) is 
   there for a box that is gone. **Below grant scope** the console cannot revoke itself,
   so the panel is two steps: the line to run on the box (`Machine#revoke_command` →
   `sudo -u _vilice vilice revoke console`), then a **Forget** button that only forgets.
-  `events: :nullify` keeps the record intact; the join, targets, snapshots, and labels
-  cascade, so any apps on the box are orphaned (kept, target dropped), not deleted.
+  `events: :nullify` keeps the record intact; the join, placements, snapshots, and labels
+  cascade, so any apps on the box are orphaned (kept, placement dropped), not deleted.
 
 ## The App Library — the front-of-funnel
 
@@ -93,7 +93,7 @@ export) is specified in [`data-model.md`](data-model.md).
 
 ## The app flow
 
-Apps live at `/installs` — placement is its own layer, not something a client
+Apps live at `/apps` — placement is its own layer, not something a client
 contains ([`decisions/console-layers.md`](../../decisions/console-layers.md)). **A project
 is optional context and arrives in the URL** (`apps/new?project_id=`, the same shape
 `machines/new` already uses), never as a dropdown: with one, the machine list narrows to
@@ -180,7 +180,7 @@ are serving shows the gap on its own page and on Status; **Place on another box*
 candidate, records a `placed app` act, and hands off to the same deploy ceremony. The
 gap does not narrow when the placement is made — only when the box reports the app running,
 because the right-hand side of the comparison is always the box. Scaling down is the
-existing `remove` verb, which retires the target.
+existing `remove` verb, which retires the placement.
 
 > Most fields are **prefilled — confirm/override, not entry.** The progressive-reveal
 > single-page form (reveal each section as the prior choice is made, with a Preflight panel
@@ -188,11 +188,13 @@ existing `remove` verb, which retires the target.
 
 ## The lifecycle (back half — built)
 
-Once installed, every act runs through the mutate ceremony, targeting an `App`'s live
-target(s): **deploy / rollback / start / stop / restart / remove**, plus machine-level
+Once installed, every act runs through the mutate ceremony, against an `App`'s live
+placements: **deploy / rollback / start / stop / restart / remove**, plus machine-level
 **apply-updates**. Remove retires the `Placement` (the row is kept for history). The
-App has a show page that hosts these witnessed verbs per target; the Machine page keeps
-the same verbs as the sysadmin lens (one shared partial, one return-aware ceremony). A
+App's show page hosts the lifecycle verbs per placement; the Machine page acts on the box —
+machine-level acts, and deploying or removing an app with no project — through the same
+return-aware ceremony
+([`install-the-app-actions-home.md`](../../decisions/install-the-app-actions-home.md)). A
 successful deploy pins `Placement.desired_image`; `current_image` is reconciled from
 what the box reports, so drift is honest. (`reboot` is deliberately **not** a verb — the
 settled Vilice command set has no machine reboot.)

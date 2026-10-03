@@ -68,16 +68,16 @@ happened and who is answerable for it.
 
 Naming it, because an article that can't point at code isn't applied:
 
-- **The two halves never merge.** `Install#count` is the claim; `Install#serving_count`
-  counts only targets the *box* reports running, on a machine still reachable. The gap is
-  `placement_gap`, and it is kept out of `Install#state` on purpose, so an intention can
+- **The two halves never merge.** `App#count` is the claim; `App#serving_count`
+  counts only placements the *box* reports running, on a machine still reachable. The gap is
+  `placement_gap`, and it is kept out of `App#state` on purpose, so an intention can
   never be rendered through the status glyph.
-- **Placing is not closing.** `POST /installs/:id/targets` creates a `pending` target and
-  records a `placed install` act. The gap does not move. It narrows only when observe
-  reconciles the target to `running` — which is to say, when the box says so. This is the
+- **Placing is not closing.** `POST /apps/:id/placements` creates a `pending` placement and
+  records a `placed` act. The gap does not move. It narrows only when observe
+  reconciles the placement to `running` — which is to say, when the box says so. This is the
   property that makes the layer honest rather than decorative: the console cannot close its
   own gap by asserting anything.
-- **There is no converger.** No job, no callback, no scheduled pass writes a target or
+- **There is no converger.** No job, no callback, no scheduled pass writes a placement or
   issues a deploy. `FleetObserveJob` reads and reconciles *reality*; it never acts on the
   intention. The only writer is a person pressing a button, and the button appears solely
   when the gap is negative — the over-served case gets no one-click trim, because silently
@@ -85,9 +85,9 @@ Naming it, because an article that can't point at code isn't applied:
 
 ## Two corollaries
 
-**Deleting an intention must not touch a box.** *(Built: `installs#update` restates
+**Deleting an intention must not touch a box.** *(Built: `apps#update` restates
 `count`/`exposure` and reaches nothing else. Going from three boxes to one retires no
-target and issues no call — the gap simply closes. Removing an app is still `remove`.)*
+placement and issues no call — the gap simply closes. Removing an app is still `remove`.)*
 Deleting a statement of desire is not an
 act on a machine. A cascade that fires N destructive calls whose only trace is a
 vanished row is the same failure in a different costume. Removing the apps is a separate,

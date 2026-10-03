@@ -93,7 +93,7 @@ carries the three things the units don't:
 - **exposure** — *On the Edge* (public, count 1) or *Behind a Balancer* (private, count 1…N);
 - **source** — *existing* boxes (pick) or *new* (MachineSpec → Provider).
 
-App lifecycle acts across *several* boxes happen here, per target — the App is the
+App lifecycle acts across *several* boxes happen here, per placement — the App is the
 app-actions home for placement
 ([`install-the-app-actions-home.md`](../../decisions/install-the-app-actions-home.md)).
 
@@ -175,7 +175,7 @@ witnessed *mutate*).
 | AppConfig as a versioned artifact (digest identity + slot timeline) | principle settled, **pending** |
 | Accessories (linked Redis/Postgres) — `accessories` block in the AppConfig | in scope, **pending** |
 | Balancer — role over Machine, derived table, applied as an act | **built** |
-| Rollout orchestration across a balanced app's targets | **pending** |
+| Rollout orchestration across a balanced app's placements | **pending** |
 | Private-network jump (`via` / ProxyJump) | settled, **pending** |
 | Managed cloud LB (out-of-spine) | settled, **pending** |
 
