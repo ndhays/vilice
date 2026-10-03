@@ -292,7 +292,9 @@ enough to make a group read as a group.
   **Identity: the name and one live signal, then a short labelled list.** Beside the
   name sits the health line — a dot and plain words: *Online*, or what is wrong (*disk
   91% — running low*), or *Unreachable*. No pills in the header; on the box the console
-  runs on, the leading glyph is a location pin that says *you are here* on hover. What
+  runs on, the leading glyph is a location pin that says *you are here* on hover (the
+  box's reported `machine_id` matches the console's own: `/etc/machine-id`, or
+  `VILICE_SELF_MACHINE_ID` set by hand when the console runs in a container). What
   the box *is* sits beneath as a two-column list, labels left, values right, always in
   the same order: **Address · Role · Owned by · Used by**. Ownership reads as a sentence
   fragment — *project Acme*, or *no project* — because a box is owned by a project, not

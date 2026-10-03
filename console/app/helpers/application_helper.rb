@@ -309,10 +309,10 @@ module ApplicationHelper
     digest ? "@#{digest[0, 12]}" : image.to_s
   end
 
-  # The machine-id Vilice Console knows itself by. In a real deployment Vilice
-  # injects VILICE_SELF_MACHINE_ID when it deploys Vilice Console (robust even
-  # in a container that can't see the host's /etc/machine-id); on a co-resident
-  # dev box we fall back to reading it directly. Blank when Vilice Console runs off-box.
+  # The machine-id Vilice Console knows itself by. Running straight on a box, it
+  # reads /etc/machine-id. In a container it cannot see the host's, so the operator
+  # sets VILICE_SELF_MACHINE_ID in the console's own env — nothing injects it.
+  # Blank when Vilice Console runs off-box, and then no machine is "here".
   def self_machine_id
     return @self_machine_id if defined?(@self_machine_id)
     @self_machine_id = ENV["VILICE_SELF_MACHINE_ID"].presence ||
