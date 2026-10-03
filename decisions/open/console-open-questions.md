@@ -8,6 +8,14 @@
 
 ---
 
+## Agents and the console — its own doc
+
+If an agent does the operating, how does a person stay in charge? The lead idea is that
+the console's operate becomes a **gate**: an agent with a read-only key proposes, a
+person approves or denies the exact command. Where that gate lives, what it must
+guarantee, and whether an agent belongs inside the console at all are in
+[agents-and-the-console.md](agents-and-the-console.md).
+
 ## Host keys — whose memory, and who forgets
 
 The console trusts a box's SSH host key on first connect (`StrictHostKeyChecking=

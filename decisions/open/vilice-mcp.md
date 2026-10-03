@@ -83,6 +83,8 @@ agent's name) is already answered:
 plane's* record to keep, because Vilice structurally cannot see it. An agent is the same
 case as an operator. This is an existing seam, not a new violation — but it does mean the
 agent's identity is only as good as the console's record, which is not hash-chained.
+What the console would offer such an agent — read and *propose*, with a person approving —
+is worked through in [`agents-and-the-console.md`](agents-and-the-console.md).
 
 **4. A daemon on the box.** A listener beside Vilice, driving Podman and Caddy for
 speed, calling Vilice to write entries so the history looks complete. This is the exact
