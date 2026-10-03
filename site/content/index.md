@@ -34,6 +34,36 @@ curl -fsSL https://get.vilice.org/install.sh | sudo bash -s -- {{version}}
 </div>
 </div>
 
+## Set Up a Box
+
+Three steps turn a fresh Ubuntu box into one Vilice runs. Each command has
+[its own page](/commands/).
+
+**Harden it** — optional, and first. Key-only SSH, a firewall with only the SSH port open,
+and automatic security updates. Log in with a key, not a password, before you run it.
+
+```bash
+sudo vilice harden
+```
+
+**Prepare it** — required. Say what the box is for: a `host` runs apps, a `balancer` fronts
+other boxes. See [Roles](/overview.html#roles).
+
+```bash
+sudo vilice prepare host
+```
+
+**Admit a key.** Everything past here runs as the `_vilice` account, not root. Authorize
+whoever will operate the box — Vilice Console, a CI job, your own script — by name, at a
+scope:
+
+```bash
+sudo -u _vilice vilice authorize "ssh-ed25519 AAAA… console" --client console --scope operate
+```
+
+From there, every deploy arrives over that scoped key. The next thing you need is an
+[AppConfig](/overview.html#appconfig).
+
 Part of Vilice's reliability is its controlled access plane: every command is gated by a
 scoped SSH key, and every action that changes the box is written to a hash-chained log on
 the machine — *before* it is executed, so nothing happens off the books. Security starts by

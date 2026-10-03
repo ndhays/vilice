@@ -87,14 +87,16 @@ it is one element, and it has nothing to get stuck open.
 
 ## The home page
 
-The one page whose job is the hook rather than the reference. It is five parts and
+The one page whose job is the hook rather than the reference. It is six parts and
 nothing else, and each of them appears only here.
 
-**The hero.** `h1` at `clamp(2.5rem, 9vw, 4rem)` — the one element on the site
-sized against the viewport rather than a token, because it is the one element that
-should fill the screen it lands on. Under it a short `--brand-yellow` rule (graphic
-use, carrying no meaning), then the tagline at `--text-lg`+ in `--ink-soft`, capped
-at `--measure`.
+**The hero.** The name as `h1` in `--font-display` at `clamp(3.4rem, 12.5vw, 5.75rem)` —
+the one element on the site sized against the viewport rather than a token, because it
+is the one element that should fill the screen it lands on. Under it a short
+`--brand-yellow` rule (graphic use, carrying no meaning), then the tagline in
+`--font-inscription` at `--text-xl`, then the motto — the first line of Horace's letter,
+`--text-sm` in `--ink-faint`, linking to the whole poem. The faces are in
+[`tokens.md`](tokens.md).
 
 **The split.** A two-column card, figure on the left and the command you would
 actually type on the right, `1fr / 3fr` so the command has the room. It stacks below
@@ -113,6 +115,13 @@ install command beside it are filled
 from `VERSION` at build time (`{{version}}`, replaced by `site/versions.js`); a docs page
 claiming a release that is not the current one is a failure mode worth removing
 rather than remembering.
+
+**The setup steps.** *Set Up a Box*, directly under the split: what to run after the
+install line — harden, prepare, admit a key — one command per step, each in its own
+block so its copy button copies exactly one command. A sentence per step says what it
+does and links to where the detail lives (the command pages, Roles, AppConfig); the
+page does not describe a command, because the command pages are the binary's own help.
+Without this the install line led nowhere.
 
 **The tool list.** Other people's projects, one per row on a hairline. Each line is
 the name and a plain sentence saying what the tool is *for* — never how it compares
