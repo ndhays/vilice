@@ -163,7 +163,8 @@ resolve to an installer. A hostname that only redirects carries a proxied record
 
 **Still to do:**
 
-1. **The dev box**, reinstalled from `get.vilice.org` — the first install outside a test.
+1. **The dev box**, reinstalled from `get.vilice.org` — the first install outside a test —
+   on a **new IP**: the old one was in the repo, and its history, from the first commit.
 2. **Retire the old names.** `steward.agoraforge.org` no longer resolves; its Cloudflare
    project goes, and `codeberg.org/agoraforge/steward` (the old key) is archived.
 3. **HSTS preload** for `vilice.org`, once the subdomains have settled.

@@ -90,11 +90,11 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     sign_in_as @user
     assert_difference [ -> { Machine.count }, -> { Event.count } ], 1 do
       post machines_path, params: { machine: {
-        ssh_host: "5.78.1.1", ssh_port: 22, scope: "operate"
+        ssh_host: "203.0.113.1", ssh_port: 22, scope: "operate"
       } }
     end
-    machine = Machine.find_by(ssh_host: "5.78.1.1")
-    assert_equal "5.78.1.1", machine.name               # seeded from the host until the first read
+    machine = Machine.find_by(ssh_host: "203.0.113.1")
+    assert_equal "203.0.113.1", machine.name               # seeded from the host until the first read
     assert_equal "_vilice", machine.ssh_user            # forced, not a form choice
     assert machine.ssh_private_key.present?, "private key generated + stored"
     assert_match(/\Assh-ed25519 /, machine.ssh_public_key)
@@ -107,10 +107,10 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     project = Project.create!(name: "Acme")
     assert_difference [ -> { Machine.count }, -> { ProjectMachine.count } ], 1 do
       post machines_path, params: { project_id: project.id, machine: {
-        ssh_host: "5.78.9.9", ssh_port: 22, scope: "operate"
+        ssh_host: "203.0.113.9", ssh_port: 22, scope: "operate"
       } }
     end
-    assert_includes project.machines, Machine.find_by(ssh_host: "5.78.9.9")
+    assert_includes project.machines, Machine.find_by(ssh_host: "203.0.113.9")
     assert_redirected_to new_app_path(project_id: project)
   end
 
@@ -127,7 +127,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
   # Settings. The line carries `sudo -u _vilice`: run bare, the box refuses it.
   test "a box Vilice has never reached leads with its authorize line" do
     sign_in_as @user
-    machine = Machine.create!(name: "edge-2", ssh_host: "5.78.1.2", scope: "operate",
+    machine = Machine.create!(name: "edge-2", ssh_host: "203.0.113.2", scope: "operate",
                               ssh_public_key: "ssh-ed25519 AAAAKEY console@edge-2")
     offline = { ok: false, error: "unreachable", at: Time.current }
     stub_observe(status: offline, record: offline) { get machine_path(machine) }

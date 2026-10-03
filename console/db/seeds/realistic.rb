@@ -6,13 +6,16 @@ include Scenario
 
 operator!
 
-# The dev box (memory: devbox = root@5.78.218.105). If an observe key is sitting
-# at /tmp/sy_key (the heartbeat proof's key), fold it in so reads work live.
+# The dev box. Its address comes from VILICE_SSH_HOST — never a real IP in the repo,
+# which would tell every scanner where to aim. Unset, it is 203.0.113.10, a
+# documentation address that never answers, so the rest of this world still has a box
+# to hang off. If an observe key is sitting at /tmp/sy_key (the heartbeat proof's key),
+# fold it in so reads work live.
 key_path = ENV.fetch("VILICE_SSH_KEY", "/tmp/sy_key")
 devbox = Machine.find_or_initialize_by(name: "devbox")
 devbox.assign_attributes(
-  ssh_host: ENV.fetch("VILICE_SSH_HOST", "5.78.218.105"),
-  ssh_user: ENV.fetch("VILICE_SSH_USER", "root"),
+  ssh_host: ENV.fetch("VILICE_SSH_HOST", "203.0.113.10"),
+  ssh_user: ENV.fetch("VILICE_SSH_USER", "_vilice"),
   scope: "observe"
 )
 devbox.ssh_private_key = File.read(key_path) if File.exist?(key_path) && devbox.ssh_private_key.blank?
