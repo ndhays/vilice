@@ -269,6 +269,12 @@ new threat (prompt injection), and the shapes already forbidden are written up i
 [vilice-mcp.md](vilice-mcp.md). It leans on *time-boxed grants* and *scoped observe*
 above, which is why it is flagged from here.
 
+## A dry run — its own doc
+
+There is no way to ask what a verb would do without doing it — the one test for
+agent-ready software Vilice fails. Whether it is a flag or a read verb, what "would work"
+covers, and whether an observe key may ask, are written up in [dry-run.md](dry-run.md).
+
 ## Security smoke-tests — industry-standard tools
 
 Built: `make audit` (govulncheck + gosec, gating `release`), `make audit-box`
