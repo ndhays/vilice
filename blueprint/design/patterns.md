@@ -121,7 +121,9 @@ install line — harden, prepare, admit a key — one command per step, each in 
 block so its copy button copies exactly one command. A sentence per step says what it
 does and links to where the detail lives (the command pages, Roles, AppConfig); the
 page does not describe a command, because the command pages are the binary's own help.
-Without this the install line led nowhere.
+Without this the install line led nowhere. It closes with **Upgrading**, an `h3`: one
+paragraph and one line — the install line again, then `prepare` — because there is no
+upgrade command and a reader will look for one.
 
 **The tool list.** Other people's projects, one per row on a hairline. Each line is
 the name and a plain sentence saying what the tool is *for* — never how it compares

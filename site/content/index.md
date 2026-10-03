@@ -64,6 +64,16 @@ sudo -u _vilice vilice authorize "ssh-ed25519 AAAA… console" --client console 
 From there, every deploy arrives over that scoped key. The next thing you need is an
 [AppConfig](/overview.html#appconfig).
 
+### Upgrading
+
+There is no upgrade command. Run the install line with the newer version, then `prepare`
+again with the box's role — it approves the new binary, and until it runs Vilice refuses
+to act. Your apps keep running throughout.
+
+```bash
+curl -fsSL https://get.vilice.org/install.sh | sudo bash -s -- {{version}} && sudo vilice prepare host
+```
+
 Part of Vilice's reliability is its controlled access plane: every command is gated by a
 scoped SSH key, and every action that changes the box is written to a hash-chained log on
 the machine — *before* it is executed, so nothing happens off the books. Security starts by
