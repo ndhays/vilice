@@ -174,11 +174,27 @@ resolve to an installer. A hostname that only redirects carries a proxied record
 2. **Retire the old names.** `steward.agoraforge.org` no longer resolves; its Cloudflare
    project goes, and `codeberg.org/agoraforge/steward` (the old key) is archived.
 3. **HSTS preload** for `vilice.org`, once the subdomains have settled.
+4. **The image names.** The console image is still `ghcr.io/agoraforge/vilice-console`
+   (`Makefile`, and the examples on the docs site), and the harness is
+   `ghcr.io/agoraforge/harness-rails`, which the App Library points at. The source is now
+   `github.com/ndhays/vilice`, so `ghcr.io/ndhays/…` would put an image where a reader
+   expects it. Decide before the first console image is published: after that, a move
+   strands whoever pulled the old name.
 
 **The gate, for every publish:** `get.vilice.org` does not go live until the key answers
 at its Codeberg path, and the docs site does not go live before `get.vilice.org` — the
 install line it prints must work the moment someone copies it. An installer pointed at a path that does
 not answer fails every install.
+
+## Not claimed: package registries
+
+`vilice` is free on RubyGems, crates.io and Homebrew, and is left unclaimed. Nothing is
+published there — the binary comes from `get.vilice.org`, the console as a container
+image — and nothing an install fetches touches a registry, so a package by that name
+could not reach one. A placeholder would not hold the name either: registries treat
+packages with no function as squatting and remove or reassign them. The name is claimed
+the day there is something real to publish, such as a Ruby client or an MCP server
+([`open/vilice-mcp.md`](open/vilice-mcp.md)).
 
 ## Roads not taken
 
