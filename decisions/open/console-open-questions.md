@@ -16,6 +16,22 @@ person approves or denies the exact command. Where that gate lives, what it must
 guarantee, and whether an agent belongs inside the console at all are in
 [agents-and-the-console.md](agents-and-the-console.md).
 
+## The console does not build from a clone
+
+Its Gemfile takes Boxcar as a **path gem** (`../../boxcar-rails`), a checkout that sits
+beside this repository and is not in it. So `bundle install` fails for anyone but the
+maintainer. An outside read of the repo found it first, and it blocks three things at
+once:
+
+- **Anyone else running the console.** The docs say it can run locally; it cannot.
+- **CI for the console.** The Go binary is checked on every push
+  (`.github/workflows/ci.yml`); the Rails half has no check at all.
+- **A published image** — the build-context note under "App image registry" below.
+
+The ways out are the usual ones: publish Boxcar and take it from a git source or a gem
+server, or vendor it into this repository. Not decided, and the first one waits on
+whether Boxcar is ready to be public.
+
 ## Host keys — whose memory, and who forgets
 
 The console trusts a box's SSH host key on first connect (`StrictHostKeyChecking=

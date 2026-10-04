@@ -1,0 +1,30 @@
+# CI for the Go binary. Thin on purpose: it calls `make check`, so what runs here is what
+# runs on a laptop, and moving to another CI system means rewriting this file and nothing
+# else.
+#
+# The console is not here yet. Its Gemfile depends on Boxcar as a path gem outside this
+# repository, so it cannot install from a clone — see
+# decisions/open/console-open-questions.md.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go — formatted, vetted, tested
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: vilice/go.mod
+          cache: false # the binary requires no modules, so there is nothing to cache
+
+      - run: make check

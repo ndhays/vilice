@@ -18,7 +18,7 @@ ARCHES       ?= amd64 arm64
 GOVULN_VER   ?= v1.3.0
 GOSEC_VER    ?= v2.29.0
 
-.PHONY: build build-linux man test fuzz vet fmt audit sign release keygen clean
+.PHONY: build build-linux man test fuzz vet fmt check audit sign release keygen clean
 
 # Host-arch dev build.
 build:
@@ -61,6 +61,15 @@ vet:
 
 fmt:
 	go fmt ./...
+
+# What CI runs, and what to run before a commit: formatted, vetted, tested. It fails on
+# an unformatted file rather than rewriting it — a check that fixes things cannot fail,
+# and a check that cannot fail is not one.
+check:
+	@unformatted="$$(gofmt -l .)"; test -z "$$unformatted" || { \
+	  echo "not gofmt-formatted (run 'make fmt'):"; echo "$$unformatted"; exit 1; }
+	go vet ./...
+	go test ./...
 
 # Static security audit. Kept out of `build` (it needs the network and is slower);
 # it gates `release` instead — a version doesn't ship unless it passed.

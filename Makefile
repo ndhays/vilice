@@ -1,9 +1,11 @@
 # Top-level orchestration. Most work lives in the subprojects; this delegates.
-.PHONY: build build-linux test audit audit-box sign release site-build image push clean
+.PHONY: build build-linux test check audit audit-box sign release site-build image push clean
 
 build:        ; $(MAKE) -C vilice build
 build-linux:  ; $(MAKE) -C vilice build-linux
 test:         ; $(MAKE) -C vilice test
+# Formatted, vetted, tested — what CI runs (.github/workflows/ci.yml).
+check:        ; $(MAKE) -C vilice check
 audit:        ; $(MAKE) -C vilice audit
 # Box-posture audit against a live box (ssh-audit + nmap + Lynis). Needs HOST.
 # e.g. make audit-box HOST=devbox
