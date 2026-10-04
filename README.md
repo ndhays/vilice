@@ -25,8 +25,8 @@ accountable, the privileged ceiling small and legible — as mechanism, not comm
 ## This repository is a proof of concept
 
 **Most of the code here was written by an LLM** (Claude), from a specification that is
-itself the canonical artifact — `blueprint/` is 6,900 lines of prose that came first, and
-the code is a projection of it. That is worth saying plainly rather than leaving a reader
+itself the canonical artifact — `blueprint/` is prose that came first, and the code is a
+projection of it. That is worth saying plainly rather than leaving a reader
 to infer it from the commit trailers.
 
 It has a consequence. [Codeberg's Terms of Use](https://codeberg.org/Codeberg/org/src/branch/main/TermsOfUse.md)
@@ -69,10 +69,12 @@ make sign                  # build + tar + sign the release (self-verifies). VER
 make release               # sign + publish artifacts to RELEASE_DEST
 ```
 
-**Install vilice on a box** (run on the box; verifies the signature first):
+**Install vilice on a box** (run on the box; verifies the signature first). The current
+version is in [`VERSION`](VERSION), and [vilice.org](https://vilice.org) prints the line
+with it filled in:
 
 ```bash
-./install.sh 0.3.1
+curl -fsSL https://get.vilice.org/install.sh | sudo bash -s -- <version>
 ```
 
 **Docs site** (`cd site`):
