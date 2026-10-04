@@ -74,6 +74,31 @@ takes the zones shape in the blueprint. Still open, in order:
   re-target** verb (move an app to another box) — see
   [`console-open-questions.md`](console-open-questions.md).
 
+## Open — where the acts sit (raised 2026-10-04)
+
+The machine page puts every act in an **Operate** zone beside **Observe**
+([`../what-the-console-is-for.md`](../what-the-console-is-for.md),
+[`interface.md`](../../blueprint/console/interface.md)). The thought is to put each act
+back **in the card it belongs to** — the reading and the act on it together:
+
+- **Maintenance:** `status` (read) with `apply-updates` beside it; a restart, and changing
+  the automatic-update time, if those become verbs
+  ([`vilice-open-questions.md`](vilice-open-questions.md)).
+- **Registries** as their own card on the machine page, with `registry-login` /
+  `registry-logout` — a box credential, so machine level.
+- **Each app on the box gets its own page.** The machine page shows one line per app with
+  a clear state indicator; the line leads to a page with that app's acts — deploy,
+  rollback, start, stop, restart, remove, backup, restore. Today a box app that has no
+  console `App` behind it has no page at all, only a row with `remove`.
+- **Backups follow the app**, since `backup` is per app; the machine page keeps only the
+  record's own snapshot.
+
+It reverses the two-zone layout, which was chosen so a reader never has to work out which
+kind of control they are looking at. What has to survive the move is that distinction —
+the command button already carries it (the mark and the verb). It also meets
+[`agents-and-the-console.md`](agents-and-the-console.md): if the console's operate
+becomes approve/deny, where a button sits matters less than where a proposal lands.
+
 ## Still-open sub-questions
 
 - **Machine-row name cell** — the protagonist of a machine row should be the box's

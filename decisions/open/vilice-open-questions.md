@@ -72,6 +72,51 @@ The console's Environment panel is in
 deployable app *is*, and the hooks question — is in
 [deploy-config-model.md](deploy-config-model.md).
 
+## `authorize` and `revoke` — may root run them?
+
+Today they run only as `_vilice`: every non-ceiling command refuses root, so the line is
+`sudo -u _vilice vilice authorize …`. The question is whether root may run them too.
+What it touches: the ledger path is resolved from the *running* user's home, so as root
+it would be root's own `authorized_keys` unless it targets `_vilice` by name and writes
+with that owner and mode; a grant-scope key must still be able to run both over SSH as
+`_vilice`; and "refuse bare root" is a corollary of
+[`../ceiling-is-the-machine.md`](../ceiling-is-the-machine.md), so allowing it is an
+exception to state, not a default to slip in. The case for: the operator setting up a box
+is already root, and the first `authorize` is the step people trip on.
+
+## The rights ledger — something cleaner than one `authorized_keys` file?
+
+One file, one line per grant, edited in place. Two shapes sshd already supports:
+
+- **`AuthorizedKeysCommand`** — sshd asks a program for the keys. A `vilice` verb could
+  answer from **one file per actor**, which makes `revoke` a delete, gives each grant
+  somewhere to keep an expiry (time-boxed grants, below), and makes the ledger data
+  rather than a line format. It needs an sshd_config change, so it is the ceiling's to
+  make, and the program must be root-owned.
+- **Several `AuthorizedKeysFile` paths.** Less: sshd reads a list of files, not a
+  directory.
+
+Open: whether the gain is worth moving the boundary's most-read sentence — today
+[`auth.md`](../../blueprint/vilice/auth.md) can say *the ledger is `authorized_keys`, and
+`cat` shows it*.
+
+## The command reference — grouped by what a verb acts on
+
+`vilice help` and the docs group verbs by **who runs them and at what scope** (root;
+authorize; operate; observe). A reader thinks in *the machine* and *an app*, and those
+are mixed inside "Operate":
+
+- **Machine:** `apply-updates`, `registry-login` / `registry-logout` (a box credential,
+  not part of any app), `route` (a balancer's table), and a restart or a maintenance
+  window if those become verbs (below).
+- **An app:** `deploy`, `rollback`, `start`, `stop`, `restart`, `remove`, `backup`,
+  `restore`. **`backup` is per app** (`backup <app>`, or `--all`, or `--machine` for the
+  record itself) — easy to read as a machine verb, and it is not.
+
+Open: a second grouping in help and on the site (by subject, inside scope), or scope
+shown as a badge and subject as the heading. The table in `dispatch.go` is the one
+source for both, so this is a field on a command, not a second list.
+
 ## Rescheduling the maintenance window
 
 Reading it is built — `status` reports the unattended-upgrades window and pending updates,
@@ -80,7 +125,10 @@ time is open.** It needs
 a `vilice maintenance --at HH:MM [--reboot on|off]` operate command that rewrites
 `/etc/apt/apt.conf.d/52-harden-unattended` — a **root-owned** file, so it needs the narrow
 `sudoers.d/vilice` pattern (same as `apply-updates`), recorded + witnessed. A *forced reboot
-now* would also bump the **no machine-reboot command** gap (kept off the surface for v1:
+now* would also bump the **no machine-reboot command** gap — sharper since `status`
+began reporting *Restart required*: the console can now say a restart is owed and can
+offer no way to do it. A `reboot` verb would be a third fixed command in the sudoers
+grant, and the one act that takes the box away from the caller mid-reply (kept off the surface for v1:
 "apply now" patches now; reboot stays on the schedule).
 
 ## Registry credential helpers — short-lived tokens
