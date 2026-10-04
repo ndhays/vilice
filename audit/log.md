@@ -1,6 +1,7 @@
 # Audit log
 
-The security-audit attestation, one entry per audited version. This is the committed
+The security-audit attestation, one entry per released version — `make release` refuses
+a version that has none. This is the committed
 verdict — the "this version was measured" record. Raw scanner output (`out/`) is
 regenerable and gitignored; only the human reading lives here.
 
@@ -38,6 +39,27 @@ Folded into harden/: <changes, or none>
 ---
 
 <!-- newest entries on top -->
+
+## v0.4.2 — 2026-10-04
+
+Code (make audit)
+- govulncheck: **clean** — "No vulnerabilities found."
+- gosec:       **clean** (policy: G301/G302/G304/G306 excluded; G204 annotated)
+- toolchain:   go1.27.1 (the `toolchain` floor in go.mod is go1.26.6)
+
+Box (make audit-box HOST=<box>)
+- **Not run.** No ssh-audit, nmap or Lynis baseline has been captured for any version;
+  it is still the open item in `decisions/open/vilice-open-questions.md`.
+- harden --check: not read for this entry.
+
+Folded into harden/: none.
+
+## v0.2.0 – v0.4.1 — no entries
+
+Nothing was written for these. `release` depends on `audit`, so every version cut with
+`make release` passed govulncheck and gosec at the time — but what they said was not
+recorded, and no box audit was run. From v0.4.2 `make release` refuses a version with no
+entry here (`audit-entry` in `vilice/Makefile`).
 
 ## v0.1.2 — 2026-06-10
 

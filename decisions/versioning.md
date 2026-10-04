@@ -17,9 +17,10 @@ version. Everything below follows from this.
 A release is a ceremony, not a commit. Cut one at a deliberate milestone — when the
 blueprint's promises are true and `make test` is green:
 
-1. bump `VERSION`, 2. `make release` (builds every arch in `ARCHES` — linux/amd64 and
-linux/arm64 — signs **each tarball separately**, self-verifies, copies to
-`release/published/`), 3. commit, 4. tag.
+1. bump `VERSION`, 2. write the version's entry in `audit/log.md` (`make audit` gives the
+numbers; `release` refuses without it), 3. `make release` (builds every arch in `ARCHES` —
+linux/amd64 and linux/arm64 — signs **each tarball separately**, self-verifies, copies to
+`release/published/`), 4. commit, 5. tag.
 
 One signature per artifact, never one covering several: a signature has to name exactly
 the bytes it vouches for. `install.sh` picks the arch from `uname -m` and refuses an

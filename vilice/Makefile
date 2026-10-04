@@ -18,7 +18,7 @@ ARCHES       ?= amd64 arm64
 GOVULN_VER   ?= v1.3.0
 GOSEC_VER    ?= v2.29.0
 
-.PHONY: build build-linux man test fuzz vet fmt check audit sign release keygen clean
+.PHONY: build build-linux man test fuzz vet fmt check audit audit-entry sign release keygen clean
 
 # Host-arch dev build.
 build:
@@ -116,8 +116,20 @@ sign: man
 	done
 	@ls -lh dist/$(VERSION)/
 
-# Publish the signed artifacts. Audited first — an unaudited version never ships.
-release: audit sign
+# The audit has to be written down, not just run. `audit/log.md` is the "this version was
+# measured" record, and it stopped at v0.1.2 while releases went on to 0.4 — the scans
+# ran every time and nobody recorded what they said. So a version with no entry does not
+# ship: read the output above, write the entry, run this again.
+audit-entry:
+	@grep -q '^## v$(VERSION) ' ../audit/log.md || { \
+	  echo "audit/log.md has no entry for v$(VERSION)."; \
+	  echo "  Write one from the template in that file (the scans above are the numbers),"; \
+	  echo "  then run 'make release' again."; \
+	  exit 1; }
+
+# Publish the signed artifacts. Audited first — an unaudited version never ships, and
+# neither does one whose audit was not written down.
+release: audit audit-entry sign
 	mkdir -p "$(RELEASE_DEST)/vilice/$(VERSION)"
 	@for arch in $(ARCHES); do \
 	  cp dist/$(VERSION)/vilice-linux-$$arch.tar.gz     "$(RELEASE_DEST)/vilice/$(VERSION)/" || exit 1; \

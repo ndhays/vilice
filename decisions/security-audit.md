@@ -44,9 +44,24 @@ which is the shape all of these should take.
 Build runs constantly in the dev loop; it stays fast and offline. The audit needs the
 network (vuln DB) and is slower, so it hangs off `release` instead (`release: audit
 sign`). Release is rare and deliberate — the right moment for "this version was
-measured." That gate *is* the teeth; **CI stays manual** on purpose (the process is
-deliberately slow). A govulncheck finding usually means the **build toolchain is behind**
-— the remediation is to bump Go to the latest patch release, not to touch the code.
+measured." That gate *is* the teeth for the **audit**, and the audit stays there:
+deliberate, at release, never on every push. A govulncheck finding usually means the
+**build toolchain is behind** — the remediation is to bump Go to the latest patch release,
+not to touch the code.
+
+**The tests are another matter, and they run on every push.** This doc once said CI stays
+manual on purpose. That held while one person ran `make test` before each commit; it
+stopped holding when a rename shipped a wrong account name in `prepare` that no test
+covered and nothing ran unasked, and when an outside read of the repo found that no check
+ran at all. `.github/workflows/ci.yml` runs `make check` — formatted, vetted, tested — and
+nothing more. The slow, deliberate part is still the release.
+
+**And the reading is written down, or the version does not ship.** `release` also depends
+on `audit-entry`, which refuses a version with no entry in
+[`audit/log.md`](../audit/log.md). The scans ran on every release from 0.2 to 0.4.1 and
+nobody recorded what they said: a gate that passes silently leaves no attestation, and
+the log is the attestation. Like the site's release guard, the fix for a number that
+drifts is a check, not a resolution to remember.
 
 ## gosec policy: G204 stays on, the perms/path rules don't
 
