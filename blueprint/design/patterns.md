@@ -179,8 +179,9 @@ underline. One hairline under the whole thing.
 today, that the project is a proof of concept. `--term-bg` with `--term-yellow`
 text: the one place the accent shouts, and it is contrast-safe there.
 
-**Footer.** Version, licences, source, and where the name comes from — *Named for the
-steward in Horace, Epistles 1.14*, in plain English, linking to the poem. It says what the
+**Footer.** Where the name comes from, first and at the far left — *Vilice is named for
+the steward in Horace, Epistles 1.14*, a whole sentence in plain English, linking to the
+poem — then version, licences, source. It says what the
 reference is, so nobody has to guess, and it is one click from anyone curious rather than
 on the first screen. `--text-sm`, `--ink-soft`, one hairline above.
 
