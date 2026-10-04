@@ -577,24 +577,6 @@ main > details > summary {
   margin: var(--space-4) 0 0;
 }
 
-/* The motto: the first line of the letter the name comes from, a step down from the
-   tagline and quieter, and a link to the whole poem. */
-.hero .motto {
-  font-family: var(--font-inscription);
-  font-size: var(--text-sm);
-  letter-spacing: 0.03em;
-  margin: var(--space-2) 0 0;
-}
-.hero .motto a {
-  color: var(--ink-faint);
-  text-decoration: none;
-}
-.hero .motto a:hover {
-  color: var(--ink-soft);
-  text-decoration: underline;
-  text-decoration-color: var(--brand-yellow);
-}
-
 /* The split: a figure beside the thing you would actually type. Below 640px it
    stacks, and the figure goes first because it is the smaller half. */
 .split {

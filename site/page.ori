@@ -64,6 +64,8 @@ ${ doc._body }
         Site built with <a href="https://weborigami.org">Web Origami</a>
         &nbsp;·&nbsp;
         <a href="https://github.com/ndhays/vilice">ndhays/vilice</a>
+        &nbsp;·&nbsp;
+        <a href="/horace.html">Named for the steward in Horace, <cite>Epistles</cite> 1.14</a>
       </span>
     </footer>
     <script src="/assets/copy.js" defer></script>

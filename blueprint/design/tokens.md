@@ -97,7 +97,7 @@ arrive (`font-display: swap`).
 | `--font-sans` | `"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif` |
 | `--font-mono` | `"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace` |
 | `--font-display` | `"Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif` — the docs home page title only |
-| `--font-inscription` | `"Cinzel", "Trajan Pro", Georgia, serif` — the lines under that title, and the headings of the Horace page |
+| `--font-inscription` | `"Cinzel", "Trajan Pro", Georgia, serif` — the line under that title, and the headings of the Horace page |
 
 **IBM Plex Mono is the code face** — it is the one the project already reads code
 in. IBM Plex Sans is its sibling: same designer, same skeleton, so the two sit
@@ -105,9 +105,9 @@ together without argument.
 
 **The display faces are for the home page's hero, and the page it links to.** The name
 in **Bodoni Moda** (after Giambattista Bodoni, Parma, 1798); beneath it in **Cinzel**
-(Roman inscriptional capitals) the tagline, then the motto — the letter's first line,
-quieter in `--ink-faint` and a step smaller, linking to the whole poem (`/horace.html`,
-Latin beside Conington's public-domain English, whose two headings are Cinzel too).
+(Roman inscriptional capitals) the tagline. Cinzel also sets the two headings of the
+poem page (`/horace.html`, Latin beside Conington's public-domain English), which the
+footer links to.
 Italian for the name, Horace's Rome for the steward it comes from
 ([`decisions/the-name-is-vilice.md`](../../decisions/the-name-is-vilice.md)). One weight
 each — Bodoni 600, Cinzel 400. Every other heading, the header wordmark, and

@@ -94,9 +94,9 @@ nothing else, and each of them appears only here.
 the one element on the site sized against the viewport rather than a token, because it
 is the one element that should fill the screen it lands on. Under it a short
 `--brand-yellow` rule (graphic use, carrying no meaning), then the tagline in
-`--font-inscription` at `--text-xl`, then the motto — the first line of Horace's letter,
-`--text-sm` in `--ink-faint`, linking to the whole poem. The faces are in
-[`tokens.md`](tokens.md).
+`--font-inscription` at `--text-xl`, and nothing else. The name and one line: a third
+line of Latin under an English tagline read as that tagline's translation. The faces are
+in [`tokens.md`](tokens.md).
 
 **The split.** A two-column card, figure on the left and the command you would
 actually type on the right, `1fr / 3fr` so the command has the room. It stacks below
@@ -179,8 +179,10 @@ underline. One hairline under the whole thing.
 today, that the project is a proof of concept. `--term-bg` with `--term-yellow`
 text: the one place the accent shouts, and it is contrast-safe there.
 
-**Footer.** Version, licences, source. `--text-sm`, `--ink-soft`, one hairline
-above.
+**Footer.** Version, licences, source, and where the name comes from — *Named for the
+steward in Horace, Epistles 1.14*, in plain English, linking to the poem. It says what the
+reference is, so nobody has to guess, and it is one click from anyone curious rather than
+on the first screen. `--text-sm`, `--ink-soft`, one hairline above.
 
 **Skip link.** First focusable element on every page, hidden until focused.
 
