@@ -13,6 +13,7 @@
 /site/node_modules/
 /site/dist/
 /site/dist-get/
+/site/.wrangler/
 
 # OS / editor cruft
 .DS_Store

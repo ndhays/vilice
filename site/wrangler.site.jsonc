@@ -1,0 +1,10 @@
+// vilice.org — the docs and the App Library. Published by `make publish`, after
+// get.vilice.org, so the install line it prints works the moment someone copies it.
+{
+  "name": "vilice-site",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./dist" },
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [ { "pattern": "vilice.org", "custom_domain": true } ]
+}

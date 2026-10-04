@@ -183,7 +183,9 @@ resolve to an installer. A hostname that only redirects carries a proxied record
 
 **The gate, for every publish:** `get.vilice.org` does not go live until the key answers
 at its Codeberg path, and the docs site does not go live before `get.vilice.org` — the
-install line it prints must work the moment someone copies it. An installer pointed at a path that does
+install line it prints must work the moment someone copies it. `make publish` is that
+gate as a script: it compares the Codeberg key with the one in this repo, uploads the
+installer host, confirms it serves the version, and only then uploads the docs. An installer pointed at a path that does
 not answer fails every install.
 
 ## Not claimed: package registries
@@ -240,6 +242,12 @@ the day there is something real to publish, such as a Ruby client or an MCP serv
   also the familiar convention.
 - **The source under a company account** (`github.com/obelisqueops/vilice`). Considered
   and dropped for `ndhays/vilice`: the project is personal, and the repo should say so.
+- **Deploying on push**, with the repository connected to the host. For
+  `get.vilice.org` it cannot work — the release needs the signing key, which is in no CI
+  — and it must not: a push that changes the `install.sh` root runs puts GitHub in the
+  trust path, the one thing the layout above keeps it out of. For the docs it is possible
+  and declined for now: that page carries the install line people copy, and releases are
+  rare enough that one command from a laptop is no burden.
 - **`vilice.dev` as the home.** Its HTTPS-only default can be had on .org through HSTS
   preload, and .org says open source. Not held; cheap to add as a blocker for a
   lookalike install page.

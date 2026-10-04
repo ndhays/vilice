@@ -17,6 +17,13 @@ Two hosts, two outputs. `dist/` is the docs site. `dist-get/` is the installer h
 cannot reach what root runs. Publish `dist-get/` first — the docs' install line must
 work the moment someone copies it.
 
+**Publishing is `make publish`, from the repo root** — one deliberate command on a machine
+that holds the release, never a push. It checks that the key on Codeberg is the key in
+this repo, uploads `dist-get/`, confirms `get.vilice.org` serves the new version, and only
+then uploads `dist/`. `make publish-check` does all the checking and uploads nothing. The
+two hosts are declared in `wrangler.get.jsonc` and `wrangler.site.jsonc`; Cloudflare
+access comes from `npx wrangler login` or `CLOUDFLARE_API_TOKEN`.
+
 ## How it's wired
 
 - `content/*.md` — the hand-written pages (Markdown + front-matter `title`, `nav`):
