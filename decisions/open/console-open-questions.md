@@ -26,11 +26,22 @@ once:
 - **Anyone else running the console.** The docs say it can run locally; it cannot.
 - **CI for the console.** The Go binary is checked on every push
   (`.github/workflows/ci.yml`); the Rails half has no check at all.
-- **A published image** — the build-context note under "App image registry" below.
+- **A published image** — the build-context note under "App image registry" below, and
+  the repo-root `VERSION` file (after this list).
 
 The ways out are the usual ones: publish Boxcar and take it from a git source or a gem
 server, or vendor it into this repository. Not decided, and the first one waits on
 whether Boxcar is ready to be public.
+
+**The image has a second reach outside `console/`:** the repo-root `VERSION` file.
+`config/initializers/version.rb` reads `Rails.root.join("..", "VERSION")` so the console
+and the CLI share one version, and in an image built from `console/` that is `/VERSION`,
+which is not there — `assets:precompile` aborts. A local clone is fine; the image is not.
+Found on the first image build, 2026-10-22, which got past it with a second build context
+(`--build-context root=…` and `COPY --from=root VERSION /VERSION` in both stages). The ways
+out: build from the repo root (a context that sees `VERSION`, and Boxcar too if it is
+vendored), or stamp the version in at build time (`ARG VERSION`, written into the image),
+keeping the one file as the source. Nothing else in the console reads above `console/`.
 
 ## Host keys — whose memory, and who forgets
 
