@@ -7,4 +7,4 @@ go 1.22
 // code change (see ../decisions/security-audit.md). 1.26.6 carries the net/url,
 // crypto/tls, encoding/asn1 and net/http fixes that 1.26.5 lacked. The `go` line above
 // stays the language floor, which is a separate thing.
-toolchain go1.26.6
+toolchain go1.27.3
