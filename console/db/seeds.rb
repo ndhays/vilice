@@ -10,6 +10,11 @@
 # worlds) and leans on the fake-observe seam for health — boot with
 # VILICE_FAKE_OBSERVE=1, or just use `bin/scenario <name>`, which sets the
 # flags for you. See db/seeds/README.md.
+# A deployed console is not seeded: every scenario signs in as operator@console.test /
+# password. Its first user comes from the deploy instead (User.create_first, called by
+# bin/docker-entrypoint on every boot).
+return unless Rails.env.local?
+
 require_relative "seeds/shared"
 
 name = ENV.fetch("SCENARIO", "empty")

@@ -24,24 +24,20 @@ maintainer. An outside read of the repo found it first, and it blocks three thin
 once:
 
 - **Anyone else running the console.** The docs say it can run locally; it cannot.
-- **CI for the console.** The Go binary is checked on every push
-  (`.github/workflows/ci.yml`); the Rails half has no check at all.
-- **A published image** — the build-context note under "App image registry" below, and
-  the repo-root `VERSION` file (after this list).
+- **CI for the console on GitHub.** The Go binary is checked on every push
+  (`.github/workflows/ci.yml`); the console's `bin/ci` runs only where Boxcar sits beside
+  the repo — today the maintainer's build machine.
+- **A published image** — for anyone but the maintainer. `make image` builds one with
+  Boxcar as a build context
+  ([`the-console-image-is-built-from-a-commit.md`](../the-console-image-is-built-from-a-commit.md)),
+  which needs the sibling checkout.
 
 The ways out are the usual ones: publish Boxcar and take it from a git source or a gem
 server, or vendor it into this repository. Not decided, and the first one waits on
 whether Boxcar is ready to be public.
 
-**The image has a second reach outside `console/`:** the repo-root `VERSION` file.
-`config/initializers/version.rb` reads `Rails.root.join("..", "VERSION")` so the console
-and the CLI share one version, and in an image built from `console/` that is `/VERSION`,
-which is not there — `assets:precompile` aborts. A local clone is fine; the image is not.
-Found on the first image build, 2026-10-22, which got past it with a second build context
-(`--build-context root=…` and `COPY --from=root VERSION /VERSION` in both stages). The ways
-out: build from the repo root (a context that sees `VERSION`, and Boxcar too if it is
-vendored), or stamp the version in at build time (`ARG VERSION`, written into the image),
-keeping the one file as the source. Nothing else in the console reads above `console/`.
+The image's other reach outside `console/`, the repo-root `VERSION`, is settled: it
+arrives as a build context too.
 
 ## Host keys — whose memory, and who forgets
 
@@ -220,16 +216,6 @@ on Vilice reporting per-app container state).
   [`status-signals.md`](status-signals.md).
 - Where Vilice Console's observe key lives in a real deployment (not `/tmp`; seeds read
   `/tmp/sy_key` only for local dev).
-
-## App image registry — ghcr to start
-
-Vilice Console (and other apps) build to a container image that Vilice deploys. Start with
-**ghcr.io**; roll-your-own registry is the open alternative. **Sub-question (real):** a
-deployable image needs Boxcar *in the build context*, but locally Boxcar is a **path
-gem** pointing at a sibling checkout — which Docker/Podman builds can't see. Options:
-`podman build --build-context boxcar=../../boxcar-rails` (+ COPY in the Dockerfile),
-a git source for the image build, or vendoring at build time. Pick one when `make
-image` needs to actually ship.
 
 ## Secrets & credentials — what belongs in an open repo
 

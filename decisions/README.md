@@ -64,6 +64,7 @@ The settled *why*, one line per document. What the system *is* lives in
 - [appearance-belongs-to-the-operator](appearance-belongs-to-the-operator.md) — theme and mode are stored on the user.
 - [console-build-choices](console-build-choices.md) — Rails 8 auth, Boxcar used sparingly, the cache store.
 - [secrets-come-from-the-deployment](secrets-come-from-the-deployment.md) — the repo ships no credentials; production reads its keys from the environment.
+- [the-console-image-is-built-from-a-commit](the-console-image-is-built-from-a-commit.md) — `make image`: Boxcar and VERSION as build contexts, tagged by commit, deployed by digest.
 - [scenario-seeds](scenario-seeds.md) — named dev scenarios, and a dev-only fake for machine health.
 
 ## The project

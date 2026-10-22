@@ -22,7 +22,11 @@ module Scenario
     Rails.cache.clear
   end
 
+  # A known login, for dev and test only. Seeds run on a new production database too
+  # (`db:prepare`), and a deployed console with this account is open to anyone.
   def operator!
+    raise "operator@console.test is for dev and test, never #{Rails.env}" unless Rails.env.local?
+
     User.find_or_create_by!(email_address: "operator@console.test") { |u| u.password = "password" }
   end
 

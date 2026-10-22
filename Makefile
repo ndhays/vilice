@@ -48,12 +48,30 @@ publish: publish-check
 	cd site && $(WRANGLER) deploy --config wrangler.site.jsonc
 	@echo "✓ published v$(RELEASE): $(GET_HOST), then https://vilice.org"
 
-# --- Vilice Console image (registry: ghcr.io to start; override IMAGE) ---
-# NOTE: Boxcar is a local path gem, which a plain build context can't see. A
-# deployable image needs Boxcar in-context (podman build --build-context, a git
-# source, or vendor-at-build). See decisions/open/console-open-questions.md.
-IMAGE ?= ghcr.io/agoraforge/vilice-console
-TAG   ?= $(shell cat VERSION)
+# --- Vilice Console image ----------------------------------------------------------
+# Built from commits only, for the boxes' architecture, and tagged with the commit — so
+# an image always names the code in it. Boxcar (a path gem in a sibling checkout) and
+# VERSION (the repo root's) are outside console/, so they arrive as named build
+# contexts. Vilice deploys by digest, so there is no `latest`: `push` prints the digest
+# to deploy. Override IMAGE for your registry, e.g. IMAGE=zot.example.com/vilice-console.
+IMAGE    ?= ghcr.io/agoraforge/vilice-console
+PLATFORM ?= linux/amd64
+BOXCAR   ?= ../boxcar-rails
+REV       = $(shell git rev-parse --short HEAD)
 
-image:        ; podman build -t $(IMAGE):$(TAG) -t $(IMAGE):latest console
-push:         ; podman push $(IMAGE):$(TAG) && podman push $(IMAGE):latest
+image:
+	@test -z "$$(git status --porcelain)" || { \
+	  echo "uncommitted changes — an image is built from a commit:"; git status --short; exit 1; }
+	@test -d "$(BOXCAR)" || { echo "Boxcar not found at $(BOXCAR) (set BOXCAR=…)"; exit 1; }
+	@test -z "$$(git -C $(BOXCAR) status --porcelain)" || { \
+	  echo "uncommitted changes in $(BOXCAR) — Boxcar goes in as a commit too"; exit 1; }
+	podman build --platform $(PLATFORM) \
+	  --build-context boxcar=$(BOXCAR) --build-context repo=. \
+	  --label org.opencontainers.image.revision=$$(git rev-parse HEAD) \
+	  --label org.opencontainers.image.version=$$(cat VERSION) \
+	  --label boxcar.revision=$$(git -C $(BOXCAR) rev-parse HEAD) \
+	  -t $(IMAGE):$(REV) console
+
+push:
+	@d=$$(mktemp); podman push --digestfile $$d $(IMAGE):$(REV) && \
+	  echo "pushed. Deploy it as: $(IMAGE)@$$(cat $$d)"; rm -f $$d

@@ -367,6 +367,13 @@ open heartbeat question.
 ## Auth
 - `User`, `Session` — operators who log into Vilice Console (Boxcar / Rails 8 auth).
   Vilice Console's own **web** auth; distinct from the scoped-SSH keys it holds per Machine.
+- **The first user of a deployed console comes from the deploy.** A box has no shell to
+  run a command in, so the spec carries `CONSOLE_ADMIN_EMAIL` and a secret
+  `CONSOLE_ADMIN_PASSWORD` (off the record), and every boot runs `console:first_user`
+  (`bin/docker-entrypoint`): it creates that user only while there are none, so a value
+  left in the spec can never reset a password or add an account. Production is never
+  seeded — the scenarios' `operator@console.test` / `password` refuses to exist outside
+  dev and test.
 
 ---
 
