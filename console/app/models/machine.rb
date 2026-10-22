@@ -44,8 +44,16 @@ class Machine < ApplicationRecord
        default: "dedicated", prefix: :sharing
 
   validates :name, presence: true, uniqueness: true
-  validates :ssh_host, presence: true
-  validates :ssh_user, presence: true
+  # Both reach ssh as `user@host`, one argument on its command line. A value starting
+  # with a dash would be read as an option — `-oProxyCommand=…` runs a command on the
+  # console's own host — so neither may, and neither may carry a space, an `@`, or
+  # anything else a hostname, an IP address, or a login name never has. `ssh` passes
+  # `--` before the destination as well (Vilice#ssh), so a row written before this
+  # check still cannot be read as an option.
+  validates :ssh_host, presence: true, format: { with: /\A[A-Za-z0-9:][A-Za-z0-9.:-]*\z/,
+    message: "must be a hostname or an IP address" }
+  validates :ssh_user, presence: true, format: { with: /\A[A-Za-z0-9_][A-Za-z0-9_.-]*\z/,
+    message: "must be a login name" }
   validates :ssh_port, numericality: { only_integer: true, in: 1..65_535 }
 
   # Shared in any form — anything but dedicated (for counts and badges).

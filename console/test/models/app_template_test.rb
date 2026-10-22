@@ -31,7 +31,17 @@ class AppTemplateTest < ActiveSupport::TestCase
     assert AppTemplate.new(name: "a", health: "/up").valid?
     app = AppTemplate.new(name: "a", health: "up")
     assert_not app.valid?
-    assert_includes app.errors[:health], "must start with /"
+    assert_includes app.errors[:health], "must start with / and have no spaces"
+  end
+
+  # The whole value is a path, not just its first character: a newline after the slash
+  # would otherwise pass.
+  test "health is matched whole" do
+    [ "/up\nX-Evil: 1", "/up now", "/up\t" ].each do |bad|
+      assert_not AppTemplate.new(name: "a", health: bad).valid?, bad.inspect
+      assert_not App.new(name: "a", health: bad).tap(&:valid?).errors[:health].empty?, bad.inspect
+    end
+    assert AppTemplate.new(name: "a", health: "/v2/").valid?
   end
 
   test "latest_version is the one flagged latest, and set_latest! keeps exactly one" do

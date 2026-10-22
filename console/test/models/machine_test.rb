@@ -27,6 +27,21 @@ class MachineTest < ActiveSupport::TestCase
     refute new_machine(name: nil).valid?
   end
 
+  # The destination is one argument on ssh's command line; a leading dash would make it
+  # an option, and -oProxyCommand runs a command on the console's host.
+  test "ssh host and user cannot be read as ssh options" do
+    [ "-oProxyCommand=touch /tmp/x", "host name", "a@b", "host\n", "" ].each do |bad|
+      refute new_machine(ssh_host: bad).valid?, "host #{bad.inspect}"
+    end
+    [ "-oProxyCommand=x", "a b", "a@b" ].each do |bad|
+      refute new_machine(ssh_user: bad).valid?, "user #{bad.inspect}"
+    end
+    [ "10.0.0.1", "box.example.com", "2001:db8::1", "::1", "vm-devbox" ].each do |ok|
+      assert new_machine(ssh_host: ok).valid?, "host #{ok.inspect}"
+    end
+    assert new_machine(ssh_user: "_vilice").valid?
+  end
+
   test "a dedicated box permits only its owner; sharing widens it (machine-ownership)" do
     a = Project.create!(name: "A-#{SecureRandom.hex(2)}")
     b = Project.create!(name: "B-#{SecureRandom.hex(2)}")

@@ -32,8 +32,8 @@ class AppTemplate < ApplicationRecord
   # blank means "no app default", and the box falls back (port 8080, health "/").
   validates :port, numericality: { only_integer: true, greater_than_or_equal_to: 1024,
                                     less_than_or_equal_to: 65535 }, allow_nil: true
-  # Health is a URL path Caddy probes — it must start with "/".
-  validates :health, format: { with: %r{\A/}, message: "must start with /" }, allow_blank: true
+  # Health is a URL path the box probes: it starts with "/", and the whole of it is a path.
+  validates :health, format: { with: %r{\A/[^[:space:][:cntrl:]]*\z}, message: "must start with / and have no spaces" }, allow_blank: true
 
   # The app's declared inputs — *names only*, no values (values are supplied at install).
   #   env          : [{ "key" => "PASSWORD", "secret" => true }, …]  — secret? = off-record.

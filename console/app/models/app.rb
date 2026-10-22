@@ -26,7 +26,7 @@ class App < ApplicationRecord
                    format: { with: NAME_FORMAT, message: "must start with a letter or digit, then letters, digits, dashes, and underscores" }
   validates :port, numericality: { only_integer: true, greater_than_or_equal_to: 1024,
                                    less_than_or_equal_to: 65535 }, allow_nil: true
-  validates :health, format: { with: %r{\A/}, message: "must start with /" }, allow_blank: true
+  validates :health, format: { with: %r{\A/[^[:space:][:cntrl:]]*\z}, message: "must start with / and have no spaces" }, allow_blank: true
 
   # How the app is reached, which is what decides whether a count above 1 can mean
   # anything (decisions/one-primitive-composed.md). On the edge, DNS points at the box and

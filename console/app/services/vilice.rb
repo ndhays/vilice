@@ -322,7 +322,8 @@ module Vilice
         "-o", "PreferredAuthentications=publickey",
         "-o", "PasswordAuthentication=no",
         "-p", machine.ssh_port.to_s,
-        "#{machine.ssh_user}@#{machine.ssh_host}", command
+        # `--` ends ssh's options: whatever the destination holds, it is a destination.
+        "--", "#{machine.ssh_user}@#{machine.ssh_host}", command
       ]
       # stdout and stderr apart: the reply is JSON on stdout, and everything else the
       # box says — its tools' output, ssh's own errors — is on stderr.
