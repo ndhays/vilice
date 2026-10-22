@@ -84,8 +84,16 @@ open heartbeat question.
 - `ssh_private_key` — **encrypted** (Active Record Encryption) → see decision 2
 - `ssh_public_key` — the authorized half (not secret). Vilice Console generates the keypair at
   onboarding (`SshKeypair`); the operator `vilice authorize`s this pubkey on the box.
-  `Machine#authorize_command` renders that line. See
+  `Machine#authorize_command` renders that line, and the authorize panels show
+  `Machine#ssh_key_fingerprint` beside it, to compare with `vilice actors` on the box. See
   `../../decisions/open/create-machine.md`.
+- `ssh_host_key`, `ssh_host_key_trusted_at` — the box's own host key, `type base64`,
+  **pinned here**, not in the console user's `known_hosts`. Every ssh call trusts this one
+  key and nothing else. With none, the first call that authenticates pins the key the box
+  answered with; a different key is refused until someone compares fingerprints and
+  trusts the new one (Machine Settings → *The box's key*). Both are recorded
+  (`trusted host key`). See
+  [`host-keys-are-pinned-on-the-machine.md`](../../decisions/host-keys-are-pinned-on-the-machine.md).
 - has_many `projects, through: project_machines`; has_many `granted_projects, through:
   machine_grants` (the `list`-mode allowlist); has_many `labels` (polymorphic)
 

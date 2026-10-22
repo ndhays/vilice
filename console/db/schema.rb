@@ -10,20 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_130000) do
   create_table "app_templates", force: :cascade do |t|
-    t.json "accessories", default: [], null: false
     t.datetime "created_at", null: false
     t.string "description"
     t.json "env", default: [], null: false
     t.string "health"
     t.string "name", null: false
     t.integer "port"
-    t.json "processes", default: [], null: false
-    t.json "release", default: [], null: false
     t.json "secret_files", default: [], null: false
-    t.boolean "stop_first", default: false, null: false
     t.datetime "updated_at", null: false
+    t.json "release", default: [], null: false
+    t.json "accessories", default: [], null: false
+    t.json "processes", default: [], null: false
+    t.boolean "stop_first", default: false, null: false
     t.index ["name"], name: "index_app_templates_on_name", unique: true
   end
 
@@ -40,9 +40,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.string "name", null: false
     t.integer "port"
     t.integer "project_id"
-    t.text "secret_values"
     t.datetime "updated_at", null: false
     t.integer "version_id"
+    t.text "secret_values"
     t.index ["app_template_id"], name: "index_apps_on_app_template_id"
     t.index ["balancer_id"], name: "index_apps_on_balancer_id"
     t.index ["project_id"], name: "index_apps_on_project_id"
@@ -52,19 +52,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
   create_table "events", force: :cascade do |t|
     t.string "action", null: false
     t.string "actor", null: false
-    t.integer "app_id"
     t.datetime "at", null: false
     t.datetime "created_at", null: false
     t.text "detail"
-    t.integer "exit_status"
     t.datetime "finished_at"
+    t.integer "app_id"
     t.integer "machine_id"
     t.string "outcome"
-    t.json "output"
     t.integer "project_id"
     t.json "raw", default: {}, null: false
     t.string "summary"
     t.datetime "updated_at", null: false
+    t.json "output"
+    t.integer "exit_status"
     t.index ["app_id"], name: "index_events_on_app_id"
     t.index ["at"], name: "index_events_on_at"
     t.index ["machine_id"], name: "index_events_on_machine_id"
@@ -107,17 +107,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.text "ssh_public_key"
     t.string "ssh_user", default: "root", null: false
     t.string "status", default: "unknown", null: false
-    t.datetime "updated_at", null: false
     t.string "vilice_version"
+    t.datetime "updated_at", null: false
+    t.text "ssh_host_key"
+    t.datetime "ssh_host_key_trusted_at"
     t.index ["name"], name: "index_machines_on_name", unique: true
     t.index ["owner_id"], name: "index_machines_on_owner_id"
   end
 
   create_table "placements", force: :cascade do |t|
-    t.integer "app_id", null: false
     t.datetime "created_at", null: false
     t.string "current_image"
     t.string "desired_image"
+    t.integer "app_id", null: false
     t.integer "machine_id", null: false
     t.integer "position", default: 0, null: false
     t.string "status", default: "pending", null: false
@@ -159,8 +161,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
   end
 
   create_table "settings", force: :cascade do |t|
-    t.boolean "apps_library_only", default: true, null: false
     t.datetime "created_at", null: false
+    t.boolean "apps_library_only", default: true, null: false
     t.datetime "updated_at", null: false
   end
 

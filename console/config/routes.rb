@@ -91,6 +91,10 @@ Rails.application.routes.draw do
     # carries a password: that goes to the box on stdin and is kept nowhere. Logging out
     # is an ordinary ceremony act.
     resource :registry, only: %i[ new create ], module: :machines, controller: "registries"
+    # The box's host key: what it answers with now beside the key the console trusts, and
+    # the act that replaces it. Not a ceremony act — it runs nothing on the box; it
+    # changes what the console will accept from it, and is recorded as that.
+    resource :host_key, only: %i[ show update ], module: :machines, controller: "host_keys"
     resources :labels, only: %i[ create destroy ], shallow: true
     member do
       # Observe — re-read the machine's live status, bypassing the 30s cache. It

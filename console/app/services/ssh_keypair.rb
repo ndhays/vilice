@@ -19,4 +19,16 @@ module SshKeypair
       { private: File.read(path), public: File.read("#{path}.pub").strip }
     end
   end
+
+  # The SHA256 fingerprint of a key line (`type base64 [comment]`), the form `ssh-keygen
+  # -lf`, ssh's own prompts and the box's `vilice actors` print: SHA256 of the key blob,
+  # base64 without padding. nil when the line holds no key.
+  def fingerprint(line)
+    blob = Base64.strict_decode64(line.to_s.split[1].to_s)
+    return if blob.empty?
+
+    "SHA256:#{Base64.strict_encode64(Digest::SHA256.digest(blob)).delete('=')}"
+  rescue ArgumentError
+    nil
+  end
 end

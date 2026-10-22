@@ -152,8 +152,9 @@ class ViliceTest < ActiveSupport::TestCase
 
   # ── A changed host key ────────────────────────────────────────────────────
   # ssh refuses, rightly, and says so in forty lines of capitals. The console says what
-  # happened, the one command for the innocent case, and that the other case exists.
-  test "a changed host key is named, with the command that forgets the old one" do
+  # happened, where the innocent case is fixed — the box's key, in Machine Settings,
+  # not a command in a container nobody can open — and that the other case exists.
+  test "a changed host key is named, and points to where the new one is compared" do
     banner = "@@@@@@@@@@@\n@ WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED! @\n@@@@@@@@@@@\n" \
              "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!\nHost key verification failed."
     with_fake_vilice do |vilice|
@@ -165,18 +166,11 @@ class ViliceTest < ActiveSupport::TestCase
       refute res[:reached]
       assert res[:host_key_changed]
       assert_match(/different SSH host key/, res[:error])
-      assert_match(/ssh-keygen -R 10\.0\.0\.1/, res[:error])
+      assert_match(/Machine Settings → The box's key/, res[:error])
+      refute_match(/ssh-keygen -R/, res[:error], "no command to run where the console runs")
       assert_match(/something else is answering/, res[:error])
       refute_match(/NASTY/, res[:error])
       assert_match(/NASTY/, res[:output], "ssh's own words are kept, underneath")
-    end
-  end
-
-  test "the forget command names the port when it is not 22" do
-    box = Machine.create!(name: "odd-port", ssh_host: "10.0.0.9", ssh_port: 2222)
-    with_fake_vilice do |vilice|
-      vilice.on(/status/, stdout: "", stderr: "Host key verification failed.", success: false, exit_status: 255)
-      assert_match(/ssh-keygen -R \[10\.0\.0\.9\]:2222/, Vilice::Observe.status(box, refresh: true)[:error])
     end
   end
 

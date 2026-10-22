@@ -851,9 +851,11 @@ apt did.
 
 **A changed host key is named.** ssh refuses a host that answers with a different key
 than it remembered — rightly: that is a machine in the middle, and also a rebuilt box.
-Its own message is forty lines of capitals, so the console says what happened, gives the
-one command for the innocent case (`ssh-keygen -R <host>`, as the user the console runs
-as), and says the other case exists. No "check the box is up" hint is added to it. A failed act that never reached its box has `Machine#connection_hint`
+Its own message is forty lines of capitals, so the console says what happened, points
+the innocent case to Machine Settings → *The box's key* — both fingerprints side by side,
+and *Trust the new key*, a recorded act — and says the other case exists. The key itself
+is pinned on the Machine
+([`host-keys-are-pinned-on-the-machine.md`](../../decisions/host-keys-are-pinned-on-the-machine.md)). No "check the box is up" hint is added to it. A failed act that never reached its box has `Machine#connection_hint`
 appended to the alert — *the authorize line has most likely not been run* for a box that has
 never answered, *check the box and the provider's own firewall* for one we had and lost.
 That firewall is the biggest gotcha in

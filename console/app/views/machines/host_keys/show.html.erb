@@ -1,0 +1,55 @@
+<% content_for :title, "The box’s key — #{@machine.name} — Vilice" %>
+
+<%= breadcrumb [["Machines", machines_path], [@machine.name, machine_path(@machine)], ["Settings", settings_machine_path(@machine)], ["The box’s key", nil]] %>
+
+<%= page_header "#{@machine.name}’s key", icon: "shield" %>
+
+<p class="note">Every box has a key of its own that proves it is that box. Vilice trusts
+  one key per machine and refuses a box that answers with another — which is what a
+  rebuilt box does, and also what something else answering at its address does.</p>
+
+<% trusted = @machine.ssh_host_key_fingerprint %>
+<% offered = SshKeypair.fingerprint(@offered) %>
+
+<dl class="facts">
+  <dt>Vilice trusts</dt>
+  <dd>
+    <% if trusted %>
+      <code><%= trusted %></code>
+      <% if @machine.ssh_host_key_trusted_at %>
+        <span class="muted">since <%= l(@machine.ssh_host_key_trusted_at, format: :long) %></span>
+      <% end %>
+    <% else %>
+      <span class="muted">No key yet. The first time Vilice gets through, it trusts the key the box answers with, and records it.</span>
+    <% end %>
+  </dd>
+  <dt>The box answers with</dt>
+  <dd>
+    <% if offered %>
+      <code><%= offered %></code>
+    <% else %>
+      <span class="muted">Nothing — <%= @machine.ssh_host %> did not answer on port <%= @machine.ssh_port %>.</span>
+    <% end %>
+  </dd>
+</dl>
+
+<% if offered && trusted == offered %>
+  <p class="note">They match. Nothing to do.</p>
+<% elsif offered %>
+  <div class="flash alert">
+    <p><strong>They differ.</strong> Trust the new key only if you rebuilt or reinstalled
+      this box. If you did not, something else may be answering at
+      <code><%= @machine.ssh_host %></code> — do not trust it.</p>
+    <p>To be sure, compare with the box itself. From a shell on the box:</p>
+    <%= command_block("ssh-keygen -lf /etc/ssh/ssh_host_#{HostKey.key_type(@offered)}_key.pub") %>
+  </div>
+
+  <%= form_with url: machine_host_key_path(@machine), method: :patch, class: "stack-form" do |f| %>
+    <%= hidden_field_tag :fingerprint, offered %>
+    <p class="note muted">Recorded: who trusted it, the new fingerprint, and the one it replaces.</p>
+    <div class="form-actions">
+      <%= f.button "Trust the new key", class: "btn mutate" %>
+      <%= link_to "Cancel", settings_machine_path(@machine, anchor: "host-key"), class: "btn-quiet" %>
+    </div>
+  <% end %>
+<% end %>

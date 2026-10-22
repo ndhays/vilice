@@ -1,10 +1,10 @@
 {
   "ignored_warnings": [
     {
-      "fingerprint": "8e0dda8017245f2ac4d58ed9380b0437dbf9acc0a400464827acae0d436b7ce2",
+      "fingerprint": "a895dc43b2c6b9f0ec4356f783c4cd0008d9e75068c58bfd4a425ea1021c76e9",
       "warning_type": "Command Injection",
       "file": "app/services/vilice.rb",
-      "note": "argv, never a shell (Open3 with an array). The one interpolated argument is user@host, and it cannot become an ssh option: Machine validates ssh_host and ssh_user to a hostname/IP and a login name with no leading dash, and the argv puts -- before it. The command after it is sent to the box's forced command, which validates it there."
+      "note": "argv, never a shell (Open3 with an array). Two interpolated arguments: user@host, which cannot become an ssh option (Machine validates ssh_host and ssh_user to a hostname/IP and a login name with no leading dash, and the argv puts -- before it); and UserKnownHostsFile=<path>, a Tempfile path the console made (HostKey.with_known_hosts). The command after the destination is sent to the box's forced command, which validates it there."
     }
   ],
   "brakeman_version": "8.1.0"

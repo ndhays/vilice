@@ -299,36 +299,55 @@ module Vilice
     err.to_s.match?(/REMOTE HOST IDENTIFICATION HAS CHANGED|Host key verification failed/)
   end
 
-  # ssh's own text for this is forty lines of capitals. Say what happened, the one
-  # command that fixes the innocent case, and that the other case exists.
+  # ssh's own text for this is forty lines of capitals. Say what happened, where the
+  # innocent case is fixed, and that the other case exists.
   def host_key_message(machine)
-    host = machine.ssh_port.to_i == 22 ? machine.ssh_host : "[#{machine.ssh_host}]:#{machine.ssh_port}"
     "#{machine.name} answered with a different SSH host key than the one Vilice Console " \
-      "remembered, so it refused to connect. If you rebuilt the box, forget the old key — " \
-      "run `ssh-keygen -R #{host}` as the user the console runs as — and read it again. " \
-      "If you did not, something else is answering at that address."
+      "trusts, so it refused to connect. If you rebuilt the box, compare the two and trust " \
+      "the new one under Machine Settings → The box's key. If you did not, something else " \
+      "is answering at that address."
   end
 
+  # The box's host key is pinned on the Machine, and each call gets a known_hosts file
+  # holding that key alone (HostKey). With none pinned yet, the first contact is trusted —
+  # and pinned only once the call got through, which means the box accepted the key it
+  # authorized: a mistyped address answers, but it does not authenticate.
   def ssh(machine, command, stdin: nil)
     with_key(machine) do |key_path|
-      cmd = [
-        "ssh", "-i", key_path,
-        "-o", "IdentitiesOnly=yes",
-        "-o", "StrictHostKeyChecking=accept-new",
-        "-o", "ConnectTimeout=10",
-        # Never prompt: a read must fail fast, not block the request on an
-        # interactive password fallback when the key is wrong or the box is gone.
-        "-o", "BatchMode=yes",
-        "-o", "PreferredAuthentications=publickey",
-        "-o", "PasswordAuthentication=no",
-        "-p", machine.ssh_port.to_s,
-        # `--` ends ssh's options: whatever the destination holds, it is a destination.
-        "--", "#{machine.ssh_user}@#{machine.ssh_host}", command
-      ]
-      # stdout and stderr apart: the reply is JSON on stdout, and everything else the
-      # box says — its tools' output, ssh's own errors — is on stderr.
-      stdin ? Open3.capture3(*cmd, stdin_data: stdin) : Open3.capture3(*cmd)
+      HostKey.with_known_hosts(machine) do |known_hosts, pinned|
+        out, err, st = ssh_call(machine, command, key_path, known_hosts, pinned, stdin)
+        if !pinned && st.exitstatus != 255
+          HostKey.pin_first_contact(machine, known_hosts, actor: Current.user&.email_address || "console")
+        end
+        [ out, err, st ]
+      end
     end
+  end
+
+  def ssh_call(machine, command, key_path, known_hosts, pinned, stdin)
+    cmd = [
+      "ssh", "-i", key_path,
+      "-o", "IdentitiesOnly=yes",
+      # Only the pinned key, never the console user's own files: what is trusted lives
+      # on the Machine. `yes` once a key is pinned — a different one is refused, and
+      # only a person replaces it.
+      "-o", "UserKnownHostsFile=#{known_hosts}",
+      "-o", "GlobalKnownHostsFile=/dev/null",
+      "-o", "HashKnownHosts=no",
+      "-o", "StrictHostKeyChecking=#{pinned ? 'yes' : 'accept-new'}",
+      "-o", "ConnectTimeout=10",
+      # Never prompt: a read must fail fast, not block the request on an
+      # interactive password fallback when the key is wrong or the box is gone.
+      "-o", "BatchMode=yes",
+      "-o", "PreferredAuthentications=publickey",
+      "-o", "PasswordAuthentication=no",
+      "-p", machine.ssh_port.to_s,
+      # `--` ends ssh's options: whatever the destination holds, it is a destination.
+      "--", "#{machine.ssh_user}@#{machine.ssh_host}", command
+    ]
+    # stdout and stderr apart: the reply is JSON on stdout, and everything else the
+    # box says — its tools' output, ssh's own errors — is on stderr.
+    stdin ? Open3.capture3(*cmd, stdin_data: stdin) : Open3.capture3(*cmd)
   end
 
   # Materialize the machine's encrypted key to a private tempfile for one call.

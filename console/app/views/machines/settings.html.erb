@@ -28,6 +28,21 @@
   </section>
 <% end %>
 
+<%# The box's key — the other direction from the one above: it proves to Vilice that
+    it reached this box. Pinned here, changed only on its own page. %>
+<section class="panel settings-section" id="host-key">
+  <h2 class="settings-head"><%= icon "shield", size: 16 %> The box’s key</h2>
+  <% if (print = @machine.ssh_host_key_fingerprint) %>
+    <p class="note">Vilice trusts <code><%= print %></code><% if @machine.ssh_host_key_trusted_at %>
+      since <%= l(@machine.ssh_host_key_trusted_at, format: :long) %><% end %>, and refuses
+      this box if it answers with another.</p>
+  <% else %>
+    <p class="note">None yet. The first time Vilice gets through, it trusts the key the box
+      answers with, and records it.</p>
+  <% end %>
+  <%= link_to "Compare with what the box answers now", machine_host_key_path(@machine), class: "btn sm" %>
+</section>
+
 <%# ── Danger zone ────────────────────────────────────────────────────────────
     Moving the box to another project and forgetting it. Both are a deliberate step:
     transfer sits behind its own click, and every button carries a confirm. %>

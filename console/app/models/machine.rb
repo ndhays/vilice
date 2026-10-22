@@ -161,14 +161,12 @@ class Machine < ApplicationRecord
   # The key's SHA256 fingerprint, the form `ssh-keygen -lf` and the box's `vilice actors`
   # print. The key itself is a long line nobody compares by eye; this is the short form
   # that answers "does the box trust the key the console holds?".
-  def ssh_key_fingerprint
-    blob = Base64.strict_decode64(ssh_public_key.to_s.split[1].to_s)
-    return if blob.empty?
+  def ssh_key_fingerprint = SshKeypair.fingerprint(ssh_public_key)
 
-    "SHA256:#{Base64.strict_encode64(Digest::SHA256.digest(blob)).delete('=')}"
-  rescue ArgumentError
-    nil
-  end
+  # The box's own key — the one that proves it is the box — pinned here, not in a
+  # known_hosts file in the console's home, which a container loses on every redeploy
+  # (decisions/host-keys-are-pinned-on-the-machine.md). `type base64`, as ssh writes it.
+  def ssh_host_key_fingerprint = SshKeypair.fingerprint(ssh_host_key)
 
   # What the console sends to cut its own key, over that key. Only a grant key can —
   # `revoke` is at the top of the scope ladder.
