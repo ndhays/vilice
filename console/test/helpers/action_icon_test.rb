@@ -14,14 +14,16 @@ class ActionIconTest < ActionView::TestCase
     added removed edited set placed restated granted revoked transferred released
     promoted demoted starred unstarred imported opened restricted authorized linked
     observed
-  ].freeze
+  ].freeze + [ "logged in" ]
+
+  # English has no one-word past tense for these.
+  PHRASAL = [ "rolled back", "backed up", "logged in", "logged out" ].freeze
 
   # A verb is one word — the object it acted on belongs in the summary beside it,
   # not in the action column, where it only made the filter pills longer.
   test "every verb is a single word" do
     (Mutation::ACTS.values.map(&:past) + CONSOLE_VERBS).each do |verb|
-      # "rolled back" is the one exception: English has no one-word past tense for it.
-      next if verb == "rolled back"
+      next if PHRASAL.include?(verb)
       assert_equal 1, verb.split.size, "#{verb.inspect} is more than one word"
     end
   end

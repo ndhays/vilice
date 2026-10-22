@@ -14,6 +14,52 @@ class MutationTest < ActiveSupport::TestCase
     Mutation.build(verb, machine: @machine, actor: "alice", app_id: @app.id, params: params)
   end
 
+  # An app the box reports that we hold no App for is acted on by name.
+  test "an act binds to an app by name when we hold no App for it" do
+    m = Mutation.build("restart", machine: @machine, actor: "alice", name: "stray")
+    assert_equal "restart stray --json", m.command
+    assert_nil m.app
+    assert_equal "stray on op", m.summary
+  end
+
+  test "a name finds the App we hold, so the record entry is tied to it" do
+    m = Mutation.build("stop", machine: @machine, actor: "alice", name: "web")
+    assert_equal @app, m.app
+  end
+
+  test "a name that is not an app name is refused" do
+    [ "", "-rf", "web --all", "a/b", "web;id" ].each do |bad|
+      assert_nil Mutation.build("remove", machine: @machine, actor: "alice", name: bad), bad.inspect
+    end
+  end
+
+  test "deploy needs an App — a name alone carries no spec" do
+    assert_nil Mutation.build("deploy", machine: @machine, actor: "alice", name: "stray")
+  end
+
+  test "backup and restore follow the app; the record has its own" do
+    assert_equal "backup web --json", build("backup").command
+    assert_equal "restore web --json", build("restore").command
+    record = Mutation.build("backup-record", machine: @machine, actor: "alice")
+    assert_equal "backup --machine --json", record.command
+    assert_equal "backup", record.act.verb
+    assert_equal "the record on op", record.summary
+  end
+
+  test "registry-logout takes a registry host and nothing else" do
+    m = Mutation.build("registry-logout", machine: @machine, actor: "alice", params: { registry: "ghcr.io" })
+    assert_equal "registry-logout ghcr.io --json", m.command
+    [ nil, "", "ghcr.io --all", "ghcr.io/acme", "-x" ].each do |bad|
+      assert_nil Mutation.build("registry-logout", machine: @machine, actor: "alice", params: { registry: bad }), bad.inspect
+    end
+  end
+
+  test "the acts that take something away are marked" do
+    assert build("remove").danger?
+    assert build("restore").danger?
+    refute build("restart").danger?
+  end
+
   test "an unknown verb is refused" do
     assert_nil Mutation.build("rm-rf", machine: @machine, actor: "alice")
   end

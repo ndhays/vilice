@@ -108,7 +108,9 @@
         <li class="acts-app">
           <span class="acts-app-name">
             <%= icon "hard-drive", size: 13 %>
-            <%= link_to placement.machine.name, placement.machine %>
+            <%# To this app's page on that box: what the box says about it, its backups
+                and logs, and the same acts as below. %>
+            <%= link_to placement.machine.name, machine_box_app_path(placement.machine, @app.name) %>
             <span class="badge state-<%= placement.state %>"><%= placement.state %></span>
             <%# Logs sit with the box's name, not with the verbs, because they are not
                 one: reading is `observe` and every verb below is `operate`. That is why

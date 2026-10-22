@@ -1,5 +1,5 @@
 class MachinesController < ApplicationController
-  before_action :set_machine, only: %i[ show live refresh settings destroy sharing transfer ]
+  before_action :set_machine, only: %i[ show live status_page refresh settings destroy sharing transfer ]
 
   # All Machines — the fleet, and the floor of the three rings. This page is about
   # the *shape* of the fleet, so grouping is the primitive rather than filtering: a
@@ -65,7 +65,7 @@ class MachinesController < ApplicationController
 
   # The per-machine deep dive, in two requests so the page never waits on the box. `show`
   # is the shell — what we hold ourselves, rendered at once. `live` is everything that
-  # needs the box (both zones and the record), loaded into a frame right after, from
+  # needs the box (the cards and the record), loaded into a frame right after, from
   # reads cached for 30s (Decision 3).
   def show
     @q = params[:q].to_s.strip
@@ -96,12 +96,29 @@ class MachinesController < ApplicationController
     render layout: false
   end
 
+  # Machine Status — the box itself, in full: its numbers and hardening, maintenance,
+  # registries, certificates, the record and its backup, and who can reach it, each with
+  # the acts on it. One request, from the same cached reads the machine page makes.
+  def status_page
+    @status = MachineStatus.from(Vilice::Observe.status(@machine))
+    @record = @status.online? ? Vilice::Observe.record(@machine) : { ok: false, error: @status.error }
+    @actors = Vilice::Observe.actors(@machine) if @status.online?
+  end
+
   # ── Observe ──────────────────────────────────────────────────────────────
   # Re-read the machine's live status, bypassing the cache. A read: changes
-  # nothing on the box.
+  # nothing on the box. Returns to the page it was asked from.
   def refresh
     Vilice::Observe.status(@machine, refresh: true)
-    redirect_to @machine, notice: "Read #{@machine.name} from Vilice."
+    back =
+      if params[:from] == "status"
+        status_machine_path(@machine)
+      elsif params[:from] == "box" && params[:name].to_s.match?(App::NAME_FORMAT)
+        machine_box_app_path(@machine, params[:name])
+      else
+        machine_path(@machine)
+      end
+    redirect_to back, notice: "Read #{@machine.name} from Vilice."
   end
 
   # ── Remove ─────────────────────────────────────────────────────────────────

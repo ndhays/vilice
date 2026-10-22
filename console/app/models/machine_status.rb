@@ -23,7 +23,7 @@ class MachineStatus
     "password_auth_disabled"  => "password auth enabled",
     "firewall_active"         => "firewall inactive",
     "fail2ban_active"         => "fail2ban not running",
-    "unattended_upgrades"     => "unattended upgrades off",
+    "unattended_upgrades"     => "unattended upgrades off"
   }.freeze
 
   def initialize(result)
@@ -59,7 +59,13 @@ class MachineStatus
     # The certificate each served hostname hands out: [{ host, not_after, issuer,
     # valid, error }]. Absent when the box serves no hostname (or predates the check).
     @certs = (result.dig(:data, "data", "certs") if @ok) || []
+    # The registries the box is logged into: [{ host, username }]. Never the secret.
+    @registries = (result.dig(:data, "data", "registries") if @ok) || []
   end
+
+  # ── Registries ─────────────────────────────────────────────────────────────
+  Registry = Data.define(:host, :username)
+  def registries = @registries.map { |r| Registry.new(host: r["host"], username: r["username"]) }
 
   # ── Backups ────────────────────────────────────────────────────────────────
   def backups_known? = @backups.is_a?(Hash)
@@ -76,13 +82,16 @@ class MachineStatus
   end
   def backup_rows
     return [] unless backups_known?
-    targets = @backups["targets"] || {}
-    names = @apps.map { |a| a["name"] } + [ "machine" ]
-    names.uniq.map do |name|
-      run = targets[name] || {}
-      BackupRow.new(target: name, last_ok: time_or_nil(run["last_ok"]),
-                    last_failed: time_or_nil(run["last_failed"]), error: run["error"])
-    end
+    (@apps.map { |a| a["name"] } + [ "machine" ]).uniq.map { |name| backup_row(name) }
+  end
+
+  # One target's row: an app by name, or "machine" for the record. Nil when the box
+  # does not report backups at all — unknown, not "never".
+  def backup_row(name)
+    return nil unless backups_known?
+    run = (@backups["targets"] || {})[name] || {}
+    BackupRow.new(target: name, last_ok: time_or_nil(run["last_ok"]),
+                  last_failed: time_or_nil(run["last_failed"]), error: run["error"])
   end
 
   # ── Certificates ───────────────────────────────────────────────────────────
@@ -102,6 +111,12 @@ class MachineStatus
     end
   end
 
+  # A certificate belongs to a hostname, and a hostname to one app. The box says which
+  # hostnames each app answers at, so the two can be tied. Nil when it does not say (an
+  # older vilice), or when the hostname is one a balancer fronts for another box.
+  def app_for_host(host) = @apps.find { |a| Array(a["hostnames"]).include?(host) }&.dig("name")
+  def certs_for(name) = certs.select { |c| app_for_host(c.host) == name }
+
   def online? = @ok
   def machine_id = @machine["machine_id"]
   def hostname = @machine["hostname"]
@@ -112,6 +127,9 @@ class MachineStatus
   # The apps the box itself reports running — not the apps we think it has.
   # The machine view renders these: it shows what is there, not what was intended.
   def apps = @apps
+
+  # One app the box reports, by the name it goes by there. Nil when it reports none.
+  def app(name) = @apps.find { |a| a["name"] == name }
 
   # What the box was prepared as. The machine view shapes itself around this — a
   # balancer has no container runtime, so it shows no Apps section at all. An
@@ -141,6 +159,12 @@ class MachineStatus
     return nil if disk_total_bytes.zero?
     (100.0 * (disk_total_bytes - disk_free_bytes) / disk_total_bytes).round
   end
+
+  # How full each is, against its own thresholds — for the bars on the machine page.
+  def mem_level  = level_for(mem_percent, MEM)
+  def disk_level = level_for(disk_percent, DISK)
+  def mem_used_bytes  = mem_total_bytes - mem_available_bytes
+  def disk_used_bytes = disk_total_bytes - disk_free_bytes
 
   # :ok | :warn | :crit | :offline — the worst of what we can see.
   def health

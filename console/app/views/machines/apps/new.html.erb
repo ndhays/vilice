@@ -28,8 +28,10 @@
   <% end %>
 <% end %>
 
+<%# Turbo is off for this form. Its answer is the preview — a page, not a redirect —
+    and Turbo drops a 200 page in reply to a form post, leaving the form on screen. %>
 <%= form_with model: @deploy, scope: :box_deploy, url: machine_box_apps_path(@machine), method: :post,
-      class: "stack-form" do |f| %>
+      class: "stack-form", data: { turbo: false } do |f| %>
   <% if @deploy.errors.any? %>
     <div class="flash alert"><%= @deploy.errors.full_messages.to_sentence %>.</div>
   <% end %>

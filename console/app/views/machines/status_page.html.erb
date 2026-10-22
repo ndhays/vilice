@@ -1,0 +1,85 @@
+<%# Machine Status — the box itself, in full. The machine page shows a quick view of this
+    and each of its lines leads here, to the part of the same name. Each part leads with
+    the summary the quick view showed, then the detail, then the acts on it
+    (decisions/acts-sit-with-what-they-act-on.md).
+
+    `acts` is whether an act can be sent at all: an operate key, and a box that answers. %>
+<% content_for :title, "Status — #{@machine.name} — Vilice" %>
+<% acts = @machine.operate? && @status.online? %>
+
+<%= breadcrumb [["Machines", machines_path], [@machine.name, machine_path(@machine)], ["Status", nil]] %>
+
+<h1 class="machine-head">
+  <%= icon machine_role_icon_name(@machine, @status), size: 22 %>
+  <span class="machine-name"><%= @machine.name %></span>
+  <%= health_line(@status) %>
+</h1>
+
+<% if !@status.online? %>
+  <%# Nothing current is known and nothing can be sent. One card owns the message. %>
+  <div class="panel unreachable">
+    <div class="panel-head">
+      <div class="kicker">Unreachable</div>
+      <%= button_to refresh_machine_path(@machine, from: "status"), class: "btn cmd observe sm panel-action", title: "Read the box again" do %>
+        <%= vilice_verb "status" %>
+      <% end %>
+    </div>
+    <p class="unreachable-line">
+      <%= icon "circle-cut", size: 18 %>
+      Vilice could not reach <strong><%= @machine.name %></strong><%
+        %><% if @machine.last_seen_at %>, last heard from <%= time_ago_in_words(@machine.last_seen_at) %> ago<% end %>.
+    </p>
+    <pre class="raw"><%= @status.error %></pre>
+  </div>
+<% else %>
+  <% unless @machine.operate? %>
+    <p class="note observe-only"><%= icon "lock", size: 14 %>
+      This box holds an <strong>observe</strong> key: Vilice can read it, not act on it.
+      Grant <strong>operate</strong> to act here.</p>
+  <% end %>
+  <div class="read-bar">
+    <p class="read-age"><%= read_age(@status) %></p>
+    <%= button_to refresh_machine_path(@machine, from: "status"), class: "btn cmd observe sm", title: "Read the box again" do %>
+      <%= vilice_verb "status" %>
+    <% end %>
+  </div>
+
+  <%= status_part "Status", hardening_summary(@status), "status" do %>
+    <%= render "machines/metrics", status: @status %>
+    <%# Hardening posture, read from the fact the box published (not a live check). %>
+    <%= hardening_line(@status) %>
+    <%# What this page is read from: the command, then exactly what it returned. %>
+    <details class="raw-output">
+      <summary>Raw status output</summary>
+      <p class="raw-cmd">vilice status --json</p>
+      <pre class="raw"><%= JSON.pretty_generate(@status.raw) %></pre>
+    </details>
+  <% end %>
+
+  <%= status_part "Maintenance", maintenance_summary(@status), "maintenance" do %>
+    <%= render "machines/maintenance", machine: @machine, status: @status, acts: acts %>
+  <% end %>
+
+  <% unless @status.balancer? %>
+    <%= status_part "Registries", registries_summary(@status), "registries" do %>
+      <%= render "machines/registries", machine: @machine, status: @status, acts: acts %>
+    <% end %>
+  <% end %>
+
+  <%# Caddy keeps certificates for the whole box, but each belongs to a hostname and so
+      to one app, which the row names. Absent when the box serves no hostname. %>
+  <% if @status.certs.any? %>
+    <%= status_part "Certificates", certs_summary(@status), "certificates" do %>
+      <%= render "machines/cert_rows", machine: @machine, status: @status, certs: @status.certs, app_column: true %>
+    <% end %>
+  <% end %>
+
+  <%= status_part "Record", record_summary(@status, @record), "record" do %>
+    <%= render "machines/record_card", machine: @machine, status: @status, record: @record, acts: acts %>
+    <p class="note"><%= link_to "The entries are on the machine page", machine_path(@machine) %>.</p>
+  <% end %>
+
+  <%= status_part "Access", access_summary(@machine, @actors), "access" do %>
+    <%= render "machines/keyholders", machine: @machine, actors: @actors %>
+  <% end %>
+<% end %>

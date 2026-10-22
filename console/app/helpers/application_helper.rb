@@ -115,6 +115,56 @@ module ApplicationHelper
     safe_join([ render("shared/mark", size: 18), tag.span(verb, class: "cmd-verb") ])
   end
 
+  # The button for a ceremony act: the vilice verb, on a link that opens the preview in
+  # the named frame — the one in the card the act belongs to. `params` name what it
+  # acts on (app_id, name, registry) and where it returns (from).
+  def act_button(machine, key, frame: "ceremony", **params)
+    link_to vilice_verb(Mutation::ACTS.fetch(key).verb),
+            new_machine_mutation_path(machine, act: key, frame: frame, **params.compact),
+            class: "btn #{Mutation::DANGER.include?(key) ? 'danger' : 'mutate'} cmd sm",
+            data: { turbo_frame: frame }
+  end
+
+  # How an app on a box is doing: a dot, and the box's own words. The words are
+  # Podman's ("Up 6 minutes", "Exited (1) 2 minutes ago") or Vilice's "stopped", so the
+  # colour is read off how they begin: up is green, stopped on purpose is grey, and
+  # anything else — exited, created, restarting — is red. A box too old to report a
+  # state draws nothing rather than guessing.
+  def box_app_state(box_app)
+    state = box_app && box_app["state"].to_s
+    return "".html_safe if state.blank?
+
+    color = case state
+    when /\A(up|running)\b/i then "green"
+    when /\Astopped\b/i      then "gray"
+    else                           "red"
+    end
+    tag.span(safe_join([ tag.span(class: "dot dot-#{color}"), " ", state ]), class: "app-state")
+  end
+
+  # Where an app answers, as a link that opens it in a new tab — the quickest check
+  # that it is up. A hostname is a Caddy site address: it may carry its own scheme or a
+  # port, and https is assumed otherwise. A wildcard names no one address, so it is
+  # shown and not linked.
+  def host_link(host)
+    return tag.span(host, class: "host mono") if host.include?("*")
+
+    url = host.match?(%r{\Ahttps?://}) ? host : "https://#{host}"
+    link_to safe_join([ host.sub(%r{\Ahttps?://}, ""), icon("external-link", size: 12) ], " "), url,
+            class: "host mono", target: "_blank", rel: "noopener", title: "Open #{url} in a new tab"
+  end
+
+  # An app's hostnames on one line: the first as a link, and a count of the rest that
+  # leads to the app's page, where they are all listed.
+  def host_links(hosts, more_path:)
+    hosts = Array(hosts).compact_blank
+    return "".html_safe if hosts.empty?
+
+    parts = [ host_link(hosts.first) ]
+    parts << link_to("+#{hosts.size - 1}", more_path, class: "host-more", title: hosts.drop(1).join("\n")) if hosts.size > 1
+    safe_join(parts, " ")
+  end
+
   # The stamp an entry leads with: the vilice verb it ran, drawn like the button that
   # sends it (`vilice_verb`) but flat — a record of a press, not a thing to press.
   def act_stamp(item)
@@ -482,6 +532,10 @@ module ApplicationHelper
   # Instantaneous acts and box-mirror entries have no outcome — nothing renders.
   def outcome_tag(item)
     case item.outcome
+    when "preview"
+      # The entry-to-be, shown before Confirm. Nothing has been sent, so it must not
+      # read as running.
+      tag.span("not run yet", class: "outcome preview")
     when "pending"
       tag.span("running…", class: "outcome running")
     when "ok"
@@ -521,7 +575,10 @@ module ApplicationHelper
     case action.to_s.downcase
     when "updated", /applied update/ then "check-check"
     when /deploy/                    then "rocket"
-    when /rollback|rolled/           then "rotate-cw"
+    when /rollback|rolled|restored/  then "rotate-cw"
+    when /backed/                    then "hard-drive"
+    when /logged in/                 then "log-in"
+    when /logged out/                then "log-out"
     when /restart|start/             then "play"
     when /stop/                      then "square"
     when /remov/                     then "trash-2"

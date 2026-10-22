@@ -6,7 +6,7 @@
 
 **Status:** Canonical (the shape is settled and largely built — Waves 1–3). The build
 roadmap and the screens still ahead live in
-[`decisions/open/ui-roadmap.md`](../../decisions/open/ui-roadmap.md). Last touched 2026-09-29.
+[`decisions/open/ui-roadmap.md`](../../decisions/open/ui-roadmap.md). Last touched 2026-10-05.
 
 ---
 
@@ -159,9 +159,12 @@ enough to make a group read as a group.
 - **Apps → App** — placement, fleet-wide: what should run where. One ring above
   the machine view (which reads a single box) and below Projects. The list carries every
   placement, with the project shown where there is one and a plain dash where there isn't
-  — an app with no client is a legitimate state, not missing data. The App page
-  is the app-actions home
-  ([`decisions/install-the-app-actions-home.md`](../../decisions/install-the-app-actions-home.md)).
+  — an app with no client is a legitimate state, not missing data. The App page lists
+  each placement with its lifecycle verbs
+  ([`decisions/install-the-app-actions-home.md`](../../decisions/install-the-app-actions-home.md)),
+  and each placement's box name leads to that app's page on the box, which holds the same
+  verbs beside what the box reports. Two places for one act is an open question — see
+  [`ui-roadmap.md`](../../decisions/open/ui-roadmap.md).
 
   **Logs sit with the box's name, not with the verbs beside it**, because they are not
   one of them: reading is `observe` and every verb there is `operate`. So the link is
@@ -295,74 +298,170 @@ enough to make a group read as a group.
   runs on, the leading glyph is a location pin that says *you are here* on hover (the
   box's reported `machine_id` matches the console's own: `/etc/machine-id`, or
   `VILICE_SELF_MACHINE_ID` set by hand when the console runs in a container). What
-  the box *is* sits beneath as a two-column list, labels left, values right, always in
-  the same order: **Address · Role · Owned by · Used by**. Ownership reads as a sentence
+  the box *is* sits beneath on **one line, as a row of bordered cells**, label over
+  value, always in the same order: **Address · Role · Owned by · Used by**, with the
+  **Settings** button right beside the table. Ownership reads as a sentence
   fragment — *project Acme*, or *no project* — because a box is owned by a project, not
   by a person. Two more rows appear only when
   they are news: **Box says** when the hostname the box reports differs from the name
   (the name mirrors the box, so usually it does not), and **Also serves** for clients
-  beyond the owner. Access is not listed; the Operate zone says it. A missing owner or an
+  beyond the owner. Access is not listed; its chip says it. A missing owner or an
   unprepared role reads in red.
 
-  **Two zones, side by side: Observe, then Operate.** Under the header the page splits
-  into two columns (stacked on a narrow screen), each headed in its own colour — blue
-  **Observe**, violet **Operate**. *Where a control sits says what kind it is*
-  ([`what-the-console-is-for.md`](../../decisions/what-the-console-is-for.md)).
+  **A quick view, then one level down.** The machine page is for looking. It shows how
+  the box is and what runs on it, and each leads one level down: a status chip to
+  the **Machine Status** page, an app line to that app's page. The detail and the acts
+  are down there, beside what they act on
+  ([`acts-sit-with-what-they-act-on.md`](../../decisions/acts-sit-with-what-they-act-on.md)).
+  Nothing on the machine page is folded away.
 
-  **Plain on the surface, exact underneath.** The zones interpret; the command and its
-  raw reply are one step down — in the preview, the record, and a card's raw disclosure.
-  The one bridge on the surface is the button: **a command button carries the Vilice
-  mark and the verb** — `status`, `apply-updates`, `route`, `deploy`, `remove` (and on
-  the App, `deploy` `rollback` `start` `stop` `restart` `remove`) — mono, lowercase,
-  **filled**: violet for an act, blue for a read, red for one that takes something away.
-  Nothing that does not call Vilice looks like it. A plain sentence beside it says why
-  you would press it. The full command, flags and all, is shown in the preview, copyable,
-  before anything runs.
+  Under the header, in order:
 
-  - **Observe holds no act.** Live status, with when it was read beneath its title
-    (*Read 2 minutes ago · cached*), a `status` button to read again, and **Raw status
-    output** at its foot — the command in bold, then the JSON it returned; maintenance (the window,
-    the updates waiting, by name, and **Restart required** when the box owes itself one —
-    with the packages that asked and what happens next: *the box restarts itself at 04:00*,
-    or *restart it on the box*, since Vilice has no restart command); the apps the box reports; **Backups** — each app
-    and the record, last backed up when, or *never*, or *last attempt failed* with the
-    reason, and *Nothing on this box is backed up* when no repo is set (from `status`'s
-    `backups`; absent when the box's vilice predates it); **Certificates** — each served
-    hostname, valid and days to expiry, amber inside 14 days, red when not served or not
-    trusted (from `status`'s `certs`); the edge table on a balancer; the **Record** card
-    (chain intact, entry count, last entry); and beneath the cards, as a list rather than
-    a card, **Who can reach this box** — its ledger via `vilice actors`, the Access
-    page's rows, and *Could not read the ledger* rather than an empty list when unread.
-  - **Operate lists every act the box can take**, each a sentence and a button:
-    `apply-updates`, `route` on a balancer, `deploy` (below), and `remove`
-    per app the box reports. An act with nothing to do (no updates waiting) **keeps its
-    button, inert** — the zone reads the same whatever the box's state. Commands come
-    from `Mutation.command`, the same builder that sends them. App lifecycle is not here —
-    it lives on the App. The ceremony opens **inside this zone**.
-  - On an observe key, Operate is one large statement — **No operate access** — and on
-    an offline box, **Nothing can be sent**.
+  - **Status**, the quick view. **The whole card is the link to Machine Status**; the
+    things inside it that do something of their own sit above that link. Its head is the
+    title, when the box was read (*Read 2 minutes ago · cached*), and — right beside
+    those words, so it is plain what it re-reads — the `status` button.
+    **Memory and disk are bars**: the label, the percentage and the amounts (*6.4 GB of
+    16 GB*) on one line, and beneath it a bar as wide as the usage, cut into small blocks
+    like a level meter. The fill is
+    green, then amber, then red as it passes the same thresholds the health line uses.
+    Load and uptime are words beside them. Then **everything else about the box, on one
+    line of chips**: an icon and a few words each, calm when well, bordered in the
+    warning colour when not, with the full sentence on hover. Each chip is the link to
+    its part of Machine Status. No act is offered here.
+  - **Apps on this box** — one line per app the box reports (below), with **`deploy`**:
+    putting an app on the box is not an act on any one app, so it stays with the list.
+    On a balancer its place is taken by the **Edge** card — the derived table, what the
+    box reports fronting, and **`route`**.
+  - **The record**, as the body of the page.
+
+  The chips, and what each says (`MachineSectionsHelper`; the chip shows the short form,
+  Machine Status the full one):
+
+  | Chip | When all is well | Coloured when |
+  |---|---|---|
+  | **Hardening** (a lock) | *Hardened*, or *Hardening not checked* | a property has drifted |
+  | **Maintenance** | *Up to date* | updates are waiting (*3 updates*), or a restart is required |
+  | **Registries** | the hosts logged into, or *No registries* | never |
+  | **Certificates** | *3 certs valid* | one is close to expiry, not served, or not trusted |
+  | **Record** | *Record intact* | the chain is broken or unread; the record's backup failed, never ran, or has no repo |
+  | **Access** | *2 keys* | the ledger could not be read, or a key has no forced command |
+
+  Registries is absent on a balancer, and Certificates when the box serves no hostname.
+
+  **Machine Status is its own page** (`/machines/:id/status`): the box itself, in full.
+  It has one part per chip above, in the same order, each a card that **leads with the
+  full summary**, then the detail, then the acts on it:
+
+  - **Status** — the numbers, the hardening line, and **Raw status output**: the command
+    in bold, then the JSON it returned.
+  - **Maintenance** — the window, the updates waiting, by name, and **Restart required**
+    — with the packages that asked and what happens next: *the box restarts itself at
+    04:00*, or *restart it on the box*, since Vilice has no restart command. Its act is
+    **`apply-updates`**.
+  - **Registries** — host and username, never the secret (from `status`'s `registries`).
+    A registry login belongs to the box
+    ([`registry-credentials.md`](../../decisions/registry-credentials.md)), so its acts
+    are here: **`registry-logout`** beside each, and **`registry-login`**, a form (below).
+  - **Certificates** — each served hostname, valid and days to expiry, amber inside 14
+    days, red when not served or not trusted (from `status`'s `certs`), and **the app
+    the hostname belongs to**, linked. Caddy keeps certificates for the whole box, but
+    each is one app's, so the same rows appear on that app's page. No act.
+  - **Record** — chain intact, entry count, last entry, and when the record itself last
+    backed up off the box. Its act is **`backup`** (`backup --machine`). With no repo set
+    it says *The record is not backed up* and offers nothing.
+  - **Access** — the box's ledger via `vilice actors`, the Access page's rows, and *Could
+    not read the ledger* rather than an empty list when unread.
+
+  It is one request, from the same cached reads the machine page makes, with its own read
+  line; reading again returns to it. An act's preview opens in the part it was pressed
+  in, and returns to the page when it settles. An act with nothing to do (no updates
+  waiting) **keeps its button, inert**. On an **observe key** the page reads the same and
+  offers no act. An unreachable box shows one card with the error.
+
+  *Which kind of control it is reads off the button*: **a command button carries the
+  Vilice mark and the verb**, mono, lowercase, **filled** — blue for a read, violet for
+  an act, red for one that takes something away. Nothing that does not call Vilice looks
+  like it. A plain sentence beside it says why you would press it.
+
+  **Plain on the surface, exact underneath.** The page interprets; the command and its
+  raw reply are one step down — in the preview, the record, and the raw disclosure. The
+  full command, flags and all, is shown in the preview, copyable, before anything runs.
+  Commands come from `Mutation`, the same builder that sends them.
 
   **The Apps card is what the box reports, with our record attached.** One list, not
-  two: the box's apps are the rows, each linking to its `App` where we hold one,
-  each showing the digest it is *actually* running — truncated, with click-to-copy
-  that copies the whole reference rather than the abbreviation. An app the box runs
-  that we hold no placement for says **not in our record** (a machine-view deploy
-  keeps none, by design, above). A placement we hold that the box does not report is
-  named as a gap beneath the list — stated, never closed on its own.
+  two: the box's apps are the rows, one line each — the name, **how it is doing** (a dot
+  and the box's own words: green for *Up 6 minutes*, grey for *stopped*, red for anything
+  else), **where it answers** (its first hostname, a link that opens the app in a new
+  tab, and *+N* for the rest, leading to its page), **how much of the box's memory it is
+  using** (a small bar and the amount — a share of the box, since an app has no limit of
+  its own), **two marks** that stay quiet unless something is wrong (a shield for its
+  certificates, a drive for its backup, each saying the whole thing on hover), the
+  project where we hold one, and the digest it is *actually* running,
+  truncated, with click-to-copy that copies the whole reference. An app the box runs
+  that we hold no placement for carries no mark for it here — a machine-view deploy
+  keeps none, by design, above, so it is an ordinary state — and its own page says so.
+  **A stopped app stays in the list**: it is still deployed, and its page is the way to
+  start it. A placement we hold that the box does not report is named as a gap beneath
+  the list — stated, never closed on its own.
+
+  **Every app on a box has its own page** (`/machines/:id/apps/:name`), and the line
+  leads to it. The app is named by what the box calls it, so an app we hold no `App`
+  for has the page too. **It has the shape of Machine Status**: the name and state, the
+  facts on one line, when the box was read with `status` beside it, then a part for each
+  thing about the app — each leading with how it is, then the detail, then the acts.
+
+  The facts, as one row of bordered cells: **Box · Answers at · Image · Placement**.
+  *Answers at* is every hostname, each a link that opens the app in a new tab (a
+  wildcard is shown, not linked). *Placement* is a link to the `App`, or *none*.
+
+  The parts:
+
+  | Part | Leads with | Holds | Acts |
+  |---|---|---|---|
+  | **Running** | the box's words for its state | how much of the box's memory it is using, as a bar; **Logs**, a read, offered on a key that cannot act | `restart`, `stop`, `start` |
+  | **Deploy** | *Running @abc123…* | — | `deploy`, `rollback` |
+  | **Certificates** | *2 valid* | each of its hostnames and the certificate it hands out | — |
+  | **Backups** | *Backed up 5 hours ago* | the reason, when the last one failed | `backup`, `restore` |
+  | **Remove** | what it takes and what it leaves | — | `remove` |
+
+  - **`deploy`**: with an `App` in our record it sends that App's spec at an image you
+    pick (the ceremony's compose step); with none there is no stored spec, so it opens
+    the box's own deploy form with the name filled in.
+  - **`rollback`** is inert when the box says there is no earlier image to go back to.
+  - **`restore`** is red, and inert until there is a snapshot to restore. With no repo
+    set on the box, Backups says so and offers nothing. Backups follow the app; the
+    machine keeps only the record's own.
+  - **`remove`** is red. When it settles the page returns to the machine, since the
+    app's page has nothing left to show.
+  - Certificates is absent when the box reports none for the app, and Backups when the
+    box's vilice predates the fact.
+
+  A name the box does not report gets the page too, saying so, rather than an error —
+  and where we hold a placement for it, that is the gap, with `deploy` to close it. An
+  unreachable box shows one card with the error and no act. The page reads the same
+  cached `status` the machine page does; it is one request, and reading again returns
+  to it.
+
+  **Logging a box in to a registry is a form, not a ceremony act**, because it carries a
+  password and the ceremony's preview travels in a URL
+  (`Machines::RegistriesController`). The form is the preview: it shows the command and
+  says what is recorded — who, the registry, the username. The password goes to the box
+  once, on stdin; the console keeps it in no column, no `Event`, and no log.
 
   **The page never waits on the box.** It is two requests. `show` is the shell — the
   name, the facts, labels and settings, everything we hold ourselves — rendered at once,
   with the header saying *Reading…* rather than a last-known state that could read as
-  current. Where the zones and record go, a frame loads `live`, and until it answers it
+  current. Where the quick view, apps and record go, a frame loads `live`, and until it answers it
   shows what it is waiting on in the words it is waiting on: `$ vilice status --json`
-  and a cursor. When `live` arrives it fills both zones and the record, and replaces the
+  and a cursor. When `live` arrives it fills them, and replaces the
   header and facts with the live ones. A box that does not answer the status read is not
   asked for its record and ledger too, so an unreachable box costs one timeout, not
   three. The frame sends its links and forms to the whole page; only the ceremony opens
   in place, and its act button and Cancel leave it for the whole page, so the notice and
   the settled record land where they belong.
 
-  **Deploying straight to a box is a form, then a preview.** Operate's `deploy` opens
+  **Deploying straight to a box is a form, then a preview.** The Apps card's `deploy` opens
   *Deploy an app to this box* — stateless, like everything the machine view does: the
   spec goes to the box and is not kept (`BoxDeploy`, `Machines::AppsController`). An
   app whose intention and drift should stay in view is added under Apps instead, and
@@ -396,7 +495,7 @@ enough to make a group read as a group.
   last read.* Muted would have read as "nothing to see".
 
   **Machine Settings is its own page** (`/machines/:id/settings`), reached by the
-  **Settings** button beside the labels. Ownership, sharing, the key, transfer and
+  **Settings** button beside the facts. Ownership, sharing, the key, transfer and
   removal configure the box rather than report on it, so none of it sits in the way of
   the live view ([`machine-settings-is-a-page.md`](../../decisions/machine-settings-is-a-page.md)).
   In order:
@@ -533,8 +632,8 @@ Every entity — Machine, App, Project — renders the same shape:
    digest + health for an App).
 3. **Chain** — the record filtered to this entity, **as the body of the page, not a
    footer**. Acts plus status transitions, newest first.
-4. **Mutate zone** — witnessed actions, visually set apart (the violet "this will be
-   recorded" zone).
+4. **Acts** — each in the card it acts on, on a command button. The preview that opens
+   there is the violet "this will be recorded" step.
 
 The inversion: the timeline is not a tab or a bottom-of-page feed. It **is** the page,
 and current state is its most recent vertebra.
@@ -722,7 +821,7 @@ rewritten at display; only its *case* is, and case is not a fact.
 ## The hero interaction — the mutate ceremony
 
 One component for *any* witnessed act (deploy, rollback, start/stop/restart, remove,
-apply-updates):
+backup, restore, apply-updates, route, registry-logout):
 
 1. **Compose** — pick what (image digest, target). Only acts that need it (deploy).
 2. **Preview the record entry** — show the exact accountable line before it runs:
@@ -732,7 +831,10 @@ apply-updates):
 4. **Settle** — the outcome is stamped on the same entry (`pending → ok/failed`). Rollback
    is a *new witnessed act*, never a silent undo.
 
-Verbs come from an allowlist (`Mutation::ACTS`), never raw input. The deploy/rollback path
+Verbs come from an allowlist (`Mutation::ACTS`), never raw input. An app-scoped act names
+its app by an `App` we hold or by the name the box reports; a name, a registry host and the
+frame the preview opens in are each checked against a fixed pattern before they are used,
+because the first two are written into a command. The deploy/rollback path
 pipes the desired-state envelope on scoped-SSH **stdin** so secret values never ride the
 recorded command line. The settle step reuses the **same timeline component** the observe
 side renders — the deploy screen isn't special, it's the record, live. That is how the

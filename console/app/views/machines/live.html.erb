@@ -1,8 +1,8 @@
-<%# The half of the machine page that needs the box: both zones and the record. The
+<%# The half of the machine page that needs the box: the status quick view, the apps and the record. The
     shell (show) renders at once and this frame fills in when the SSH reads return
     (MachinesController#live), so a slow or unreachable box never holds the page blank.
     The frame's links and forms go to the top by default (`target: "_top"` on the frame);
-    only the ceremony opens in place.
+    only a ceremony opens in place, in its card.
 
     It also replaces the shell's header and facts with the live ones: a turbo-stream
     inside a frame runs when the frame is inserted. %>
@@ -10,18 +10,20 @@
   <%= turbo_stream.replace "machine-head", partial: "machines/head_only", locals: { machine: @machine, status: @status } %>
   <%= turbo_stream.replace "machine-facts", partial: "machines/facts_only", locals: { machine: @machine, status: @status } %>
 
-<%# ── Two zones, side by side ─────────────────────────────────────────────────
-    Observe on the left: what the box reports. Nothing in it writes — at most it
-    points across. Operate on the right: every act this box can take, each with
-    the exact command it sends, and the ceremony opens there too. So a reader never
-    has to work out which kind of control they are looking at: it is where it sits. %>
-<div class="zones">
-<section class="zone zone-observe" aria-label="Observe">
-  <h2 class="zone-head"><%= icon "eye", size: 15 %> Observe</h2>
+<%# ── A quick view, then the apps ───────────────────────────────────────────────
+    The machine page is for looking. It shows how the box is and what runs on it, and
+    each line leads one level down: a status line to the Machine Status page, an app
+    line to that app's page. The acts are down there, beside what they act on
+    (decisions/acts-sit-with-what-they-act-on.md). The one act here is `deploy`, with
+    the apps list, because putting an app on the box is not an act on any one app.
 
-<%# When the box does not answer we know **nothing current** about it, so the zone
+    `acts` is whether this key may act at all. %>
+<% acts = @machine.operate? && @status.online? %>
+
+<%# When the box does not answer we know **nothing current** about it, so the page
     does not lay out empty cards that each apologise in their own words. One card
-    owns the message. Our own record stays at full strength further down. %>
+    owns the message, and no act is offered: every act travels the same connection.
+    Our own record stays at full strength further down. %>
 <% if !@status.online? %>
   <div class="panel unreachable">
     <div class="panel-head">
@@ -38,84 +40,60 @@
     <pre class="raw"><%= @status.error %></pre>
   </div>
 <% else %>
-  <div class="panel observe">
-    <div class="panel-head">
-      <div>
-        <div class="kicker">Live status</div>
-        <p class="read-age"><%= read_age(@status) %></p>
-      </div>
-      <%# A POST, not a link: it opens an SSH connection to the box, so it must not be
-          something a hover or a prefetch can fire. A read, so it lives on this side. %>
-      <%= button_to refresh_machine_path(@machine), class: "btn cmd observe sm panel-action", title: "Read the box again" do %>
-        <%= vilice_verb "status" %>
-      <% end %>
-    </div>
-
-    <ul class="metrics">
-      <li><span class="k"><%= icon "cpu", size: 13 %> load</span><span class="v"><%= @status.load1 %></span></li>
-      <li><span class="k"><%= icon "memory-stick", size: 13 %> memory used</span><span class="v"><%= @status.mem_percent %>%</span></li>
-      <li><span class="k"><%= icon "container", size: 13 %> disk used</span><span class="v"><%= @status.disk_percent %>%</span></li>
-      <li><span class="k"><%= icon "clock", size: 13 %> uptime</span><span class="v"><%= distance_of_time_in_words(0, @status.uptime_sec) %></span></li>
-    </ul>
-    <%# Hardening posture, read from the fact the box published (not a live check). %>
-    <%= hardening_line(@status) %>
-    <%# What the cards above are read from: the command, then exactly what it returned. %>
-    <details class="raw-output">
-      <summary>Raw status output</summary>
-      <p class="raw-cmd">vilice status --json</p>
-      <pre class="raw"><%= JSON.pretty_generate(@status.raw) %></pre>
-    </details>
-  </div>
-
-  <%# Maintenance — when the box patches itself, and whether anything is waiting.
-      Pure observe now: applying lives across in Operate. %>
-  <div class="panel observe">
-    <div class="kicker">Maintenance</div>
-    <% if @status.maintenance_known? %>
-      <p class="maint-line"><%= icon "stethoscope", size: 15 %>
-        <strong>Daily at <%= @status.maintenance_time %></strong></p>
-      <p class="muted maint-note">Security patches install themselves<%=
-        "; the box reboots then if the kernel needs it" if @status.auto_reboot? %>.</p>
-    <% else %>
-      <p class="maint-line muted"><%= icon "stethoscope", size: 15 %>
-        <strong>No maintenance window.</strong></p>
-      <p class="muted maint-note">Updates wait until someone applies them.</p>
-    <% end %>
-    <% if @status.updates_available? %>
-      <p class="maint-pending" title="<%= @status.update_packages.join("\n") %>">
-        <%= icon "circle-dot", size: 15 %>
-        <strong><%= pluralize(@status.update_count, "update") %> waiting</strong>
-      </p>
-      <% if @status.update_packages.any? %>
-        <p class="muted maint-note mono"><%= @status.update_packages.join(" ") %></p>
-      <% end %>
-    <% else %>
-      <p class="muted updates-current"><%= icon "circle-check", size: 15 %> <strong>Up to date.</strong></p>
-    <% end %>
-    <%# A restart the box owes itself — what the terminal says as "System restart
-        required". Said with what happens next, because Vilice has no restart verb: either
-        the box does it at its window, or a person does it on the box. %>
-    <% if @status.reboot_required? %>
-      <p class="maint-pending maint-reboot" title="<%= @status.reboot_packages.join("\n") %>">
-        <%= icon "rotate-cw", size: 15 %>
-        <strong>Restart required</strong>
-      </p>
-      <p class="muted maint-note">
-        <% if @status.reboot_packages.any? %>To finish updating
-          <span class="mono"><%= @status.reboot_packages.join(" ") %></span>.<% end %>
-        <% if @status.reboots_itself? %>
-          The box restarts itself at <%= @status.maintenance_time %>.
-        <% else %>
-          Restart it on the box — <code>sudo reboot</code>. Vilice has no restart command.
-        <% end %>
-      </p>
+<% unless @machine.operate? %>
+  <p class="note observe-only"><%= icon "lock", size: 14 %>
+    This box holds an <strong>observe</strong> key: Vilice can read it, not act on it.
+    Grant <strong>operate</strong> to act here.</p>
+<% end %>
+<%# ── Status, at a glance ────────────────────────────────────────────────────
+    The quick view: how full the box is, as bars, then a chip for each other thing about
+    it, saying how it is. Nothing here acts and nothing is folded away — a chip with a
+    problem is coloured, and every chip leads to its part of the Machine Status page,
+    where the detail and the acts are (blueprint/console/interface.md). %>
+<%# The whole card is the way to Machine Status: the title carries the link and it is
+    stretched over the card. The `status` button and the chips sit above it — the button
+    re-reads the box (a POST, so a hover cannot fire an SSH connection), and each chip
+    goes to its own part of the page. %>
+<div class="panel observe quick-view">
+  <div class="quick-head">
+    <%= link_to "Status", status_machine_path(@machine), class: "kicker card-link", title: "Machine status, in full" %>
+    <span class="read-age"><%= read_age(@status) %></span>
+    <%= button_to refresh_machine_path(@machine), class: "btn cmd observe sm", title: "Read the box again" do %>
+      <%= vilice_verb "status" %>
     <% end %>
   </div>
+  <%# How full it is, as bars; how busy and how long up, as words. %>
+  <div class="usage-row">
+    <%= usage_bar "Memory", percent: @status.mem_percent, level: @status.mem_level, icon_name: "memory-stick",
+          used: @status.mem_used_bytes, total: @status.mem_total_bytes %>
+    <%= usage_bar "Disk", percent: @status.disk_percent, level: @status.disk_level, icon_name: "hard-drive",
+          used: @status.disk_used_bytes, total: @status.disk_total_bytes %>
+    <p class="usage-words">
+      <span><%= icon "cpu", size: 13 %> load <strong><%= @status.load1 %></strong></span>
+      <span><%= icon "clock", size: 13 %> up <strong><%= distance_of_time_in_words(0, @status.uptime_sec) %></strong></span>
+    </p>
+  </div>
+  <%# Everything else about the box, on one line: a chip each, coloured when it needs
+      you, and each the link to its part of Machine Status. %>
+  <p class="status-chips">
+    <%= status_chip @machine, "Hardening", hardening_summary(@status), "status", @status.hardened? ? "lock" : "lock-open" %>
+    <%= status_chip @machine, "Maintenance", maintenance_summary(@status), "maintenance", "stethoscope" %>
+    <% unless @status.balancer? %>
+      <%= status_chip @machine, "Registries", registries_summary(@status), "registries", "library-big" %>
+    <% end %>
+    <% if @status.certs.any? %>
+      <%= status_chip @machine, "Certificates", certs_summary(@status), "certificates", "shield" %>
+    <% end %>
+    <%= status_chip @machine, "Record", record_summary(@status, @record), "record", "disc" %>
+    <%= status_chip @machine, "Access", access_summary(@machine, @actors), "access", "key-round" %>
+  </p>
+</div>
 
   <%# ── Apps ──────────────────────────────────────────────────────────────────
-      What the box says is running, which is the reason the box exists. Each row
-      carries the image digest it is actually running and links through to the
-      App where we have one. Absent only where the box says it is a balancer. %>
+      What the box says is running, which is the reason the box exists. One line per
+      app: how it is doing, the digest it is actually running, and the way to its own
+      page — where its acts are. Every app the box reports has that page, held in our
+      record or not. Absent only where the box says it is a balancer. %>
   <% unless @status.balancer? %>
     <div class="panel observe">
       <div class="kicker">Apps on this box</div>
@@ -128,19 +106,18 @@
             <li class="row">
               <span class="cell-name">
                 <%= icon "box", size: 15, css_class: "icon row-icon" %>
-                <% if app %>
-                  <%= link_to box_app["name"], app, class: "row-name" %>
-                <% else %>
-                  <span class="row-name"><%= box_app["name"] %></span>
-                <% end %>
+                <%= link_to box_app["name"], machine_box_app_path(@machine, box_app["name"]), class: "row-name" %>
               </span>
+              <span class="cell-state"><%= box_app_state(box_app) %></span>
+              <%# Where it answers: a link that opens the app itself, in a new tab. %>
+              <span class="cell-hosts"><%= host_links(box_app["hostnames"], more_path: machine_box_app_path(@machine, box_app["name"])) %></span>
+              <%# How much of the box it is using, then two marks — its certificates and its
+                  backup — that stay quiet unless something is wrong. %>
+              <span class="cell-memory"><%= app_memory_bar(@status, box_app) %></span>
+              <span class="cell-marks"><%= app_cert_mark(@status, box_app["name"]) %><%= app_backup_mark(@status, box_app["name"]) %></span>
               <span class="cell-project">
                 <% if app&.project %>
                   <%= link_to app.project.name, app.project, class: "owner-link" %>
-                <% elsif app.nil? %>
-                  <%# The box runs it, our record doesn't know it — a machine-view deploy
-                      keeps no App, and so does anything deployed outside the console. %>
-                  <span class="badge unowned" title="Running on the box with no placement recorded here">not in our record</span>
                 <% end %>
               </span>
               <span class="cell-image"><%= digest_chip(box_app["image"]) %></span>
@@ -156,19 +133,21 @@
         <p class="note muted">
           <%= icon "triangle-alert", size: 13 %>
           Placed here but not reported running:
-          <%= safe_join(missing.map { |i| link_to(i.name, i) }, ", ") %>.
+          <%= safe_join(missing.map { |i| link_to(i.name, machine_box_app_path(@machine, i.name)) }, ", ") %>.
         </p>
+      <% end %>
+      <% if acts %>
+        <%= render "machines/act", verb: "deploy",
+              state: "Deploy an app to this box",
+              button: link_to(vilice_verb("deploy"), new_machine_box_app_path(@machine), class: "btn mutate cmd sm") %>
       <% end %>
     </div>
   <% end %>
 
-  <%= render "machines/backups", status: @status %>
-  <%= render "machines/certs", status: @status %>
-
   <%# ── The edge, when this box is a balancer ───────────────────────────────
       Two halves, kept visibly apart: the table this box *should* serve, derived from
       the apps that select it, and the addresses it *reports* fronting. Nothing
-      reconciles them — applying is an act, across in Operate. %>
+      reconciles them — sending the table is the act on this card. %>
   <% if @machine.balancer? %>
     <div class="panel observe">
       <div class="kicker">Edge · derived from the apps behind it</div>
@@ -193,21 +172,15 @@
           Box reports fronting nothing yet.
         <% end %>
       </p>
+      <% if acts %>
+        <%= render "machines/act", verb: "route",
+              state: @table.any? ? "Send the edge table: #{pluralize(@table.size, 'app')} behind it" : "Send the edge table (no app selects this box yet)",
+              button: act_button(@machine, "route", frame: "ceremony-edge") %>
+        <%= turbo_frame_tag "ceremony-edge" %>
+      <% end %>
     </div>
   <% end %>
-  <%= render "machines/record_card", record: @record %>
-  <%= render "machines/keyholders", machine: @machine, actors: @actors %>
 <% end %>
-</section>
-
-<section class="zone zone-operate" aria-label="Operate">
-  <h2 class="zone-head"><%= icon "zap", size: 15 %> Operate</h2>
-  <%= render "machines/operate", machine: @machine, status: @status, table: @table %>
-  <%# The ceremony lands here, inside the zone that writes: pick an act → this frame
-      fills with the preview of the exact record line, then Confirm writes & runs it. %>
-  <%= turbo_frame_tag "ceremony" %>
-</section>
-</div>
 
 <%# ── Record — this box's half of the two records, newest first ─────────────── %>
 <h2 class="section-kicker"><%= icon "disc", size: 15 %> Record</h2>

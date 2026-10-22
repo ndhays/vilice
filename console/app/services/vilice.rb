@@ -176,10 +176,21 @@ module Vilice
       Vilice.read(machine, "logs #{app} --tail #{Integer(tail)} --json")
     end
 
+    CACHED = %w[status actors doctor record].freeze
+
     def cached(machine, verb, refresh:)
-      key = "vilice:observe:#{verb}:#{machine.id}"
+      key = cache_key(machine, verb)
       Rails.cache.delete(key) if refresh
       Rails.cache.fetch(key, expires_in: CACHE_TTL) { yield }
+    end
+
+    def cache_key(machine, verb) = "vilice:observe:#{verb}:#{machine.id}"
+
+    # Drop every cached read of a box. Called after an act on it: the act changed the
+    # box, so a read from before it is now wrong, and the page the act returns to must
+    # not show it. Without this a fresh deploy took up to CACHE_TTL to appear.
+    def forget(machine)
+      CACHED.each { |verb| Rails.cache.delete(cache_key(machine, verb)) }
     end
   end
 
@@ -206,6 +217,9 @@ module Vilice
       event.settle!(result[:ok] ? "ok" : "failed", detail: result[:ok] ? nil : result[:error],
                     output: result[:ok] ? settled_output(result) : result[:output].presence || result[:error],
                     exit_status: result[:exit_status])
+      # Whatever it did, what we last read of the box is now out of date — and that is
+      # so for a failed act too, which may have got partway.
+      Observe.forget(machine)
       { event: event, result: result }
     end
 

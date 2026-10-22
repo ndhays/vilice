@@ -97,7 +97,7 @@ module Vilice
     BANDS = {
       "ok"   => { mem: 35, disk: 40, load: "0.20", uptime_days: 12 },
       "warn" => { mem: 84, disk: 80, load: "1.60", uptime_days: 5 },
-      "crit" => { mem: 95, disk: 96, load: "7.90", uptime_days: 1 },
+      "crit" => { mem: 95, disk: 96, load: "7.90", uptime_days: 1 }
     }.freeze
 
     MEM_TOTAL_KB  = 16_000_000
@@ -119,16 +119,18 @@ module Vilice
           "mem_total_kb"     => MEM_TOTAL_KB,
           "mem_available_kb" => (MEM_TOTAL_KB * (100 - b[:mem]) / 100.0).round,
           "disk_total_bytes" => DISK_TOTAL,
-          "disk_free_bytes"  => (DISK_TOTAL * (100 - b[:disk]) / 100.0).round,
+          "disk_free_bytes"  => (DISK_TOTAL * (100 - b[:disk]) / 100.0).round
         },
         "apps"      => apps_for(machine),
-        "hardening" => hardening_for(health),
+        "hardening" => hardening_for(health)
       }.tap do |d|
         (m = maintenance_for(machine, health)) and d["maintenance"] = m
         (u = updates_for(machine, health)) and d["updates"] = u
         d["reboot"] = reboot_for(machine)
         d["backups"] = backups_for(machine, d["apps"], health)
         (c = certs_for(machine, health)) and d["certs"] = c
+        # A `fake-registry` label reports the box logged into that host.
+        (r = label_value(machine, "fake-registry")) and d["registries"] = [ { "host" => r, "username" => "deploy" } ]
       end
     end
 
@@ -209,7 +211,7 @@ module Vilice
       entries = [
         { "time" => 26.hours.ago.iso8601, "actor" => "ci-deployer",    "action" => "deploy",  "args" => [ app ] },
         { "time" => 90.minutes.ago.iso8601, "actor" => client,         "action" => "restart", "args" => [ app ] },
-        { "time" => 5.minutes.ago.iso8601, "actor" => "snapshot.timer", "action" => "observe", "args" => [] },
+        { "time" => 5.minutes.ago.iso8601, "actor" => "snapshot.timer", "action" => "observe", "args" => [] }
       ]
       { "entries" => entries, "count" => entries.size, "intact" => true }
     end
@@ -229,8 +231,10 @@ module Vilice
     end
 
     def apps_for(machine)
-      machine.placements.includes(:app).map do |t|
-        { "name" => t.app.name, "image" => t.current_image || t.app.image }
+      machine.placements.includes(:app).each_with_index.map do |t, i|
+        { "name" => t.app.name, "image" => t.current_image || t.app.image, "state" => "Up 2 hours",
+          "hostnames" => [ t.app.hostname ].compact_blank, "rollback" => true,
+          "memory_bytes" => (180 + 140 * i) * 1024 * 1024 }
       end
     end
 

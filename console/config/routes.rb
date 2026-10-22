@@ -82,7 +82,14 @@ Rails.application.routes.draw do
     # the machine view's own surface, and it works with no Project and no App —
     # the AppConfig is sent to the box and discarded, and the box's record is the
     # only record. See blueprint/console/interface.md.
-    resources :apps, only: %i[ new create destroy ], module: :machines, as: :box_apps
+    # `show` is the page of one app on this box — what the box reports about it, and
+    # every act on it (decisions/acts-sit-with-what-they-act-on.md). `:id` is the app's
+    # name on the box.
+    resources :apps, only: %i[ new create show ], module: :machines, as: :box_apps
+    # Log the box into a registry. Its own form rather than a ceremony act, because it
+    # carries a password: that goes to the box on stdin and is kept nowhere. Logging out
+    # is an ordinary ceremony act.
+    resource :registry, only: %i[ new create ], module: :machines, controller: "registries"
     resources :labels, only: %i[ create destroy ], shallow: true
     member do
       # Observe — re-read the machine's live status, bypassing the 30s cache. It
@@ -93,6 +100,11 @@ Rails.application.routes.draw do
       # The half of the machine page that needs the box, loaded into a frame after the
       # rest of the page is on screen. A read, and the same cached reads as before.
       get :live
+      # Machine Status: everything about the box itself, in full, with the acts on it.
+      # The machine page shows a quick view of this and links down
+      # (decisions/acts-sit-with-what-they-act-on.md). The action is not named `status`
+      # because a controller already has a method by that name.
+      get :status, action: :status_page
       # Machine Settings: ownership, sharing, the key, transfer and removal — its own
       # page, apart from the box's live view (decisions/machine-settings-is-a-page.md).
       get :settings

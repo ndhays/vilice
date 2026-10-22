@@ -1,7 +1,7 @@
 <%# Preview the record entry — the confirm step IS the record-before-act
     invariant made visible. Nothing is written until Confirm. The line below is
     rendered with the same chain styling it will have once committed. %>
-<%= turbo_frame_tag "ceremony" do %>
+<%= turbo_frame_tag @frame do %>
   <div class="ceremony">
     <div class="kicker">Confirm · this writes to the record</div>
     <p class="ceremony-intro">You're about to witness this act on
@@ -69,7 +69,8 @@
       </div>
     <% end %>
 
-    <% confirm = { act: @mutation.act.verb, app_id: @mutation.app&.id, from: @from } %>
+    <% confirm = { act: @mutation.act.key, app_id: @mutation.app&.id, name: @mutation.name, from: @from }.compact %>
+    <% confirm[:registry] = @mutation.params[:registry] if @mutation.params[:registry] %>
     <% confirm.merge!(image: @mutation.image, hostname: @mutation.hostname, port: @mutation.port, health: @mutation.health) if @mutation.needs_compose? %>
     <div class="ceremony-actions">
       <%# The act itself: the command button, named for what it sends. It and Cancel
@@ -77,7 +78,8 @@
           belong to the page, and on the machine page the ceremony sits inside a frame
           the box's reply fills in, which the reply to this cannot land in. %>
       <%= button_to vilice_verb(@mutation.act.verb), machine_mutation_path(@machine), method: :post,
-            class: "btn mutate cmd", params: confirm, form: { data: { turbo_frame: "_top" } } %>
+            class: "btn #{@mutation.danger? ? 'danger' : 'mutate'} cmd", params: confirm,
+            form: { data: { turbo_frame: "_top", controller: "busy", action: "submit->busy#start" } } %>
       <%= link_to "Cancel", @return_path, class: "btn-quiet", data: { turbo_frame: "_top" } %>
     </div>
   </div>

@@ -1,0 +1,41 @@
+<% content_for :title, "Log in to a registry — #{@machine.name} — Vilice" %>
+
+<%= breadcrumb [["Machines", machines_path], [@machine.name, machine_path(@machine)], ["Status", status_machine_path(@machine)], ["Log in to a registry", nil]] %>
+
+<%= page_header "Log #{@machine.name} in to a registry", icon: "log-in" %>
+
+<p class="note">A registry login belongs to the box, not to an app: one login, shared by
+  every app that pulls from that registry, until it is logged out.</p>
+
+<%= form_with url: machine_registry_path(@machine), method: :post, class: "stack-form",
+      data: { controller: "busy", action: "submit->busy#start" } do |f| %>
+  <% if @error %>
+    <div class="flash alert"><%= @error %></div>
+  <% end %>
+  <label class="field">
+    <span>Registry</span>
+    <%= f.text_field :registry, value: @registry, required: true, autocomplete: "off",
+          spellcheck: false, placeholder: "ghcr.io" %>
+    <small class="muted">The host, and a port if it has one. No path.</small>
+  </label>
+  <label class="field">
+    <span>Username</span>
+    <%= f.text_field :username, value: @username, required: true, autocomplete: "off", spellcheck: false %>
+  </label>
+  <label class="field">
+    <span>Password or token</span>
+    <%= f.password_field :password, required: true, autocomplete: "off" %>
+    <small class="muted">Sent to the box once, on stdin. Vilice does not keep it, and it
+      is not written to the record.</small>
+  </label>
+
+  <%# The form is the preview: what runs, and what is written down. %>
+  <p class="ceremony-runs">Runs over scoped SSH, with the password on stdin:</p>
+  <%= command_block("vilice registry-login <registry> --username <name> --json") %>
+  <p class="note muted">Recorded before it runs: who, the registry and the username.</p>
+
+  <div class="form-actions">
+    <%= button_tag vilice_verb("registry-login"), class: "btn mutate cmd" %>
+    <%= link_to "Cancel", status_machine_path(@machine, anchor: "registries"), class: "btn-quiet" %>
+  </div>
+<% end %>

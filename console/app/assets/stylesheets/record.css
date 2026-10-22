@@ -255,6 +255,7 @@
 /* the settled (or pending) outcome on a chain entry */
 .outcome { font-size: 0.72rem; font-weight: 700; margin-left: 0.4rem; display: inline-flex; align-items: center; gap: 0.2rem; }
 .outcome.running { color: var(--muted); font-style: italic; font-weight: 600; }
+.outcome.preview { color: var(--muted); font-weight: 600; }
 .outcome.ok { color: var(--ok); }
 .outcome.failed { color: var(--bad); text-transform: uppercase; letter-spacing: 0.04em; }
 .chain-entry.is-failed .chain-what { color: var(--bad); }
@@ -346,10 +347,11 @@
 .route-table .route-ups { color: var(--muted); font-size: 0.85rem; }
 .route-table .route-app { margin-left: auto; font-size: 0.85rem; }
 
-/* ── The machine page: facts, then two zones ──────────────────────────────
-   What the box *is* reads as a labelled line; only live state is a pill. Below,
-   Observe and Operate sit side by side, so which kind of control you are looking
-   at is answered by where it sits (decisions/what-the-console-is-for.md). */
+/* ── The machine page: facts, then cards ──────────────────────────────────
+   What the box *is* reads as a labelled line; only live state is a pill. Below, each
+   card holds what the box reports about one thing and the acts on it
+   (decisions/acts-sit-with-what-they-act-on.md). Which kind of control a button is
+   reads off the button: blue reads, violet acts, red takes something away. */
 .facts {
   display: grid; grid-template-columns: max-content minmax(0, 1fr);
   gap: 0.15rem 1rem; margin: 0.3rem 0 0.8rem; font-size: 0.88rem;
@@ -361,26 +363,21 @@
 .facts dd { margin: 0; }
 .fact-gap { color: var(--bad); }
 
-.zones {
-  display: grid; gap: 1.5rem; align-items: start;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-}
-@media (max-width: 60rem) { .zones { grid-template-columns: minmax(0, 1fr); } }
-.zone-head {
-  display: flex; align-items: center; gap: 0.4rem;
-  font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  margin: 0 0 0.6rem; padding-bottom: 0.4rem; border-bottom: 2px solid currentColor;
-}
-.zone-observe .zone-head { color: var(--observe); }
-.zone-operate .zone-head { color: var(--mutate); }
-.zone .panel { margin-bottom: 1rem; }
+.observe-only { margin: 0 0 0.8rem; }
+.observe-only .icon { vertical-align: -0.15em; }
+.app-state { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; }
+.backup-line { margin: 0.5rem 0 0; font-size: 0.9rem; }
+.backup-line .icon { vertical-align: -0.15em; }
+.backup-line.ok .icon { color: var(--ok); }
+.backup-line.warn { color: var(--warn); }
+.backup-line.bad { color: var(--bad); }
+.fact-rows .fact-act { grid-column: 3; justify-self: end; }
 
-/* One act: plain words and the command it sends on the left, the button (only
-   when there is something to do) on the right. */
-.acts-lede { font-size: 0.85rem; color: var(--muted); margin: 0 0 0.4rem; }
+/* One act, at the foot of its card: plain words on the left, the button on the
+   right. Inert when there is nothing to do, so the card keeps its shape. */
 .act {
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-  padding: 0.6rem 0; border-top: 1px solid var(--mutate-line);
+  padding: 0.6rem 0 0; margin-top: 0.6rem; border-top: 1px solid var(--mutate-line);
 }
 .act-state { font-size: 0.9rem; min-width: 0; }
 .act-button { flex: none; }
@@ -409,10 +406,6 @@
 .btn.cmd.danger:hover { background: var(--bad); }
 .btn.cmd[aria-disabled="true"] { opacity: 0.35; cursor: default; pointer-events: none; }
 
-/* No access, or nothing can be sent: one large statement, not a paragraph. */
-.no-access { text-align: center; padding: 1.4rem 1.2rem; }
-.no-access > .icon { color: var(--muted); }
-.no-access-head { font-weight: 700; font-size: 1.05rem; margin: 0.4rem 0 0.2rem; }
 .maint-pending .icon { vertical-align: -0.2em; }
 .ceremony-runs { font-size: 0.85rem; margin: 0.8rem 0 0.3rem; }
 
@@ -453,10 +446,17 @@ h1 .health-line.crit { font-size: 1rem; }
 /* A card of named facts, one per line: the thing on the left, what is true of it on
    the right, and — only when something is wrong — why, beneath. The line's colour is
    its verdict, carried by an icon as well so it survives without colour. */
-.fact-rows { list-style: none; margin: 0.3rem 0 0; padding: 0; }
+/* One grid for the whole list, so the columns line up down the card: the name, what is
+   true of it, and a last column for what it belongs to or the act on it. Each row
+   borrows the list's columns (subgrid). */
+.fact-rows {
+  list-style: none; margin: 0.3rem 0 0; padding: 0;
+  display: grid; grid-template-columns: minmax(7rem, max-content) minmax(0, 1fr) max-content;
+  column-gap: 1rem;
+}
 .fact-rows li {
-  display: grid; grid-template-columns: minmax(7rem, max-content) minmax(0, 1fr);
-  gap: 0.15rem 1rem; padding: 0.4rem 0; border-top: 1px solid var(--line); font-size: 0.9rem;
+  display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: center;
+  row-gap: 0.15rem; padding: 0.4rem 0; border-top: 1px solid var(--line); font-size: 0.9rem;
 }
 .fact-rows li:first-child { border-top: 0; }
 .fact-rows .fact-name { font-weight: 600; overflow-wrap: anywhere; }
@@ -465,7 +465,7 @@ h1 .health-line.crit { font-size: 1rem; }
 .fact-rows li.warn .fact-value { color: var(--warn); }
 .fact-rows li.bad .fact-value { color: var(--bad); }
 .fact-rows .fact-detail {
-  grid-column: 2; font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted);
+  grid-column: 2 / -1; font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted);
   overflow-wrap: anywhere;
 }
 .card-verdict { margin: 0.2rem 0; }
@@ -537,3 +537,93 @@ h1 .health-line.crit { font-size: 1rem; }
 .connect-foot form { margin: 0; }
 .remove-steps { margin: 0.4rem 0 0; padding-left: 1.2rem; display: grid; gap: 0.5rem; }
 .remove-steps .note { margin: 0 0 0.35rem; }
+/* An act that has been sent and not yet answered: the button stays, inert. */
+.btn.cmd[aria-busy="true"] { opacity: 0.6; cursor: progress; }
+
+/* ── The machine page's quick view, and the Machine Status page ───────────────
+   The quick view is how full the box is, then a chip per other thing about it, each
+   the way down to its part of the status page. On the status page each part is a card
+   that leads with the full summary. */
+/* When the box was read, with the button that reads it again right beside the words. */
+.read-bar { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.8rem; }
+.read-bar form, .quick-head form { margin: 0; }
+.read-bar .read-age, .quick-head .read-age { margin: 0; }
+
+/* The quick view is one link: its title is stretched over the whole card, and the
+   things inside that do something else of their own sit above it. */
+.quick-view { position: relative; }
+.quick-view:hover { border-color: var(--observe); }
+.quick-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.quick-head .kicker { margin: 0 0.4rem 0 0; text-decoration: none; }
+.card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.quick-view form, .quick-view .status-chip { position: relative; z-index: 1; }
+/* How full the box is. Two lines each, so nothing has to share a row it cannot fit:
+   the label, percentage and amounts above, the bar beneath at full width. The fill
+   takes the colour of how close it is to trouble. */
+.usage-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.8rem 1.75rem; margin: 0.7rem 0; align-items: end; }
+.usage { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); gap: 0.3rem 0.6rem; align-items: baseline; font-size: 0.85rem; }
+.usage-label { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--muted); }
+.usage .bar { grid-column: 1 / -1; }
+.usage-amount { justify-self: end; overflow: hidden; text-overflow: ellipsis; }
+
+/* The bar: a row of small blocks, like the level meter on an old tape deck — the fill
+   is one colour and thin gaps are cut through it, so it reads as segments without
+   needing any. Square-shouldered on purpose. */
+.bar { display: block; position: relative; height: 0.55rem; border-radius: 2px; background: var(--inset); overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--dot-green); }
+.bar::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(90deg, transparent 0 4px, var(--card) 4px 5px);
+}
+.usage.is-warn .bar-fill { background: var(--dot-yellow); }
+.usage.is-crit .bar-fill { background: var(--dot-red); }
+.usage-pct { font-family: var(--font-mono); font-weight: 600; text-align: right; }
+.usage-amount { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+.usage-words { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; margin: 0; font-size: 0.85rem; color: var(--muted); }
+.usage-words span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.usage-words strong { color: var(--ink); font-family: var(--font-mono); font-weight: 600; }
+
+/* Everything else about the box, as chips on one line. Calm when well; the border and
+   words take the warning colour when not. */
+.status-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.7rem 0 0; }
+.status-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.65rem;
+  border: 1px solid var(--line); border-radius: 999px; font-size: 0.82rem;
+  color: var(--ink); text-decoration: none; background: var(--card);
+}
+.status-chip:hover { background: var(--inset); }
+.status-chip .icon { color: var(--ok); flex: none; }
+.status-chip.is-warn { border-color: var(--warn); color: var(--warn); }
+.status-chip.is-warn .icon { color: var(--warn); }
+.status-chip.is-bad { border-color: var(--bad); color: var(--bad); background: var(--bad-soft); }
+.status-chip.is-bad .icon { color: var(--bad); }
+.status-summary { font-size: 0.9rem; min-width: 0; }
+.is-warn > .status-part-head .status-summary { color: var(--warn); }
+.is-bad > .status-part-head .status-summary { color: var(--bad); }
+.status-part { scroll-margin-top: 1rem; }
+.status-part-head { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.5rem; }
+.status-part-head .kicker { margin: 0; flex: none; min-width: 7.5rem; }
+.status-part .keyholders { margin: 0; }
+.status-part turbo-frame:not(:empty) { display: block; margin-top: 0.6rem; }
+
+/* What the box is, on one line: a row of bordered cells, label over value. */
+.facts-table {
+  border-collapse: collapse; margin: 0.4rem 0 0.9rem; font-size: 0.88rem;
+  border: 1px solid var(--line); border-radius: 8px;
+}
+.facts-table th, .facts-table td { text-align: left; padding: 0.3rem 1.1rem; border-left: 1px solid var(--line); }
+.facts-table th:first-child, .facts-table td:first-child { border-left: 0; }
+.facts-table th {
+  color: var(--muted); font-size: 0.7rem; font-weight: 600; padding-bottom: 0;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.facts-table td { padding-top: 0.1rem; padding-bottom: 0.4rem; }
+
+/* The facts table, with Settings beside it. */
+.facts-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin: 0.4rem 0 0.9rem; }
+.facts-row .facts-table { margin: 0; }
+
+/* A hostname that opens the app in a new tab. */
+.host { font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.25rem; }
+.host-more { font-size: 0.8rem; color: var(--muted); }
+.host-list { display: flex; flex-wrap: wrap; gap: 0.2rem 1rem; }

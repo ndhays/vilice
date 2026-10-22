@@ -152,7 +152,8 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       get live_machine_path(crit)
       assert_response :success
       assert_select ".health-line.crit"     # loud health line
-      assert_select ".integrity.ok"         # box record reads back intact
+      assert_select ".status-chip[title^=?]", "Record: Intact"   # box record reads back intact
+      assert_select ".usage.is-crit", minimum: 1                 # the bars take the warning colour
     end
   end
 
@@ -167,25 +168,175 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "an operate box shows its maintenance window, and Operate offers Apply updates with its command" do
+  test "an operate box shows its maintenance window, and the card offers apply-updates" do
     with_fake_observe do
       sign_in_as @user
       box = Machine.create!(name: "upd-box", ssh_host: "x", scope: "operate")
       box.labels.create!(key: "fake-updates", value: "3")
-      get live_machine_path(box)
+      get status_machine_path(box)
       assert_response :success
-      # Observe reports; it holds no act.
-      assert_select ".zone-observe .kicker", "Maintenance"
       assert_select ".maint-line", /Daily at 04:00/
       assert_select ".maint-pending", /3 updates waiting/
-      assert_select ".zone-observe .act", count: 0
-      assert_select ".zone-observe a[href*=?]", "act=apply-updates", count: 0
-      # Operate offers it, on a button named for the command it sends.
-      assert_select ".zone-operate .act", /3 OS updates waiting/ do
-        assert_select "a.btn.cmd[href=?]", new_machine_mutation_path(box, act: "apply-updates"), text: "apply-updates"
+      # The reading and the act on it sit in one card, on a button named for the
+      # command it sends, and the preview opens in that card.
+      assert_select ".panel", /Maintenance/ do
+        assert_select ".act", /3 OS updates waiting/ do
+          assert_select "a.btn.cmd[href=?][data-turbo-frame=?]",
+                        new_machine_mutation_path(box, act: "apply-updates", frame: "ceremony-maintenance", from: "status"),
+                        "ceremony-maintenance", text: "apply-updates"
+        end
+        assert_select "turbo-frame#ceremony-maintenance"
       end
-      # The ceremony opens inside the zone that writes.
-      assert_select ".zone-operate turbo-frame#ceremony"
+    end
+  end
+
+  # ── The quick view, and the Machine Status page it leads to ──────────────
+  test "the machine page shows a quick view: usage as bars, then a chip per thing, each a link down" do
+    with_fake_observe do
+      sign_in_as @user
+      box = Machine.create!(name: "calm", ssh_host: "x", scope: "operate")
+      box.labels.create!(key: "fake-health", value: "ok")
+      box.labels.create!(key: "fake-registry", value: "ghcr.io")
+      app = App.create!(name: "shop", hostname: "shop.example")
+      app.placements.create!(machine: box, status: "running")
+      get live_machine_path(box)
+      assert_response :success
+
+      # Memory and disk as bars: the fill is as wide as the usage, and calm when low.
+      assert_select ".quick-view .usage.is-ok", 2
+      assert_select ".quick-view .usage", /Memory.*\d+%.*of/m
+      assert_select ".quick-view .usage .bar .bar-fill[style^=?]", "width:"
+      assert_select ".quick-view .usage-words", /load.*up/m
+
+      # Everything else is one line of chips: a few words each, the sentence on hover.
+      { "status" => "Hardened", "maintenance" => "Up to date", "registries" => "ghcr.io",
+        "certificates" => "1 cert valid", "record" => "Record intact" }.each do |anchor, words|
+        assert_select ".status-chips a.status-chip.is-ok[href=?]", status_machine_path(box, anchor: anchor), text: words
+      end
+      assert_select "a.status-chip[title=?]", "Maintenance: Up to date · daily at 04:00"
+      # The card itself is the link to Machine Status; reading again sits by the words.
+      assert_select ".quick-view a.card-link[href=?]", status_machine_path(box), text: "Status"
+      assert_select ".quick-view a", text: /Machine status →/, count: 0
+      assert_select ".quick-head .read-age + form[action=?]", refresh_machine_path(box)
+      # Nothing is folded away, and nothing here acts but the apps list's deploy.
+      assert_select "details.section", count: 0
+      assert_select "a[href*=?]", "act=", count: 0
+      assert_select ".act a.btn.cmd[href=?]", new_machine_box_app_path(box), text: "deploy"
+
+      # …how much of the box it is using, and two quiet marks: certificates, backup.
+      assert_select ".app-box-rows .app-memory[title*=?]", "of this box's memory" do
+        assert_select ".bar .bar-fill[style^=?]", "width:"
+        assert_select ".app-memory-amount", "180 MB"
+      end
+      assert_select ".app-box-rows .app-mark.is-ok[title=?]", "1 certificate valid"
+      assert_select ".app-box-rows .app-mark.is-ok[title^=?]", "Backed up"
+      # The app's line carries where it answers, as a link that opens it in a new tab.
+      assert_select ".app-box-rows .cell-hosts a.host[href=?][target=_blank][rel=noopener]", "https://shop.example"
+    end
+  end
+
+  test "a chip with something to say is coloured, and says it" do
+    with_fake_observe do
+      sign_in_as @user
+      box = Machine.create!(name: "busy", ssh_host: "x", scope: "operate")
+      box.labels.create!(key: "fake-health", value: "warn")
+      box.labels.create!(key: "fake-updates", value: "3")
+      app = App.create!(name: "shop", hostname: "shop.example")
+      app.placements.create!(machine: box, status: "running")
+      get live_machine_path(box)
+
+      assert_select ".status-chip.is-warn", "3 updates"
+      assert_select ".status-chip.is-warn", "1 cert expiring"
+      # The fake answers no `actors` read: an unread ledger is a problem.
+      assert_select ".status-chip.is-bad", "Access unread"
+      assert_select ".usage.is-warn", minimum: 1
+      # The app's own marks speak up too: a cert close to expiry, a backup never run.
+      assert_select ".app-box-rows .app-mark.is-warn[title^=?]", "A certificate expires within"
+      assert_select ".app-box-rows .app-mark.is-warn[title=?]", "Never backed up"
+    end
+  end
+
+  test "Settings sits beside the facts" do
+    sign_in_as @user
+    box = Machine.create!(name: "set-box", ssh_host: "10.1.1.2", scope: "operate")
+    stub_observe { get machine_path(box) }
+    assert_select ".facts-row table.facts-table"
+    assert_select ".facts-row a[href=?]", settings_machine_path(box), text: /Settings/
+  end
+
+  test "the facts are one row of labelled cells" do
+    sign_in_as @user
+    box = Machine.create!(name: "facts-box", ssh_host: "10.1.1.1", scope: "operate")
+    stub_observe { get machine_path(box) }
+    assert_select "table.facts-table#machine-facts thead th", 4
+    assert_select "table.facts-table th", "Address"
+    assert_select "table.facts-table td", /10\.1\.1\.1/
+    assert_select "table.facts-table td", /no project/
+  end
+
+  test "Machine Status holds each part in full, under the summary the quick view showed" do
+    with_fake_observe do
+      sign_in_as @user
+      box = Machine.create!(name: "full", ssh_host: "x", scope: "operate")
+      box.labels.create!(key: "fake-health", value: "ok")
+      box.labels.create!(key: "fake-backups", value: "off")
+      get status_machine_path(box)
+      assert_response :success
+      %w[status maintenance registries record access].each do |anchor|
+        assert_select "section.status-part##{anchor} .status-part-head .status-summary"
+      end
+      assert_select "section#status .metrics li", 4
+      assert_select "section#status .raw-output"
+      assert_select "section#record.is-bad .status-summary", /not backed up/
+      assert_select ".read-bar form[action=?]", refresh_machine_path(box, from: "status")
+    end
+  end
+
+  test "reading again from Machine Status returns there" do
+    sign_in_as @user
+    box = Machine.create!(name: "again", ssh_host: "x", scope: "operate")
+    stub_observe { post refresh_machine_path(box, from: "status") }
+    assert_redirected_to status_machine_path(box)
+  end
+
+  test "an unreachable box's status page says so and offers no act" do
+    sign_in_as @user
+    box = Machine.create!(name: "gone-2", ssh_host: "x", scope: "operate")
+    stub_observe { get status_machine_path(box) }
+    assert_response :success
+    assert_select ".panel.unreachable", /could not reach/
+    assert_select "section.status-part", count: 0
+    assert_select "a[href*=?]", "act=", count: 0
+  end
+
+  test "an observe key reads every card and is offered no act" do
+    with_fake_observe do
+      sign_in_as @user
+      box = Machine.create!(name: "look-box", ssh_host: "x", scope: "observe")
+      box.labels.create!(key: "fake-updates", value: "3")
+      get status_machine_path(box)
+      assert_response :success
+      assert_select ".maint-pending", /3 updates waiting/
+      assert_select ".observe-only", /observe/
+      assert_select ".act", count: 0
+      assert_select "a[href*=?]", "act=", count: 0
+    end
+  end
+
+  # A registry login is the box's, so it is read and changed on the machine page.
+  test "the registries card lists the box's logins, with the acts on them" do
+    with_fake_observe do
+      sign_in_as @user
+      box = Machine.create!(name: "reg-box", ssh_host: "x", scope: "operate")
+      box.labels.create!(key: "fake-registry", value: "ghcr.io")
+      get status_machine_path(box)
+      assert_select ".panel", /Registries/ do
+        assert_select ".fact-rows li", /ghcr\.io.*as deploy/m
+        assert_select "a.btn.cmd.danger[href=?]",
+                      new_machine_mutation_path(box, act: "registry-logout", frame: "ceremony-registries", from: "status", registry: "ghcr.io"),
+                      text: "registry-logout"
+        assert_select "a.btn.cmd[href=?]", new_machine_registry_path(box), text: "registry-login"
+      end
     end
   end
 
@@ -199,7 +350,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       box.labels.create!(key: "fake-health", value: "ok")
       box.labels.create!(key: "fake-reboot", value: "linux-image-6.8.0-45-generic libc6")
 
-      get live_machine_path(box)
+      get status_machine_path(box)
       assert_response :success
       assert_select ".maint-reboot", /Restart required/
       assert_select ".maint-note", /To finish updating\s+linux-image-6.8.0-45-generic libc6/
@@ -214,7 +365,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       sign_in_as @user
       box = Machine.create!(name: "calm-box", ssh_host: "x", scope: "operate")
       box.labels.create!(key: "fake-health", value: "ok")
-      get live_machine_path(box)
+      get status_machine_path(box)
       assert_select ".maint-reboot", count: 0
     end
   end
@@ -224,12 +375,12 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       sign_in_as @user
       box = Machine.create!(name: "current-box", ssh_host: "x", scope: "operate")
       box.labels.create!(key: "fake-health", value: "ok") # ok band → 0 updates
-      get live_machine_path(box)
+      get status_machine_path(box)
       assert_response :success
       assert_select ".maint-line", /Daily at/
       assert_select ".updates-current"
       # The act still shows its command — the page is a reference too — but offers no button.
-      assert_select ".zone-operate .act", /up to date/ do
+      assert_select ".act", /up to date/ do
         assert_select ".btn.cmd[aria-disabled=true]", "apply-updates"
         assert_select "a", count: 0
       end
@@ -569,20 +720,28 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       box.labels.create!(key: "fake-health", value: "warn")
       app = App.create!(name: "shop", hostname: "shop.example")
       app.placements.create!(machine: box, status: "running")
-      get live_machine_path(box)
+      get status_machine_path(box)
       assert_response :success
 
-      assert_select ".zone-observe .panel", /Backups/ do
-        assert_select ".fact-rows li.warn", /shop.*Never backed up/m
-        assert_select ".fact-rows li.ok", /The record.*Backed up/m
+      # Backups follow the app, so the machine page keeps only the record's own.
+      assert_select ".kicker", text: "Backups", count: 0
+      assert_select ".panel", /Record/ do
+        assert_select ".backup-line.ok", /Backed up/
+        assert_select ".act a.btn.cmd[href=?]",
+                      new_machine_mutation_path(box, act: "backup-record", frame: "ceremony-record", from: "status"), text: "backup"
       end
-      assert_select ".zone-observe .panel", /Certificates/ do
+      assert_select ".panel", /Certificates/ do
         assert_select ".fact-rows li.warn", /shop\.example.*Expires in \d+ days/m
+        # …and the row names the app the hostname belongs to.
+        assert_select ".fact-rows li a[href=?]", machine_box_app_path(box, "shop"), text: "shop"
       end
-      assert_select ".zone-observe .panel .kicker", "Record"
       # The fake answers no `actors` read, and an unread ledger is never shown empty.
       assert_select ".keyholders", /Could not read the ledger/
       assert_select ".keyholders .access-rows", count: 0
+
+      # …and the app's own backup is on its page there.
+      get machine_box_app_path(box, "shop")
+      assert_select "section#backups.is-warn .status-summary", "Never backed up"
     end
   end
 
@@ -593,20 +752,22 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
       box.labels.create!(key: "fake-health", value: "crit")
       app = App.create!(name: "shop2", hostname: "shop2.example")
       app.placements.create!(machine: box, status: "running")
-      get live_machine_path(box)
-      assert_select ".fact-rows li.bad", /Last attempt failed/
-      assert_select ".fact-rows li.bad .fact-detail", /connection refused/
+      get status_machine_path(box)
       assert_select ".fact-rows li.bad", /Not trusted · expired/
+      get machine_box_app_path(box, "shop2")
+      assert_select "section#backups.is-bad .status-summary", /Last backup failed/
+      assert_select "section#backups .card-note", /connection refused/
     end
   end
 
-  test "a box with no backup repo says nothing on it is backed up" do
+  test "a box with no backup repo says its record is not backed up, and offers no backup" do
     with_fake_observe do
       sign_in_as @user
       box = Machine.create!(name: "no-repo", ssh_host: "x", scope: "operate")
       box.labels.create!(key: "fake-backups", value: "off")
-      get live_machine_path(box)
-      assert_select ".card-verdict.bad", /Nothing on this box is backed up/
+      get status_machine_path(box)
+      assert_select ".card-verdict.bad", /The record is not backed up/
+      assert_select "a[href*=?]", "act=backup-record", count: 0
     end
   end
 
@@ -656,7 +817,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     machine = Machine.create!(name: "app-box", ssh_host: "10.0.0.9", scope: "observe")
     stub_observe(status: status_reply("host")) { get live_machine_path(machine) }
     assert_response :success
-    assert_select ".panel.observe", /host/
+    assert_select ".facts-table td", /host/
   end
 
   # A balancer has no container runtime and would refuse a deploy by name, so the
@@ -676,7 +837,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     machine = Machine.create!(name: "fresh-box", ssh_host: "10.0.0.10", scope: "observe")
     stub_observe(status: status_reply("")) { get live_machine_path(machine) }
     assert_response :success
-    assert_select ".facts dd", "not prepared"
+    assert_select ".facts-table td", "not prepared"
     assert_select "h1 .health-line", /Online/
     assert_select ".kicker", "Apps on this box"
   end
@@ -697,7 +858,7 @@ class MachinesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".metrics", count: 0
     assert_select ".hardening-line", count: 0
     # Every act travels the same connection that just failed, so none is offered.
-    assert_select ".zone-operate .act", count: 0
+    assert_select ".act", count: 0
     # …but re-reading is exactly what you want to do next.
     assert_select ".panel.unreachable form[action=?]", refresh_machine_path(machine)
   end

@@ -3,11 +3,8 @@
 <%= breadcrumb [["Machines", machines_path], [@machine.name, nil]] %>
 
 <%= render "machines/head", machine: @machine, status: nil %>
-<div class="label-row with-action">
+<div class="label-row">
   <%= render "labels/editor", labelable: @machine %>
-  <%# What configures the box rather than reports on it lives on its own page
-      (decisions/machine-settings-is-a-page.md). %>
-  <%= link_to safe_join([ icon("settings", size: 15), "Settings" ]), settings_machine_path(@machine), class: "btn sm" %>
 </div>
 
 <%# A box Vilice has never reached is waiting on one thing: the authorize line, run on

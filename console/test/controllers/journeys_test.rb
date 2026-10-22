@@ -120,9 +120,10 @@ class JourneysTest < ActionDispatch::IntegrationTest
     record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
     stub_observe(status: canned, record: record) { get live_machine_path(@observer) }
     assert_response :success
-    assert_select ".panel.observe", /obs\.local/
-    assert_select ".panel.readonly", /observe.*key/i  # observe machine: read-only, not amber
-    assert_select ".integrity.ok"                      # the chain-integrity line
+    assert_select ".facts-table td", "obs.local"       # what the box calls itself
+    assert_select ".observe-only", /observe.*key/i     # observe machine: it reads, and offers no act
+    assert_select ".act", count: 0
+    assert_select ".status-chip.is-ok[title^=?]", "Record: Intact", text: /Record intact/
   end
 
   # A POST, not a GET: it opens an SSH connection to the box, and Turbo prefetches
@@ -148,8 +149,12 @@ class JourneysTest < ActionDispatch::IntegrationTest
     end
     assert_response :success
     assert_select ".ceremony"
-    assert_select ".chain-entry.is-pending .chain-what", /apply-updates op/  # the would-be line
+    assert_select ".chain-entry.is-preview .chain-what", /apply-updates op/  # the would-be line
     assert_select "form[action=?]", machine_mutation_path(@operator)           # Confirm POSTs
+    # Nothing has been sent, so the entry-to-be must not read as running.
+    assert_select ".outcome.preview", "not run yet"
+    assert_select ".outcome.running", count: 0
+    assert_select "form[data-controller=busy][data-action=?]", "submit->busy#start"
   end
 
   test "an unknown or invalid act is refused" do
@@ -200,7 +205,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_match(/failed/i, flash[:alert])
   end
 
-  test "machine page lists its apps read-only, linking to the app (no act verbs)" do
+  test "machine page lists its apps, one line each, linking to the app's page on the box" do
     sign_in_as @user
     project = Project.create!(name: "Globex")
     app = project.apps.create!(name: "globex-api")
@@ -214,13 +219,15 @@ class JourneysTest < ActionDispatch::IntegrationTest
     record = { ok: true, data: { "data" => { "entries" => [], "count" => 0, "intact" => true } }, at: Time.current }
     stub_observe(status: canned, record: record) { get live_machine_path(@operator) }
     assert_response :success
-    assert_select ".app-box-rows a[href=?]", app_path(app), text: "globex-api"
+    assert_select ".app-box-rows a[href=?]", machine_box_app_path(@operator, "globex-api"), text: "globex-api"
     assert_select ".app-box-rows a", text: "Globex"    # the project it serves
     # The digest is truncated and copyable; the button carries the *whole* reference.
     assert_select ".digest-chip[data-clipboard-text-value=?]", apps.first["image"]
     assert_select ".digest-chip .digest-text", "@abcdef012345"
-    assert_select ".acts-app-verbs", count: 0          # acting on an app happens from its project
-    assert_select "a[href*=?]", "act=deploy", count: 0  # no app redeploy here
+    # An app's acts are on its own page; the list carries only the box-level deploy.
+    assert_select "a[href*=?]", "act=restart", count: 0
+    assert_select "a[href*=?]", "act=remove", count: 0
+    assert_select ".act a.btn.cmd[href=?]", new_machine_box_app_path(@operator), text: "deploy"
   end
 
   # Plan and reality are kept apart: an app we placed here that the box does not
@@ -238,12 +245,13 @@ class JourneysTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".app-box-rows .row", count: 0
     assert_select ".panel", /Placed here but not reported running/
-    assert_select ".panel a[href=?]", app_path(app), text: "ghost-api"
+    assert_select ".panel a[href=?]", machine_box_app_path(@operator, app.name), text: "ghost-api"
   end
 
   # …and the mirror of it: something the box runs that we hold no placement for. A
-  # machine-view deploy keeps no App, so this is a normal state, not an alarm.
-  test "an app the box runs with no placement of ours says so" do
+  # machine-view deploy keeps no App, so this is a normal state: the row carries no
+  # badge for it, and its page says "Placement: none".
+  test "an app the box runs with no placement of ours is listed like any other" do
     sign_in_as @user
     apps   = [ { "name" => "stray", "image" => "docker.io/stray@sha256:0011223344556677001122334455667700112233445566770011223344556677" } ]
     canned = { ok: true, at: Time.current,
@@ -252,7 +260,11 @@ class JourneysTest < ActionDispatch::IntegrationTest
     stub_observe(status: canned, record: record) { get live_machine_path(@operator) }
     assert_response :success
     assert_select ".app-box-rows .row-name", "stray"
-    assert_select ".app-box-rows .badge.unowned", "not in our record"
+    assert_select ".app-box-rows a[href=?]", machine_box_app_path(@operator, "stray")
+    assert_select ".app-box-rows .badge", count: 0
+    # A box that reports no memory, certificates or backups draws no bar and no marks.
+    assert_select ".app-box-rows .app-memory", count: 0
+    assert_select ".app-box-rows .app-mark", count: 0
   end
 
   test "a lifecycle act targets an app on the machine and records the app" do
@@ -282,7 +294,7 @@ class JourneysTest < ActionDispatch::IntegrationTest
     get new_machine_mutation_path(@operator, act: "deploy", app_id: app.id,
           image: "ghcr.io/acme/web@sha256:ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7ee7e")
     assert_select ".ceremony .spec"
-    assert_select ".chain-entry.is-pending .chain-what", /deploy web on op/
+    assert_select ".chain-entry.is-preview .chain-what", /deploy web on op/
   end
 
   test "deploy records pending, pipes the envelope, settles ok, and pins desired_image" do

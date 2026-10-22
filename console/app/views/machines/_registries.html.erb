@@ -1,0 +1,26 @@
+<%# Registries — the private image registries this box is logged into, as the box
+    reports them: host and username, never the secret. A box credential, shared by every
+    app that pulls from it (decisions/registry-credentials.md), so it sits on the
+    machine, with the acts on it. The body of its section.
+    Locals: machine, status, acts (may this key act?). %>
+<% if status.registries.empty? %>
+  <p class="muted">Not logged in to any registry. Public images need none.</p>
+<% else %>
+  <ul class="fact-rows">
+    <% status.registries.each do |reg| %>
+      <li class="ok">
+        <span class="fact-name mono"><%= reg.host %></span>
+        <span class="fact-value"><%= reg.username.presence ? "as #{reg.username}" : "logged in" %></span>
+        <% if acts %>
+          <span class="fact-act"><%= act_button(machine, "registry-logout", frame: "ceremony-registries", from: "status", registry: reg.host) %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+<% if acts %>
+  <%= render "machines/act", verb: "registry-login",
+        state: "Log the box in to a private registry",
+        button: link_to(vilice_verb("registry-login"), new_machine_registry_path(machine), class: "btn mutate cmd sm") %>
+  <%= turbo_frame_tag "ceremony-registries" %>
+<% end %>

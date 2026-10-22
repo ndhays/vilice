@@ -1,0 +1,203 @@
+<%# One app on one box, in full — the page an app's line on the machine page leads to.
+    The same shape as Machine Status: the facts on one line, when the box was read, then
+    a part for each thing about the app, each leading with how it is, then the detail,
+    then the acts on it (decisions/acts-sit-with-what-they-act-on.md).
+
+    The app is named by what the box calls it, so an app we hold no App for — a
+    machine-view deploy, or one made outside the console — has this page too.
+
+    `acts` is whether an act can be sent at all: an operate key, and a box that answers. %>
+<% content_for :title, "#{@name} on #{@machine.name} — Vilice" %>
+<% acts = @machine.operate? && @status.online? %>
+<% on = { name: @name, from: "box" } %>
+<% hosts = Array(@box_app && @box_app["hostnames"]).presence || [ @app&.hostname ].compact_blank %>
+<% certs = @status.certs_for(@name) %>
+
+<%= breadcrumb [["Machines", machines_path], [@machine.name, machine_path(@machine)], [@name, nil]] %>
+
+<h1 class="machine-head">
+  <%= icon "box", size: 22 %>
+  <span class="machine-name"><%= @name %></span>
+  <span class="health-line">
+    <% if !@status.online? %>
+      <span class="dot dot-red"></span> Box unreachable
+    <% elsif @box_app.nil? %>
+      <span class="dot dot-gray"></span> Not on this box
+    <% else %>
+      <%= box_app_state(@box_app) %>
+    <% end %>
+  </span>
+</h1>
+
+<%# What the app is, on one line. Every hostname is a link that opens the app in a new
+    tab; the box says which, and where it does not, the App we hold does. %>
+<table class="facts-table">
+  <thead>
+    <tr>
+      <th>Box</th>
+      <% if hosts.any? %><th>Answers at</th><% end %>
+      <% if @box_app %><th>Image</th><% end %>
+      <th>Placement</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><%= link_to @machine.name, @machine %></td>
+      <% if hosts.any? %>
+        <td class="host-list"><%= safe_join(hosts.map { |h| host_link(h) }, " ") %></td>
+      <% end %>
+      <% if @box_app %><td><%= digest_chip(@box_app["image"]) %></td><% end %>
+      <td>
+        <% if @app %>
+          <%= link_to @app.name, @app %><% if @app.project %> · project <%= link_to @app.project.name, @app.project %><% end %>
+        <% else %>
+          <span title="Deployed from the machine page or on the box itself: the console holds no App for it, and the box's record is the only one">none</span>
+        <% end %>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<% if !@status.online? %>
+  <%# Nothing current is known and nothing can be sent: every act travels the
+      connection that just failed. %>
+  <div class="panel unreachable">
+    <div class="panel-head">
+      <div class="kicker">Unreachable</div>
+      <%= button_to refresh_machine_path(@machine, **on), class: "btn cmd observe sm panel-action", title: "Read the box again" do %>
+        <%= vilice_verb "status" %>
+      <% end %>
+    </div>
+    <p class="unreachable-line"><%= icon "circle-cut", size: 18 %>
+      Vilice could not reach <strong><%= @machine.name %></strong>, so what
+      <%= @name %> is doing there is unknown.</p>
+    <pre class="raw"><%= @status.error %></pre>
+  </div>
+<% else %>
+  <% unless @machine.operate? %>
+    <p class="note observe-only"><%= icon "lock", size: 14 %>
+      This box holds an <strong>observe</strong> key: Vilice can read it, not act on it.</p>
+  <% end %>
+  <div class="read-bar">
+    <p class="read-age"><%= read_age(@status) %></p>
+    <%= button_to refresh_machine_path(@machine, **on), class: "btn cmd observe sm", title: "Read the box again" do %>
+      <%= vilice_verb "status" %>
+    <% end %>
+  </div>
+
+  <% if @box_app.nil? %>
+    <div class="panel observe">
+      <div class="kicker">Not on this box</div>
+      <p class="note"><%= @machine.name %> does not report an app named
+        <strong><%= @name %></strong>.
+        <% if @app %>It is placed here in our record, so this is a gap — deploy it to
+          close it.<% end %></p>
+    </div>
+  <% end %>
+
+  <%# ── Running ─────────────────────────────────────────────────────────────── %>
+  <% if @box_app %>
+    <%= status_part "Running", app_running_summary(@box_app), "running" do %>
+      <%# How much of the box it is using. A share of the box, since an app has no limit
+          of its own. Absent when the box does not say. %>
+      <% if (used = @box_app["memory_bytes"].to_i).positive? && @status.mem_total_bytes.positive? %>
+        <div class="usage-row">
+          <%= usage_bar "Memory", percent: (100.0 * used / @status.mem_total_bytes).round, level: :ok,
+                icon_name: "memory-stick", used: used, total: @status.mem_total_bytes %>
+        </div>
+      <% end %>
+      <%# A read, so it is offered on a key that cannot act. %>
+      <p class="note">
+        <%= link_to safe_join([ icon("file-text", size: 12), "Logs" ]),
+              machine_logs_path(@machine, name: @name),
+              class: "logs-link", data: { turbo_frame: "logs" } %>
+      </p>
+      <% if acts %>
+        <%= render "machines/act", verb: "restart", state: "Stop it and start it again",
+              button: act_button(@machine, "restart", frame: "ceremony-run", **on) %>
+        <%= render "machines/act", verb: "stop", state: "Stop it. It stays down across a reboot",
+              button: act_button(@machine, "stop", frame: "ceremony-run", **on) %>
+        <%= render "machines/act", verb: "start", state: "Start it, and at every boot",
+              button: act_button(@machine, "start", frame: "ceremony-run", **on) %>
+        <%= turbo_frame_tag "ceremony-run" %>
+      <% end %>
+    <% end %>
+    <%# Logs land here, under the part they were asked from: a plain read, kept apart
+        from any ceremony. Empty until asked — every tail is an SSH round trip. %>
+    <%= turbo_frame_tag "logs" %>
+  <% end %>
+
+  <%# ── Deploy ──────────────────────────────────────────────────────────────
+      With an App in our record the deploy sends that App's spec, and you pick the
+      image. With none there is no stored spec to send, so it is the box's own
+      deploy form, which sends one and keeps nothing. %>
+  <% if acts %>
+    <%= status_part "Deploy", app_deploy_summary(@box_app), "deploy" do %>
+      <% if @app %>
+        <%= render "machines/act", verb: "deploy",
+              state: safe_join([ "Deploy ", link_to(@app.name, @app), "'s spec to this box, at an image you pick" ]),
+              button: act_button(@machine, "deploy", frame: "ceremony-deploy", app_id: @app.id, **on) %>
+      <% else %>
+        <%= render "machines/act", verb: "deploy",
+              state: "Send a new spec for it. Nothing is kept here afterwards",
+              button: link_to(vilice_verb("deploy"), new_machine_box_app_path(@machine, name: @name), class: "btn mutate cmd sm") %>
+      <% end %>
+      <%# Inert when the box says there is no earlier image. A box that does not say
+          (an older vilice) keeps the button: unknown is not "nothing". %>
+      <% if @box_app %>
+        <% no_previous = @box_app.key?("rollback") && !@box_app["rollback"] %>
+        <%= render "machines/act", verb: "rollback",
+              state: no_previous ? "Nothing to go back to: this is the first image deployed here" : "Go back to the image it ran before",
+              button: (act_button(@machine, "rollback", frame: "ceremony-deploy", **on) unless no_previous) %>
+      <% end %>
+      <%= turbo_frame_tag "ceremony-deploy" %>
+    <% end %>
+  <% end %>
+
+  <%# ── Certificates ────────────────────────────────────────────────────────
+      What each of its hostnames hands a visitor. Caddy keeps them for the box, but
+      they are this app's. Absent when the box reports none for it. %>
+  <% if certs.any? %>
+    <%= status_part "Certificates", certs_summary(@status, certs), "certificates" do %>
+      <%= render "machines/cert_rows", machine: @machine, status: @status, certs: certs, app_column: false %>
+    <% end %>
+  <% end %>
+
+  <%# ── Backups ─────────────────────────────────────────────────────────────
+      This app's data and spec, to the box's restic repo. Absent when the box's
+      vilice predates the fact: unknown is not "never". %>
+  <% if @backup && @box_app %>
+    <%= status_part "Backups", app_backup_summary(@status, @backup), "backups" do %>
+      <% if !@status.backup_configured? %>
+        <p class="muted card-note">Set a repo on the box with <code>vilice backup --repo</code>.</p>
+      <% else %>
+        <% if @backup.failing? && @backup.error.present? %>
+          <p class="muted card-note mono"><%= @backup.error %></p>
+        <% end %>
+        <% if acts %>
+          <%= render "machines/act", verb: "backup", state: "Snapshot its volumes and spec now",
+                button: act_button(@machine, "backup", frame: "ceremony-backups", **on) %>
+          <%= render "machines/act", verb: "restore", danger: true,
+                state: "Put its data back from the latest snapshot, and redeploy. This overwrites what is there",
+                button: (act_button(@machine, "restore", frame: "ceremony-backups", **on) unless @backup.last_ok.nil?) %>
+          <%= turbo_frame_tag "ceremony-backups" %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <%# ── Remove ──────────────────────────────────────────────────────────── %>
+  <% if acts && @box_app %>
+    <%= status_part "Remove", MachineSectionsHelper::Summary.new(text: "Takes its units, secrets and route off the box. Its volumes stay", level: :ok), "remove" do %>
+      <%= render "machines/act", verb: "remove", danger: true,
+            state: safe_join([ "Take ", tag.strong(@name), " off ", @machine.name ]),
+            button: act_button(@machine, "remove", frame: "ceremony-remove", **on) %>
+      <%= turbo_frame_tag "ceremony-remove" %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<p class="note">
+  <%= link_to safe_join([ icon("disc", size: 13), " #{@name} in #{@machine.name}'s record" ]),
+        machine_path(@machine, q: @name) %>
+</p>

@@ -1,0 +1,47 @@
+<%# Maintenance — when the box patches itself, whether anything is waiting, and the act
+    that applies it. Locals: machine, status, acts (may this key act?). %>
+  <% if status.maintenance_known? %>
+    <p class="maint-line"><%= icon "stethoscope", size: 15 %>
+      <strong>Daily at <%= status.maintenance_time %></strong></p>
+    <p class="muted maint-note">Security patches install themselves<%=
+      "; the box reboots then if the kernel needs it" if status.auto_reboot? %>.</p>
+  <% else %>
+    <p class="maint-line muted"><%= icon "stethoscope", size: 15 %>
+      <strong>No maintenance window.</strong></p>
+    <p class="muted maint-note">Updates wait until someone applies them.</p>
+  <% end %>
+  <% if status.updates_available? %>
+    <p class="maint-pending" title="<%= status.update_packages.join("\n") %>">
+      <%= icon "circle-dot", size: 15 %>
+      <strong><%= pluralize(status.update_count, "update") %> waiting</strong>
+    </p>
+    <% if status.update_packages.any? %>
+      <p class="muted maint-note mono"><%= status.update_packages.join(" ") %></p>
+    <% end %>
+  <% else %>
+    <p class="muted updates-current"><%= icon "circle-check", size: 15 %> <strong>Up to date.</strong></p>
+  <% end %>
+  <%# A restart the box owes itself — what the terminal says as "System restart
+      required". Said with what happens next, because Vilice has no restart verb: either
+      the box does it at its window, or a person does it on the box. %>
+  <% if status.reboot_required? %>
+    <p class="maint-pending maint-reboot" title="<%= status.reboot_packages.join("\n") %>">
+      <%= icon "rotate-cw", size: 15 %>
+      <strong>Restart required</strong>
+    </p>
+    <p class="muted maint-note">
+      <% if status.reboot_packages.any? %>To finish updating
+        <span class="mono"><%= status.reboot_packages.join(" ") %></span>.<% end %>
+      <% if status.reboots_itself? %>
+        The box restarts itself at <%= status.maintenance_time %>.
+      <% else %>
+        Restart it on the box — <code>sudo reboot</code>. Vilice has no restart command.
+      <% end %>
+    </p>
+  <% end %>
+  <% if acts %>
+    <%= render "machines/act", verb: "apply-updates",
+          state: status.updates_available? ? "#{pluralize(status.update_count, 'OS update')} waiting" : "OS packages are up to date",
+          button: (act_button(machine, "apply-updates", frame: "ceremony-maintenance", from: "status") if status.updates_available?) %>
+    <%= turbo_frame_tag "ceremony-maintenance" %>
+  <% end %>

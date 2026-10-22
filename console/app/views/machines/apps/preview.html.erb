@@ -39,7 +39,7 @@
   <p class="ceremony-intro">It will be recorded, then run:</p>
   <%= render "events/chain", items: [ ChainItem.new(at: Time.current, actor: Current.user&.email_address || "console",
         action: "deployed", summary: "#{@deploy.name} on #{@machine.name}", origin: :authored,
-        machine: @machine, outcome: "pending", kind: :command, command: "vilice #{@deploy.command}") ] %>
+        machine: @machine, outcome: "preview", kind: :command, command: "vilice #{@deploy.command}") ] %>
 
   <p class="ceremony-runs">Runs over scoped SSH, with the spec on stdin:</p>
   <%= command_block("vilice #{@deploy.command}") %>
@@ -50,7 +50,9 @@
     <pre class="raw"><%= JSON.pretty_generate(@deploy.shown_envelope) %></pre>
   </details>
 
-  <%= form_with model: @deploy, scope: :box_deploy, url: machine_box_apps_path(@machine), method: :post do |f| %>
+  <%# Turbo off, as on the form: Edit answers with the form again, a 200 page. %>
+  <%= form_with model: @deploy, scope: :box_deploy, url: machine_box_apps_path(@machine), method: :post,
+        data: { turbo: false, controller: "busy", action: "submit->busy#start" } do |f| %>
     <% %i[name image hostnames port health env secrets volumes extras pasted template_id].each do |attr| %>
       <%= f.hidden_field attr %>
     <% end %>
@@ -58,7 +60,7 @@
       <%= button_tag name: "confirm", value: "1", class: "btn mutate cmd" do %>
         <%= vilice_verb "deploy" %>
       <% end %>
-      <%= button_tag "Edit", name: "edit", value: "1", class: "btn-quiet" %>
+      <%= button_tag "Edit", name: "edit", value: "1", class: "btn-quiet", data: { busy: "false" } %>
     </div>
   <% end %>
 </div>

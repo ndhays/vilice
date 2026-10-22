@@ -2,14 +2,15 @@
     Deploy: pick the image digest (hostname/port/health prefilled from the App,
     overridable). Submitting GETs back to `new` with the inputs, which then renders
     the preview. Nothing is written here. %>
-<%= turbo_frame_tag "ceremony" do %>
+<%= turbo_frame_tag @frame do %>
   <div class="ceremony">
     <div class="kicker">Compose · deploy <%= @mutation.app.name %> → <%= @machine.name %></div>
 
     <%= form_with url: new_machine_mutation_path(@machine), method: :get, class: "compose" do %>
-      <%= hidden_field_tag :act, @mutation.act.verb %>
+      <%= hidden_field_tag :act, @mutation.act.key %>
       <%= hidden_field_tag :app_id, @mutation.app.id %>
       <%= hidden_field_tag :from, @from %>
+      <%= hidden_field_tag :frame, @frame %>
 
       <label class="compose-field">
         <span>Image</span>

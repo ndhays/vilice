@@ -1,0 +1,7 @@
+<%# The box's numbers, as tiles. Locals: status. %>
+<ul class="metrics">
+  <li><span class="k"><%= icon "cpu", size: 13 %> load</span><span class="v"><%= status.load1 %></span></li>
+  <li><span class="k"><%= icon "memory-stick", size: 13 %> memory used</span><span class="v"><%= status.mem_percent %>%</span></li>
+  <li><span class="k"><%= icon "container", size: 13 %> disk used</span><span class="v"><%= status.disk_percent %>%</span></li>
+  <li><span class="k"><%= icon "clock", size: 13 %> uptime</span><span class="v"><%= distance_of_time_in_words(0, status.uptime_sec) %></span></li>
+</ul>

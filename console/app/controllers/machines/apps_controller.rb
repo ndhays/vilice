@@ -11,8 +11,21 @@
 # rather than assumed away.
 class Machines::AppsController < ApplicationController
   before_action :set_machine
-  before_action :require_operate
-  before_action :require_host_role
+  before_action :require_operate, except: :show
+  before_action :require_host_role, except: :show
+
+  # One app on this box: what the box reports about it, and every act on it. The app
+  # is named by what the box calls it, so an app we hold no App for has a page too.
+  # Reads the same cached status the machine page does.
+  def show
+    @name = params[:id].to_s
+    return redirect_to(@machine, alert: "Not an app name.") unless @name.match?(App::NAME_FORMAT)
+
+    @status  = MachineStatus.from(Vilice::Observe.status(@machine))
+    @box_app = @status.app(@name)
+    @app     = @machine.apps.includes(:project).find_by(name: @name)
+    @backup  = @status.backup_row(@name)
+  end
 
   # The form. `template_id` prefills it from an App Template; the choice is a plain GET,
   # so picking one is a link, not a script.
@@ -45,21 +58,6 @@ class Machines::AppsController < ApplicationController
     else
       @error = outcome[:result][:error]
       render :new, status: :unprocessable_entity
-    end
-  end
-
-  def destroy
-    name = params[:id].to_s
-    outcome = Vilice::Mutate.run(
-      @machine, Mutation.command("remove", @machine, name: name),
-      actor: Current.user&.email_address || "console",
-      action: "removed",
-      summary: "#{name} from #{@machine.name}"
-    )
-    if outcome[:result][:ok]
-      redirect_to @machine, notice: "Removed #{name}."
-    else
-      redirect_to @machine, alert: "Could not remove #{name}: #{outcome[:result][:error]}"
     end
   end
 

@@ -1,9 +1,24 @@
-<%# The box's record, as a card: is the chain intact, how long is it, and when was the
-    last act. The entries themselves are the Record section below. Locals: record. %>
-<div class="panel observe">
-  <div class="kicker">Record</div>
-  <%= record_integrity(record) %>
-  <% if record && record[:ok] && (last = Array(record.dig(:data, "data", "entries")).map { |e| e["time"] }.compact.max) %>
-    <p class="muted card-note">Last entry <%= time_ago_in_words(Time.zone.parse(last)) %> ago.</p>
+<%# The box's record: is the chain intact, how long is it, when was the last act, and
+    when was it last backed up off the box — the one backup that belongs to the machine
+    rather than to an app. The entries themselves are the Record list below. The body of
+    its section. Locals: machine, status, record, acts (may this key act?). %>
+<%= record_integrity(record) %>
+<% if record && record[:ok] && (last = Array(record.dig(:data, "data", "entries")).map { |e| e["time"] }.compact.max) %>
+  <p class="muted card-note">Last entry <%= time_ago_in_words(Time.zone.parse(last)) %> ago.</p>
+<% end %>
+<% if (row = status.backup_row("machine")) %>
+  <% if !status.backup_configured? %>
+    <p class="card-verdict bad"><%= icon "triangle-alert", size: 15 %>
+      <strong>The record is not backed up.</strong></p>
+    <p class="muted card-note">No backup repo is set on this box. Set one there with
+      <code>vilice backup --repo</code>.</p>
+  <% else %>
+    <%= render "machines/backup_line", row: row %>
+    <% if acts %>
+      <%= render "machines/act", verb: "backup",
+            state: "Snapshot the record off the box",
+            button: act_button(machine, "backup-record", frame: "ceremony-record", from: "status") %>
+      <%= turbo_frame_tag "ceremony-record" %>
+    <% end %>
   <% end %>
-</div>
+<% end %>

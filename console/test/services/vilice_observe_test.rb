@@ -83,4 +83,22 @@ class ViliceObserveTest < ActiveSupport::TestCase
     end
     assert_equal "old", retired.reload.current_image, "a retired placement isn't reconciled"
   end
+
+  # An act changes the box, so a read from before it is stale the moment it returns.
+  test "an act drops every cached read of its box" do
+    machine = Machine.create!(name: "cache-box", ssh_host: "10.0.0.7", scope: "operate", ssh_private_key: "k")
+    store = ActiveSupport::Cache::MemoryStore.new
+    stub_returning(Rails, :cache, store) do
+      with_fake_vilice do |vilice|
+        vilice.on(/status/, data: { "data" => { "apps" => [] } })
+        Vilice::Observe.status(machine)
+        Vilice::Observe.status(machine)
+        assert_equal 1, vilice.commands.grep(/status/).size, "the second read is cached"
+
+        Vilice::Mutate.run(machine, "restart web --json", actor: "a", action: "restarted")
+        Vilice::Observe.status(machine)
+        assert_equal 2, vilice.commands.grep(/status/).size, "the act made the next read a fresh one"
+      end
+    end
+  end
 end

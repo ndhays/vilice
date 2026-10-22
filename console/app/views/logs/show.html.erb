@@ -5,20 +5,20 @@
 <%= turbo_frame_tag "logs" do %>
   <div class="panel logs-panel">
     <div class="panel-head">
-      <div class="kicker">Logs · <%= @app.name %> on <%= @machine.name %></div>
+      <div class="kicker">Logs · <%= @name %> on <%= @machine.name %></div>
       <span class="panel-action logs-controls">
         <%# The tail is the whole control surface. `podman logs` is a passthrough, so
             these are the box's own lines and there is nothing to filter here that
             `grep` would not do better on the far side. %>
         <% Vilice::Observe::TAILS.each do |n| %>
-          <%= link_to n, machine_logs_path(@machine, app_id: @app.id, tail: n),
+          <%= link_to n, machine_logs_path(@machine, **@ask, tail: n),
                 class: "logs-tail#{' on' if n == @tail}",
                 data: { turbo_frame: "logs" }, title: "Last #{n} lines" %>
         <% end %>
         <%= link_to safe_join([ icon("rotate-cw", size: 13), "Refresh" ]),
-              machine_logs_path(@machine, app_id: @app.id, tail: @tail),
+              machine_logs_path(@machine, **@ask, tail: @tail),
               class: "btn-quiet sm", data: { turbo_frame: "logs" } %>
-        <%= link_to "Close", app_path(@app),
+        <%= link_to "Close", @close,
               class: "btn-quiet sm", data: { turbo_frame: "logs" } %>
       </span>
     </div>

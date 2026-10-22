@@ -28,14 +28,14 @@ class MutationsController < ApplicationController
     # authorize gap (a *reading* that can be stale, so it only warns), we either hold a
     # value or we do not. Refused before the Event is written, the same shape as the
     # observe-scope refusal above: nothing was attempted, so nothing is recorded.
-    if @mutation.act.verb == "deploy" && (missing = @mutation.app&.missing_secrets).present?
+    if @mutation.act.key == "deploy" && (missing = @mutation.app&.missing_secrets).present?
       return redirect_to @return_path,
         alert: "#{@mutation.app.name} needs #{'a value'.pluralize(missing.size)} for " \
                "#{missing.join(', ')} — the box refuses a deploy without one. " \
                "Set them under Configuration."
     end
     # A compose act reaching create without its input is a malformed request.
-    return redirect_to(new_machine_mutation_path(@machine, act: @mutation.act.verb,
+    return redirect_to(new_machine_mutation_path(@machine, act: @mutation.act.key,
       app_id: @mutation.app&.id, from: @from)) unless @mutation.composed?
 
     outcome = Vilice::Mutate.run(
@@ -47,7 +47,9 @@ class MutationsController < ApplicationController
     reconcile(outcome) if outcome[:result][:ok]
 
     if outcome[:result][:ok]
-      redirect_to @return_path, notice: "#{@mutation.summary.upcase_first} (witnessed)."
+      # Once an app is off the box its page there has nothing left to show.
+      back = @mutation.act.key == "remove" && @from == "box" ? machine_path(@machine) : @return_path
+      redirect_to back, notice: "#{@mutation.summary.upcase_first} (witnessed)."
     else
       redirect_to @return_path, alert: failure_alert(outcome[:result])
     end
@@ -73,31 +75,41 @@ class MutationsController < ApplicationController
     @machine = Machine.find(params[:machine_id])
   end
 
-  # Where the ceremony returns when it settles or is cancelled. The act is always
-  # keyed to a machine (the SSH target), but it can be launched from the app
-  # page or the machine page — `from` says which, so we land back where we started.
-  # See decisions/install-the-app-actions-home.md.
+  # Where the ceremony returns when it settles or is cancelled, and which frame it
+  # opens in. The act is always keyed to a machine (the SSH target), but it is launched
+  # from the card it belongs to: on the App page (`from=app`), on the page of an app on
+  # this box (`from=box`), on Machine Status (`from=status`), or on the machine page. See
+  # decisions/acts-sit-with-what-they-act-on.md.
   def set_return
     @from = params[:from].presence
+    @frame = params[:frame].to_s.match?(FRAME_FORMAT) ? params[:frame] : "ceremony"
     @return_path =
       if @from == "app" && @mutation.app
         app_path(@mutation.app)
+      elsif @from == "box" && @mutation.name
+        machine_box_app_path(@machine, @mutation.name)
+      elsif @from == "status"
+        status_machine_path(@machine)
       else
         machine_path(@machine)
       end
   end
 
+  # A page with several cards has a ceremony frame in each, so the preview opens beside
+  # the button that asked for it. The id comes from the page, so it is checked.
+  FRAME_FORMAT = /\Aceremony(-[a-z0-9]+)*\z/
+
   # Bind the requested verb (+ app + compose params) to a runnable act, or bail.
   def set_mutation
     @mutation = Mutation.build(
       params[:act], machine: @machine, actor: Current.user.email_address,
-      app_id: params[:app_id], params: compose_params
+      app_id: params[:app_id], name: params[:name], params: compose_params
     )
     redirect_to @machine, alert: "Unknown or invalid act." unless @mutation
   end
 
   def compose_params
-    params.permit(:image, :hostname, :port, :health).to_h.symbolize_keys
+    params.permit(:image, :hostname, :port, :health, :registry).to_h.symbolize_keys
   end
 
   # Reconcile control-plane state after a successful act. Deploy pins the desired
@@ -107,7 +119,7 @@ class MutationsController < ApplicationController
     placement = @mutation.app&.placements&.find_by(machine: @machine)
     return unless placement
 
-    case @mutation.act.verb
+    case @mutation.act.key
     when "deploy" then placement.update(desired_image: @mutation.image, status: "running")
     when "remove" then placement.update(status: "retired")
     end

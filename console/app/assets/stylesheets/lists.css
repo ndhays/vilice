@@ -260,7 +260,20 @@
 /* ── Apps on a box — what the box reports it is running ───────────────────────
    The reason the box exists, so it gets the room: name, whose it is, the digest it
    is actually running, and the one act that belongs here. Reuses .rows. */
-.rows.app-box-rows { grid-template-columns: minmax(8rem, max-content) max-content minmax(6rem, 1fr) max-content; }
+/* The hostname is the one column that gives way: it may shrink to nothing and cut off,
+   so the fixed columns either side never run into each other. */
+.rows.app-box-rows { grid-template-columns: minmax(6rem, max-content) max-content minmax(0, 1fr) max-content max-content max-content max-content; }
+.rows.app-box-rows .row > * { min-width: 0; }
+.app-memory { display: inline-flex; align-items: center; gap: 0.4rem; }
+.app-memory .bar { width: 3.5rem; height: 0.45rem; }
+.app-memory .bar-fill { background: var(--observe); }
+.app-memory-amount { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+.rows .cell-marks { display: inline-flex; align-items: center; gap: 0.35rem; }
+.app-mark { display: inline-flex; color: var(--line); }
+.app-mark.is-ok { color: var(--muted); opacity: 0.55; }
+.app-mark.is-warn { color: var(--warn); }
+.app-mark.is-bad { color: var(--bad); }
+.rows .cell-hosts { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rows.app-box-rows .row { padding: 0.55rem 0.95rem; min-height: 3rem; align-items: center; }
 .rows .cell-image { min-width: 0; justify-self: start; }
 

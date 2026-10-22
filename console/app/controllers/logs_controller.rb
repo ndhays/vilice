@@ -12,14 +12,27 @@
 class LogsController < ApplicationController
   def show
     @machine = Machine.find(params[:machine_id])
-    @app = App.find(params[:app_id])
     @tail    = Vilice::Observe::TAILS.include?(params[:tail].to_i) ? params[:tail].to_i
                                                                    : Vilice::Observe::DEFAULT_TAIL
+    # Asked for by name, from the page of an app on this box: the box reports it, and we
+    # may hold no App for it. The name is checked again where it reaches the command.
+    if params[:app_id].blank?
+      @name   = params[:name].to_s
+      @ask    = { name: @name }
+      @close  = machine_box_app_path(@machine, @name)
+      @result = Vilice::Observe.logs(@machine, @name, tail: @tail)
+      return
+    end
+
+    @app   = App.find(params[:app_id])
+    @name  = @app.name
+    @ask   = { app_id: @app.id }
+    @close = app_path(@app)
     # The app is only readable where it was actually placed. Asking box B for app A's
     # logs when A lives on C would fail on the box anyway; refusing here says why.
     @placement = @app.placements.find_by(machine: @machine)
     return render :absent, status: :not_found unless @placement
 
-    @result = Vilice::Observe.logs(@machine, @app.name, tail: @tail)
+    @result = Vilice::Observe.logs(@machine, @name, tail: @tail)
   end
 end

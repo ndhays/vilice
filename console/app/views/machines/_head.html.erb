@@ -2,10 +2,16 @@
     Online is the only pill: the one fact here that changes under you, read live on
     this request. What the box is reads as a short labelled list, labels in one
     column and values in the next, so every page puts each fact in the same place.
-    Access is not listed — the Operate zone says it, where it matters. %>
+    Access is not listed — the cards say it, where it matters. %>
 <%# Rendered twice: in the page shell before the box has answered (status nil), then
     again by the live frame, which replaces this header and the facts with what the box
     just said. Locals: machine, status (nil until read). %>
 <%= render "machines/head_only", machine: machine, status: status %>
 
-<%= render "machines/facts_only", machine: machine, status: status %>
+<%# The facts, and beside them the way to what configures the box rather than reports
+    on it (decisions/machine-settings-is-a-page.md). The live frame replaces the table
+    alone, by its id. %>
+<div class="facts-row">
+  <%= render "machines/facts_only", machine: machine, status: status %>
+  <%= link_to safe_join([ icon("settings", size: 15), "Settings" ]), settings_machine_path(machine), class: "btn sm" %>
+</div>

@@ -1,0 +1,32 @@
+<%# One row per certificate: the hostname, what a visitor is handed, and — where asked
+    for — the app the hostname belongs to. Locals: machine, status, certs, app_column. %>
+<ul class="fact-rows">
+  <% certs.each do |cert| %>
+    <li class="<%= cert.level %>">
+      <span class="fact-name mono"><%= cert.host %></span>
+      <span class="fact-value">
+        <% if cert.not_after.nil? %>
+          <%= icon "circle-x", size: 14 %> Not served
+        <% elsif !cert.valid %>
+          <%= icon "circle-x", size: 14 %> Not trusted<%
+            %><% if cert.days_left.negative? %> · expired <%= time_ago_in_words(cert.not_after) %> ago<% end %>
+        <% elsif cert.level == :warn %>
+          <%= icon "triangle-alert", size: 14 %> Expires in <%= pluralize(cert.days_left, "day") %>
+        <% else %>
+          <%= icon "circle-check", size: 14 %> Valid · expires in <%= pluralize(cert.days_left, "day") %>
+        <% end %>
+        <% if cert.issuer.present? %><span class="muted"> · <%= cert.issuer %></span><% end %>
+      </span>
+      <% if app_column %>
+        <span class="fact-act">
+          <% if (name = status.app_for_host(cert.host)) %>
+            <%= link_to name, machine_box_app_path(machine, name), class: "owner-link" %>
+          <% end %>
+        </span>
+      <% end %>
+      <% if cert.level == :bad && cert.error.present? %>
+        <span class="fact-detail"><%= cert.error %></span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
