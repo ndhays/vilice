@@ -1,28 +1,17 @@
 # The console is layered too — three rings, one app
 
-> Decided 2026-08-03. *Pack*, below, is the plugin layer Vilice had then; it is gone
-> ([`roles-not-packs.md`](roles-not-packs.md)), so read it as "the app layer" — every
-> argument survives, including the one that matters most: the console's engines are not
-> that thing and must not be called it, because they run in the control plane and are not
-> digest-pinned on a box. The console has the same seam the binary has between its core and
-> its verbs ([`roles-not-packs.md`](roles-not-packs.md)): a small generic layer fused to one domain's
-> UI. Same call, one level up — draw the line, keep one deployable, split physically
-> only when something real demands it.
+> Decided 2026-08-03. Written when Vilice had a plugin ("pack") layer; that is gone
+> ([`roles-not-packs.md`](roles-not-packs.md)). The argument stands.
 
-## The question
+## The problem
 
-Vilice split into a core and verb packs, and the console did not follow. It is
-currently three things wearing one name, and the fusion shows: **you cannot deploy an
-app without first inventing a client.** `App belongs_to :project`, required, with
-app names unique per project and apps nested under projects in the routes.
-
-That is not a console with a Projects feature. It is a Projects app with some console
-views inside it.
+The console was three things under one name: you could not deploy an app without first
+inventing a client, because `App belongs_to :project` was required.
 
 ## The decision
 
-Three rings. **Each is optional above the one below, and each is authoritative about a
-different thing** — which is why they don't collapse into "which one is right?"
+Three rings. Each is optional above the one below, and each is authoritative about a
+different thing.
 
 | Ring | Authoritative about | Needs the ring above? |
 |---|---|---|
@@ -30,139 +19,72 @@ different thing** — which is why they don't collapse into "which one is right?
 | **Placement** (intentions) | what was *asked for*, across N boxes | no |
 | **Tenancy** (projects) | whose work it is | no |
 
-- **Machine view** — one box, shaped by what that box reports about itself: its role
-  ([`roles-not-packs.md`](roles-not-packs.md)).
-  Stateless in the console: a deploy sends an AppConfig and discards it, and the box's
-  record is the only record. This is the floor, not a lens you rarely visit
-  ([`install-the-app-actions-home.md`](install-the-app-actions-home.md)).
-- **Placement** — one app across several boxes: count, exposure, placements. The model is
-  settled in [`one-primitive-composed.md`](one-primitive-composed.md); what this decision
-  adds is that it is a *layer*, not the spine, and that the gap between it and reality is
-  never closed automatically
+- **Machine view** — one box, shaped by the role it reports. Stateless in the console: a
+  deploy sends an AppConfig and keeps nothing.
+- **Placement** — one app across several boxes: count, exposure, placements
+  ([`one-primitive-composed.md`](one-primitive-composed.md)). A layer, not the spine, and
+  its gap with reality is never closed automatically
   ([`drift-is-surfaced-never-closed.md`](drift-is-surfaced-never-closed.md)).
-- **Tenancy** — ownership, sharing, grouping by client. A homelab never needs it; an
-  agency needs it on day one.
+- **Tenancy** — ownership, sharing, grouping by client. A homelab never needs it.
 
-Evidence they are genuinely separate: *"deploy app X to boxes A, B, C behind balancer L"*
-is coherent with no client anywhere. *"Client Acme owns boxes A and B"* is coherent with
-no apps. Today's schema welds the second to the first for no reason but history.
+They are separate: *"deploy app X to boxes A, B, C behind balancer L"* needs no client,
+and *"Client Acme owns boxes A and B"* needs no apps.
 
-Worth noting that **tenancy has no unix analogue at all.** A machine view is `cockpit`;
-placement is what Ansible does — desired state driven from a client with no agent on the
-box. Tenancy is business bookkeeping. That absence is the argument for it being the
-outermost, most optional ring.
+## One app, with engines
 
-## One app, engines — not two apps, and not packs
-
-**Not two deployed Rails apps.** Two apps means two key stores, two record authorities,
-two surfaces to audit — against the grain of a design whose point is that exactly one
-thing holds the keys. Both would also need `Machine`, the SSH transport, and auth, so the
-split would run *through* the shared half rather than along a seam.
-
-**Rails engines**, which is Rails' own idiom for this and therefore the standard tool in
-its native idiom. One process, one key store, one record. Mount it or don't:
-
-```
-on the box    vilice-app,        vilice-backup      (packs)
-in the web    vilice-intentions, vilice-projects    (engines)
-```
-
-Same prefix and the same "named for what it promises" rule; the only difference is where
-it runs.
-
-**They are not packs, and must not be called packs.** A pack is on-box, digest-pinned,
-root-authorized, and named in the chain. A Rails engine is none of those. Reusing the
-word would cost the one word that currently means something precise.
-
-**The Rails app stays `vilice-console`** — one deployable, one name, exactly like the
-binary. Console with no engines mounted *is* the machine view, so "Console is the machine
-view" is true without renaming anything. One name you never have to defend is worth more
-than three you do.
+**Rails engines** (`vilice-intentions`, `vilice-projects`): one process, one key store,
+one record. Mount it or don't. The Rails app stays `vilice-console`; with no engines
+mounted it is the machine view.
 
 ## The prerequisite: invert `App → Project` — done
 
-An engine you can decline has to be the thing that *depends*, not the thing depended on.
-While `App` requires `Project`, tenancy is load-bearing and no amount of file-moving
-makes it optional.
+An engine you can decline must be the thing that depends. `App.project` is optional, the
+per-project name index is replaced by the per-machine rules `Placement` already enforced
+(`app_name_free_on_machine`, `hostname_free_on_machine`), and apps live at `/apps`.
 
-The inversion was nearly free, because the constraint that actually matters was already in
-the right place — `Placement` enforces `app_name_free_on_machine` and
-`hostname_free_on_machine`, which is uniqueness *on the box*, independent of any project.
-So `App.project` is optional, the per-project name index is gone in favour of the
-per-machine rule that already existed, and apps have their own home at `/apps`
-with a nav entry between Machines and Record.
+A project is optional context in the URL (`apps/new?project_id=`), not a form field: a
+dropdown would put tenancy back in the middle of the flow.
 
-A project is now **optional context in the URL** (`apps/new?project_id=`), the shape
-`machines/new` already used — with one, the machine list narrows to that project's boxes;
-with none, the whole operate-scoped fleet is offered. It is deliberately not a form field:
-a dropdown would put tenancy back in the middle of the flow, one step short of requiring it.
+**The test:** can you deploy an app to a box without creating a Project? Yes, both from
+the machine view and through `App` with `project_id` null.
 
-The acceptance test is one sentence: **can you deploy an app to a box without creating a
-Project?** Yes, both ways now — the machine view sidesteps `App` entirely, and
-placement goes through `App` with `project_id` null, into the same witnessed ceremony.
-
-What the inversion did **not** change: deleting a Project still destroys its apps
-(`dependent: :destroy`), guarded by the refusal to delete a project with any live placement.
-Whether a placement should instead *survive* its client, becoming untenanted, is left
-open — see [`open/install-journeys.md`](open/install-journeys.md).
+Unchanged: deleting a Project still destroys its apps, guarded by the refusal to delete a
+project with a live placement. Whether a placement should survive its client is open in
+[`open/install-journeys.md`](open/install-journeys.md).
 
 ## Why `ui-shape.md` does not foreclose this
 
-[`ui-shape.md`](ui-shape.md) records that the "Operator vs Dispatcher" split was dropped,
-and someone will cite it against this. It does not apply. That split was on **N** — a
-single-machine UI versus a fleet UI, which turned out to be the same screens with more
-rows, a lens difference and nothing more.
-
-This splits on **domain**: tenancy present or absent. Different axis. The old rejection
-stands on its own terms and this decision does not disturb it.
+[`ui-shape.md`](ui-shape.md) dropped the Operator/Dispatcher split, which was on **N** —
+one machine versus many, the same screens with more rows. This splits on **domain**:
+tenancy present or absent.
 
 ## Roads not taken
 
-- **A second Rails app** ("Vilice Projects" as its own deployable). Above: two key
-  stores, two record authorities, and the split runs through the shared half. It also
-  creates a migration cliff — an operator who starts with two boxes and picks up a client
-  should mount an engine, not migrate to a different product.
-- **An engine per pack** (`vilice-app` ships its own Rails engine). Rejected for now on
-  the same rule as the packs themselves: build it concretely once, and let a real second
-  case say what is general. A pack is a Go binary on a box; making it also ship Rails
-  would couple two very different release surfaces.
-- **Calling the engines "console packs."** Rejected: see above. One word, one meaning.
-- **Renaming the Rails app** so "Console" could belong to the machine view alone.
-  Unnecessary once the layering is right — Console with nothing mounted already *is* the
-  machine view — and it would cost a rename to buy a distinction the architecture already
-  makes.
-- **Naming the layers as products** (Manor, Grounds, Orangery were all considered).
-  Rejected by the project's own naming rule: if a reader needs the docs to decode a name,
-  the name failed. That is why Switchyard was retired, and re-buying the problem one
-  month later would be hard to explain. "Intention" survives the test because it says
-  what it is and, usefully, does *not* claim to be reality.
+- **Two deployed Rails apps.** Two key stores, two record authorities, two surfaces to
+  audit — against a design where one thing holds the keys. Both would need `Machine`, the
+  SSH transport and auth, so the split would run through the shared half. And an operator
+  who picks up a client should mount an engine, not migrate products.
+- **An engine shipped by the box-side layer.** Couples a Go binary's release to a Rails
+  one. Build it once concretely and let a second case say what is general.
+- **Calling the engines "packs."** That word meant on-box, digest-pinned and
+  root-authorized. An engine runs in the control plane and is none of those.
+- **Renaming the Rails app** so "Console" meant the machine view alone. Console with
+  nothing mounted already is the machine view.
+- **Naming the layers as products** (Manor, Grounds, Orangery). If a reader needs the
+  docs to decode a name, the name failed.
 
-## Built vs pending
+## Built and pending
 
 | Piece | State |
 |---|---|
-| Machine view, shaped by what the box reports, stateless deploy | **built** |
-| `vilice status` (role) / `actors` — the box's own facts, read live | **built** (`vilice packs` existed here until the pack layer was dropped) |
-| Drift as a surfaced, never-closed gap | **built** — `App#count`, `placement_gap`, and the act that closes it |
-| `App.project` inversion, apps at `/apps` | **built** — the prerequisite |
-| Exposure — the gate that makes a count above 1 honest | **built** |
-| Balancer — the managed front edge those N boxes sit behind | **built** — `vilice route` + the derived table |
-| `Machine → Project` inversion | **pending** — tenancy's own prerequisite, see below |
-| `vilice-intentions` engine | **pending** — the layer works; extracting it does not block anything |
-| `vilice-projects` engine | **pending** |
+| Machine view, stateless deploy | built |
+| Drift as a surfaced gap (`App#count`, `placement_gap`) | built |
+| `App.project` inversion, apps at `/apps` | built |
+| Exposure, and the balancer (`vilice route`) | built |
+| `Machine → Project` inversion | **pending** |
+| `vilice-intentions`, `vilice-projects` engines | **pending** |
 
-## Tenancy has a prerequisite too, and it is not packaging
-
-`App` no longer depends on `Project`, but **`Machine` still does** — `belongs_to :owner,
-class_name: "Project"`, `has_many :projects`, `granted_projects`, `permits?(project)`, plus
-`ProjectMachine` and `MachineGrant`, which are entirely Project-shaped.
-
-So the console cannot currently be run with tenancy declined: not because a machine needs an
-owner (`owner` is already optional), but because the `Machine` class will not load without
-the `Project` constant. The floor depends on the outermost ring, which is exactly the
-inversion this decision says each ring must not require.
-
-That makes `vilice-projects` **not** an extraction job yet. The order is: cut `Machine`'s
-dependence on `Project` first — the same move already made for `App`, one layer down and
-harder, because ownership and sharing are genuinely tenancy concepts that currently live on
-`Machine` — and only then is mounting-or-not a packaging question.
+**Tenancy's own prerequisite.** `Machine` still depends on `Project` (`owner`,
+`has_many :projects`, `granted_projects`, `permits?`, `ProjectMachine`, `MachineGrant`),
+so the class will not load without it. Cut that first; only then is mounting a packaging
+question.

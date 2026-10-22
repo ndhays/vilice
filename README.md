@@ -1,7 +1,7 @@
 # Vilice
 
-> A coordination platform for operators running managed services on infrastructure
-> they control.
+> A self-hosting tool that records every state-changing action to a hash-chained log
+> before running it.
 
 ## Overview
 

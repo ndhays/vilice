@@ -1,219 +1,109 @@
-# One primitive, composed — App is intent, the fleet is reconciled
+# One primitive, composed — App is intent, the gap is shown
 
-> Decided 2026-06-17. The simplification pass over the App / Machine / Fleet /
-> load-balancer model. Graduates and supersedes the framing scattered across
-> [`open/console-open-questions.md`](open/console-open-questions.md) *(Replica /
-> deploy strategy; Migrate an app)* and
-> [`open/install-journeys.md`](open/install-journeys.md) *(Replicas / scale)* — those
-> keep the **build** detail; the **model** is settled here. Extends
-> [`declarative-deploy.md`](declarative-deploy.md) one level up. The canonical *what* now
-> lives in [`../blueprint/console/patterns.md`](../blueprint/console/patterns.md); the
-> Vilice Console/cloud line is [`provider-boundary.md`](provider-boundary.md). Nothing
-> here converges on its own — that rule is
-> [`drift-is-surfaced-never-closed.md`](drift-is-surfaced-never-closed.md) — and the
-> layering the model sits in is [`console-layers.md`](console-layers.md).
+> Decided 2026-06-17. The model for App / Machine / balancer. Spec:
+> [`../blueprint/console/patterns.md`](../blueprint/console/patterns.md). Related:
+> [`drift-is-surfaced-never-closed.md`](drift-is-surfaced-never-closed.md) (nothing
+> converges on its own), [`console-layers.md`](console-layers.md) (the layering),
+> [`provider-boundary.md`](provider-boundary.md) (the cloud line). Build detail stays in
+> [`open/console-open-questions.md`](open/console-open-questions.md) and
+> [`open/install-journeys.md`](open/install-journeys.md).
 
-## The frame: declarative all the way up
+## The frame
 
-Vilice's `deploy` is a declarative upsert — *here is the full desired state, converge
-the box to it* ([declarative-deploy.md](declarative-deploy.md)). The control-plane knot
-(does App or Machine come first? how does a fleet go 4→5?) comes from that thinking
-stopping at the box. **Extend it:** an `App` is desired state for a *slice of the
-fleet*, and a reconciler closes the gap between that plan and what's actually running.
+`deploy` is a declarative upsert on one box
+([declarative-deploy.md](declarative-deploy.md)). Extend it one level: an `App` is desired
+state for a slice of the fleet. You author intent; the gap with reality is shown; closing
+it is an act — named, scoped, recorded.
 
-You author **intent**; the gap between it and reality is made visible, and closing that
-gap is an **act** — named, scoped, recorded — not something the system does on its own.
-That single move dissolves the rest.
-
-**Nothing auto-converges.** An earlier draft of this decision said "the system converges
-substrate to match," and that was wrong. The rule, and why it is the good property rather
-than the compromise, is now its own decision:
-[`drift-is-surfaced-never-closed.md`](drift-is-surfaced-never-closed.md).
-
-## Three nouns, and what each is for
+## The nouns
 
 | Noun | Is | Role |
 |---|---|---|
-| **App** | the **intent** — the full desired spec (`App#deploy_envelope`), now incl. *how many* and *where* | the front door; what the operator manages |
-| **Machine** | the **authority + substrate** — a scoped key, a scope, an owner, pointed at a box | a reconciled resource + the read-only box lens |
-| **Placement** | the **placement** — where intent meets substrate | carries plan-vs-reality *per box* |
-| **Balancer** | a Machine in a **balancer role** — Caddy with a routing table reconciled from the apps behind it | the (optional) shared public edge; its own page (*see below*) |
+| **App** | the intent — the full spec (`App#deploy_envelope`), plus *how many* and *where* | what the operator manages |
+| **Machine** | the authority and substrate — a scoped key pointed at a box | the floor |
+| **Placement** | where intent meets substrate | carries plan vs. reality per box |
+| **Balancer** | a Machine in the balancer role | the optional shared public edge |
 
-The Balancer is the one addition — a *role over Machine*, not a fourth primitive (*"The
-edge is a Balancer"*, below).
-
-**Machine is the floor, not a lens.** It *is* Agora Invariant 1 made physical: a named
-actor with a declared scope is the box's scoped SSH key. The machine view is the **base
-layer**, shaped by the box's role, and it can deploy to a box with no Project and no plan
-at all ([install-the-app-actions-home.md](install-the-app-actions-home.md)).
-
-Intent still leads *for placement across boxes*. It is not a prerequisite for using a
+**Machine is the floor.** It is invariant 1 made physical: a named actor with a declared
+scope is the box's scoped key. The machine view can deploy to a box with no Project and
+no plan. Intent leads for placement across boxes; it is not a prerequisite for using a
 box.
 
-## The chicken-and-egg, dissolved
-
-Neither App nor Machine is a prerequisite. **Intent is authored first; substrate is
-converged to match.** In the app flow, "where it runs" is a *step inside the App*,
-not a thing you build beforehand:
-
-- **existing box** — pick one already on the project;
-- **new box** — declare it; the reconciler provisions it (cloud-provider API, Hetzner
-  first), installs Vilice, authorizes the operate key, then deploys
-  ([machine-onboarding.md](machine-onboarding.md)).
-
-The Machines page still exists for pre-provisioning a bare box or browsing the lens — an
-alternate entry that writes the *same* records, not the foundation.
+Neither App nor Machine comes first. In the app flow, "where it runs" is a step inside
+the App: pick an existing box, or declare a new one
+([machine-onboarding.md](machine-onboarding.md)).
 
 ## Fleet is not a noun — exposure is
 
-There is no Fleet object and no "single vs fleet" mode. An App has an **exposure**, and
-when balanced, a **count**:
+An App has an **exposure**, and when balanced, a **count**.
 
-- **On the Edge (public).** The box faces the internet and terminates its own TLS; DNS
-  points at the box. Count is **1** — one box, one IP (scaling here would need round-robin
-  DNS, rejected). The simple single-app case.
-- **Behind a Balancer (private).** The box is a backend; DNS points at the **Balancer**,
-  and the box can be private (no public IP / firewalled to the balancer). Scaling is now
-  free — **count 1…N** is just more upstreams.
+- **On the edge (public).** The box faces the internet and terminates its own TLS. Count
+  is 1.
+- **Behind a balancer (private).** DNS points at the balancer; the box can be private.
+  Count 1…N is more upstreams.
 
-"Scale a fleet 4→5" is: change the App's count, which opens a gap; closing it
-provisions a backend, deploys, and the balancer picks it up — each step an act, not a
-background convergence. **The public/private choice is what unlocks scale.**
+Exposure is `edge` | `balanced` (default `edge`) and gates `count` at validation: without
+it, an edge app could ask for three boxes all claiming one hostname. Restating it is a
+recorded `restated intention` act that reaches no box. Picking a balancer is optional even
+when balanced, for an operator running their own edge.
 
-Exposure is `edge` | `balanced` (default `edge`), and it gates `count` at validation:
-without the gate, an app on the edge could ask for three boxes and get three boxes all
-claiming one hostname that DNS points at once. Restating it is a recorded `restated
-intention` act that reaches no box. Selecting a balancer stays *optional* even when
-balanced: an operator running their own edge only wants the count unlocked.
+**Transitions.** An app that starts behind a balancer never touches DNS when it scales.
+The only cutover is the one-time edge → balanced move. Anything you might scale starts
+behind a balancer.
 
-**Transitions.** Start an app *behind a balancer* (even at count 1) and scaling later never
-touches DNS — DNS already points at the balancer; up/down is just upstreams. The only
-cutover is the one-time **Edge → Balanced** move (DNS flips from the box to the balancer
-once; the balancer issues the cert). Rule of thumb: anything you might ever scale starts
-behind a balancer; "On the Edge" is for apps that will always be one box.
+## The balancer
 
-## The edge is a Balancer — a first-class managed resource
+A balancer is a Machine with the balancer role, running a Caddy whose **routing table is
+derived, not hand-written**, from the apps that select it.
 
-A **Balancer** is a Machine with a balancer role, running a Caddy that **Vilice Console
-configures**, whose **routing table is derived, not hand-authored** — reconciled from the
-apps that select it. Add an app behind it → regenerate its config → reload; scale an
-app → update upstreams → reload. Same plan-vs-reality loop (below), applied to the edge;
-the **Balancers** page is where you see that table and the edge's health.
+- `Machine#balancer` is a boolean — no new table, because a parallel model would duplicate
+  address, key, scope and ownership.
+- `RoutingTable` derives the table; applying it is the `route` act (`vilice route`,
+  [`../blueprint/vilice/deploy.md`](../blueprint/vilice/deploy.md)).
+- **Derived on read, not converged in the background.** A person presses Apply.
+- **Only boxes actually serving are upstreams.** Routing to a placed-but-not-running box
+  would turn a visible gap into a 502.
+- Ownership and sharing are the Machine model unchanged
+  ([machine-ownership.md](machine-ownership.md)): dedicated to one project by default, or
+  unowned with `sharing=list` to front several.
 
-This is a deliberate, narrow exception to "no new noun": a Balancer earns first-class status
-by its own **lifecycle, cross-project sharing, and derived control surface** — but its
-*implementation* is still the Caddy-on-a-Machine primitive. It is a **role over Machine**,
-not a competing primitive.
+## Replication is stateless-only
 
-`Machine#balancer` is the role — a boolean, no new table, because a Balancer *is* a
-Machine and a parallel model would duplicate address, key, scope and ownership and then
-have to be kept in step. `RoutingTable` derives the table; applying it is the `route` act.
+A volume is data on one box's disk; N replicas are N diverging datasets. An app is
+**replicable when it declares no volumes** — derived, not stored, because a stored flag is
+a promise about the spec that can disagree with it. The gate is a validation: a stateful
+app is refused a count above 1.
 
-**"Reconciled from the apps behind it" means derived on read, not converged in the
-background** — the table is computed when shown and again when sent, and a person presses
-Apply ([`drift-is-surfaced-never-closed.md`](drift-is-surfaced-never-closed.md)). And
-**only boxes actually serving are upstreams**: a placed-but-not-running or unreachable box
-is left out, because routing to it would turn a placement gap into a 502 when the whole
-point is that the gap stays visible.
->
-> It also needed a Vilice verb, which the box did not have — every route the app pack could
-> write was `reverse_proxy 127.0.0.1:<port>`. `vilice route` is that verb; see
-> [`../blueprint/vilice/deploy.md`](../blueprint/vilice/deploy.md). The managed-LB
-> realization is still pending.
+## Converging boxes is dangerous
 
-**Ownership and sharing are the Machine model, unchanged** ([machine-ownership.md](machine-ownership.md)):
+Converging containers is cheap and reversible; converging boxes is not.
 
-- **dedicated to one project (default)** — the project's own edge; preserves client
-  isolation (capture-resistance).
-- **shared to a list of projects** — the opt-in amortization: one edge box (unowned /
-  operator-level) fronting several small projects. "Owned by Vilice Console, usable by selected
-  projects" is just *unowned + sharing=list* — no new ownership or isolation model.
+- **Provision** — un-witnessed setup with a live, resumable status.
+- **Deploy** — witnessed (the ceremony).
+- **Destroy** — witnessed, with friction, and it respects the in-use guard
+  ([open/status-signals.md](open/status-signals.md)).
 
-**The App's machine configuration, then:**
+## Still open
 
-```
-Box       → Existing box | New box (Hetzner)
-Exposure  → On the Edge (public)        → count 1
-          → Behind a Balancer (private) → pick a balancer → count 1…N
-```
-
-So there is still **one primitive — an App placed on substrate** — plus a Balancer role
-that is itself that primitive, made visible because it is shared and long-lived.
-
-**The constraint that keeps it safe: replication is stateless-only.** A volume is data on
-*that box's* disk; N replicas = N diverging datasets. So the count control only appears for
-apps the App Library marks **replicable**; a stateful app (declares a volume) is
-single-placement, full stop. That one flag removes a decision from the operator *and*
-closes the footgun. The flag is *derived rather than stored*: an app is replicable
-when it declares no volumes. A stored flag would be a promise *about* the spec, and it
-could disagree with the spec it describes; deriving it from the volumes the app
-actually declares cannot. The gate is a validation, so a stateful app is refused a
-count above 1 rather than merely discouraged in the form.
-
-## Plan vs reality is the UI
-
-Every entity has a **desired** state and an **observed** state; the page's job is to show
-the gap and offer to close it. Both halves now exist — the observe reconciliation
-([observe-reconciliation.md](observe-reconciliation.md)) supplies reality (`current_image`,
-reachability, K-of-N up) against the App's plan. `failed` / `drift` / `unreachable`
-are all "reality ≠ plan," and the gap *is* the action — offered, never taken
-automatically. This half of the decision was always right, and is what the auto-converge
-language above contradicted.
-
-## The one asymmetry: converging boxes is dangerous
-
-Converging *containers* is cheap and reversible; converging *boxes* is not.
-
-- **Provision (scale-up / new box)** — un-witnessed setup; a live status, resumable, never
-  a babysitting wizard ([install-journeys.md](open/install-journeys.md) lifecycle states).
-- **Deploy** — witnessed (the ceremony, record-before-act).
-- **Destroy (scale-down / remove a box)** — **witnessed + friction**, and it respects the
-  in-use guard ([open/status-signals.md](open/status-signals.md)). Tearing down a box that
-  holds data or serves traffic is the one place "declarative all the way up" keeps a human
-  firmly in the loop.
-
-## What this settles vs. leaves open
-
-- **Settled:** the *model* — one primitive, App-as-intent, the machine view as the
-  floor beneath it; exposure
-  (Edge / Behind-a-Balancer) replaces "single vs fleet"; the **Balancer** is a first-class
-  managed resource (a Machine running reconciled Caddy), **dedicated to a project by
-  default**, shareable to a list; declarative-up with a witnessed scale-down edge.
-- **HA for the balancer itself** is a later layer: one balancer box is a single point of
-  failure, and doing it properly means two boxes plus a **floating IP** — a public IP not
-  pinned to one server, reassigned to the standby on failure, so DNS keeps pointing at the
-  floating IP while the IP moves between boxes. Not v1.
-- **Open (build, not model):** cloud-provider provisioning; the balancer's reconciled Caddy
-  + rollout orchestration; **cert handling on a shared balancer** and the **private-backend
-  networking** (how a backend is reachable only by its balancer); and **HA for the balancer**
-  (pair + floating IP) — all in
-  [`open/console-open-questions.md`](open/console-open-questions.md). The
-  **migrate-an-app** verb is now clearly "blue/green across machines" — the same
-  primitive relocating one placement.
-- **Build status (UI):** the app placement step currently ships an **interim
-  Single / Fleet stub** (machine-first, with new-box and fleet as previews). The settled
-  shape above — **Box × Exposure (Edge / Behind a Balancer) × scale**, plus a **Balancers**
-  page — is the next UI rework; the stub predates this refinement.
+Build, not model — all in
+[`open/console-open-questions.md`](open/console-open-questions.md): cloud provisioning;
+certificates on a shared balancer; private-backend networking; **HA for the balancer**
+(two boxes and a floating IP — not v1); and the migrate verb, which is blue/green across
+machines.
 
 ## Roads not taken
 
-- **Fleet as a first-class object** (a named machine set you target). Rejected: a second
-  noun and a separate scaling path for what is just count + exposure on an App.
-- **Edge per fleet** (auto-create an LB when an app scales). Rejected: it couples the
-  edge to one app's lifecycle, so DNS churns on every scale and the 1↔2 boundary is a
-  cutover. The Balancer decouples the edge from any one app.
-- **Edge per project, invisible** (a hidden shared box each project gets). Superseded by the
-  **Balancer** — same DNS/scaling wins, but *visible and manageable* (its own page) and
-  *optionally shared across projects*, not an invisible per-project box.
-- **A load balancer as its own program/primitive.** Rejected: it's Caddy-on-a-Machine like
-  everything else; a new engine would re-introduce a second model. (The Balancer is a
-  *role/presentation* over that primitive, not a new one.)
-- **DNS round-robin** (N A-records for one hostname). Rejected 2026-06-13: it scales, but
-  fails over slowly and lossily because clients cache DNS, and per-box TLS breaks —
-  HTTP-01 challenges hit a random box — without DNS-01. Graduated here from
-  `open/console-open-questions.md`.
-- **In-box replicas** (N containers behind one box's Caddy). Rejected the same day: real
-  health-aware balancing, one IP and one cert, but bounded by a single box and no survival
-  of that box dying. Not worth a Vilice change for what it buys.
-- **Machine-first onboarding as the spine.** Kept as an *alternate* entry (pre-provision /
-  the lens), not the foundation — intent leads.
+- **Fleet as a first-class object.** A second noun and a second scaling path for what is
+  count + exposure.
+- **An edge per fleet** (auto-create an LB when an app scales). Couples the edge to one
+  app's lifecycle; DNS churns on every scale.
+- **An invisible edge per project.** Superseded by the balancer: visible, manageable,
+  optionally shared.
+- **A load balancer as its own program.** It is Caddy on a Machine like everything else.
+- **DNS round-robin.** Fails over slowly because clients cache DNS, and per-box TLS breaks
+  — HTTP-01 challenges hit a random box.
+- **In-box replicas** (N containers behind one box's Caddy). Bounded by one box and does
+  not survive it.
+- **Machine-first onboarding as the spine.** Kept as an alternate entry.
+- **"The system converges substrate to match"** — an earlier draft of this decision.
+  Wrong; see [`drift-is-surfaced-never-closed.md`](drift-is-surfaced-never-closed.md).

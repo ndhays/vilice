@@ -51,13 +51,12 @@
 ## Open — the overhaul
 
 What the console is for is settled in
-[`../what-the-console-is-for.md`](../what-the-console-is-for.md), and every entity page
-takes the zones shape in the blueprint. Still open, in order:
+[`../what-the-console-is-for.md`](../what-the-console-is-for.md). Still open, in order:
 
-- **The app page in zones.** What it is = the spec, interpreted (image, hostnames, env
-  names, volumes; accessories and processes nested under the app), with the literal deploy
-  envelope behind a *Raw spec* disclosure (secret names only). Observe = where it runs,
-  running vs. asked for. Operate = the command buttons, per box.
+- **The app page.** What it is = the spec, interpreted (image, hostnames, env names,
+  volumes; accessories and processes nested under the app), with the literal deploy
+  envelope behind a *Raw spec* disclosure (secret names only); then where it runs,
+  running vs. asked for.
 - **What a command does on the box.** Belongs in the record entry, not on the page: what
   apply-updates ran (its two apt commands) and how to check it. Read from
   `vilice _commands`; where that lacks the detail it grows in the binary, not the console.
@@ -74,30 +73,59 @@ takes the zones shape in the blueprint. Still open, in order:
   re-target** verb (move an app to another box) — see
   [`console-open-questions.md`](console-open-questions.md).
 
-## Open — where the acts sit (raised 2026-10-04)
+## Open — after the acts moved into their cards
 
-The machine page puts every act in an **Operate** zone beside **Observe**
-([`../what-the-console-is-for.md`](../what-the-console-is-for.md),
-[`interface.md`](../../blueprint/console/interface.md)). The thought is to put each act
-back **in the card it belongs to** — the reading and the act on it together:
+Each act now sits in the card it acts on, and every app on a box has its own page
+([`../acts-sit-with-what-they-act-on.md`](../acts-sit-with-what-they-act-on.md)). That
+left these:
 
-- **Maintenance:** `status` (read) with `apply-updates` beside it; a restart, and changing
-  the automatic-update time, if those become verbs
-  ([`vilice-open-questions.md`](vilice-open-questions.md)).
-- **Registries** as their own card on the machine page, with `registry-login` /
-  `registry-logout` — a box credential, so machine level.
-- **Each app on the box gets its own page.** The machine page shows one line per app with
-  a clear state indicator; the line leads to a page with that app's acts — deploy,
-  rollback, start, stop, restart, remove, backup, restore. Today a box app that has no
-  console `App` behind it has no page at all, only a row with `remove`.
-- **Backups follow the app**, since `backup` is per app; the machine page keeps only the
-  record's own snapshot.
+- **Two places for an app's lifecycle verbs.** The App page still lists them per
+  placement; the app's page on its box has the same ones. Either the App page keeps only
+  what spans boxes (the intention, and a deploy to every placement) and links down, or
+  the duplication is accepted. Not decided.
+- **The app-on-a-box page has no chain of its own.** It links to the machine's record
+  filtered by the app's name. The page pattern says the chain is the body of every
+  entity page.
+- **It is one request, not two.** It reads the cached `status`, so on a cold cache it
+  waits on the box, which the machine page never does.
+- **No button for a restart or the update time** on the Maintenance card, until those
+  are verbs ([`vilice-open-questions.md`](vilice-open-questions.md)).
+- **An app's memory is drawn as a share of the box**, because there is no per-app limit
+  to draw it against. When per-app `MemoryMax` exists
+  ([`vilice-open-questions.md`](vilice-open-questions.md)), the bar should be used
+  against allotted. It also counts the web container alone, not the app's processes or
+  accessories.
+- **Which commands the console sends, and which it only names** (raised 2026-10-05).
+  Setting the backup repo is shown as a command to run on the box
+  (`vilice backup --repo`), and that felt right: setting up backups is the admin's job.
+  It made `deploy` from the machine page look like too much by comparison.
 
-It reverses the two-zone layout, which was chosen so a reader never has to work out which
-kind of control they are looking at. What has to survive the move is that distinction —
-the command button already carries it (the mark and the verb). It also meets
-[`agents-and-the-console.md`](agents-and-the-console.md): if the console's operate
-becomes approve/deny, where a button sits matters less than where a proposal lands.
+  "Setup versus routine" does not hold as the line: a second placement is routine for
+  the app and first-time for the box. **The lean: the console sends acts on things it
+  holds a definition for, and only names the rest.**
+
+  - **Every deploy starts from the App Library.** An App Template and a version are the
+    definition. That includes a one-off and a test run: it is added to the Library
+    first, and **labelled** as what it is (`kind=one-off`, `kind=test`) — App Templates
+    already carry labels, so this needs no new field, only the habit and perhaps a
+    filter. The Library stays a convenience, not a security boundary
+    ([`app-library.md`](app-library.md)); this is about what the console offers, not
+    what the box permits.
+  - **The machine page's free-form deploy goes.** A spec typed there is one the console
+    has never seen and does not keep. In its place: add it to the Library, then place it.
+    This reverses part of what is settled and built — the machine view deploying with no
+    App and nothing stored ([`../console-layers.md`](../console-layers.md),
+    [`interface.md`](../../blueprint/console/interface.md)) — so it needs a decision
+    record, not just a change. `Setting.apps_library_only` already says "Library only"
+    for the App flow and defaults on; this would make it true of the machine page too.
+  - **What sets the box up is named, not sent:** the backup repo, and by the same rule a
+    registry login, which has a form today.
+  - **A trial makes placing a considered press** — try the version on the box before it
+    takes traffic ([`dry-run.md`](dry-run.md)).
+
+  Not decided: whether to take the lean; what becomes of an app already on a box that
+  was deployed by hand (it has a page and its acts today, by name); and whether
+  `registry-login` moves out with the backup repo or stays as the one exception.
 
 ## Still-open sub-questions
 

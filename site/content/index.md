@@ -7,6 +7,9 @@ nav: home
 <p class="tagline">To Help You Host Your Own Applications</p>
 </div>
 
+Vilice is a self-hosting tool that records every state-changing action to a hash-chained
+log before running it.
+
 ## Yet Another Hosting Tool?
 
 Vilice was built with the goal of making web application hosting boring and durable.

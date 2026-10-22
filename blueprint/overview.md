@@ -9,8 +9,8 @@
 
 ## What this is
 
-A coordination platform for operators running managed services on infrastructure
-they control. It is built on the **Agora Constitution** (`blueprint/agora.md`):
+A self-hosting tool that records every state-changing action to a hash-chained log
+before running it. It is built on the **Agora Constitution** (`blueprint/agora.md`):
 every actor is named, every action is accountable, and the privileged ceiling is
 small and legible. The articles count only insofar as they are **in the code**, as
 mechanism — not as documentation.

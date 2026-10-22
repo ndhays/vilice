@@ -1,46 +1,31 @@
 # The name is Vilice
 
-> Decided 2026-10-01. **Steward → Vilice**, everywhere: the brand, the binary, the
-> account (as `_vilice`), the state dir, the record, the env prefix, the unit names.
-> Replaces Steward, which replaced Hostler. **Answers** the name question in
-> [`open/landscape-scan.md`](open/landscape-scan.md), the collision scan.
->
-> **Built and published, 2026-10-02.** `0.4.0` is the first Vilice release, installable
-> from `get.vilice.org` and verified against the key on Codeberg. What is left is under
-> "Building it": the dev box, and retiring the old names.
+> Decided 2026-10-01; published 2026-10-02 as `0.4.0`. **Steward → Vilice** everywhere:
+> the brand, the binary, the account (`_vilice`), the state dir, the record, the env
+> prefix, the unit names. Answers the name question in
+> [`open/landscape-scan.md`](open/landscape-scan.md). What is left is under "Still to do".
 
-## The question
+## Why rename
 
-"Steward" collides. It is a common English word, which is why it was chosen, and
-common words are by construction words other people have used. Other tools already
-claim it in the CLI namespace, the one place a collision is not cosmetic: a name on
-`PATH`, a unix account, a directory under `/var/lib` can each be held by only one thing
-per box.
+"Steward" is a common word, and other tools hold it in the CLI namespace — the one place
+a clash is not cosmetic. A name on `PATH`, a unix account, or a directory under
+`/var/lib` can be held by one thing per box. A tagline fixes findability; it cannot free
+those.
 
-The Steward decision saw this coming and said: if the name comes back muddied, the
-answer is positioning, not a second rename, because "the chains would already carry
-`steward` verbs, and verbs are forever." That reason does not hold up:
+The Steward decision said a second rename was ruled out because "verbs are forever".
+That did not hold:
 
-- **The record carries verbs, not the binary name.** The verbs are flat — `deploy`,
-  `backup`, `rollback` — and survive a rename untouched. The name lives in the
-  `authorized_keys` forced command, the account, the paths and the env vars: things
-  tied to an install, not to history.
-- **There is still no install base.** One dev box, at `0.3.4`. That is the same reason
-  the Hostler rename was cheap, and it gets dearer with every release.
-
-So a tagline can fix findability, but it cannot free a name on `PATH` or a unix account.
-Only a rename can, and now is the cheapest it will ever be.
+- **The record carries verbs, not the binary name.** `deploy`, `backup`, `rollback`
+  survive a rename. The name lives in the forced command, the account, the paths and the
+  env vars — tied to an install, not to history.
+- **There was no install base.** One dev box.
 
 ## The decision
 
-**`vilice`.** In *Epistles* 1.14 Horace writes a letter to the steward who runs his
-Sabine farm. It opens *"Vilice silvarum et mihi me reddentis agelli"* — "Steward of the
-woods and the little farm that gives me back to myself." *Vilice* is the form of address
-of *vilicus*, the Roman estate steward: he ran the land on the owner's behalf, under a
-set remit, and answered for it. That is the product: it acts, its authority is bounded,
-and it writes down what it did. The meaning Steward carried survives as the story.
-
-One name, everywhere:
+**`vilice`.** Horace's *Epistles* 1.14 is a letter to the steward of his Sabine farm:
+*"Vilice silvarum et mihi me reddentis agelli"*. *Vilice* is the form of address of
+*vilicus*, the Roman estate steward, who ran the land on the owner's behalf, under a set
+remit, and answered for it.
 
 | Where | Was | Becomes |
 |---|---|---|
@@ -53,201 +38,139 @@ One name, everywhere:
 | Console product copy | Steward Console | Vilice Console |
 | Console Rails module | `StewardConsole` | `ViliceConsole` (directory stays `console/`) |
 
-**The account is `_vilice`.** It is still the product's name — the box does not
-disagree with itself, the failure the Steward decision rejected in "rename the binary,
-keep the account" — and the underscore marks it as a service account, not a person or a
-command: the convention OpenBSD and macOS use for every daemon (`_sshd`, `_www`) and newer
-Debian system accounts follow (`_apt`, `_chrony`). So `sudo -u _vilice vilice` reads as
-"as the vilice service account, run vilice", where `sudo -u steward steward` read as a
-typo. Directories take no prefix.
+**The account is `_vilice`.** It is still the product's name, so the box does not
+disagree with itself. The underscore marks a service account — the OpenBSD and macOS
+convention (`_sshd`, `_www`), followed by newer Debian accounts (`_apt`). Directories
+take no prefix.
 
-Two naming rules carry over from Steward, because the record makes names permanent:
+Two naming rules, because the record makes names permanent:
 
-- **Name by domain, not substrate.** `vilice-backup`, never `vilice-restic`: the name
-  promises backups happen and are recorded; restic is today's implementation, and the
-  substrate can change without a rename. The core already works this way — the verb is
-  `deploy`, not `podman-flip`.
-- **Verbs stay flat, plain, and forever.** The record is append-only, so every verb ever
-  invoked is permanent history. `vilice deploy` must mean the same thing in 2032.
+- **Name by domain, not substrate.** `vilice-backup`, never `vilice-restic`.
+- **Verbs stay flat, plain, and forever.** `vilice deploy` must mean the same thing in
+  2032.
 
-## Why a coined word passes, here
+## Why a coined word passes here
 
-This breaks the naming rule in [`CLAUDE.md`](../CLAUDE.md) on purpose: a reader will
-not decode "vilice" without being told. The rule asks for a word the reader already
-owns, and a word the reader already owns is a word somebody else already uses. For the
-name of the product itself — the one name that has to be unique on every box — owning
-it outright beats having it explain itself:
+It breaks the naming rule in [`CLAUDE.md`](../CLAUDE.md) on purpose. A word the reader
+already owns is a word someone else already uses, and the product's name has to be unique
+on every box.
 
-- **It is free where a clash bites.** No binary on `PATH`, no account, no package in
-  apt, Debian or AUR (scan below).
-- **It is one string.** An agent reading "steward" in a log, a prompt or a search
-  result has to work out which steward is meant. "vilice" means one thing. As more of
-  the commands are written by agents rather than typed, being unique matters more than
-  being easy to say.
-- **The story does the explaining.** One sentence — Horace's letter to his farm
-  steward — tells a reader what the thing is for.
+- **It is free where a clash bites** — no binary, account, or package by that name.
+- **It is one string.** An agent reading "steward" in a log has to work out which one.
+- **One sentence explains it** — Horace's letter to his farm steward.
 
-The rule still holds for everything below the product name: verbs, packs, models,
-methods, files. They stay plain words.
+The rule still holds for everything below the product name.
 
 ## The collision scan, 2026-10-01
 
 - **On the box:** no `vilice` binary, account or group; no package in apt, Debian or AUR.
-- **Registries:** free on crates.io, npm, PyPI, RubyGems, Homebrew (formula and cask),
-  the Go module proxy, Docker Hub and Codeberg.
-- **GitHub:** the user `vilice` is an empty account from 2021, so `github.com/vilice`
-  is not ours. The repo lives on Codeberg, so this does not matter.
-- **Companies and products:** none found by that name.
-- **Trademark:** no exact VILICE mark found; the nearest US marks are near-misses
-  (VILICO, VILICERT, VILI). Not a legal opinion; worth a lawyer's look before any
-  commercial use.
+- **Registries:** free on crates.io, npm, PyPI, RubyGems, Homebrew, the Go module proxy,
+  Docker Hub and Codeberg.
+- **GitHub:** the user `vilice` is an empty account from 2021, so `github.com/vilice` is
+  not ours. Never link it.
+- **Companies and products:** none found.
+- **Trademark:** no exact mark; nearest US marks are VILICO, VILICERT, VILI. Not a legal
+  opinion.
 
 ## Domains
 
 | Host | Serves |
 |---|---|
-| `vilice.org` | The site and docs. The project's home: .org for the open-source project. |
+| `vilice.org` | The site and docs. |
 | `get.vilice.org` | `install.sh` and the release binaries. Nothing else. |
-| `vilice.com` | Redirects to `vilice.org` for now; held for a business site later. **Never serves `install.sh`.** |
-| `github.com/ndhays/vilice` | The source: the main repository. Personal on purpose. **Never in the trust path** — nothing an install fetches comes from GitHub. (`github.com/vilice` is an unrelated, empty account; never link it.) |
-| `codeberg.org/vilice/vilice` | The release public key, and only that, at `release-key.pub` in the repo root, fetched from the raw path. |
+| `vilice.com` | Redirects to `vilice.org`. **Never serves `install.sh`.** |
+| `github.com/ndhays/vilice` | The source. Personal on purpose. **Never in the trust path.** |
+| `codeberg.org/vilice/vilice` | The release public key only, at `release-key.pub`. |
 
-**Why the source is on GitHub and only the key is on Codeberg.** Codeberg's Terms of Use
-now restrict generative-AI code ([`the-core-is-handwritten.md`](the-core-is-handwritten.md)),
-and this code is LLM-assisted, so it cannot live there yet. A public key is not code. The
-split also adds a property: the key sits on neither the host that serves the binary nor
-the one that holds the source, so no one account can change what a release is *and* the
-key that vouches for it. A self-hosted mirror of the source may follow; it changes
-nothing here.
+- **Source on GitHub, key on Codeberg.** Codeberg's terms restrict generative-AI code
+  ([`the-core-is-handwritten.md`](the-core-is-handwritten.md)); a public key is not code.
+  The key then sits on neither the host that serves the binary nor the one that holds the
+  source, so no one account can change what a release is and the key that vouches for it.
+- **The installer host stays bare.** `install.sh` is the one step that is not
+  signature-checked: whatever that host serves, root runs. Its own subdomain keeps a docs
+  compromise away from it. Every install command names `get.vilice.org` and nothing else.
+- **The Codeberg repo must be public.** `install.sh` fetches the key with an
+  unauthenticated `curl`.
+- **The domains are in the trust path**, so the registrar account has two-factor auth,
+  transfer lock and auto-renew.
+- **Redirect-only hostnames** (`vilice.com`, `www.*`) go to the fixed target
+  `https://vilice.org/`, not path-preserving, so no URL on them can resolve to an
+  installer. Each carries a proxied record to `192.0.2.1`, which never routes.
 
-**The installer host stays bare.** `install.sh` is the one step in the install path that
-is not signature-checked: whatever that host serves, root runs. Keeping it on its own
-subdomain means a site or docs compromise does not reach it. Every install command in the
-docs, README and site names `get.vilice.org` and nothing else, so there is one address to
-paste.
+## The publish gate
 
-**The key stays on a second provider.** The binary comes from `get.vilice.org`, the key
-from Codeberg — two providers, so no one account can hand you a matching key and binary
-([`the-core-is-handwritten.md`](the-core-is-handwritten.md) has the rule). The Codeberg
-repo must be publicly readable: `install.sh` fetches the key with an unauthenticated
-`curl`, on a stranger's box, and a private repo answers 404.
+`get.vilice.org` does not go live until the key answers at its Codeberg path, and the
+docs do not go live before `get.vilice.org` — the install line must work the moment
+someone copies it. `make publish` is that gate as a script.
 
-**The domains are in the trust path**, so the registrar account has two-factor auth,
-transfer lock and auto-renew. Once the subdomains are settled, `vilice.org` goes on the
-HSTS preload list. That protects the page the install command is copied from (curl
-ignores the list; the command's explicit `https://` and the signature check cover the
-install itself). It commits every subdomain to HTTPS, which is why it waits.
+## How it was built
 
-## Building it
+Full rename, reinstall required, no migration code. Renaming a live account that owns
+rootless containers, user units and append-only record files risks a half-finished
+migration and a ghost install ([`one-vilice-per-box.md`](one-vilice-per-box.md)).
 
-Full rename, reinstall required — no migration code. Renaming a live account that owns
-rootless Podman containers, user units and append-only record files is the painful case:
-a half-finished migration leaves a healthy-looking ghost install, the failure
-[`one-vilice-per-box.md`](one-vilice-per-box.md) exists to prevent. Migration code would
-be written once, carried forever, and exercised against an install base of one dev box. That box is reinstalled, and its record and key go
-with it.
+Left alone on purpose:
 
-What does not move, on purpose:
+- **The `steward` releases up to `0.3.4` are withdrawn**, not kept. Nobody installed
+  one, and keeping a version's bytes forever ([`versioning.md`](versioning.md)) protects
+  installs.
+- **The `steward-app` pack value** in the pinned historical record entry stays; boxes
+  holding one must still verify.
+- **Past console migrations.** A new migration renames the column, the stored themes and
+  the stored ssh users.
 
-- **The retired `pack` value is not touched** — see below. The `steward` releases up to
-  `0.3.4` are withdrawn rather than kept: nobody ever installed one, and keeping a
-  version's bytes forever ([`versioning.md`](versioning.md)) protects installs, of which
-  there were none. The first Vilice release is **`0.4.0`**: the binary's name is inside
-  the tarball, so it could never have been a re-signed `0.3.4` anyway.
-- **The `steward-app` pack value** in the pinned historical record entry stays. Boxes
-  that hold one must still verify.
-- **Past console migrations**, which are history. A new migration renames the column,
-  the stored themes, and the stored ssh users.
+## Still to do
 
-**Published.** `0.4.0` is signed and served from `get.vilice.org`; the key is at the root
-of `codeberg.org/vilice/vilice`; `vilice.org` serves the docs and the App Library. A run
-of the live installer with no overrides fetched the key from Codeberg, verified the
-release, and installed it. `vilice.com`, `www.vilice.com` and `www.vilice.org` redirect
-to `https://vilice.org/` — a fixed target, not path-preserving, so no URL on them can
-resolve to an installer. A hostname that only redirects carries a proxied record to
-`192.0.2.1`, an address reserved for documentation that never routes.
-
-**Still to do:**
-
-1. **The dev box**, reinstalled from `get.vilice.org` — the first install outside a test —
-   on a **new IP**: the old one was in the repo, and its history, from the first commit.
+1. **The dev box**, reinstalled from `get.vilice.org` on a **new IP**: the old one was in
+   the repo's history from the first commit.
 2. **Retire the old names.** `steward.agoraforge.org` no longer resolves; its Cloudflare
    project goes, and `codeberg.org/agoraforge/steward` (the old key) is archived.
-3. **HSTS preload** for `vilice.org`, once the subdomains have settled.
+3. **HSTS preload** for `vilice.org`, once the subdomains settle. It commits every
+   subdomain to HTTPS, which is why it waits. (curl ignores the list; the explicit
+   `https://` and the signature check cover the install.)
 4. **The image names.** The console image is still `ghcr.io/agoraforge/vilice-console`
-   (`Makefile`, and the examples on the docs site), and the harness is
-   `ghcr.io/agoraforge/harness-rails`, which the App Library points at. The source is now
-   `github.com/ndhays/vilice`, so `ghcr.io/ndhays/…` would put an image where a reader
-   expects it. Decide before the first console image is published: after that, a move
-   strands whoever pulled the old name.
-
-**The gate, for every publish:** `get.vilice.org` does not go live until the key answers
-at its Codeberg path, and the docs site does not go live before `get.vilice.org` — the
-install line it prints must work the moment someone copies it. `make publish` is that
-gate as a script: it compares the Codeberg key with the one in this repo, uploads the
-installer host, confirms it serves the version, and only then uploads the docs. An installer pointed at a path that does
-not answer fails every install.
+   (`Makefile`, and the docs examples), and the harness is
+   `ghcr.io/agoraforge/harness-rails`, which the App Library points at.
+   `ghcr.io/ndhays/…` would put an image where a reader expects it. Decide before the
+   first console image is published; after that, a move strands whoever pulled the old
+   name.
 
 ## Not claimed: package registries
 
-`vilice` is free on RubyGems, crates.io and Homebrew, and is left unclaimed. Nothing is
-published there — the binary comes from `get.vilice.org`, the console as a container
-image — and nothing an install fetches touches a registry, so a package by that name
-could not reach one. A placeholder would not hold the name either: registries treat
-packages with no function as squatting and remove or reassign them. The name is claimed
-the day there is something real to publish, such as a Ruby client or an MCP server
+`vilice` is free on RubyGems, crates.io and Homebrew and left unclaimed. Nothing an
+install fetches touches a registry, and registries remove placeholder packages as
+squatting. Claim it when there is something real to publish
 ([`open/vilice-mcp.md`](open/vilice-mcp.md)).
 
 ## Roads not taken
 
-- **The earlier names.** Hostler, with Switchyard for the console: railway terms that
-  paired with each other and needed a paragraph of explanation each. Steward said what
-  the thing is in one word, and collided for the same reason.
-- **Keep Steward and add a qualifier.** Fixes findability, not the clash: a tagline
-  cannot free a name on `PATH` or a unix account.
-- **VOLIO** — Malvolio, the steward in *Twelfth Night*, minus the "ill". Short and easy
-  to say, but a live US trademark in the software class (O.C. Tanner, headphones and
-  device accessories), five companies by the name, npm and PyPI taken, .com parked. And
-  Malvolio is the steward the play mocks.
-- **A short binary under the brand** (`vil`, `vili`, `vilit`). Two names for one thing,
-  and the box disagreeing with the product about its own name — the split the Steward
-  decision already rejected. If agents do the typing, six letters cost nothing. `vil` is
-  taken on crates.io and npm and sits a typo from `vi`. Anyone who wants a short name can
-  set an alias; that choice stays theirs, not baked into every `authorized_keys`.
-- **tamias** — the Athenian treasurer, publicly audited at the end of office: the
-  closest fit to Agora. But the name is crowded with money software (a POS system, an
-  expense app, a portfolio tracker, an invoicing tool) and .com is taken.
-- **gastald** — the Lombard steward of the king's estates. Free everywhere; the
-  runner-up if vilice ever runs into trouble.
-- **klucznik** — Polish for the manor's key-keeper. Fits scoped keys exactly, but
-  crates.io and .com are taken and the spelling is hard.
-- **benvolio**, **flavius**, **reeve**, **oikos**, **bryti**, **epitrop**, **distain**,
-  **banto**, **achates** — each either taken in too many places or hard to say for no
-  better story.
-- **Horace's lines as the name** — *modus* and *fines* ("est modus in rebus, sunt certi
-  denique fines"), *aere* ("exegi monumentum aere perennius"). *modus* is taken
-  everywhere; *fines* reads as penalties; *aere* has no obvious sound. The first line
-  would make a fitting motto: bounded scope is the whole design.
+- **Earlier names.** Hostler, with Switchyard for the console: railway terms that each
+  needed a paragraph. Steward said it in one word and collided for that reason.
+- **Keep Steward, add a qualifier.** Cannot free a name on `PATH`.
+- **VOLIO** (Malvolio minus the "ill"). A live US software-class trademark, five
+  companies, npm and PyPI taken. And the play mocks him.
+- **A short binary under the brand** (`vil`, `vili`). Two names for one thing. `vil` is
+  taken on crates.io and npm and is a typo from `vi`. Anyone can set an alias.
+- **tamias** — the Athenian treasurer, publicly audited: the closest fit to Agora.
+  Crowded with money software.
+- **gastald** — the Lombard royal steward. Free everywhere; the runner-up.
+- **klucznik** — the manor's key-keeper. Fits scoped keys; hard to spell, .com taken.
+- **benvolio, flavius, reeve, oikos, bryti, epitrop, distain, banto, achates** — taken
+  in too many places or hard to say.
+- **Horace's own words** — *modus*, *fines*, *aere*. Taken, reads as penalties, and
+  unpronounceable, in that order. *Est modus in rebus* would make a fitting motto.
 - **famulus** — a servant who obeys. A steward holds bounded authority and answers for
-  it; that difference is the product.
-- **Another word for the account** (`vilicus`, say). Fixes the `sudo -u x x` stutter
-  by making the box disagree with the product about its own name again.
-- **`sudo vilice …` dropping to the account by itself**, instead of refusing root. Ends
-  the `sudo -u` entirely, but reverses a deliberate choice in
-  [`ceiling-is-the-machine.md`](ceiling-is-the-machine.md): refuse root loudly; a
-  privileged process never quietly becomes something else. A separate question, not
-  part of a rename.
-- **`cli.vilice.org` for the installer.** Names the host after the artifact, not the
-  job. The host hands out releases, which may later be more than the CLI. `get.` is
-  also the familiar convention.
-- **The source under a company account** (`github.com/obelisqueops/vilice`). Considered
-  and dropped for `ndhays/vilice`: the project is personal, and the repo should say so.
-- **Deploying on push**, with the repository connected to the host. For
-  `get.vilice.org` it cannot work — the release needs the signing key, which is in no CI
-  — and it must not: a push that changes the `install.sh` root runs puts GitHub in the
-  trust path, the one thing the layout above keeps it out of. For the docs it is possible
-  and declined for now: that page carries the install line people copy, and releases are
-  rare enough that one command from a laptop is no burden.
-- **`vilice.dev` as the home.** Its HTTPS-only default can be had on .org through HSTS
-  preload, and .org says open source. Not held; cheap to add as a blocker for a
-  lookalike install page.
+  it.
+- **Another word for the account** (`vilicus`). The box would disagree with the product.
+- **`sudo vilice …` dropping to the account by itself.** Reverses a deliberate choice in
+  [`ceiling-is-the-machine.md`](ceiling-is-the-machine.md): refuse root loudly. A
+  separate question.
+- **`cli.vilice.org` for the installer.** Names the host after the artifact; `get.` is
+  the convention.
+- **The source under a company account.** The project is personal.
+- **Deploying on push.** For `get.vilice.org` it cannot work — the release needs the
+  signing key, which is in no CI — and must not: a push that changes the `install.sh`
+  root runs would put GitHub in the trust path. For the docs it is possible and declined:
+  that page carries the install line.
+- **`vilice.dev` as the home.** HTTPS-only can be had on .org through HSTS preload. Not
+  held; cheap to add against a lookalike.

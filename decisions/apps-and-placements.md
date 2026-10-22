@@ -1,8 +1,6 @@
 # Apps, placements, and app templates
 
-> Decided 2026-09-30, while overhauling the console
-> ([`what-the-console-is-for.md`](what-the-console-is-for.md)). The code takes the
-> words the page and the operator already used.
+> Decided 2026-09-30. See [`what-the-console-is-for.md`](what-the-console-is-for.md).
 
 ## The question
 

@@ -1,9 +1,8 @@
 # Agents and the console — who proposes, who approves
 
 > **Not settled, and nothing is built.** Raised 2026-10-03, from one question: if an AI
-> agent does the operating, how does a person stay in charge? It would change
-> [`../what-the-console-is-for.md`](../what-the-console-is-for.md), which is settled, so
-> it starts here. The box-side shapes an agent can take are in
+> agent does the operating, how does a person stay in charge? One part is answered: the
+> gate is not built in the console ([`../no-console-gate.md`](../no-console-gate.md)). The box-side shapes an agent can take are in
 > [`vilice-mcp.md`](vilice-mcp.md); this is about the console's part.
 
 ---
@@ -50,23 +49,18 @@ That keeps the witnessed step, the human name, the intention layer and bounded a
 an agent that cannot act cannot be talked into acting. The worst a poisoned log line can
 do is put a bad proposal in the inbox.
 
-### Two places the gate can live
+### Where the gate lives
 
-- **In the console.** The console sends the approved command with its own operate key.
-  Mostly the existing ceremony, plus an inbox and a way to file. The honest cost: the
-  gate is the console's code, the console still holds every operate key, and the box's
-  record says only *console*. Who proposed and who approved are in the console's record,
-  which is not hash-chained. No worse than today; none of the gain in (1) either.
-- **On the box.** The agent files the proposal *on the box* with its observe key. The
-  console's key can only approve what has been proposed; it cannot originate an act.
-  Neither key acts alone — a two-key rule the box enforces — and the box's own record
-  carries both lines. New verbs on the box, and verbs are forever
-  ([`../the-name-is-vilice.md`](../the-name-is-vilice.md)).
+**On the box.** The agent files the proposal *on the box* with its observe key. The
+console's key can only approve what has been proposed; it cannot originate an act.
+Neither key acts alone — a two-key rule the box enforces — and the box's own record
+carries both lines. New verbs on the box, and verbs are forever
+([`../the-name-is-vilice.md`](../the-name-is-vilice.md)). **Open.**
 
-The first can be built now and the second is where it should end up. Not decided:
-whether to build the first at all, or wait for the second.
+The other place — in the console, sending the approved command with its own operate key —
+is **not being built**: [`../no-console-gate.md`](../no-console-gate.md).
 
-### What must hold, in either place
+### What must hold
 
 - **What is approved is exactly what runs.** The approval names the spec's digest, so
   nothing can change between the two. Proposals expire. This is the same digest a dry run
@@ -106,7 +100,7 @@ are approved. Three costs:
 - **It is a product.** A chat surface, a tool loop, streaming, model upgrades, cost — on a
   console whose stated job is watching.
 
-**Lean:** the gate first; then the endpoint; an embedded chat only as one more client of
+**Lean:** the gate on the box first; then the endpoint; an embedded chat only as one more client of
 the same tools, if it is still wanted after using the first two.
 
 ## What a person can do today, with no code
@@ -132,12 +126,8 @@ setting on the agent's side, and the box does not enforce them.
 
 ## What the answers change
 
-- *The gate, in the console* → `what-the-console-is-for.md` gains a line rather than
-  losing one: bounded acts stay, and "who composed it" stops being assumed to be the
-  person pressing the button. The console needs a proposals model, an inbox entry, a way
-  for an agent to file, and passkeys.
 - *The gate, on the box* → new verbs and a new rung or pair of rungs on the scope ladder
   ([`../../blueprint/vilice/auth.md`](../../blueprint/vilice/auth.md)), and the console
   can hold a key that approves and nothing else — which is (1)'s gain, kept.
-- *No operate in the console* → the decision above is rewritten, and most of the console's
-  write side is removed.
+- *No operate in the console* → [`../what-the-console-is-for.md`](../what-the-console-is-for.md)
+  is rewritten, and most of the console's write side is removed.

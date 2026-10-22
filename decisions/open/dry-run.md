@@ -101,13 +101,97 @@ the check holding anything.
 Then `route` (the table would be validated the way Caddy validates it), `remove` and
 `restore` (what would be lost), and `apply-updates` (apt can already simulate).
 
+## A trial — the other half (raised 2026-10-05)
+
+Everything above is a **check**: it changes nothing, so it may not pull an image and may
+not promise health. That leaves the question an operator actually asks before placing an
+app on a box — *will it come up here?* — unanswered on purpose. A **trial** answers it,
+and it is a different thing: it is an act.
+
+### What it is
+
+Pull the image, start the app beside whatever is live, wait for its health path, and stop
+there. Traffic is never switched to it. Then take it down and say how it went.
+
+`deploy` already does this as its first half: the new color comes up on its own port,
+is health-checked, and only then does Caddy flip
+([`deploy.md`](../../blueprint/vilice/deploy.md)). A trial is that sequence stopped
+before the flip, followed by the teardown a failed deploy already runs. So it needs
+little new machinery, and "never goes live" is a property the deploy path has today.
+
+### How it differs from the check
+
+| | Check | Trial |
+|---|---|---|
+| Changes the box | no | yes — pulls an image, runs a container, then removes it |
+| Says | the spec is valid and this box could take it | it pulled, started, and answered its health path |
+| Scope | could be observe | operate |
+| Recorded | no, like every read | yes, before it runs, like every act |
+| Leaves behind | nothing | the pulled image, until the next prune |
+
+They are two verbs, not one verb with a depth flag, for the reason in question 1: the
+gate decides from the command's name, and these sit at different scopes.
+
+### What it must not do
+
+- **Run the release step.** A migration changes real data. A trial of an app that
+  declares one starts the app without it and says so in its answer — which means a trial
+  cannot vouch for an app that will not boot until its schema is there.
+- **Touch the app's live volumes.** A second copy writing to the first copy's data is
+  the thing blue/green is careful about. Not decided: start it with no volumes, with
+  empty throwaway ones, or refuse to try an app that declares any.
+- **Start or restart accessories.** An accessory already running is left alone, as in a
+  deploy. One that is not running is not brought up for a trial — not decided whether
+  the trial then proceeds without it or stops.
+- **Stand in for the deploy.** Like a check, it is not a reservation. `deploy` pulls (or
+  finds the image cached), starts, and health-checks again.
+
+It still needs every declared secret's value, on stdin, as a deploy does.
+
+### "Deployable" is a dated fact, not a status
+
+The tempting shape is a green *deployable* on a Library version. Two things are wrong
+with a standing status:
+
+- **It is true of a version on a box, not of a version.** Whether the image can be pulled
+  depends on that box's registry login; whether it boots depends on that box's secrets
+  and settings.
+- **It goes stale.** A credential expires and the status is still green.
+
+What holds is the record entry the trial writes: *tried on nick-main, 5 Oct, this
+digest, came up healthy*. The console shows that on the version — a check with its box
+and its date — and on the box when placing. The state is the latest thing the record
+says ([`../ui-shape.md`](../ui-shape.md)); nothing is stored that the record does not
+already hold. The digest ties it to the deploy that follows, as in question 5.
+
+### What it is for: placing a known app
+
+This came out of asking when the console should have a button at all
+([`ui-roadmap.md`](ui-roadmap.md)). The lean there is that the console sends acts on
+**things it holds a definition for** — an App Template and its version — and only names
+the rest. Under that rule every deploy starts from the Library, including a second
+placement of an app already running elsewhere, and a trial is what makes "place it on
+this box" a press someone can make with a reason to expect it to work.
+
+### Open
+
+- The word. `try`, `trial`, `rehearse`. Verbs are forever.
+- Volumes and accessories, above.
+- Whether the pulled image is kept (a later deploy then needs no pull, and no working
+  registry credential) or removed (a trial leaves the box as it found it). Lean: kept —
+  the image store is a cache, and prune already owns it.
+- Whether a failed trial's logs are returned the way a failed deploy's now are.
+- Build order against the check. The trial is nearer to hand, since the deploy path
+  already contains it; the check is the one with the agent-facing property.
+
 ## What must stay true
 
 - **No new entry point.** It comes through the same forced command as every verb
   ([`../orchestrators-are-clients.md`](../orchestrators-are-clients.md)).
-- **It writes nothing** — no unit, no secret, no image, no record entry for an act that
-  did not happen.
-- **It never promises health.** It says what it checked, and that is all it says.
+- **A check writes nothing** — no unit, no secret, no image, no record entry for an act
+  that did not happen.
+- **A check never promises health.** It says what it checked, and that is all it says.
+- **A trial never takes traffic**, and is recorded like any act.
 
 ## Related: exit codes
 
@@ -118,6 +202,9 @@ already depend on, so it is written here rather than done in passing.
 
 ## What the answers change
 
+- *A trial* → the console can show, on a Library version and when placing, where and
+  when that digest last came up healthy; and the machine page's free-form deploy can
+  give way to "add it to the Library, then place it".
 - *A read verb at observe scope* → the console's ceremony can show the box's own answer
   before the press, not just the command — which is most of "what a command does on the
   box" in [`ui-roadmap.md`](ui-roadmap.md) — and an MCP adapter

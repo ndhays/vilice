@@ -36,6 +36,8 @@ Three folders, three jobs. Truth flows in one direction: `decisions/open/` →
 - **`decisions/` — the settled *why*.** Especially **roads not taken** and reasoning
   git can't surface. Write one when you choose between real alternatives, so settled
   questions aren't re-litigated.
+  - **`decisions/README.md` is the index**, one line per decision. Add the line when
+    you add the decision.
 
 - **`decisions/open/` — questions still being decided.** Planning docs and open
   threads live here (e.g. `decisions/open/vilice-open-questions.md`). As a piece

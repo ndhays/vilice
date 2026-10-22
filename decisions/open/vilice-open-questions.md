@@ -7,27 +7,20 @@
 
 ---
 
-## Off-host shipping — streaming + queryable read-replica
+## Important, next: DNS-01 challenge + Agora-aligned edge/DNS providers
 
-**Snapshot-grade is built:** `backup --machine` ships the record dir off-box (see
-[`decisions/backup.md`](../backup.md)). What's still open is the stronger property:
-
-- **Streaming (zero-loss-window).** The record is **append-only**, so this is "ship new
-  bytes as they land," not Litestream (whose value is mutable-DB replication). The earlier
-  "SQLite + Litestream for the record" sketch is **reconsidered** — keep the record JSONL
-  (immutable via `chattr +a`, zero-dep) and stream the log itself.
-- **Off-box queryable read-replica.** Project the shipped append-only log into SQLite
-  **off-box**, so Vilice Console's read side gets rich SQL without SSH round-trips (the CQRS
-  "consume the shipped dump" model). The box stays simple; SQLite never lands on it.
-
-## DNS-01 challenge + Agora-aligned edge/DNS providers
-
-**Implement DNS-01 at some point** — the bulletproof path to HTTPS behind a TLS-terminating
+**Implement DNS-01** — the bulletproof path to HTTPS behind a TLS-terminating
 CDN (and the only way to get *wildcard* certs). It validates via a DNS TXT record, so it
 needs no inbound `:80`/`:443` reachability and is immune to edge interception. Shape: a
 custom Caddy build carrying the provider's [libdns](https://github.com/libdns) module, plus
 a scoped DNS-API token delivered as a Vilice secret. With a valid origin cert, the CDN runs
 in **Full (strict)** mode — the recommended secure topology.
+
+**Wildcard hostnames are refused at deploy until this exists** (2026-10-05, from a real
+install: `*.example.com` deployed, and Caddy retried for ever with *no solvers available
+… offered=[dns-01]*). The refusal says why and what to do instead. It is a stopgap:
+naming every hostname by hand does not work for an app that serves a subdomain per
+customer.
 
 **The tension (worth naming):** the obvious DNS-01 target is Cloudflare, and wiring it in
 deepens our dependence on a large US corporation — against Agora's "make capture expensive"
@@ -49,6 +42,19 @@ picked up:
   the megacorps.
 - **Tunnels (reaching a NAT'd box):** **headscale** (self-hosted Tailscale control plane) >
   Tailscale > Cloudflare Tunnel — see *Remote reach for Dispatcher* below.
+
+## Off-host shipping — streaming + queryable read-replica
+
+**Snapshot-grade is built:** `backup --machine` ships the record dir off-box (see
+[`decisions/backup.md`](../backup.md)). What's still open is the stronger property:
+
+- **Streaming (zero-loss-window).** The record is **append-only**, so this is "ship new
+  bytes as they land," not Litestream (whose value is mutable-DB replication). The earlier
+  "SQLite + Litestream for the record" sketch is **reconsidered** — keep the record JSONL
+  (immutable via `chattr +a`, zero-dep) and stream the log itself.
+- **Off-box queryable read-replica.** Project the shipped append-only log into SQLite
+  **off-box**, so Vilice Console's read side gets rich SQL without SSH round-trips (the CQRS
+  "consume the shipped dump" model). The box stays simple; SQLite never lands on it.
 
 ## Litestream for app SQLite databases
 
@@ -114,7 +120,7 @@ are mixed inside "Operate":
   record itself) — easy to read as a machine verb, and it is not.
 
 Open: a second grouping in help and on the site (by subject, inside scope), or scope
-shown as a badge and subject as the heading. The table in `dispatch.go` is the one
+shown as a badge and subject as the heading. The table in `commands.go` is the one
 source for both, so this is a field on a command, not a second list.
 
 ## Rescheduling the maintenance window
@@ -341,6 +347,41 @@ Still open:
 - **`testssl.sh`** — needs a real cert; rides with the DNS-01 / HTTPS work.
 - **OpenSCAP** — rejected for now (compliance machinery, against the grain); Lynis covers
   it lighter. See the decision.
+
+## Per-address connection limits
+
+Where they go is **settled**: nftables, not a Caddy module. See
+[`../connection-limits-in-nftables.md`](../connection-limits-in-nftables.md). Nothing is
+built. Open:
+
+- **Which command owns it.** `prepare <role>`, not `harden`: it opens 80/443, and harden is
+  optional. On a host behind a balancer the limits belong on the balancer, so does `host`
+  skip them, or apply them with the balancer exempted?
+- **Exempting proxies.** Behind a Vilice balancer or a CDN, all traffic comes from a few
+  addresses, and per-address limits would block the site. How does a host learn its
+  balancer's address, and does Vilice keep Cloudflare's ranges current, or leave CDN boxes
+  out?
+- **Loading without wiping ufw.** Ubuntu's `/etc/nftables.conf` starts with
+  `flush ruleset`, which would remove ufw's rules, SSH included. The likely answer is a
+  Vilice-owned file that replaces only `table inet vilice`, loaded by its own unit at boot.
+- **The rules.** The open-connection cap must sit in a set keyed by address; a bare
+  `ct count` caps the whole box. IPv6 is keyed per /64, not per address. Sets get a `size`
+  so forged-source floods cannot grow them without bound. Starting numbers: 30 new/second
+  (burst 60) and 100 open per address.
+- **HTTP/3.** Caddy serves UDP 443. A hardened box only opens 443/tcp; on an unhardened
+  one, UDP passes these rules. Cover it or close it.
+- **Checks.** `doctor` reports the table missing; a test from a second machine shows the
+  limits trip and a normal page load does not.
+
+## Client addresses behind a proxy — `trusted_proxies`
+
+Caddy sets `X-Forwarded-For` to whoever connected to it and discards any incoming value
+unless the sender is in `trusted_proxies`. Vilice sets none. So an app behind a Vilice
+balancer sees the balancer's address, and one behind Cloudflare sees Cloudflare's: logs
+and any app-level limit count every visitor as one. The fix is `trusted_proxies` on the
+host's Caddy (the balancer's private address, or the CDN's ranges), rendered through the
+same allow-list as everything else. Shares the "how does a host know its balancer" question
+above.
 
 ## Further hardening (later)
 

@@ -1,77 +1,47 @@
 # An observe read reconciles the stored projection
 
-> Refines the two-records model in [two-records.md](two-records.md) and the live-status
-> machinery noted built there. Settled 2026-06-17 while closing the Status-page signal
-> gaps ([open/status-signals.md](open/status-signals.md)).
+> Decided 2026-06-17. Refines [two-records.md](two-records.md).
 
-## The question
+## The problem
 
-`Vilice::Observe` reads a box's live `status --json` over scoped SSH and **caches** the
-reply (Decision 3). The cache made reads cheap — but it was *all* the read did. The
-persisted columns that exist precisely to project box truth into the control plane —
-`machine.status` (the `unknown`/`reachable`/`unreachable` enum), `machine.last_seen_at`,
-and `placement.current_image` — were **never written by the read path**. They were
-declared and then only ever set at deploy time (`desired_image`) or not at all.
-
-So the Status page, the app `drift` rollup, and the unreachable-machine signal were
-reading a projection that nothing updated: `machine.status` sat at `unknown` forever and
-`current_image` stayed nil. The page was correct; the inputs were dead.
+`Vilice::Observe` read a box's `status --json` and cached it, and did nothing else. The
+columns meant to mirror the box — `machine.status`, `machine.last_seen_at`,
+`placement.current_image` — were never written by the read path. The Status page, the
+`drift` rollup and the unreachable signal all read inputs nothing updated.
 
 ## The decision
 
-**Every real observe read reconciles the stored projection, inline in the read path.**
+**Every real observe read reconciles the stored projection, inline.**
 
-On a successful `status` read:
+On success: `machine.status = reachable`, `machine.last_seen_at = now`, and each reported
+app's live `Placement` gets its `current_image`.
 
-- `machine.status = reachable`, `machine.last_seen_at = now`.
-- For each app the box reports (`data.apps[] = { name, image }`), the live
-  `Placement` for that app on that machine gets its `current_image` set — the
-  exact input `in_sync?`/`drift` needs.
+On failure: `machine.status = unreachable`. `last_seen_at` is left alone — it means the
+last time the box answered.
 
-On a failed read: `machine.status = unreachable`. `last_seen_at` is **left alone** — it
-means "the last time we actually heard from it," so a failed read must not move it.
+It runs on a **cache miss only**, so it fires when the box was actually reached. Writes
+use `update_columns`: no callbacks, no `updated_at`, and **no `Event`**.
 
-Reconciliation runs on a **cache miss only** (it lives inside the cache-fill block), so
-it fires when we genuinely talked to the box, not on every cache hit. Writes use
-`update_columns`: this is a **projection, not a witnessed act** — no callbacks, no
-`updated_at` churn, and crucially **no `Event`**.
+## Why this is not a second recorder
 
-## Why this doesn't add a second recorder
+Vilice is the sole recorder of the box. Reconciliation writes the console's own mirror of
+reachability and the running image — the mirror the cache already was, persisted. No box
+entry is authored and no console `Event` is written, because nothing on the box changed.
+A normal save would imply an act worth a timestamp; a projection is not one. Witnessed
+acts still go through the ceremony.
 
-Two-records is the load-bearing invariant here: Vilice is the *sole recorder* of the
-box; Vilice Console never authors the box's record. Reconciliation respects that — it writes
-**Vilice Console's own mirror** of reachability and the running image, the same mirror the
-cached read already was, just persisted instead of thrown away. No box entry is authored;
-no Vilice Console `Event` is written. An observe read stays zero-privilege and accountable-to-
-no-one because it changes nothing *on the box* — updating our local picture of the box is
-what "mirror" already meant.
+## Why on read, not a separate ingester
 
-This is also why it's `update_columns`, not a normal save: a save would imply a
-control-plane act worth a timestamp and (eventually) a record line. A projection is
-neither. The witnessed side (deploy/rollback/remove) still goes through the ceremony and
-writes an `Event`; the two sides stay cleanly apart, as
-[the spine](../blueprint/console/interface.md) requires.
-
-## Why reconcile-on-read, not a standalone ingester
-
-The read already happens and already has the data parsed; reconciling in place means the
-projection is correct the moment any surface reads a box, with no second code path to
-drift from the cache. The **fleet-wide freshness** problem — keeping the Status page true
-for a box nobody has opened — is solved by *scheduling* the same read (`FleetObserveJob`
-sweeps the fleet on a cadence), not by a separate ingestion pipeline. One read path, used
-on demand and on a timer.
+The read already has the data parsed, so the projection is right the moment any surface
+reads a box, with no second path to drift from the cache. Fleet-wide freshness is the
+same read on a schedule (`FleetObserveJob`).
 
 ## Roads not taken
 
-- **A separate `Snapshot`/ingestion table as the source of truth.** Heavier, and it
-  splits "what the box said" across two stores (the cache and the table). The columns
-  already model the projection; persisting into them keeps one shape. The cross-fleet,
-  queryable `Snapshot` history is still a real future item, but it's an *addition* for
-  forensics, not the path that lights up the Status page.
-- **Marking the placement `failed` on a failed deploy.** Per
-  [deploy.md](../blueprint/vilice/deploy.md) a failed pull leaves the running app
-  untouched, so the truthful state is "still on the old image," not "dead." A genuine
-  `failed` needs the box to report per-app container state, which `status --json` doesn't
-  carry yet — left open in [open/status-signals.md](open/status-signals.md).
-- **Writing through `update`/an `Event` per read.** Would imply each read is an act and
-  flood the record with non-acts. Rejected; a projection is not a witnessed change.
+- **A separate `Snapshot` table as the source of truth.** Splits "what the box said"
+  across two stores. A queryable history is still wanted for forensics, as an addition.
+- **Marking the placement `failed` on a failed deploy.** A failed pull leaves the running
+  app untouched, so the truth is "still on the old image". A real `failed` needs per-app
+  container state from the box — open in
+  [open/status-signals.md](open/status-signals.md).
+- **An `Event` per read.** Floods the record with non-acts.

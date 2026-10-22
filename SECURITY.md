@@ -11,7 +11,7 @@ Three invariants hold throughout the platform:
 1. **Every caller is a named actor with a declared scope.** Authentication is scoped
    SSH: the key is the identity, an OpenSSH *forced command* is the scope, and
    `authorized_keys` is the inspectable rights ledger. Scopes form a ladder —
-   `observe ⊂ operate ⊂ ssh`.
+   `observe ⊂ operate ⊂ grant`.
 2. **Every action writes an accountable record before it runs** — append-only,
    hash-chained, and shipped off-host. Nothing privileged happens off the books.
 3. **The privileged layer keeps a small, legible ceiling**, enforced by filesystem
@@ -28,10 +28,10 @@ Reads are zero-privilege (`observe`); writes are named, scoped, and witnessed
 ## Privilege separation — the `_vilice` user
 
 Root is kept out of the day-to-day loop. Apart from `prepare`/`harden`, every command —
-deploy, lifecycle, grant, observe — runs as the unprivileged **`vilice`** user, and
+deploy, lifecycle, grant, observe — runs as the unprivileged **`_vilice`** user, and
 Vilice refuses to run them as root. Consequences:
 
-- **Apps are rootless containers.** They run as rootless Podman under `vilice` (systemd
+- **Apps are rootless containers.** They run as rootless Podman under `_vilice` (systemd
   Quadlet user units), so a container escape lands as an unprivileged user, not root —
   defense in depth, not just policy.
 - **The web edge needs no root in the loop.** Caddy runs on :80/:443 as its own `caddy`
@@ -54,7 +54,7 @@ Vilice refuses to run them as root. Consequences:
 - key-only SSH — password login disabled, applied lockout-safe. On a fresh root box root
   keeps a key-only login (`prohibit-password`) — the break-glass for re-running the two
   root commands. Root SSH is closed entirely (`PermitRootLogin no`) only when a non-root
-  admin account (uid ≥ 1000, login shell, keyed) can already log in by key; the `vilice`
+  admin account (uid ≥ 1000, login shell, keyed) can already log in by key; the `_vilice`
   system user (uid < 1000) never triggers this. The root password stays as a console
   break-glass either way;
 - a host firewall (UFW) and intrusion mitigation (fail2ban);

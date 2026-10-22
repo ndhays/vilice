@@ -1,103 +1,68 @@
 # Two records — the box's and the control plane's
 
-> Settled. There is not one record but two, by layer; neither subsumes the other.
-> And Vilice Console's record is **not** hash-chained (Vilice's is). Anchors the
-> ingestion design and the coming Boxcar audit.
+> Decided 2026-06-10.
 
-**Status:** Settled 2026-06-10.
+## The decision
 
----
+There are two records, by layer. Neither contains the other.
 
-## The two records
+- **Vilice's record** — the box's. What touched this machine's power. Hash-chained,
+  append-only (`chattr +a`), per machine. Authoritative for what happened to the box.
+- **The console's record** — the control plane's. What operators did in the fleet UI.
+  Authoritative for what happened there. **Not hash-chained.**
 
-- **Vilice's record** — the *box's* truth. What touched this machine's power
-  (deploy, start/stop, authorize, reboot). Hash-chained, append-only (`chattr +a`),
-  shipped off-host, per-machine. Authoritative for **what happened to the box**.
-  Un-bypassable: every privileged act funnels through the scoped SSH gate, which
-  records-before-act (Invariant 2).
-- **Vilice Console's record** — the *control plane's* truth. What operators did in the
-  fleet UI — the human/fleet layer Vilice structurally cannot see. Authoritative
-  for **what happened in the cockpit**.
+"Vilice is the sole recorder" is true for the box. Invariant 2 applies to the console at
+its own layer.
 
-"Vilice is the sole recorder" is true **for the box**. It is *not* true for the
-control plane. Agora Invariant 2 applies to Vilice Console at its own layer, so Vilice Console
-must keep its own record of its own privileged acts.
+## What only the console can record
 
-## What only Vilice Console can record
+1. **Acts with no box involved** — created a project, linked a machine, rotated a stored
+   key, added a label.
+2. **The human.** Vilice records the key's client name (`client=console`); only the
+   console knows the person behind it.
+3. **Fleet-level grouping.** "Deploy to A and B" is one act; each box records its half.
+4. **Intent and outcome at the edge.** A refused or failed command may never reach the
+   box, but the attempt is what accountability wants.
+5. **Reads worth tracking** — exports and sensitive reads do not touch the box.
+6. **The console's own security** — logins, sessions, grants, connecting a machine.
 
-These never appear in any single box's Vilice record:
+## Mirror is not record
 
-1. **Domain mutations with no box involved** — created Project Acme, linked devbox to
-   Acme, stored/rotated an SSH key, added a label, starred a project.
-2. **Human attribution** — Vilice records the *client identity* of the key
-   (`client=console`); only Vilice Console knows the **human** (alice) behind it. The
-   operator→client mapping is the foundation of delegation.
-3. **Fleet-level grouping** — "deploy to A *and* B" is one operator-initiated act;
-   each box records its half, only Vilice Console holds the act that spanned them.
-4. **Intent + outcome at the edge** — record-before-act at the Vilice Console boundary; a
-   **refused or failed** command never reaches the box, so it has no Vilice record —
-   but the *attempt* is exactly what accountability wants.
-5. **Access / observe worth tracking** — exports and sensitive reads don't touch the
-   box (so Vilice won't log them), but "who exported db-1's record" is a control-plane
-   fact.
-6. **Vilice Console's own security/config** — logins, sessions, delegation grants,
-   connecting/disconnecting a machine.
+For everything that did touch a box, the console mirrors Vilice's record for display and
+search. The mirror is a cache: re-pull and it rebuilds. So `Event` holds two things that
+must not be mixed:
 
-## Mirror ≠ record
+- **The console's own acts** — authoritative, not re-derivable.
+- **A mirror of the box's record** — a read cache.
 
-For everything that *did* touch a box, Vilice Console **mirrors** Vilice's record for a
-unified display and search. That mirror is **re-derivable — a cache, never
-authoritative**; re-pull and it rebuilds. So `Event` carries two distinct things that
-must not be conflated:
+The displayed chain is a merge of the two. That is also where *authored* (the console ran
+it) versus *witnessed* (it appeared in the box record from elsewhere) comes from — by
+layer, not by string matching.
 
-- **Vilice Console's own acts** (items 1–6) — *authoritative*, Vilice Console-owned, **not**
-  re-derivable.
-- **A mirror of Vilice's record** — a re-derivable read cache for display.
+## Why the console's record is not hash-chained
 
-The displayed timeline (the "chain") is a **merge** of the two — which is also where
-*authored* (Vilice Console ran it, with a human behind it) vs *witnessed* (it appeared in
-the box record from elsewhere) comes from, cleanly, **by layer** rather than by string
-matching.
+A hash chain earns its cost only at an un-bypassable privilege boundary with an anchor
+outside the attacker's reach. Vilice has both. That matters for the cases that worry us —
+two consoles driving one box, or an admin acting by hand — because every such path still
+goes through Vilice's gate.
 
-## Decision: Vilice Console's record is NOT hash-chained
+A chain stored in the database it protects is theater: anyone who can write the rows can
+recompute it. And the box record already is the external anchor — anything that touched a
+box is in a chain the console does not control, so the console's account can be
+cross-checked.
 
-A hash chain earns its cost only at an **un-bypassable privilege boundary with an
-anchor outside the attacker's reach**. Vilice has both (on-box, `chattr +a`, shipped
-off-host) — tamper-evident even against a rogue admin on that machine. That is
-load-bearing precisely because of the cases that worry us: **two Vilice Consoles driving
-one box, or an admin doing manual things**. Every such path still funnels through
-Vilice's gate into its chained, off-shipped record.
+Rails has no native pattern for it either: `audited` and `paper_trail` are versioning,
+`ActiveRecord::Encryption` is confidentiality.
 
-Vilice Console's record lives in its own DB. A chain **stored in the same DB it protects**
-is theater — anyone who can write the rows can recompute it; tamper-evidence needs an
-anchor the attacker can't reach, and Vilice Console would be self-anchoring. And it's
-unnecessary: **the box record is already that external anchor.** Anything that touched
-a box is independently in Vilice's chain, so Vilice Console's account is *cross-checkable
-against a chain it doesn't control* — strictly better than a self-anchored one, and
-free.
+**Instead:** append-only by mechanism (no edit or delete paths; the outcome settles once
+— [record-outcome-on-the-entry.md](record-outcome-on-the-entry.md)), record-before-act
+with the human named, ordinary DB integrity and backups, and cross-checking against the
+box.
 
-**Rails has no native pattern** for this anyway: `audited`/`paper_trail` are versioning,
-not tamper-evidence; `ActiveRecord::Encryption` is confidentiality, not integrity.
-Hand-rolling a `before_create` chain would be off-path *and* low-value here.
+**Road not taken: external anchoring** — ship digests to an append-only store or SIEM.
+The move if a compliance case ever demands tamper-evidence for console-only acts.
 
-**Instead, Vilice Console relies on:** append-only **by convention** (no edit/delete paths
-for the record), record-before-act with human attribution, normal DB integrity/backups,
-and cross-checkability against Vilice for anything box-touching. If a real compliance
-case ever demands tamper-evidence for Vilice Console-only acts, the move is **external
-anchoring** (ship digests to an append-only store / SIEM) — a road noted, not taken.
+## Still open
 
-**Refinement (Wave 3):** "append-only" means the recorded *facts* never change. A
-witnessed act's **outcome** is the one exception — it settles **once**, pending →
-ok/failed, on the same entry (record-before-act records it running; the result is
-appended when it returns). See
-[record-outcome-on-the-entry.md](record-outcome-on-the-entry.md).
-
-## Consequences
-
-- `Event` is **two concerns**: Vilice Console's authoritative own-record + a re-derivable
-  Vilice mirror. `data-model.md` corrected to say so.
-- Ingestion (the mirror) is a plain cached read — build now, Boxcar-irrelevant
-  (option A).
-- Vilice Console's **own** record is what Boxcar `Eventable` would model (Agora Article
-  II/VIII at the app layer); its persistence shape — and whether `Event` becomes
-  `Eventable` — is deferred to the Boxcar audit. No hash chain either way.
+Whether `Event` becomes Boxcar `Eventable`, and the persisted mirror — ingestion, #6 in
+[`open/ui-roadmap.md`](open/ui-roadmap.md).
