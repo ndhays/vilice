@@ -56,8 +56,9 @@ Rails.application.routes.draw do
   end
 
   # App Library — the curated directory of installable app definitions (no app
-  # action here; the library is a directory, not a launcher).
-  resources :app_templates do
+  # action here; the library is a directory, not a launcher). The URL says what the page
+  # is called, `/library`; the model and its helpers keep the code's name, AppTemplate.
+  resources :app_templates, path: "library" do
     # The library as a portable manifest, and bulk curation (the counterweight to
     # additive import). See decisions/open/app-library.md.
     collection do

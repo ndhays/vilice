@@ -21,7 +21,8 @@ The names follow the words:
 | `Install` | `App` | An app: a template configured for a client, with its intention |
 | `InstallTarget` | `Placement` | One app on one box |
 
-Tables, foreign keys, routes (`/apps`, `/apps/:id/placements`, `/app_templates`),
+Tables, foreign keys, routes (`/apps`, `/apps/:id/placements`, `/app_templates` — since
+2026-10-22 served at `/library`, the page's own name),
 params and the blueprint all follow. The words on the page moved first, the code in the
 same week; no compatibility was kept, because nothing outside the repo depended on the
 old names.
