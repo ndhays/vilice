@@ -1,5 +1,5 @@
 # Top-level orchestration. Most work lives in the subprojects; this delegates.
-.PHONY: build build-linux test check audit audit-box sign release site-build publish publish-check image push clean
+.PHONY: build build-linux test check audit audit-box sign release site-build publish publish-check cloudflare-token image push clean
 
 build:        ; $(MAKE) -C vilice build
 build-linux:  ; $(MAKE) -C vilice build-linux
@@ -21,7 +21,9 @@ clean:        ; $(MAKE) -C vilice clean
 #   1. the key on Codeberg is the key in this repo, or nothing is published;
 #   2. get.vilice.org goes up first, and must serve this version's release;
 #   3. only then vilice.org, whose install line names that version.
-# Needs Cloudflare access: `npx wrangler login`, or CLOUDFLARE_API_TOKEN in the env.
+# Needs CLOUDFLARE_API_TOKEN in the env (CLOUDFLARE_ACCOUNT_ID too, if the token sees more
+# than one account). Without it `publish` stops, rather than letting wrangler fall back to
+# a browser login: the machine that publishes holds a scoped token, not a login.
 WRANGLER   ?= npx --yes wrangler@4
 RELEASE    := $(shell cat VERSION)
 PUBKEY_URL ?= https://codeberg.org/vilice/vilice/raw/branch/main/release-key.pub
@@ -39,7 +41,13 @@ publish-check: site-build
 	cd site && $(WRANGLER) deploy --config wrangler.get.jsonc --dry-run
 	cd site && $(WRANGLER) deploy --config wrangler.site.jsonc --dry-run
 
-publish: publish-check
+# Checked before anything is built, so a missing token costs nothing.
+cloudflare-token:
+	@test -n "$$CLOUDFLARE_API_TOKEN" || { \
+	  echo "CLOUDFLARE_API_TOKEN is not set — nothing published."; \
+	  echo "  Run it with the token in the env, e.g. cloudflare make publish."; exit 1; }
+
+publish: cloudflare-token publish-check
 	cd site && $(WRANGLER) deploy --config wrangler.get.jsonc
 	@curl -fsS --retry 6 --retry-delay 5 --retry-all-errors -o /dev/null \
 	  $(GET_HOST)/releases/vilice/$(RELEASE)/vilice-linux-amd64.tar.gz.sig || { \
