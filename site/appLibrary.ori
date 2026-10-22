@@ -24,6 +24,8 @@ ${ Tree.map(library.apps, (app) => `          <li class="card library-app">
               <dt>Port</dt><dd>${ app.port }</dd>
               <dt>Health</dt><dd><code>${ Origami.htmlEscape(app.health) }</code></dd>
 ${ app.env ? `              <dt>Asks for</dt><dd>${ Tree.map(app.env, (e) => `<code>${ e.key }</code>${ e.secret ? ` (secret)` : `` } `) }</dd>
+` : `` }${ app.secret_files ? `              <dt>Files</dt><dd>${ Tree.map(app.secret_files, (f) => `<code>${ Origami.htmlEscape(f.path) }</code> `) }(secret, mounted)</dd>
+` : `` }${ app.stop_first ? `              <dt>Redeploy</dt><dd>Stops first: it cannot run beside itself, so it is down until the new copy is healthy</dd>
 ` : `` }            </dl>
           </li>
 `) }        </ul>

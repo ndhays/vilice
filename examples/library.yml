@@ -111,7 +111,7 @@ apps:
         latest: true
 
   - name: zot
-    description: Self-hosted OCI registry (Go) — deploy it, then deploy from it to exercise the private-registry source. Config + htpasswd as file secrets (see examples/zot).
+    description: A private container registry. Deploy it, push your images to it, and deploy them from it. Give it its config.json and an htpasswd of users as files, and a volume at /var/lib/registry, or every push is lost on the next deploy.
     port: 5000
     health: /v2/
     # Zot's BoltDB cache lets one process hold it, so a new copy cannot start beside
