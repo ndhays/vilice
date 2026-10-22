@@ -26,7 +26,7 @@ class LibraryTest < ActiveSupport::TestCase
     Library.import("format" => 1, "apps" => [ {
       "name" => "web",
       "env" => [ { "key" => "LOG" }, { "key" => "TOKEN", "secret" => true } ],
-      "secret_files" => [ { "name" => "config", "path" => "/etc/web/config" } ],
+      "secret_files" => [ { "name" => "config", "path" => "/etc/web/config" } ]
     } ])
 
     app = AppTemplate.find_by!(name: "web")
@@ -66,7 +66,7 @@ class LibraryTest < ActiveSupport::TestCase
     Library.import("format" => 1, "apps" => [ {
       "name" => "web",
       "versions" => [ { "tag" => "v1", "image" => "img@sha256:f98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98e" },
-                      { "tag" => "v2", "image" => "img@sha256:47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f4", "latest" => true } ],
+                      { "tag" => "v2", "image" => "img@sha256:47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f47f4", "latest" => true } ]
     } ])
 
     assert_equal "img@sha256:f98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98edf98e", app.versions.find_by(tag: "v1").image
@@ -81,7 +81,7 @@ class LibraryTest < ActiveSupport::TestCase
     app.set_latest!(v2)
 
     Library.import("format" => 1, "apps" => [ {
-      "name" => "web", "versions" => [ { "tag" => "v1", "image" => "img@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" } ],
+      "name" => "web", "versions" => [ { "tag" => "v1", "image" => "img@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" } ]
     } ])
 
     assert_equal "v2", app.reload.latest_version.tag

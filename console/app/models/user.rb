@@ -7,6 +7,6 @@ class User < ApplicationRecord
   # Appearance — this operator's own, not fleet policy. Validated against the
   # registry so a retired theme name can never reach the layout as an attribute
   # no stylesheet answers to.
-  validates :theme, inclusion: { in: -> (_) { Theme.names } }
+  validates :theme, inclusion: { in: ->(_) { Theme.names } }
   validates :mode,  inclusion: { in: Theme::MODES }
 end

@@ -24,21 +24,21 @@ class AppTest < ActiveSupport::TestCase
   test "volumes must look like source:/container-path, or be absent" do
     assert App.new(project: @project, name: "web", config: { "volumes" => [] }).valid?
     assert App.new(project: @project, name: "web",
-                       config: { "volumes" => ["storage:/rails/storage"] }).valid?
+                       config: { "volumes" => [ "storage:/rails/storage" ] }).valid?
     assert App.new(project: @project, name: "web",            # host path + opts
-                       config: { "volumes" => ["/srv/x:/data:ro"] }).valid?
-    bad = App.new(project: @project, name: "web", config: { "volumes" => ["storage"] })
+                       config: { "volumes" => [ "/srv/x:/data:ro" ] }).valid?
+    bad = App.new(project: @project, name: "web", config: { "volumes" => [ "storage" ] })
     assert_not bad.valid?   # no container path
     assert_match(/must look like/, bad.errors[:base].first)
     assert_not App.new(project: @project, name: "web",
-                           config: { "volumes" => ["storage:relative"] }).valid?   # path not absolute
+                           config: { "volumes" => [ "storage:relative" ] }).valid?   # path not absolute
   end
 
   test "deploy_envelope carries declared volumes as the AppConfig `volumes` key" do
     app = App.new(project: @project, name: "web",
-                          config: { "volumes" => ["storage:/rails/storage"] })
+                          config: { "volumes" => [ "storage:/rails/storage" ] })
     env = app.deploy_envelope(image: "ghcr.io/acme/web@sha256:abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabca")
-    assert_equal ["storage:/rails/storage"], env.dig(:app, :volumes)
+    assert_equal [ "storage:/rails/storage" ], env.dig(:app, :volumes)
   end
 
   test "deploy_envelope omits volumes when none are declared" do

@@ -12,10 +12,10 @@ class AddInputDeclarationsToApps < ActiveRecord::Migration[8.1]
     app.reset_column_information
     app.find_each do |a|
       list = case a.env
-             when Hash  then a.env.keys.map { |k| { "key" => k, "secret" => false } }
-             when Array then a.env
-             else []
-             end
+      when Hash  then a.env.keys.map { |k| { "key" => k, "secret" => false } }
+      when Array then a.env
+      else []
+      end
       a.update_columns(env: list)
     end
   end

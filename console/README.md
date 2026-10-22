@@ -13,7 +13,7 @@ writes the act *before* it runs. For the full picture start at
 
 Prerequisites:
 
-- Ruby 4.0.3 (see `.ruby-version`), Rails 8.1
+- Ruby 4.0.7 (see `.ruby-version`), Rails 8.1
 - [`boxcar-rails`](../../boxcar-rails) as a sibling checkout — it's a path gem
   (`gem "boxcar-rails", path: "../../boxcar-rails"`)
 

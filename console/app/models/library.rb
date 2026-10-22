@@ -20,7 +20,7 @@ module Library
   def self.export
     {
       "format" => FORMAT,
-      "apps" => AppTemplate.order(:name).includes(:versions).map { |app| app_to_h(app) },
+      "apps" => AppTemplate.order(:name).includes(:versions).map { |app| app_to_h(app) }
     }
   end
 
@@ -69,7 +69,7 @@ module Library
       "processes"    => app.processes.presence,
       "versions"     => app.versions.newest_first.map { |v|
         { "tag" => v.tag, "image" => v.image, "latest" => v.latest }.compact
-      }.presence,
+      }.presence
     }.compact
   end
 
