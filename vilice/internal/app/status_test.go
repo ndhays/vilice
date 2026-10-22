@@ -117,3 +117,45 @@ func TestCollectRebootReadsTheFlag(t *testing.T) {
 		t.Errorf("packages = %v, want %v", r.Packages, want)
 	}
 }
+
+// A stopped app has no container, so Podman does not list it. It is still deployed here,
+// and status has to say so — it is the only way back to `start`.
+func TestWithDeployedKeepsAStoppedApp(t *testing.T) {
+	running := parsePodmanPS("web-a\timg@sha256:aa\tUp 3 hours\nweb-db\tpostgres\tUp 3 hours\n")
+	deployed := []appState{
+		{Name: "web", Image: "img@sha256:aa", Hostnames: []string{"web.example"}, PrevImage: "img@sha256:00"},
+		{Name: "blog", Image: "img@sha256:bb", Hostnames: []string{"blog.example"}},
+	}
+	apps := withDeployed(running, deployed)
+	if len(apps) != 3 {
+		t.Fatalf("got %d entries, want 3: %+v", len(apps), apps)
+	}
+	web, db, blog := apps[0], apps[1], apps[2]
+	if web.State != "Up 3 hours" || !web.Rollback || len(web.Hostnames) != 1 || web.Hostnames[0] != "web.example" {
+		t.Errorf("a running app keeps Podman's state and gains its hostnames and rollback: %+v", web)
+	}
+	if db.Hostnames != nil || db.Rollback {
+		t.Errorf("an accessory's container is not a deployed app: %+v", db)
+	}
+	if blog.Name != "blog" || blog.State != stateStopped || blog.Image != "img@sha256:bb" || blog.Rollback {
+		t.Errorf("a deployed app with no container is listed as stopped: %+v", blog)
+	}
+	if got := withDeployed(nil, nil); got != nil {
+		t.Errorf("nothing running and nothing deployed is no apps, got %v", got)
+	}
+}
+
+func TestParseMemoryCurrent(t *testing.T) {
+	cases := map[string]uint64{
+		"327155712\n":            327155712,
+		"[not set]\n":            0,
+		"18446744073709551615\n": 0, // how older systemd spells "not set"
+		"":                       0,
+		"infinity":               0,
+	}
+	for in, want := range cases {
+		if got := parseMemoryCurrent(in); got != want {
+			t.Errorf("parseMemoryCurrent(%q) = %d, want %d", in, got, want)
+		}
+	}
+}

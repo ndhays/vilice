@@ -5,6 +5,7 @@ package app
 // See blueprint/vilice/record.md (reads are observe-scoped, zero-privilege).
 
 import (
+	"math"
 	"vilice/internal/core"
 
 	"encoding/json"
@@ -33,8 +34,22 @@ type appStatus struct {
 	Name  string `json:"name"`            // the app name you pass to commands (no color suffix)
 	Color string `json:"color,omitempty"` // blue/green color of the running container ("a"|"b")
 	Image string `json:"image"`
+	// Podman's own word for the container ("Up 3 hours", "Exited (1)"), or "stopped" for
+	// an app that is deployed here and has no container.
 	State string `json:"state"`
+	// From the app's deployed spec, so a reader can tie a certificate to its app and
+	// know whether `rollback` has anything to go back to. Absent for a container that
+	// is not a deployed app's (an accessory, a process).
+	Hostnames []string `json:"hostnames,omitempty"`
+	Rollback  bool     `json:"rollback"`
+	// What the app's container is using now, as systemd accounts it for the unit. The
+	// web container only: an app's processes and accessories are units of their own.
+	// Absent when the app is not running or systemd does not say.
+	MemoryBytes uint64 `json:"memory_bytes,omitempty"`
 }
+
+// stateStopped is what status says of an app that is deployed and not running.
+const stateStopped = "stopped"
 
 func statusCmd(args []string) core.Result {
 	m := collectMachine()
@@ -319,7 +334,68 @@ func collectApps() ([]appStatus, string) {
 	if err != nil {
 		return nil, "podman ps failed: " + err.Error()
 	}
-	return parsePodmanPS(out), ""
+	deployed, _ := listApps()
+	apps := withDeployed(parsePodmanPS(out), deployed)
+	// Only for apps deployed here: their names passed the door, and the unit name is
+	// built from one.
+	isApp := make(map[string]bool, len(deployed))
+	for _, st := range deployed {
+		isApp[st.Name] = true
+	}
+	for i := range apps {
+		if isApp[apps[i].Name] && apps[i].Color != "" {
+			apps[i].MemoryBytes = unitMemory(serviceName(apps[i].Name, apps[i].Color))
+		}
+	}
+	return apps, ""
+}
+
+// unitMemory asks systemd what a unit is using. systemd already keeps the figure for
+// every unit, so this is a read of its accounting rather than a second measurement —
+// and it needs nothing `podman stats` would, which samples for a second per call.
+func unitMemory(unit string) uint64 {
+	out, err := userExec("systemctl", "--user", "show", unit, "--property=MemoryCurrent", "--value").Output()
+	if err != nil {
+		return 0
+	}
+	return parseMemoryCurrent(string(out))
+}
+
+// parseMemoryCurrent reads systemd's MemoryCurrent: a byte count, or "[not set]" where
+// the unit is not running or accounting is off, which older versions print as the
+// largest number there is. Anything that is not a plain count is "unknown", as 0. Pure.
+func parseMemoryCurrent(s string) uint64 {
+	v, err := strconv.ParseUint(strings.TrimSpace(s), 10, 64)
+	if err != nil || v == math.MaxUint64 {
+		return 0
+	}
+	return v
+}
+
+// withDeployed joins what Podman is running with what is deployed here. Podman alone is
+// not the list of apps: a stopped app has no container at all — Quadlet removes it — so
+// `stop` made an app vanish from status, and with it the only place to `start` it again.
+// An app with state and no container is listed as stopped. Pure.
+func withDeployed(running []appStatus, deployed []appState) []appStatus {
+	byName := make(map[string]appState, len(deployed))
+	for _, st := range deployed {
+		byName[st.Name] = st
+	}
+	seen := map[string]bool{}
+	for i := range running {
+		if st, ok := byName[running[i].Name]; ok {
+			running[i].Hostnames = st.Hostnames
+			running[i].Rollback = st.PrevImage != ""
+			seen[st.Name] = true
+		}
+	}
+	for _, st := range deployed {
+		if !seen[st.Name] {
+			running = append(running, appStatus{Name: st.Name, Image: st.Image, State: stateStopped,
+				Hostnames: st.Hostnames, Rollback: st.PrevImage != ""})
+		}
+	}
+	return running
 }
 
 // --- pure parsers (tested) ---

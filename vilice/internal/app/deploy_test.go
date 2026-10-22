@@ -300,3 +300,61 @@ func TestValidDigestPin(t *testing.T) {
 		t.Errorf("validDigestPin should not duplicate the missing-pin error, got %v", err)
 	}
 }
+
+func TestLowPortHint(t *testing.T) {
+	said := map[string]string{
+		"go":    `{"level":"ERROR","msg":"Failed to start HTTP listener","error":"listen tcp :80: bind: permission denied"}`,
+		"nginx": `nginx: [emerg] bind() to 0.0.0.0:80 failed (13: Permission denied)`,
+		"node":  `Error: listen EACCES: permission denied 0.0.0.0:443`,
+	}
+	for name, logs := range said {
+		hint := lowPortHint(logs, 8080)
+		if !strings.Contains(hint, "below 1024") || !strings.Contains(hint, "listen on 8080") {
+			t.Errorf("%s: no hint for %q: %q", name, logs, hint)
+		}
+	}
+	if hint := lowPortHint(said["go"], 8080); !strings.Contains(hint, "port 80,") {
+		t.Errorf("the hint should name the port the app asked for: %q", hint)
+	}
+
+	// Read off the app's own words, never guessed: a timestamp is not a port, a high
+	// port refused for another reason is not this, and silence is silence.
+	quiet := []string{
+		"",
+		"2026-10-05T10:15:30Z permission denied opening /data/app.db",
+		"listen tcp :8080: bind: address already in use",
+		"listen tcp :8080: bind: permission denied",
+	}
+	for _, logs := range quiet {
+		if hint := lowPortHint(logs, 8080); hint != "" {
+			t.Errorf("unexpected hint for %q: %q", logs, hint)
+		}
+	}
+}
+
+// A wildcard over HTTPS routes and never serves: its certificate needs a DNS challenge
+// this box does not do. Refused where a spec enters, and only there.
+func TestWildcardHostnameIsRefusedAtTheDoor(t *testing.T) {
+	st := appState{Name: "web", Image: "img@sha256:" + strings.Repeat("a", 64), Port: 8080, Health: "/",
+		Hostnames: []string{"*.example.com"}}
+	err := validateState(st)
+	if err == nil || !strings.Contains(err.Error(), "wildcard") || !strings.Contains(err.Error(), "DNS challenge") {
+		t.Fatalf("a wildcard should be refused with the reason, got %v", err)
+	}
+	st.Hostnames = []string{"https://*.example.com"}
+	if validateState(st) == nil {
+		t.Error("an explicit https wildcard is the same hostname")
+	}
+	// Still a well-formed site address: an app already here with one keeps rendering.
+	st.Hostnames = []string{"*.example.com"}
+	if err := validateRenderable(st); err != nil {
+		t.Errorf("the render boundary must not condemn an app already deployed: %v", err)
+	}
+	// No certificate is involved over plain HTTP, and a named host was never the problem.
+	for _, ok := range []string{"http://*.example.com", "app.example.com", "www.example.com:8443"} {
+		st.Hostnames = []string{ok}
+		if err := validateState(st); err != nil {
+			t.Errorf("%q should be accepted: %v", ok, err)
+		}
+	}
+}

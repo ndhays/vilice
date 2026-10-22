@@ -49,7 +49,11 @@ Every field is validated before anything is written. The app **name** is
 `[A-Za-z0-9_-]` starting with a letter or digit (it becomes a filename, a systemd unit
 name, and an argument to `podman`/`systemctl` — a leading dash would read as a flag), a
 **hostname** must be a site address (`app.example.com`, `http://app.example.com`,
-`*.example.com`, `host:port`), and no value may carry a control character. These are not
+`host:port`), and no value may carry a control character. **A wildcard hostname
+(`*.example.com`) is refused at deploy** unless it is `http://`: its certificate can only
+be issued by a DNS challenge, which this box does not do, so it would route and never
+serve. It is refused where a spec enters, not at the render boundary, so an app already
+here with one keeps working. These are not
 style rules: the spec is rendered into a Caddy site block and a Quadlet unit, both
 line-oriented, so
 a value that can end its own line writes the next directive. See
@@ -269,7 +273,11 @@ arbitrary code by the same author, with the same env and the same volumes. What 
 a place to write the command down.
 
 If the health check fails, the new color is torn down and the old one stays up and
-routed — a failed deploy changes nothing. The full desired state (image, hostnames,
+routed — a failed deploy changes nothing. The error carries the app's last log lines,
+read while the health check waits, because a container that dies at boot is removed with
+its logs. It names both ports — the loopback port the box publishes and the app's own —
+and, where those lines show the app was refused a port below 1024, it says so first and
+says which port to listen on instead. The full desired state (image, hostnames,
 port, health, env, secret *names*, volumes, the active color + per-color ports, and the
 spec digest) is persisted in app-state — sans secret values — so Caddy can be rebuilt,
 `rollback` re-applies the last-good spec, and the persisted spec is verifiable against
@@ -388,6 +396,14 @@ matches operator intent — it **stays down across reboot** (the unit is rewritt
 its `[Install]` section, since a generated Quadlet unit can't be `systemctl disable`d);
 `start` re-enables and brings it back.
 
+**A stopped app is still listed by `status`**, with the state `stopped`. It has no
+container — Quadlet removes one when it stops — so `status` reads the apps deployed here
+from their state and joins Podman's containers to them, rather than listing containers
+alone. Each app in `status --json` also carries its `hostnames`, whether `rollback` has
+an earlier image to go back to, and `memory_bytes` — what its container is using now, as
+systemd accounts it for the unit (`systemctl --user show … MemoryCurrent`). That is the
+web container alone; an app's processes and accessories are units of their own.
+
 | Command | Does |
 |---|---|
 | `vilice start <app>` | Boot-enable the active color and start it. |
@@ -476,7 +492,9 @@ An app must also:
   the container.
 - **Use an unprivileged port (1024–65535).** The container runs as its image's non-root
   user, so it can't bind a port below 1024. Vilice rejects a privileged port rather
-  than let it fail cryptically at startup.
+  than let it fail cryptically at startup. That check is on the spec; an image that
+  listens on 80 whatever the spec says is caught at the health check instead, and the
+  failed deploy names the port it asked for.
 - **Not run its own edge proxy.** Caddy is the platform's edge — it terminates TLS,
   speaks HTTP/2, and routes hostnames; a second proxy inside the container is redundant
   and fights for ports. If your image bundles one — Rails' default image ships

@@ -23,13 +23,15 @@ func TestCaddyfileShapeHoldsForValidatedHostnames(t *testing.T) {
 		}
 	}
 
-	// Real site addresses render as exactly one site.
+	// Real site addresses render as exactly one site. The render-tier check, because
+	// this is about the file's shape: a wildcard is a well-formed address that the door
+	// refuses for another reason (servableHostname).
 	for _, h := range []string{
 		"app.example.com", "http://app.example.com", "https://app.example.com",
 		"*.example.com", "example.com:8443", "localhost", "a-b.c.example.com",
 	} {
 		st := withHostname(h)
-		if err := validateState(st); err != nil {
+		if err := validateRenderable(st); err != nil {
 			t.Errorf("rejected a real site address %q: %v", h, err)
 			continue
 		}

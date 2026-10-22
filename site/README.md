@@ -52,7 +52,7 @@ the document in the same commit.
 Every page under `/commands/` opens with the literal output of
 `vilice <name> --help`, captured from the binary at build time. **Do not describe a
 command here.** If a page is missing something, the fix is in the CLI's command table
-(`vilice/internal/core/dispatch.go`, `vilice/internal/app/verbs.go`) — that is
+(`vilice/internal/core/commands.go`, `vilice/internal/app/verbs.go`) — that is
 the one source, and `core.CheckDocs` fails the Go build if a verb ships without a
 paragraph, a flag without a description, or a line too wide for the block it lands in.
 See `decisions/help-is-the-documentation.md`.

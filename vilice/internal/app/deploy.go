@@ -15,7 +15,7 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -260,206 +260,6 @@ func stateFromSpec(name string, s appSpec) (appState, error) {
 	return st, nil
 }
 
-// validateState is the full check, applied where a spec **enters** the box: a deploy
-// (flags or stdin envelope) and a restore. It is validateRenderable plus the rules about
-// what an app may *ask for* — currently where a bind mount may live.
-//
-// The split matters on upgrade. A policy rule checked on the way out would condemn an
-// app that was already here and already working: tighten the bind-mount rule and a box
-// with data at /data suddenly can't route anything. Checking policy on the way in is
-// enough for the security property, because to exploit it you have to *introduce* a
-// hostile volume, and the two doors above are the only ways to do that. An app already
-// on the box was put there by the operator, not by an attacker.
-// See decisions/rendered-config-is-a-boundary.md.
-func validateState(st appState) error {
-	if err := validateRenderable(st); err != nil {
-		return err
-	}
-	for _, v := range st.Volumes {
-		if err := validVolume(v); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// validateRenderable is the subset that keeps a rendered file well-formed: nothing here
-// may end its own line and start a directive nobody wrote. It is checked everywhere,
-// including on state read back off disk, because it is about the *shape* of the file
-// being written rather than about what the app is allowed to have.
-func validateRenderable(st appState) error {
-	switch {
-	case st.Name == "":
-		return fmt.Errorf("missing <app>")
-	case !core.ValidAppName(st.Name):
-		return fmt.Errorf("app name must be [A-Za-z0-9_-]")
-	case st.Image == "":
-		return fmt.Errorf("missing image")
-	case core.HasControlChar(st.Image):
-		return fmt.Errorf("image reference contains a control character")
-	case !strings.Contains(st.Image, "@sha256:"):
-		return fmt.Errorf("image must be digest-pinned (@sha256:…)")
-	case len(st.Hostnames) == 0:
-		return fmt.Errorf("missing hostname")
-	case st.Port < 1024 || st.Port > 65535:
-		return fmt.Errorf("port %d is out of range — use 1024–65535 (the container runs unprivileged and can't bind a port below 1024)", st.Port)
-	case core.HasControlChar(st.Backup):
-		return fmt.Errorf("backup hook contains a control character")
-	}
-	if err := validRelease(st.Release); err != nil {
-		return err
-	}
-	if err := validAccessories(st); err != nil {
-		return err
-	}
-	if err := validProcesses(st); err != nil {
-		return err
-	}
-	if err := validDigestPin(st.Image); err != nil {
-		return err
-	}
-	for _, h := range st.Hostnames {
-		if err := validHostname(h); err != nil {
-			return err
-		}
-	}
-	// Only the part that affects the unit file's shape. Where the mount may *point* is
-	// policy, checked by validateState at the doors.
-	for _, v := range st.Volumes {
-		if core.HasControlChar(v) {
-			return fmt.Errorf("volume %q contains a control character", v)
-		}
-	}
-	envSecret := map[string]bool{}
-	for _, name := range st.Secrets {
-		if !validEnvName(name) {
-			return fmt.Errorf("invalid secret name %q", name)
-		}
-		envSecret[name] = true
-	}
-	for name, path := range st.SecretFiles {
-		if !validEnvName(name) {
-			return fmt.Errorf("invalid secret-file name %q", name)
-		}
-		if envSecret[name] {
-			return fmt.Errorf("secret %q is declared as both an env secret and a file", name)
-		}
-		if !strings.HasPrefix(path, "/") {
-			return fmt.Errorf("secret-file %q needs an absolute container path, got %q", name, path)
-		}
-		if core.HasControlChar(path) {
-			return fmt.Errorf("secret-file %q path contains a control character", name)
-		}
-	}
-	for k, v := range st.Env {
-		if !validEnvName(k) {
-			return fmt.Errorf("invalid env name %q", k)
-		}
-		// A newline in a value would end the Environment= line and start a directive
-		// of the caller's choosing. Values needing one belong in the secret store,
-		// which delivers them on stdin rather than through the unit file.
-		if core.HasControlChar(v) {
-			return fmt.Errorf("env %q has a control character in its value — use a secret for multi-line values", k)
-		}
-	}
-	return nil
-}
-
-// validHostname accepts what a Caddy site address may be: an optional http:// or
-// https:// scheme, an optional "*." wildcard, a hostname of letters, digits, dots and
-// hyphens, and an optional :port.
-//
-// It is an allow-list because a block-list kept missing cases. Whitespace starts a
-// *second* address on the same site (that is how several hostnames are written); a
-// brace opens or closes a block; and a leading "#" comments out the site's opening
-// line, leaving a dangling `reverse_proxy` that makes the whole fragment — every app's
-// routing, not just this one's — fail to load. That last one a hand-written list of
-// bad characters missed and the fuzzer found.
-// See decisions/rendered-config-is-a-boundary.md.
-func validHostname(h string) error {
-	const shape = `hostname %q is not a site address — use "app.example.com", "http://app.example.com", "*.example.com", or "host:port"`
-	rest := h
-	for _, scheme := range []string{"http://", "https://"} {
-		if strings.HasPrefix(rest, scheme) {
-			rest = strings.TrimPrefix(rest, scheme)
-			break
-		}
-	}
-	rest = strings.TrimPrefix(rest, "*.")
-	if i := strings.LastIndexByte(rest, ':'); i >= 0 {
-		port, err := strconv.Atoi(rest[i+1:])
-		if err != nil || port < 1 || port > 65535 {
-			return fmt.Errorf(shape, h)
-		}
-		rest = rest[:i]
-	}
-	if rest == "" {
-		return fmt.Errorf(shape, h)
-	}
-	for _, r := range rest {
-		ok := r == '.' || r == '-' ||
-			(r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')
-		if !ok {
-			return fmt.Errorf(shape, h)
-		}
-	}
-	return nil
-}
-
-// bindRoots is where a bind-mounted volume source may live. Named volumes are
-// unrestricted (Podman owns that namespace and keeps them in the _vilice user's own
-// storage); a *host path* is the one that can reach out of the app's world, so it is
-// confined to a declared root. Without this an operate key could mount `/` — or just
-// ~_vilice/.ssh — and write itself an ssh grant, stepping over the scope ladder.
-// See decisions/rendered-config-is-a-boundary.md.
-func bindRoots() []string {
-	if p := os.Getenv("VILICE_BIND_ROOTS"); p != "" {
-		return filepath.SplitList(p)
-	}
-	return []string{"/srv"}
-}
-
-// validVolume checks one `<src>:<dst>[:opts]` volume spec.
-func validVolume(v string) error {
-	if core.HasControlChar(v) {
-		return fmt.Errorf("volume %q contains a control character", v)
-	}
-	src := volumeSource(v)
-	if src == "" {
-		return fmt.Errorf("volume %q has no source", v)
-	}
-	if !strings.HasPrefix(src, "/") {
-		if !core.ValidAppName(src) {
-			return fmt.Errorf("named volume %q must be [A-Za-z0-9_-]", src)
-		}
-		return nil
-	}
-	clean := filepath.Clean(src)
-	for _, root := range bindRoots() {
-		if clean == root || strings.HasPrefix(clean, strings.TrimSuffix(root, "/")+"/") {
-			return nil
-		}
-	}
-	return fmt.Errorf("bind mount %q is outside %s — put app data under %s, or use a named volume",
-		src, strings.Join(bindRoots(), " or "), bindRoots()[0])
-}
-
-// validEnvName accepts shell/env var names: [A-Za-z_][A-Za-z0-9_]*.
-func validEnvName(s string) bool {
-	if s == "" {
-		return false
-	}
-	for i, r := range s {
-		switch {
-		case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r == '_':
-		case r >= '0' && r <= '9' && i > 0:
-		default:
-			return false
-		}
-	}
-	return true
-}
-
 // appDigest is the content address of the declared config: sha256 over the spec
 // fields (secret names, never values), order-independent. Runtime fields (HostPort,
 // PrevImage) and the app name are excluded — it identifies the *config*, not the run.
@@ -495,89 +295,6 @@ func appDigest(st appState) string {
 	b, _ := json.Marshal(canonical) // map keys marshal sorted → deterministic
 	sum := sha256.Sum256(b)
 	return "sha256:" + hex.EncodeToString(sum[:])
-}
-
-// secretRef namespaces a secret to its app (Podman secret names are global).
-func secretRef(app, name string) string { return app + "__" + name }
-
-func sortedKeys(m map[string]string) []string {
-	ks := make([]string, 0, len(m))
-	for k := range m {
-		ks = append(ks, k)
-	}
-	sort.Strings(ks)
-	return ks
-}
-
-// declaredSecretNames is every secret an app declares — env (Secrets) and file
-// (SecretFiles) alike. Both share one Podman store under secretRef, so storing and
-// removing must cover the same set; routing remove through this helper keeps a file
-// secret from orphaning in the store when its app is removed.
-func declaredSecretNames(st appState) []string {
-	names := make([]string, 0, len(st.Secrets)+len(st.SecretFiles))
-	names = append(names, st.Secrets...)
-	for n := range st.SecretFiles {
-		names = append(names, n)
-	}
-	// An accessory's secrets ride the same envelope — one sweep carries everything this
-	// app needs, the database password included. They are namespaced *in the store* by
-	// the accessory's container (accessorySecretRef) but declared by their plain name
-	// here, because that is the name the value arrives under.
-	for _, a := range st.Accessories {
-		names = append(names, a.Secrets...)
-	}
-	return names
-}
-
-// putSecrets stores each declared secret's value in the Podman secret store. Env
-// secrets and file secrets share one store and one delivery (values arrive with the
-// deploy, never recorded); only how the unit consumes them differs (env vs mount). An
-// undeclared value, or a declared secret with no value, is an error.
-func putSecrets(st appState, values map[string]string) error {
-	declared := map[string]bool{}
-	for _, n := range declaredSecretNames(st) {
-		declared[n] = true
-	}
-	for name := range values {
-		if !declared[name] {
-			return fmt.Errorf("secret_values has %q, not declared in app.secrets or app.secret_files", name)
-		}
-	}
-	// Where each declared name is stored. An accessory's secret lands under its own
-	// container's namespace, so the app's POSTGRES_PASSWORD and the database's cannot
-	// collide in a store whose names are global.
-	ref := map[string]string{}
-	for _, n := range st.Secrets {
-		ref[n] = secretRef(st.Name, n)
-	}
-	for n := range st.SecretFiles {
-		ref[n] = secretRef(st.Name, n)
-	}
-	for _, a := range st.Accessories {
-		for _, n := range a.Secrets {
-			ref[n] = accessorySecretRef(st.Name, a.Name, n)
-		}
-	}
-	for name := range declared {
-		val, ok := values[name]
-		if !ok {
-			return fmt.Errorf("no value provided for declared secret %q", name)
-		}
-		if err := putSecret(ref[name], val); err != nil {
-			return fmt.Errorf("store secret %q: %w", name, err)
-		}
-	}
-	return nil
-}
-
-// putSecret writes one value into the Podman secret store via stdin (never argv).
-// rm-then-create makes it rotation-safe across Podman versions.
-func putSecret(ref, value string) error {
-	_ = userExec("podman", "secret", "rm", ref).Run() // ignore "no such secret"
-	c := userExec("podman", "secret", "create", ref, "-")
-	c.Stdin = strings.NewReader(value)
-	c.Stderr = os.Stderr
-	return c.Run()
 }
 
 // runDeploy is the blue/green Quadlet pipeline. The new image goes to the *inactive*
@@ -645,9 +362,22 @@ func runDeploy(st *appState) error {
 			return fail("start %s: %w", processContainer(st.Name, p.Name, target), err)
 		}
 	}
-	if err := waitHealthy(port, st.Health); err != nil {
-		out, _ := podmanOutput("logs", "--tail", "20", containerName(st.Name, target))
-		return fail("health check failed, old app left running: %w\n%s", err, out)
+	// The app's last words, kept while the container is still there to ask. A container
+	// that dies at boot is removed with its logs, so asking only after the wait has failed
+	// finds nothing — which is how a failed first deploy came back with no reason at all.
+	var logs string
+	keepLogs := func() {
+		if out, err := podmanOutput("logs", "--tail", "20", containerName(st.Name, target)); err == nil && strings.TrimSpace(out) != "" {
+			logs = out
+		}
+	}
+	if err := waitHealthy(port, st.Health, keepLogs); err != nil {
+		keepLogs()
+		// The address in the error is the loopback port this box publishes the app on,
+		// not the port the app was told to listen on. Say both, or an operator who
+		// asked for 8080 reads 8800 as a port they never chose.
+		return fail("health check failed, %s: %s%w\n127.0.0.1:%d is where this box publishes the app's port %d\n%s",
+			leftBehind(hadOld), lowPortHint(logs, st.Port), err, port, st.Port, logs)
 	}
 	// A process has no port, so nothing can probe it — but a worker that dies on boot
 	// would otherwise deploy "successfully" and simply never run, which is the failure
@@ -657,7 +387,7 @@ func runDeploy(st *appState) error {
 	for _, p := range st.Processes {
 		if err := userctl("is-active", "--quiet", processService(st.Name, p.Name, target)); err != nil {
 			out, _ := podmanOutput("logs", "--tail", "20", processContainer(st.Name, p.Name, target))
-			return fail("process %q did not stay up, old app left running:\n%s", p.Name, out)
+			return fail("process %q did not stay up, %s:\n%s", p.Name, leftBehind(hadOld), out)
 		}
 	}
 
@@ -693,7 +423,47 @@ func runDeploy(st *appState) error {
 	return nil
 }
 
-func waitHealthy(hostPort int, path string) error {
+// leftBehind says what a failed deploy left on the box. A first deploy has no old app
+// to keep serving, and saying it does sends the operator looking for one.
+func leftBehind(hadOld bool) string {
+	if hadOld {
+		return "old app left running"
+	}
+	return "nothing is deployed"
+}
+
+// The ways a program says it was refused a port, each with the port it asked for: Go
+// ("listen tcp :80: bind: permission denied"), nginx ("bind() to 0.0.0.0:80 failed (13:
+// Permission denied)"), and Node ("listen EACCES: permission denied 0.0.0.0:80"). Exact
+// shapes on purpose — a looser match would read a timestamp as a port.
+var lowPortRefusals = []*regexp.Regexp{
+	regexp.MustCompile(`:(\d{1,5}): bind: permission denied`),
+	regexp.MustCompile(`:(\d{1,5}) failed \(13: Permission denied\)`),
+	regexp.MustCompile(`EACCES: permission denied [^\s:]*:(\d{1,5})\b`),
+}
+
+// lowPortHint names the commonest reason a first deploy never answers: the app tried to
+// listen on a port below 1024, which a container here cannot do. Vilice refuses such a
+// port in the spec, but the spec only says where to *reach* the app — the app picks
+// where it listens, and many images default to 80. Returns "" when the logs do not say
+// so; it is read off the app's own words, never guessed.
+func lowPortHint(logs string, port int) string {
+	for _, re := range lowPortRefusals {
+		m := re.FindStringSubmatch(logs)
+		if m == nil {
+			continue
+		}
+		if n, err := strconv.Atoi(m[1]); err == nil && n > 0 && n < 1024 {
+			return fmt.Sprintf("the app tried to listen on port %d, and a container here cannot use a port below 1024. "+
+				"Make it listen on %d — for a Rails image with Thruster, set HTTP_PORT=%d.\n", n, port, port)
+		}
+	}
+	return ""
+}
+
+// waitHealthy polls the app until it answers. each runs once per try, while the
+// container may still exist.
+func waitHealthy(hostPort int, path string, each func()) error {
 	url := fmt.Sprintf("http://127.0.0.1:%d%s", hostPort, ensureLeadingSlash(path))
 	client := &http.Client{Timeout: 3 * time.Second}
 	var last string
@@ -708,276 +478,10 @@ func waitHealthy(hostPort int, path string) error {
 		} else {
 			last = err.Error()
 		}
+		each()
 		time.Sleep(time.Second)
 	}
 	return fmt.Errorf("not healthy at %s (%s)", url, last)
-}
-
-// --- rollback ---
-
-func rollbackCmd(args []string) core.Result {
-	_, pos := core.ParseArgs(args)
-	name := firstPos(pos)
-	if name == "" {
-		return core.Result{Code: "bad_args", Message: "missing <app>"}
-	}
-	st, found := loadApp(name)
-	if !found {
-		return core.Result{Code: "not_found", Message: fmt.Sprintf("no app %q", name)}
-	}
-	if st.PrevImage == "" {
-		return core.Result{Code: "no_previous", Message: "no last-good image to roll back to"}
-	}
-	st.Image = st.PrevImage
-	return resultOrErr(withAppLock(name, func() error { return runDeploy(&st) }),
-		"rollback_failed", fmt.Sprintf("rolled %q back to %s", name, shortDigest(st.Image)))
-}
-
-// --- lifecycle ---
-
-func startCmd(args []string) core.Result   { return lifecycle("start", args) }
-func stopCmd(args []string) core.Result    { return lifecycle("stop", args) }
-func restartCmd(args []string) core.Result { return lifecycle("restart", args) }
-
-// lifecycle drives the active color's user service. start/stop also flip whether the
-// unit is boot-enabled, so a stop stays down across reboot and a start comes back —
-// matching operator intent (generated Quadlet units can't be systemctl-disabled, so the
-// [Install] section is rewritten instead).
-func lifecycle(verb string, args []string) core.Result {
-	_, pos := core.ParseArgs(args)
-	app := firstPos(pos)
-	if app == "" {
-		return core.Result{Code: "bad_args", Message: "missing <app>"}
-	}
-	// start/stop rewrite the unit and restart drives the service — all three race a
-	// deploy that is mid-flip, so they take the same lock it does.
-	var res core.Result
-	if err := withAppLock(app, func() error { res = lifecycleLocked(verb, app); return nil }); err != nil {
-		return resultFromErr(err, verb+"_failed")
-	}
-	return res
-}
-
-func lifecycleLocked(verb, app string) core.Result {
-	st, found := loadApp(app)
-	if !found || st.ActiveColor == "" {
-		return core.Result{Code: "not_found", Message: fmt.Sprintf("no running app %q", app)}
-	}
-	color := st.ActiveColor
-	fail := func(err error) core.Result { return core.Result{Code: verb + "_failed", Message: err.Error()} }
-
-	// A colour is the whole app, so a lifecycle verb drives all of it. Stopping an app
-	// and leaving its worker running would be the drift these exist to prevent, arriving
-	// by a different road. `writeUnit` already rewrites every process's unit with the
-	// same [Install] section, so only the services need naming here.
-	services := []string{serviceName(app, color)}
-	for _, p := range st.Processes {
-		services = append(services, processService(app, p.Name, color))
-	}
-
-	switch verb {
-	case "start":
-		if err := writeUnit(st, color, st.Ports[color], true); err != nil {
-			return fail(err)
-		}
-		if err := daemonReload(); err != nil {
-			return fail(err)
-		}
-	case "stop":
-		// Rewrite without [Install] so the units aren't wanted at boot, then stop.
-		if err := writeUnit(st, color, st.Ports[color], false); err != nil {
-			return fail(err)
-		}
-		if err := daemonReload(); err != nil {
-			return fail(err)
-		}
-	}
-	for _, svc := range services {
-		if err := userctl(verb, svc); err != nil {
-			return fail(err)
-		}
-	}
-	past := map[string]string{"start": "started", "stop": "stopped", "restart": "restarted"}[verb]
-	return core.OK(fmt.Sprintf("%s %q", past, app))
-}
-
-func removeCmd(args []string) core.Result {
-	_, pos := core.ParseArgs(args)
-	app := firstPos(pos)
-	if app == "" {
-		return core.Result{Code: "bad_args", Message: "missing <app>"}
-	}
-	var res core.Result
-	if err := withAppLock(app, func() error { res = removeLocked(app); return nil }); err != nil {
-		return resultFromErr(err, "remove_failed")
-	}
-	return res
-}
-
-func removeLocked(app string) core.Result {
-	st, found := loadApp(app)
-	// Stop and remove both colors' units, then the accessories, then the secrets, then
-	// the state.
-	for _, color := range []string{colorA, colorB} {
-		// Processes go with the colour they belong to — the whole app, not the web half.
-		teardownColorWith(app, color, st.Processes)
-	}
-	// The accessories go with the app that owned them — they were never anything else's
-	// to reach. Their **volumes stay**: undeclaring a database must not be how its data
-	// disappears, and `remove` has its own opt-in for that.
-	teardownAccessories(app)
-	_ = daemonReload()
-	if found {
-		for _, name := range st.Secrets {
-			_ = userExec("podman", "secret", "rm", secretRef(app, name)).Run()
-		}
-		for n := range st.SecretFiles {
-			_ = userExec("podman", "secret", "rm", secretRef(app, n)).Run()
-		}
-		for _, a := range st.Accessories {
-			for _, n := range a.Secrets {
-				_ = userExec("podman", "secret", "rm", accessorySecretRef(app, a.Name, n)).Run()
-			}
-		}
-	}
-	if err := removeApp(app); err != nil {
-		return core.Result{Code: "io_error", Message: err.Error()}
-	}
-	if err := refreshCaddy(); err != nil {
-		return core.Result{Code: "route_error", Message: err.Error()}
-	}
-	return core.OK(fmt.Sprintf("removed %q", app))
-}
-
-// --- Caddy ---
-
-func refreshCaddy() error {
-	apps, err := listApps()
-	if err != nil {
-		return err
-	}
-	// The render boundary, same as writeUnit: app state comes off disk here, and
-	// loadApp deliberately doesn't validate (an app whose spec no longer passes should
-	// fail loudly at its next deploy, not vanish from `status` and lose its route). So
-	// the check happens on the way *into* the fragment. Refusing before the write means
-	// the previous fragment stays — nothing changed — rather than quietly dropping an
-	// app's route or writing config nobody declared.
-	for _, a := range apps {
-		if err := validateRenderable(a); err != nil {
-			return fmt.Errorf("app %q has an invalid spec, so routing was left untouched: %w", a.Name, err)
-		}
-	}
-	if err := os.MkdirAll(filepath.Dir(caddyFragmentPath()), 0o755); err != nil {
-		return err
-	}
-	if err := os.WriteFile(caddyFragmentPath(), []byte(renderCaddyfile(apps)), 0o644); err != nil {
-		return err
-	}
-	// Reload via the admin socket (no root): adapt the base Caddyfile, which imports our
-	// fragment, and push it to the running Caddy.
-	return caddyReload()
-}
-
-// caddyReload applies the current config through Caddy's admin socket. It needs no root —
-// the _vilice group may write to the socket — so the _vilice user can do it. The address
-// is named rather than read from the config, so a box whose Caddyfile has lost the admin
-// line fails the reload instead of quietly going back to localhost:2019.
-func caddyReload() error {
-	c := userExec("caddy", "reload", "--config", caddyfilePath(), "--adapter", "caddyfile",
-		"--address", "unix/"+caddyAdminSocket)
-	c.Stdout, c.Stderr = os.Stdout, os.Stderr
-	return c.Run()
-}
-
-// renderCaddyfile is pure: one reverse-proxy site per app. An app's hostnames share
-// one site address (space-separated, as Caddy expects). Each name is used as given —
-// a bare domain gets Caddy's automatic HTTPS; an http:// prefix stays HTTP.
-func renderCaddyfile(apps []appState) string {
-	// Caddy rejects a truly empty config ("EOF"); a comment is a valid no-op, which
-	// is what we want once the last app is removed.
-	if len(apps) == 0 {
-		return "# Managed by vilice. No apps deployed.\n"
-	}
-	var b strings.Builder
-	for _, a := range apps {
-		fmt.Fprintf(&b, "%s {\n\treverse_proxy 127.0.0.1:%d\n}\n\n", strings.Join(a.Hostnames, " "), a.livePort())
-	}
-	return b.String()
-}
-
-// --- app state (one JSON file per app) ---
-
-// validAppName is the charset an app name may use. It is the same rule as a client
-// name today, but they are different things and will drift; keeping them apart means
-// neither one loosens the other by accident.
-//
-
-func appPath(name string) string { return filepath.Join(appsDir(), name+".json") }
-
-// saveApp is the chokepoint the renderers stand behind: every app state that reaches a
-// Caddy site block or a Quadlet unit was either just validated by stateFromSpec or
-// loaded from a file that passed through here. It checks *renderability* rather than the
-// full spec, because it is also on the path for state that came off disk — a `rollback`
-// re-persists a spec the box already had, and re-writing it unchanged should not be the
-// moment a policy rule introduced later condemns it.
-func saveApp(st appState) error {
-	if err := validateRenderable(st); err != nil {
-		return fmt.Errorf("refusing to persist an invalid app state: %w", err)
-	}
-	if err := os.MkdirAll(appsDir(), 0o750); err != nil {
-		return err
-	}
-	b, err := json.MarshalIndent(st, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(appPath(st.Name), b, 0o640)
-}
-
-func loadApp(name string) (appState, bool) {
-	if !core.ValidAppName(name) {
-		return appState{}, false
-	}
-	b, err := os.ReadFile(appPath(name))
-	if err != nil {
-		return appState{}, false
-	}
-	var st appState
-	if json.Unmarshal(b, &st) != nil {
-		return appState{}, false
-	}
-	return st, true
-}
-
-func removeApp(name string) error {
-	if !core.ValidAppName(name) {
-		return fmt.Errorf("refusing to remove state for invalid app name %q", name)
-	}
-	err := os.Remove(appPath(name))
-	if os.IsNotExist(err) {
-		return nil
-	}
-	return err
-}
-
-func listApps() ([]appState, error) {
-	entries, err := os.ReadDir(appsDir())
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	var apps []appState
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
-			continue
-		}
-		if st, ok := loadApp(strings.TrimSuffix(e.Name(), ".json")); ok {
-			apps = append(apps, st)
-		}
-	}
-	return apps, nil
 }
 
 // --- podman + small helpers ---

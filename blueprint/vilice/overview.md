@@ -116,7 +116,7 @@ in [provision.md](provision.md) and [auth.md](auth.md); the why is in
 ## Command reference
 
 **There is one description of the CLI, and it is the CLI.** `core.Commands` — the
-table in `dispatch.go` plus what the app layer contributes — carries every verb's
+table in `commands.go` plus what the app layer contributes — carries every verb's
 summary, paragraph, synopsis, flags (each with its own description), and examples.
 Everything else is a view of it:
 

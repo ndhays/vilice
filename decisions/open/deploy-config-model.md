@@ -80,7 +80,7 @@ let the better word surface as it's built.)
 ## What's in App Config
 
 What varies between apps / deploys — and where it stands today (`appState` in
-`vilice/deploy.go`, stored at `/var/lib/vilice/apps/<name>.json`):
+`vilice/internal/app/deploy.go`, stored at `/var/lib/vilice/apps/<name>.json`):
 
 - **hostnames** — routing. ✅ today
 - **env** (non-secret config) — ✅ today, recorded
