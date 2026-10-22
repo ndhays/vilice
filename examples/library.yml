@@ -1,44 +1,32 @@
 # Vilice Console App Library — demo / example apps.
 #
-# Import via Apps → Import (a file or a URL), or seed it. The format is what
+# Import via App Library → Import Library (a file or a URL), or seed it. The format is what
 # Library.export produces (app/models/library.rb): additive on import — apps upsert by
 # name, versions by tag, nothing is deleted.
 #
-# These ten double as the deploy contract's integration tests: each is a real public
+# These double as the deploy contract's integration tests: each is a real public
 # image that exercises an axis (see the per-app note). All pass the two hard rules —
 # an **unprivileged port (>=1024)** and an **HTTP health path** (Vilice's health gate
 # does an HTTP GET, so pure-TCP services like Postgres/Redis can't be deployed through
 # it as-is — they'd need a TCP/exec health mode Vilice doesn't have yet).
 #
-# Image refs here are catalog *defaults* (repo:tag). The deploy ceremony pins the exact
-# `@sha256:` digest at deploy time — a published/production manifest would pin digests.
+# Every version is pinned to a digest, and the console refuses one that is not: a tag
+# means something different tomorrow (decisions/a-tag-is-not-a-release.md). `tag` names
+# the release; `image` is what it was when this file was written. To move a version on,
+# look the tag up again (the console's "Look up digest", or Registry.pin) and change the
+# line — a decision someone makes, never one an import makes.
+#
+# harness-rails is left out until its image is public: its ghcr.io package asks for a
+# login, so nobody importing this file could pull it.
 format: 1
 apps:
-  - name: harness-rails
-    description: The integration-test workhorse — one image, behavior driven by env knobs (health timing, env/file secrets, a volume counter, a crash, a memory balloon).
-    port: 8080
-    health: /healthz
-    # env declares the inputs the app needs — names only, no values. A `secret` entry is
-    # delivered off-record; a secret_file is mounted off-record. Values are set at install.
-    env:
-      - key: DEMO_GREETING
-      - key: SECRET_TOKEN
-        secret: true
-    secret_files:
-      - name: DEMO_FILE
-        path: /run/secrets/demo
-    versions:
-      - tag: latest
-        image: ghcr.io/agoraforge/harness-rails:latest
-        latest: true
-
   - name: nginx
     description: Static web server, rootless — the trivial known-good baseline / smoke test.
     port: 8080
     health: /
     versions:
       - tag: stable
-        image: docker.io/nginxinc/nginx-unprivileged:stable
+        image: docker.io/nginxinc/nginx-unprivileged@sha256:ec0f7ecb1fbd84959ac114e65fb36074ffc97d4d51db0f18ee925162d889dcef
         latest: true
 
   - name: httpbin
@@ -47,7 +35,7 @@ apps:
     health: /
     versions:
       - tag: latest
-        image: docker.io/mccutchen/go-httpbin:latest
+        image: docker.io/mccutchen/go-httpbin@sha256:873b4fdb27fe7cc66fa12cb9362574e1b0bf31df7ca8a71b2502988327a0b8a4
         latest: true
 
   - name: prometheus
@@ -56,7 +44,7 @@ apps:
     health: /-/healthy
     versions:
       - tag: latest
-        image: docker.io/prom/prometheus:latest
+        image: docker.io/prom/prometheus@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
         latest: true
 
   - name: grafana
@@ -68,7 +56,7 @@ apps:
         secret: true
     versions:
       - tag: latest
-        image: docker.io/grafana/grafana:latest
+        image: docker.io/grafana/grafana@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f
         latest: true
 
   - name: code-server
@@ -80,7 +68,7 @@ apps:
         secret: true
     versions:
       - tag: latest
-        image: docker.io/codercom/code-server:latest
+        image: docker.io/codercom/code-server@sha256:72ab24b5680ee597dd647b30d82625752f40109b5f61bef90ffbf1ea1f02dbb8
         latest: true
 
   - name: stirling-pdf
@@ -89,7 +77,7 @@ apps:
     health: /
     versions:
       - tag: latest
-        image: docker.io/stirlingtools/stirling-pdf:latest
+        image: docker.io/stirlingtools/stirling-pdf@sha256:f95b691c3df463373258e21a578b404f1eb4c7660e8170a40e3e03c9c8f208a4
         latest: true
 
   - name: uptime-kuma
@@ -98,7 +86,7 @@ apps:
     health: /
     versions:
       - tag: "1"
-        image: docker.io/louislam/uptime-kuma:1
+        image: docker.io/louislam/uptime-kuma@sha256:70233f4acb5163fd2a59a49909cf01e44415cecff13dba69e3a86647a2919f83
         latest: true
 
   - name: n8n
@@ -107,7 +95,7 @@ apps:
     health: /healthz
     versions:
       - tag: latest
-        image: docker.io/n8nio/n8n:latest
+        image: docker.io/n8nio/n8n@sha256:d02752c6ab446ae9db8deec2f9cc887c378f77cdcad31650814df936b7386dfb
         latest: true
 
   - name: zot
@@ -124,5 +112,5 @@ apps:
         path: /etc/zot/htpasswd
     versions:
       - tag: latest
-        image: ghcr.io/project-zot/zot-linux-amd64:latest
+        image: ghcr.io/project-zot/zot-linux-amd64@sha256:46f688dc26315a35a247e1784368829e66a67bf91de94c7d8d1645044fac1d5b
         latest: true

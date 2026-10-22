@@ -9,17 +9,19 @@
   _body: `        <h1>App Library</h1>
         <p class="lead">Ready-made apps to deploy with Vilice Console.</p>
         <p>Each one is a public image that meets the deploy contract: an unprivileged port and
-          an HTTP health check. To add them all to your console, open <strong>Apps</strong>,
-          choose <strong>Import</strong>, and give it this address:</p>
+          an HTTP health check. To add them all to your console, open the
+          <strong>App Library</strong>, choose <strong>Import Library</strong>, and give it
+          this address:</p>
         <pre><code>https://vilice.org/app-library.yml</code></pre>
-        <p>Importing adds and updates; it never deletes. The image tags are defaults: the
-          deploy step pins the exact digest when you deploy.
-          <a href="/app-library.yml">View the file</a>.</p>
+        <p>Importing adds and updates; it never deletes. Every version is pinned to the
+          digest its tag pointed at when the file was written, so what you import is exactly
+          what runs. <a href="/app-library.yml">View the file</a>.</p>
         <ul class="library">
 ${ Tree.map(library.apps, (app) => `          <li class="card library-app">
             <h2 id="${ app.name }">${ Origami.htmlEscape(app.name) }</h2>
             <p>${ Origami.htmlEscape(app.description) }</p>
             <dl>
+              <dt>Version</dt><dd>${ Origami.htmlEscape(app.versions[0].tag) }</dd>
               <dt>Image</dt><dd><code>${ Origami.htmlEscape(app.versions[0].image) }</code></dd>
               <dt>Port</dt><dd>${ app.port }</dd>
               <dt>Health</dt><dd><code>${ Origami.htmlEscape(app.health) }</code></dd>

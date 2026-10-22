@@ -47,6 +47,18 @@ class LibraryTest < ActiveSupport::TestCase
     assert_not rows["web"].key?("stop_first")
   end
 
+  # The file the site publishes and the console imports. It once carried tags, and the
+  # console — which pins, and never follows a tag — refused the whole import.
+  test "the published example library imports" do
+    manifest = YAML.safe_load_file(Rails.root.join("../examples/library.yml"))
+    assert_nothing_raised { Library.import(manifest) }
+
+    zot = AppTemplate.find_by!(name: "zot")
+    assert zot.stop_first
+    assert_match(/@sha256:\h{64}\z/, zot.latest_version.image)
+    assert_equal manifest["apps"].size, AppTemplate.count
+  end
+
   test "labels are never exported — they are local, not part of the app's definition" do
     app = AppTemplate.create!(name: "web")
     app.labels.create!(key: "team", value: "payments")
