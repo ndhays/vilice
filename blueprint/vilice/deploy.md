@@ -5,7 +5,7 @@ machine whose failures are loud and recoverable. The deep parts are borrowed —
 routes traffic and handles TLS, Podman runs the container. Everything here runs under
 `operate` scope ([auth.md](auth.md)) and writes its record first ([record.md](record.md)).
 
-**Status:** Canonical. Last touched 2026-08-19.
+**Status:** Canonical. Last touched 2026-10-22.
 
 ---
 
@@ -36,7 +36,8 @@ touch the recorded command line (argv is recorded; stdin is not):
     ],
     "processes": [                             // the same image, a different command
       { "name": "worker", "command": ["bin/jobs"] }
-    ]
+    ],
+    "stop_first": false                        // true: stop the old app before the new one starts
   },
   "secret_values": { "RAILS_MASTER_KEY": "…" } // bound, never recorded
 }
@@ -62,7 +63,7 @@ a value that can end its own line writes the next directive. See
 How it runs — **blue/green**, rollback-safe. Each app runs as a rootless **systemd
 Quadlet** unit under the `_vilice` user; deploys alternate two colors (`<app>-a` /
 `<app>-b`), so the new image is brought up *beside* the live one and only takes over once
-it's healthy:
+it's healthy (an app that cannot run twice declares [`stop_first`](#stop-first--for-an-app-that-cannot-run-twice)):
 
 1. Resolve the desired state (stdin envelope or flags) and record it **by digest**
    (`sha256` of the canonical spec, sans secret values) *before* acting.
@@ -106,6 +107,37 @@ gets turned off.
 Both are constants in the renderer — no declared value reaches either — so they join the
 directive allowlist `FuzzQuadletUnitShape` asserts, which is what proves a smuggled
 `AddCapability` cannot arrive the way `PodmanArgs=--privileged` would.
+
+### Stop First — for an App That Cannot Run Twice
+
+Blue/green assumes the new colour can start beside the old one, both mounting the same
+volumes. Most apps can. An app that **locks its data** cannot: a registry with a BoltDB
+cache (Zot), anything on LMDB. The new colour waits on a lock the old one never releases,
+the health check times out, and every redeploy fails — safely, but always.
+
+Such an app declares `"stop_first": true`. The deploy then runs:
+
+1. Pull, and bring up accessories, as above.
+2. **Stop the old colour** and its processes, if it is running. Its unit is kept.
+3. Run the `release` step, then write and start the new colour, and health-check it.
+4. Flip Caddy and retire the old colour, as above.
+
+If anything after step 2 fails, the new colour is torn down and **the old one is started
+again**; the error says `old app restarted`, or that it could not be restarted and to run
+`vilice start <app>`. An app the operator had stopped is not started by a failure.
+
+- **The cost is a gap in service**, from the stop until the new colour passes its health
+  check. Caddy answers 502 meanwhile. That is the honest price of an app that cannot run
+  twice; nothing here hides it.
+- **The old colour stops before the release step**, because the release container mounts
+  the same volumes and would hit the same lock.
+- **Declared, never passed.** It is a spec field inside the digest, so `rollback` and
+  `restore`, which redeploy from the saved spec, replace the app the same way. A spec
+  without the field keeps the digest it had before the field existed.
+- **Accessories are untouched**: they never run twice already.
+
+The why and the roads not taken are in
+[`decisions/stop-first.md`](../../decisions/stop-first.md).
 
 ### One Act on an App at a Time
 

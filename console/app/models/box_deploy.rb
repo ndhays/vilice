@@ -10,7 +10,7 @@
 # recorded on the box by digest; secret values ride beside it and are never recorded.
 #
 # The fields are the common case — image, hostnames, port, health, env, secrets,
-# volumes. What a template carries beyond them (release, accessories, processes) rides
+# volumes. What a template carries beyond them (release, accessories, processes, stop_first) rides
 # along in `extras`, untouched. A spec pasted whole replaces the fields entirely, for
 # anything the form does not have a field for.
 class BoxDeploy
@@ -50,7 +50,7 @@ class BoxDeploy
 
   def self.extras_of(template)
     x = { "release" => template.release.presence, "accessories" => template.accessories.presence,
-          "processes" => template.processes.presence }.compact
+          "processes" => template.processes.presence, "stop_first" => (true if template.stop_first) }.compact
     x.empty? ? nil : JSON.generate(x)
   end
 

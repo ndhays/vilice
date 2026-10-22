@@ -22,8 +22,15 @@
         <% if (release = @mutation.app&.release).present? %>
           <div><dt>release</dt><dd class="mono"><%= release.join(" ") %></dd></div>
         <% end %>
+        <%# A gap in service is part of what this press authorizes, so it is said here. %>
+        <% if (stop_first = @mutation.app&.stop_first?) %>
+          <div><dt>replace</dt><dd class="mono">stop first</dd></div>
+        <% end %>
       </dl>
-      <% if release.present? %>
+      <% if stop_first %>
+        <p class="note"><%= @mutation.app.name %> stops before the new one starts, so it is
+          down until the new one is healthy. If the new one fails, the old one is started again.</p>
+      <% elsif release.present? %>
         <p class="note">Runs first, from the new image. If it fails, nothing is deployed
           and <%= @mutation.app.name %> keeps serving what it serves now.</p>
       <% end %>

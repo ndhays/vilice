@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
   create_table "app_templates", force: :cascade do |t|
     t.json "accessories", default: [], null: false
     t.datetime "created_at", null: false
@@ -22,6 +22,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
     t.json "processes", default: [], null: false
     t.json "release", default: [], null: false
     t.json "secret_files", default: [], null: false
+    t.boolean "stop_first", default: false, null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_app_templates_on_name", unique: true
   end

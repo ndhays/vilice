@@ -224,6 +224,7 @@ class AppsController < ApplicationController
       config["release"]     = template.release if template.release.present?
       config["accessories"] = template.accessories if template.accessories.present?
       config["processes"]   = template.processes if template.processes.present?
+      config["stop_first"]  = true if template.stop_first
     end
     config
   end

@@ -34,6 +34,7 @@ The settled *why*, one line per document. What the system *is* lives in
 
 - [declarative-deploy](declarative-deploy.md) — deploy sends the whole spec; secrets ride stdin, never the command line.
 - [quadlet-deploy](quadlet-deploy.md) — apps are rootless Quadlet units, deployed blue/green, drained by the app.
+- [stop-first](stop-first.md) — an app that locks its data declares `stop_first`: the old copy stops before the new one starts.
 - [app-config-is-the-artifact](app-config-is-the-artifact.md) — a spec is addressed by its digest; a change mints a new one.
 - [accessories-belong-to-one-app](accessories-belong-to-one-app.md) — a database beside an app, on a network only that app joins.
 - [registry-credentials](registry-credentials.md) — a registry login belongs to the box, not to an app.

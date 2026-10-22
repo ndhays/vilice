@@ -124,7 +124,7 @@ class AppTemplatesController < ApplicationController
   def lines(text) = text.to_s.split("\n").map(&:strip).reject(&:blank?)
 
   def app_params
-    attrs = params.require(:app_template).permit(:name, :port, :health, :description).to_h
+    attrs = params.require(:app_template).permit(:name, :port, :health, :description, :stop_first).to_h
 
     # The release command is typed as one line and stored as **argv**, because argv is
     # what the box execs — it never sees a shell, so a multi-step release belongs in a

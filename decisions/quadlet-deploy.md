@@ -21,7 +21,9 @@ it and never hand-edited.
    starting the new; if the new one fails, the app is down. Colors `<app>-a` / `<app>-b`
    alternate: write the inactive color's unit with the new image and a fresh port, start
    it, health-check, flip Caddy, retire the old color. A failed health check tears down
-   only the new color.
+   only the new color. *(Amended 2026-10-22: an app that cannot run beside itself
+   declares `stop_first` and takes the in-place trade, with the old color restarted on
+   failure — [`stop-first.md`](stop-first.md).)*
 2. **Rootless user units.** Deploy and lifecycle run as `_vilice`
    ([`ceiling-is-the-machine.md`](ceiling-is-the-machine.md)), so units live in
    `~_vilice/.config/containers/systemd/` under `systemctl --user`. `prepare` sets

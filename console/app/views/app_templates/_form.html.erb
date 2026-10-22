@@ -33,6 +33,10 @@
       here, where the image digest covers what it does.</small>
   </label>
 
+  <label class="field">
+    <span><%= f.check_box :stop_first %> Stop First <%= hint "For an app that locks its data and cannot run twice at once. Each deploy stops the old copy before starting the new one, so the app is down until the new copy is healthy. If the new copy fails, the old one is started again." %></span>
+  </label>
+
   <div class="form-actions">
     <%= f.submit class: "btn mutate" %>
     <%# Cancel returns where you came from: the app when editing, the library when new. %>

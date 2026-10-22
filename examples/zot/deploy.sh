@@ -52,6 +52,7 @@ print(json.dumps({
         "port": 5000,
         "health": "/v2/",
         "volumes": ["zot-data:/var/lib/registry:U"],   # :U → podman chowns the volume to zot's user
+        "stop_first": True,   # zot's cache allows one process: stop the old copy before the new one starts
         "secret_files": {
             "config":   "/etc/zot/config.json",
             "htpasswd": "/etc/zot/htpasswd",

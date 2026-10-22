@@ -470,7 +470,7 @@ enough to make a group read as a group.
   (environment, written to the record; secrets, whose values are never recorded;
   storage) — and can **start from a template**, a plain GET that fills every field from
   an App Template and its latest version, carrying what the form has no field for
-  (release, accessories, processes) along untouched. *Paste a spec instead* is the
+  (release, accessories, processes, stop_first) along untouched. *Paste a spec instead* is the
   escape hatch, closed by default; a pasted spec or whole envelope replaces the fields.
   The form checks only what it must — a box-safe name, an image, well-formed
   `NAME=value` lines — and leaves the rest (the digest pin, port range, volume paths)

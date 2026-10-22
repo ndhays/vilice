@@ -113,6 +113,11 @@ class App < ApplicationRecord
   # end up running different code from the web process.
   def processes = Array(config["processes"])
 
+  # The app locks its data, so the box stops the old copy before starting the new one —
+  # a gap in service instead of blue/green (decisions/stop-first.md). Copied from the App
+  # at create like the release command.
+  def stop_first? = config["stop_first"] == true
+
   # An accessory keeps data on *that box's* disk, exactly like a volume, so an app
   # that brings one is single-placement for the same reason. Folded into `replicable?`
   # rather than bolted beside it, because it is the same fact: a thing that keeps data
@@ -255,6 +260,7 @@ class App < ApplicationRecord
     # is a hand-off rather than a translation, and there is no second definition to drift.
     spec[:accessories] = accessories if accessories.any?
     spec[:processes]   = processes if processes.any?
+    spec[:stop_first]  = true if stop_first?
     spec[:secrets]      = secret_env_names if secret_env_names.any?
     spec[:secret_files] = secret_file_paths if secret_file_paths.any?
 

@@ -36,6 +36,17 @@ class LibraryTest < ActiveSupport::TestCase
     assert_equal [ { "name" => "config", "path" => "/etc/web/config" } ], app.secret_files
   end
 
+  test "stop_first round-trips, and is left out of the manifest when false" do
+    Library.import("format" => 1, "apps" => [ { "name" => "zot", "stop_first" => true },
+                                              { "name" => "web" } ])
+
+    assert AppTemplate.find_by!(name: "zot").stop_first
+    assert_not AppTemplate.find_by!(name: "web").stop_first
+    rows = Library.export["apps"].index_by { |r| r["name"] }
+    assert_equal true, rows["zot"]["stop_first"]
+    assert_not rows["web"].key?("stop_first")
+  end
+
   test "labels are never exported — they are local, not part of the app's definition" do
     app = AppTemplate.create!(name: "web")
     app.labels.create!(key: "team", value: "payments")

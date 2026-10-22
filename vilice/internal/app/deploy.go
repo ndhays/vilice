@@ -51,9 +51,12 @@ type appState struct {
 	// so web and worker can never drift onto different digests. See process.go.
 	Processes []Process `json:"processes,omitempty"`
 	Backup    string    `json:"backup,omitempty"` // in-container pre-snapshot consistency hook (see backup.go)
-	Digest    string    `json:"digest,omitempty"` // sha256 of the canonical spec (sans secret values)
-	HostPort  int       `json:"host_port"`        // legacy single-container port (pre-Quadlet); see livePort
-	PrevImage string    `json:"prev_image"`       // last-good before this one, for rollback
+	// StopFirst stops the old colour before the new one starts, for an app that cannot
+	// run twice over its own data (it locks it). Costs a gap in service. See runDeploy.
+	StopFirst bool   `json:"stop_first,omitempty"`
+	Digest    string `json:"digest,omitempty"` // sha256 of the canonical spec (sans secret values)
+	HostPort  int    `json:"host_port"`        // legacy single-container port (pre-Quadlet); see livePort
+	PrevImage string `json:"prev_image"`       // last-good before this one, for rollback
 
 	// Blue/green (Quadlet): the live color Caddy points at, and each color's fixed
 	// loopback port. A deploy writes the inactive color, then flips ActiveColor.
@@ -97,6 +100,10 @@ type appSpec struct {
 	// stateful app makes itself consistent (e.g. pg_dump into a declared volume). Keeps
 	// Vilice database-agnostic — the app owns its own consistency. See backup.go.
 	Backup string `json:"backup,omitempty"`
+	// StopFirst trades blue/green for stop-then-start: the old colour is stopped before
+	// the release step and the new colour, so two copies never hold the data at once.
+	// For apps that lock their data dir (a BoltDB cache, LMDB). A gap in service.
+	StopFirst bool `json:"stop_first,omitempty"`
 }
 
 // deployEnvelope is one sweep: the full spec plus the secret values it needs. The
@@ -245,7 +252,7 @@ func stateFromSpec(name string, s appSpec) (appState, error) {
 		Port: s.Port, Health: s.Health,
 		Env: s.Env, Secrets: s.Secrets, SecretFiles: s.SecretFiles, Volumes: s.Volumes,
 		Release: s.Release, Accessories: s.Accessories, Processes: s.Processes,
-		Backup: s.Backup,
+		Backup: s.Backup, StopFirst: s.StopFirst,
 	}
 	if st.Port == 0 {
 		st.Port = 8080
@@ -290,8 +297,11 @@ func appDigest(st appState) string {
 		// change to the deploy — and the digest has to say so.
 		Processes []Process `json:"processes"`
 		Backup    string    `json:"backup"`
+		// How the app is replaced is part of the deploy. omitempty so every spec
+		// written before the field existed keeps the digest it was recorded under.
+		StopFirst bool `json:"stop_first,omitempty"`
 	}{st.Image, host, st.Port, st.Health, st.Env, sec, st.SecretFiles, vol, st.Release,
-		st.Accessories, st.Processes, st.Backup}
+		st.Accessories, st.Processes, st.Backup, st.StopFirst}
 	b, _ := json.Marshal(canonical) // map keys marshal sorted → deterministic
 	sum := sha256.Sum256(b)
 	return "sha256:" + hex.EncodeToString(sum[:])
@@ -332,6 +342,34 @@ func runDeploy(st *appState) error {
 	if err := ensureAccessories(*st); err != nil {
 		return err
 	}
+	// stop_first: an app that locks its data cannot start beside itself — the new colour
+	// waits on a lock the old one never lets go, and the health check times out. So the
+	// old colour is stopped here, before the release step (which mounts the same volumes)
+	// and before the new colour. Its unit stays, so a failure below can start it again.
+	// Only a colour that was running is restarted: an app the operator stopped stays down.
+	stopped := false
+	if st.StopFirst && hadOld && old.ActiveColor != "" && old.ActiveColor != target {
+		if userctl("is-active", "--quiet", serviceName(st.Name, old.ActiveColor)) == nil {
+			stopColor(st.Name, old.ActiveColor, old.Processes)
+			stopped = true
+		}
+	}
+	left := leftBehind(hadOld)
+	if stopped {
+		left = "old app restarted"
+	}
+	// restore brings the stopped colour back after a failure, and says so if it can't —
+	// with stop_first a failed deploy is an outage until someone starts the app.
+	restore := func(err error) error {
+		if !stopped {
+			return err
+		}
+		if rerr := startColor(st.Name, old.ActiveColor, old.Processes); rerr != nil {
+			return fmt.Errorf("%w\nthe old app was stopped first (stop_first) and did not start again: %v — try: vilice start %s",
+				err, rerr, st.Name)
+		}
+		return err
+	}
 	// The declared release step, from the new image, before anything is written or
 	// started. Here because a failure at this point changes nothing — no unit, no color,
 	// the old one still serving — which is the same fail-safe the health gate gives one
@@ -339,17 +377,17 @@ func runDeploy(st *appState) error {
 	// migrations must be backward-compatible for one release; that is the expand/contract
 	// discipline blue/green requires, not something this invents. See release.go.
 	if err := runRelease(*st); err != nil {
-		return err
+		return restore(err)
 	}
 	// Bring up the target color alongside the live one (boot-enabled).
 	if err := writeUnit(*st, target, port, true); err != nil {
-		return err
+		return restore(err)
 	}
 	// A colour is the whole app, so the teardown on every failure below takes the
 	// processes with it — a half-started colour is not a state anything should be left in.
 	fail := func(format string, args ...any) error {
 		teardownColorWith(st.Name, target, st.Processes)
-		return fmt.Errorf(format, args...)
+		return restore(fmt.Errorf(format, args...))
 	}
 	if err := daemonReload(); err != nil {
 		return fail("daemon-reload: %w", err)
@@ -377,7 +415,7 @@ func runDeploy(st *appState) error {
 		// not the port the app was told to listen on. Say both, or an operator who
 		// asked for 8080 reads 8800 as a port they never chose.
 		return fail("health check failed, %s: %s%w\n127.0.0.1:%d is where this box publishes the app's port %d\n%s",
-			leftBehind(hadOld), lowPortHint(logs, st.Port), err, port, st.Port, logs)
+			left, lowPortHint(logs, st.Port), err, port, st.Port, logs)
 	}
 	// A process has no port, so nothing can probe it — but a worker that dies on boot
 	// would otherwise deploy "successfully" and simply never run, which is the failure
@@ -387,7 +425,7 @@ func runDeploy(st *appState) error {
 	for _, p := range st.Processes {
 		if err := userctl("is-active", "--quiet", processService(st.Name, p.Name, target)); err != nil {
 			out, _ := podmanOutput("logs", "--tail", "20", processContainer(st.Name, p.Name, target))
-			return fail("process %q did not stay up, %s:\n%s", p.Name, leftBehind(hadOld), out)
+			return fail("process %q did not stay up, %s:\n%s", p.Name, left, out)
 		}
 	}
 

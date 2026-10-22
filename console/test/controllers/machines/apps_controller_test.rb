@@ -77,6 +77,14 @@ class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
     assert_equal %w[ bin/rails db:migrate ], JSON.parse(css_select("input[name='box_deploy[extras]']").first["value"])["release"]
   end
 
+  test "a stop-first template carries stop_first along" do
+    sign_in_as @user
+    template = AppTemplate.create!(name: "zot", port: 5000, stop_first: true)
+    template.versions.create!(tag: "v1", image: IMAGE, latest: true)
+    deploying { get new_machine_box_app_path(@machine, template_id: template.id) }
+    assert_equal true, JSON.parse(css_select("input[name='box_deploy[extras]']").first["value"])["stop_first"]
+  end
+
   test "a pasted spec replaces the fields, whether spec or whole envelope" do
     sign_in_as @user
     [ { "image" => IMAGE, "hostnames" => [ "p.example.com" ] },

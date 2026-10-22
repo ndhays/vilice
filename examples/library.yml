@@ -114,6 +114,9 @@ apps:
     description: Self-hosted OCI registry (Go) — deploy it, then deploy from it to exercise the private-registry source. Config + htpasswd as file secrets (see examples/zot).
     port: 5000
     health: /v2/
+    # Zot's BoltDB cache lets one process hold it, so a new copy cannot start beside
+    # the old one: each deploy stops the old copy first (decisions/stop-first.md).
+    stop_first: true
     secret_files:
       - name: config
         path: /etc/zot/config.json

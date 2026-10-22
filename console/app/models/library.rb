@@ -67,6 +67,7 @@ module Library
       # reshaped it would be inventing a second definition to keep in step.
       "accessories"  => app.accessories.presence,
       "processes"    => app.processes.presence,
+      "stop_first"   => (true if app.stop_first),
       "versions"     => app.versions.newest_first.map { |v|
         { "tag" => v.tag, "image" => v.image, "latest" => v.latest }.compact
       }.presence
@@ -85,6 +86,7 @@ module Library
       attrs["release"] = Array(row["release"]) if row["release"].present?
       attrs["accessories"] = Array(row["accessories"]) if row["accessories"].present?
       attrs["processes"] = Array(row["processes"]) if row["processes"].present?
+      attrs["stop_first"] = row["stop_first"] == true if row.key?("stop_first")
       app.update!(attrs)
 
       versions = Array(row["versions"])

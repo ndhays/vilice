@@ -308,6 +308,20 @@ class AppTemplatesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".field small", /no shell/i
   end
 
+  test "stop first is a checkbox on the library form, and a form without it leaves it alone" do
+    sign_in_as @user
+    app = AppTemplate.create!(name: "zot")
+
+    patch app_template_path(app), params: { app_template: { name: "zot", stop_first: "1" } }
+    assert app.reload.stop_first
+
+    patch app_template_path(app), params: { app_template: { name: "zot" } }
+    assert app.reload.stop_first
+
+    patch app_template_path(app), params: { app_template: { name: "zot", stop_first: "0" } }
+    assert_not app.reload.stop_first
+  end
+
   # ── Accessories ────────────────────────────────────────────────────────────
   # Typed as rows and stored in the box's own shape, so the deploy envelope is a copy
   # rather than a translation (decisions/accessories-belong-to-one-app.md).

@@ -296,6 +296,29 @@ func teardownColor(app, color string) {
 	teardownColorWith(app, color, nil)
 }
 
+// stopColor stops a colour and its processes but keeps their units, so startColor can
+// bring them back — the stop_first path, where the old colour must let go of its data
+// before the new one starts, yet stay recoverable until the new one is healthy.
+func stopColor(app, color string, procs []Process) {
+	_ = userctl("stop", serviceName(app, color))
+	for _, p := range procs {
+		_ = userctl("stop", processService(app, p.Name, color))
+	}
+}
+
+// startColor starts a colour stopped by stopColor, web first.
+func startColor(app, color string, procs []Process) error {
+	if err := userctl("start", serviceName(app, color)); err != nil {
+		return err
+	}
+	for _, p := range procs {
+		if err := userctl("start", processService(app, p.Name, color)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // teardownColorWith retires a colour and the processes that belong to it. `procs` is
 // nil where the caller has no spec in hand — `remove` sweeps by filename instead, so a
 // process whose declaration has already gone is still cleaned up.

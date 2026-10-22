@@ -28,6 +28,9 @@
     <% if (release = spec["release"]).present? %>
       <dt>Runs first</dt><dd class="mono"><%= Array(release).join(" ") %></dd>
     <% end %>
+    <% if spec["stop_first"] %>
+      <dt>Replaced</dt><dd>Stop first: down until the new one is healthy</dd>
+    <% end %>
     <% Array(spec["accessories"]).each do |a| %>
       <dt>Accessory</dt><dd class="mono"><%= a["name"] %> · <%= a["image"] %></dd>
     <% end %>

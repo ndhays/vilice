@@ -483,6 +483,45 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".ceremony .note", /nothing is deployed/i
   end
 
+  # An app that locks its data has its old copy stopped before the new one starts.
+  # Copied at create like the release command; false adds nothing to the envelope.
+  test "an app copies stop_first from the library and carries it in the envelope" do
+    sign_in_as @user
+    @app_template.update!(stop_first: true)
+    post apps_path(project_id: @project), params: { app: {
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    app = App.last
+
+    assert_equal true, app.deploy_envelope(image: "img@sha256:#{'a' * 64}")[:app][:stop_first]
+    @app_template.update!(stop_first: false)
+    assert app.reload.stop_first?, "copied, not followed"
+  end
+
+  test "an app without stop_first puts no stop_first key in the envelope" do
+    sign_in_as @user
+    post apps_path(project_id: @project), params: { app: {
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+
+    assert_not App.last.deploy_envelope(image: "img@sha256:#{'a' * 64}")[:app].key?(:stop_first)
+  end
+
+  test "the deploy ceremony says a stop-first app goes down before the new one starts" do
+    sign_in_as @user
+    @app_template.update!(stop_first: true)
+    post apps_path(project_id: @project), params: { app: {
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    app = App.last
+
+    get new_machine_mutation_path(@operator, act: "deploy", app_id: app.id,
+                                  image: app.image, hostname: app.hostname)
+
+    assert_select ".spec dd", "stop first"
+    assert_select ".ceremony .note", /down until the new one is healthy/
+  end
+
   # ── Accessories reach the box ──────────────────────────────────────────────
   test "an app copies the app's accessories and carries them in the envelope" do
     sign_in_as @user

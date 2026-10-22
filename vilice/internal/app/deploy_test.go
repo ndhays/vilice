@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
@@ -356,5 +357,42 @@ func TestWildcardHostnameIsRefusedAtTheDoor(t *testing.T) {
 		if err := validateState(st); err != nil {
 			t.Errorf("%q should be accepted: %v", ok, err)
 		}
+	}
+}
+
+// stop_first is how the app is replaced, so it is part of the deploy and the digest
+// says so — but adding the field must not move the digest of any spec recorded before
+// it existed, or every app already on a box would stop matching its own record.
+func TestStopFirstInTheDigest(t *testing.T) {
+	st := appState{Image: "x@sha256:abc0000000000000000000000000000000000000000000000000000000000000",
+		Hostnames: []string{"a.example"}, Port: 5000, Health: "/v2/", Volumes: []string{"data:/var/lib/registry"}}
+	// Computed by the code before stop_first existed.
+	const before = "sha256:71e4d7c55143b7b173e628eb3386126b90c5e7c62317ff8c1a40d1420b5313f6"
+	if got := appDigest(st); got != before {
+		t.Errorf("a spec without stop_first must keep its old digest: got %s", got)
+	}
+	st.StopFirst = true
+	if appDigest(st) == before {
+		t.Error("setting stop_first must change the digest")
+	}
+}
+
+func TestStopFirstSurvivesTheEnvelopeAndState(t *testing.T) {
+	env, err := parseEnvelope([]byte(`{"app":{"image":"x@sha256:abc0000000000000000000000000000000000000000000000000000000000000","hostnames":["h"],"stop_first":true}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := stateFromSpec("zot", env.App)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !st.StopFirst {
+		t.Fatal("stop_first lost between the envelope and the app state")
+	}
+	// Persisted, so rollback and restore — which redeploy from the saved state — keep it.
+	b, _ := json.Marshal(st)
+	var back appState
+	if err := json.Unmarshal(b, &back); err != nil || !back.StopFirst {
+		t.Errorf("stop_first must round-trip through app state: %s", b)
 	}
 }

@@ -146,7 +146,7 @@ module Scenario
     # The secret-*file* case: a whole config mounted into the container, never a
     # value on a command line. The App model's own docs use this example.
     library_app!("zot", image: demo_pin("docker.io/project/zot"), tag: "v2",
-                 port: 5000, health: "/v2/",
+                 port: 5000, health: "/v2/", stop_first: true,
                  description: "An OCI registry. Its config arrives as a mounted secret file.",
                  secret_files: [ { "name" => "config", "path" => "/etc/zot/config.json" } ])
 
