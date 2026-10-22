@@ -18,7 +18,7 @@ ARCHES       ?= amd64 arm64
 GOVULN_VER   ?= v1.3.0
 GOSEC_VER    ?= v2.29.0
 
-.PHONY: build build-linux man test fuzz vet fmt check audit audit-entry sign release keygen clean
+.PHONY: build build-linux man test fuzz vet fmt check audit audit-entry committed unreleased sign release keygen clean
 
 # Host-arch dev build.
 build:
@@ -127,15 +127,34 @@ audit-entry:
 	  echo "  then run 'make release' again."; \
 	  exit 1; }
 
-# Publish the signed artifacts. Audited first — an unaudited version never ships, and
-# neither does one whose audit was not written down.
-release: audit audit-entry sign
+# A release is built from a commit, so its tag can name exactly what was built: Go stamps
+# the commit into the binary (vcs.revision), and any uncommitted change — untracked files
+# included, as Go counts them — stamps vcs.modified=true and leaves nothing true to tag.
+# So VERSION and the audit entry are committed *before* `make release`, not after.
+committed:
+	@test -z "$$(git status --porcelain)" || { \
+	  echo "uncommitted changes — commit VERSION and the audit entry, then release:"; \
+	  git status --short; exit 1; }
+
+# A version is one set of bytes, forever (decisions/versioning.md). Rebuilding one that is
+# already in RELEASE_DEST would make new tarballs — new timestamps, new bytes — and copy
+# them over the ones that were signed and published.
+unreleased:
+	@test ! -e "$(RELEASE_DEST)/vilice/$(VERSION)" || { \
+	  echo "v$(VERSION) is already released at $(RELEASE_DEST)/vilice/$(VERSION) —"; \
+	  echo "  a version is never rebuilt. Bump VERSION for a new release."; exit 1; }
+
+# Publish the signed artifacts. Committed and new first, then audited — an unaudited
+# version never ships, and neither does one whose audit was not written down.
+release: committed unreleased audit audit-entry sign
 	mkdir -p "$(RELEASE_DEST)/vilice/$(VERSION)"
 	@for arch in $(ARCHES); do \
 	  cp dist/$(VERSION)/vilice-linux-$$arch.tar.gz     "$(RELEASE_DEST)/vilice/$(VERSION)/" || exit 1; \
 	  cp dist/$(VERSION)/vilice-linux-$$arch.tar.gz.sig "$(RELEASE_DEST)/vilice/$(VERSION)/" || exit 1; \
 	done
 	@echo "published $(VERSION) ($(ARCHES)) to $(RELEASE_DEST)/vilice/$(VERSION)/"
+	@echo "built from $$(git rev-parse --short HEAD). Tag it where you push tags:"
+	@echo "  git tag -a v$(VERSION) $$(git rev-parse --short HEAD) -m \"Vilice $(VERSION)\""
 
 # Generate a fresh signing keypair (do once; keep the private key safe).
 # Guarded: rotating the key invalidates every signature already published, and

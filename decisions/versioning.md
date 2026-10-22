@@ -1,7 +1,7 @@
 # Versioning and releases
 
 > Decided 2026-06-09. The flow is in `install.sh` and `vilice/Makefile`
-> (`sign`/`release`).
+> (`committed`/`unreleased`/`sign`/`release`).
 
 ## The rule: a version is one set of bytes, forever
 
@@ -15,9 +15,19 @@ A release is a ceremony, at a milestone where the blueprint is true and tests pa
 
 1. bump `VERSION`;
 2. write the version's entry in `audit/log.md` (`release` refuses without it);
-3. `make release` — builds every arch in `ARCHES`, signs each tarball separately,
-   self-verifies, copies to `release/published/`;
-4. commit; 5. tag.
+3. commit both;
+4. `make release` — refuses uncommitted changes and a version already in
+   `release/published/`, then builds every arch in `ARCHES`, signs each tarball
+   separately, self-verifies, copies to `release/published/`, and prints the tag command
+   for the commit it built;
+5. tag that commit (`vX.Y.Z`, annotated) where tags are pushed from.
+
+**Commit before building, not after.** Go stamps the commit into the binary
+(`go version -m vilice` shows `vcs.revision`), so a release built from a clean tree names
+exactly the commit its tag should point at. Built first and committed after, the binary
+reads `vcs.modified=true` and names the commit *before* the release. v0.4.3 was built that
+way, which is when this order changed: its tag points at the release commit, whose code
+is the same, and says so.
 
 **One signature per artifact.** A signature names exactly the bytes it vouches for.
 `install.sh` picks the arch from `uname -m` and refuses one it has no build for.
