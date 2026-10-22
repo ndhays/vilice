@@ -42,6 +42,15 @@ class MachineTest < ActiveSupport::TestCase
     assert new_machine(ssh_user: "_vilice").valid?
   end
 
+  # The short form `vilice actors` prints, so the console's key can be checked against the
+  # one the box trusts. Expected value from `ssh-keygen -lf` on the same key.
+  test "the key's fingerprint is the one ssh-keygen prints" do
+    machine = new_machine(ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE5CAQe1ADPkhlodYS2zXqwU9rqP2WbLOomJUhYG9SyN test")
+    assert_equal "SHA256:yBaAESHGBqxcYXZQfh8TZKoqDr0/dkRhSfJQVw5brSg", machine.ssh_key_fingerprint
+    assert_nil new_machine(ssh_public_key: nil).ssh_key_fingerprint
+    assert_nil new_machine(ssh_public_key: "ssh-ed25519 not*base64").ssh_key_fingerprint
+  end
+
   test "a dedicated box permits only its owner; sharing widens it (machine-ownership)" do
     a = Project.create!(name: "A-#{SecureRandom.hex(2)}")
     b = Project.create!(name: "B-#{SecureRandom.hex(2)}")

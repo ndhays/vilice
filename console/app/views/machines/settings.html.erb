@@ -18,6 +18,12 @@
     <p class="note">Vilice reaches this box as <code>_vilice</code>, with its own key, at
       <strong><%= @machine.scope %></strong> scope. To let it in, run this once on the box:</p>
     <%= command_block(@machine.authorize_command) %>
+    <% if (print = @machine.ssh_key_fingerprint) %>
+      <p class="note">Its fingerprint is <code><%= print %></code>. On the box,
+        <code>sudo -u _vilice vilice actors</code> lists <code><%= @machine.console_client %></code>
+        with the fingerprint the box trusts; if the two differ, the box holds an older key —
+        run the line above again.</p>
+    <% end %>
     <p class="note muted">Vilice holds the matching private key, encrypted, and never root.</p>
   </section>
 <% end %>

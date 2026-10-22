@@ -158,14 +158,24 @@ class Machine < ApplicationRecord
     %(sudo -u _vilice vilice authorize "#{ssh_public_key}" --client #{console_client} --scope #{scope})
   end
 
+  # The key's SHA256 fingerprint, the form `ssh-keygen -lf` and the box's `vilice actors`
+  # print. The key itself is a long line nobody compares by eye; this is the short form
+  # that answers "does the box trust the key the console holds?".
+  def ssh_key_fingerprint
+    blob = Base64.strict_decode64(ssh_public_key.to_s.split[1].to_s)
+    return if blob.empty?
+
+    "SHA256:#{Base64.strict_encode64(Digest::SHA256.digest(blob)).delete('=')}"
+  rescue ArgumentError
+    nil
+  end
+
   # What the console sends to cut its own key, over that key. Only a grant key can —
   # `revoke` is at the top of the scope ladder.
   def revoke_args = "revoke #{console_client}"
 
   # The same act, as a line to run on the box by hand — for a key below grant scope.
   def revoke_command = "sudo -u _vilice vilice #{revoke_args}"
-
-  private
 
   def console_client = ENV.fetch("VILICE_CLIENT_NAME", "console")
 end

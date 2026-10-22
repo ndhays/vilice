@@ -16,6 +16,12 @@
     <p class="note">Vilice has not reached this box yet. Run this once on the box, from an
       account that can <code>sudo</code>, to let Vilice in at <strong><%= @machine.scope %></strong> scope:</p>
     <%= command_block(@machine.authorize_command) %>
+    <% if (print = @machine.ssh_key_fingerprint) %>
+      <p class="note">Its fingerprint is <code><%= print %></code>. On the box,
+        <code>sudo -u _vilice vilice actors</code> lists <code><%= @machine.console_client %></code>
+        with the fingerprint the box trusts; if the two differ, the box holds an older key —
+        run the line above again.</p>
+    <% end %>
     <div class="connect-foot">
       <p class="note muted">Vilice holds the matching private key, encrypted, and never root.
         Then read the box:</p>
