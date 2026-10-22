@@ -233,30 +233,19 @@ image` needs to actually ship.
 
 ## Secrets & credentials — what belongs in an open repo
 
-Vilice Console is public (AGPL) **and** what the maintainer runs for clients, so this is the
-open-core / private-edges line (`decisions/licensing.md`) made concrete. Right now
-`config/credentials.yml.enc` is committed; it's encrypted and `master.key` is gitignored,
-which is standard Rails and safe *as long as the master key stays secret*. The wrinkle:
-that file holds the **Active Record Encryption keys**, and those protect
-`Machine#ssh_private_key` — real, operate-scoped SSH keys to client boxes. The highest-
-value secret in the system shouldn't ride in core just because it's encrypted.
+**Settled: the repo ships no credentials** — production reads its keys from the
+environment, development keeps a local, gitignored file, and production starts with keys
+that were never in git
+([`secrets-come-from-the-deployment.md`](../secrets-come-from-the-deployment.md)). Still
+open:
 
-Decide the proper steps (alongside the website/docs pass — this is part of "open and
-proprietary, not a contradiction"):
-
-- **Keys out of core.** Per-deployment secrets are a private edge: core should ship
-  placeholder/structure only. Candidates — supply AR encryption keys (and other prod
-  secrets) via **ENV** / a secret store in production (out of git entirely), or use a
-  per-env `config/credentials/production.yml.enc` whose key lives only on the deploy
-  host and is never pushed.
-- **Master-key custody + rotation**, documented — consistent with Vilice's own key
-  custody (release key already offline at `~/.keys`).
-- **The keys in 586067f are dev-only** — rotate before any real client data, since
-  they're now in git history.
+- **Rotating the encryption keys**, documented: Active Record supports several primary
+  keys at once (old ones decrypt, the newest encrypts), so rotation is adding a key,
+  re-saving every machine, then dropping the old one. Not written down or tried.
 - **`SECRET_KEY_BASE` rotation, documented** *(suggested 2026-06-18, not settled)* —
   rotating it invalidates every active session (the Rails-specific dance), distinct from
-  the master-key/AR-key rotation above. Worth a short documented procedure (and a note on
-  whether it's ENV-supplied in production like the AR keys) so a rotation isn't an
+  the encryption-key rotation above. It comes from the environment in production, so
+  rotating it is changing one value — worth a short documented procedure so it isn't an
   unplanned logout-everyone event. Suggested topic, not yet a plan.
 
 ## Replica / deploy strategy — the build

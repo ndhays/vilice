@@ -13,6 +13,10 @@
 # Ignore all default key files.
 /config/master.key
 /config/credentials/*.key
+# Credentials are a deployment's own, never baked into an image: a local copy would
+# otherwise ride into any image built where it exists.
+/config/credentials.yml.enc
+/config/credentials/
 
 # Ignore all logfiles and tempfiles.
 /log/*

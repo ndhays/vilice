@@ -17,10 +17,26 @@ Prerequisites:
 - [`boxcar-rails`](../../boxcar-rails) as a sibling checkout — it's a path gem
   (`gem "boxcar-rails", path: "../../boxcar-rails"`)
 
+Credentials are your own — the repo ships none
+([`secrets-come-from-the-deployment.md`](../decisions/secrets-come-from-the-deployment.md)).
+Before you add a real machine, make a local credentials file holding the keys that
+encrypt its SSH key (the seeded demo data needs none):
+
+```bash
+bin/rails db:encryption:init     # prints three keys
+bin/rails credentials:edit       # paste them under active_record_encryption:, save
+```
+
+Both files it writes (`config/credentials.yml.enc`, `config/master.key`) are gitignored.
+They encrypt the SSH keys of the machines you add, so keep the master key somewhere safe.
+
 ```bash
 bin/setup           # install gems, prepare the database, seed
 bin/rails server    # http://localhost:3000
 ```
+
+In production the console reads `SECRET_KEY_BASE` and the three
+`ACTIVE_RECORD_ENCRYPTION_*` keys from its environment instead.
 
 Sign in with the seeded operator: `operator@console.test` / `password`.
 

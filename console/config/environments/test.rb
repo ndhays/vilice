@@ -50,4 +50,12 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Tests encrypt with keys of their own, not the ones in credentials. Those protect the
+  # real SSH keys in a console's database, and a machine that only runs the tests — the
+  # build PC — has no business holding them. These are public on purpose: they guard
+  # nothing but test data.
+  config.active_record.encryption.primary_key = "test-primary-key-not-a-secret"
+  config.active_record.encryption.deterministic_key = "test-deterministic-key-not-a-secret"
+  config.active_record.encryption.key_derivation_salt = "test-key-derivation-salt-not-a-secret"
 end

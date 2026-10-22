@@ -389,6 +389,12 @@ Per-machine keypairs, so revoking one box never touches another. This is the
 best-practice default; **no external secret manager** (Bitwarden CLI, etc.) — that would
 solve a problem we don't have yet.
 
+The keys that do the encrypting are the deployment's, never the repo's: production reads
+`ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`, `…_DETERMINISTIC_KEY` and `…_KEY_DERIVATION_SALT`
+(and `SECRET_KEY_BASE`) from its environment and will not boot without them; development
+uses a local, gitignored credentials file; tests use fixed public keys of their own
+([`secrets-come-from-the-deployment.md`](../../decisions/secrets-come-from-the-deployment.md)).
+
 ### 3. Reads — live from Vilice, cached in `solid_cache`
 Vilice's on-box append-only record is the **source of truth for box data** (status,
 the audit chain); Vilice Console never authors it. (Off-host shipping, to make the record

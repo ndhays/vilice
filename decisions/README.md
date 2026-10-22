@@ -63,6 +63,7 @@ The settled *why*, one line per document. What the system *is* lives in
 - [app-library-manifest](app-library-manifest.md) — the App Library imports and exports as a YAML manifest.
 - [appearance-belongs-to-the-operator](appearance-belongs-to-the-operator.md) — theme and mode are stored on the user.
 - [console-build-choices](console-build-choices.md) — Rails 8 auth, Boxcar used sparingly, the cache store.
+- [secrets-come-from-the-deployment](secrets-come-from-the-deployment.md) — the repo ships no credentials; production reads its keys from the environment.
 - [scenario-seeds](scenario-seeds.md) — named dev scenarios, and a dev-only fake for machine health.
 
 ## The project

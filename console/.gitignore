@@ -33,3 +33,8 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# Credentials are each deployment's own, never the repo's
+# (decisions/secrets-come-from-the-deployment.md). Make yours with bin/rails credentials:edit.
+/config/credentials.yml.enc
+/config/credentials/
+
