@@ -40,6 +40,24 @@ Folded into harden/: <changes, or none>
 
 <!-- newest entries on top -->
 
+## v0.4.3 — 2026-10-22
+
+Code (make audit)
+- govulncheck: **clean** after a toolchain bump. The first run, on go1.27.1, found 9
+  standard-library vulnerabilities the code reaches — GO-2026-6603, -6605, -6607, -6608,
+  -6610, -6611, -6613, -6617 (net/http, its HTTP/2 client, net/textproto, crypto/tls;
+  fixed in go1.27.2) and GO-2026-6809 (crypto/x509; fixed in go1.27.3). go.mod's
+  `toolchain` now names go1.27.3; re-run: "No vulnerabilities found."
+- gosec:       **clean** (policy: G301/G302/G304/G306 excluded; G204 annotated)
+- toolchain:   go1.27.3 (the `toolchain` line in go.mod, fetched by GOTOOLCHAIN=auto)
+
+Box (make audit-box HOST=<box>)
+- **Not run.** Still no ssh-audit, nmap or Lynis baseline for any version; the open item
+  in `decisions/open/vilice-open-questions.md`.
+- harden --check: not read for this entry.
+
+Folded into harden/: none.
+
 ## v0.4.2 — 2026-10-04
 
 Code (make audit)
