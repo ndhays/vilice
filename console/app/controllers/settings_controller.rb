@@ -53,7 +53,7 @@ class SettingsController < ApplicationController
       return redirect_to settings_path(anchor: "this-console"), alert: "Choose the machine this console runs on first."
     elsif !machine.operate?
       return redirect_to settings_path(anchor: "this-console"), alert: "#{machine.name}'s key is observe-only; updating needs operate."
-    elsif !image.match?(Setting::IMAGE_FORMAT)
+    elsif !image.match?(Mutation::IMAGE_FORMAT)
       return redirect_to settings_path(anchor: "this-console"),
                          alert: "Give the image pinned by digest — ref@sha256: and 64 hex characters, as make push prints it."
     end

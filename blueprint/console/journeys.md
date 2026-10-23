@@ -189,12 +189,18 @@ existing `remove` verb, which retires the placement.
 ## The lifecycle (back half — built)
 
 Once installed, every act runs through the mutate ceremony, against an `App`'s live
-placements: **deploy / rollback / start / stop / restart / remove / backup / restore**,
+placements: **deploy / rollback / update / start / stop / restart / remove / backup / restore**,
 plus the machine-level **apply-updates**, **route**, **backup** of the record, and
 **registry-logout** (**registry-login** is its own form, since it carries a password). Remove retires the `Placement` (the row is kept for history). The
 App's show page hosts the lifecycle verbs per placement. On the Machine page each act sits
 in the card it acts on, and every app on the box has its own page there with its acts —
-whether or not an `App` is held for it — through the same return-aware ceremony
+whether or not an `App` is held for it — through the same return-aware ceremony. On that
+page **update** asks only for a digest and sends `vilice update <app> --image …`: the box
+re-deploys the spec it holds with the new image, so it works for any app there, however it
+was deployed, and no secret is sent
+([`update-is-rollback-pointed-forward.md`](../../decisions/update-is-rollback-pointed-forward.md)).
+An update made there does not move an `App`'s recorded image, so the App page shows that
+placement as drift until it is deployed through the App
 ([`acts-sit-with-what-they-act-on.md`](../../decisions/acts-sit-with-what-they-act-on.md)). A
 successful deploy pins `Placement.desired_image`; `current_image` is reconciled from
 what the box reports, so drift is honest. (`reboot` is deliberately **not** a verb — the

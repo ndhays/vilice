@@ -14,10 +14,6 @@ class Setting < ApplicationRecord
   validates :self_app_name, format: { with: AppTemplate::NAME_FORMAT,
                                       message: "must start with a letter or digit, then letters, digits, dashes, and underscores" }
 
-  # An image the console can be updated to: pinned by digest, and nothing in it that
-  # would split the command it rides on. The box checks it again.
-  IMAGE_FORMAT = %r{\A[a-z0-9][a-z0-9._/:-]*@sha256:[0-9a-f]{64}\z}
-
   def self.current
     first_or_create!
   end

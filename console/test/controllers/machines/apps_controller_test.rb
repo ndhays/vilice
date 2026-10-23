@@ -245,6 +245,60 @@ class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a.logs-link[href=?]", machine_logs_path(@machine, name: "stray")
   end
 
+  # ── Update: a new image, everything else as the box holds it ───────────────
+  NEW_IMAGE = "docker.io/stray@sha256:#{'1' * 64}".freeze
+
+  test "any app on the box can be updated, by name, with nothing but an image" do
+    sign_in_as @user
+    reporting({ "name" => "stray", "image" => STRAY_IMAGE, "state" => "running", "rollback" => false }) do
+      get machine_box_app_path(@machine, "stray")
+    end
+    assert_select "a.btn.cmd[href=?]",
+                  new_machine_mutation_path(@machine, act: "update", frame: "ceremony-deploy", from: "box", name: "stray"),
+                  text: "update"
+
+    # Compose asks for the image only — the spec is the box's.
+    reporting { get new_machine_mutation_path(@machine, act: "update", name: "stray", from: "box") }
+    assert_select "input[name=image]"
+    assert_select "input[name=name][value=stray]"
+    assert_select "input[name=hostname]", count: 0
+
+    # A tag, or a digest with something after it, stays at compose and says why.
+    reporting { get new_machine_mutation_path(@machine, act: "update", name: "stray", from: "box", image: "docker.io/stray:latest") }
+    assert_select ".flash.alert", /pinned by digest/
+    reporting { get new_machine_mutation_path(@machine, act: "update", name: "stray", from: "box", image: "#{NEW_IMAGE} --json") }
+    assert_select ".flash.alert", /pinned by digest/
+
+    # The preview names the command, and says nothing else is sent.
+    reporting { get new_machine_mutation_path(@machine, act: "update", name: "stray", from: "box", image: NEW_IMAGE) }
+    assert_select ".cmd-block pre.cmd, .chain", /vilice update stray --image #{Regexp.escape(NEW_IMAGE)} --json/
+    assert_select ".ceremony .note", /Only the image changes/
+  end
+
+  test "confirming sends update with the image on the command line and nothing on stdin" do
+    sign_in_as @user
+    with_fake_vilice do |vilice|
+      vilice.on(/^update /, data: { "code" => "ok", "message" => "updating" })
+      assert_difference -> { Event.where(action: "updated").count }, 1 do
+        post machine_mutation_path(@machine), params: { act: "update", name: "stray", from: "box", image: NEW_IMAGE }
+      end
+      assert vilice.issued?("update stray --image #{NEW_IMAGE} --json")
+      assert_nil vilice.stdin_for(/^update /)
+    end
+    assert_redirected_to machine_box_app_path(@machine, "stray")
+    assert_match(/stray on edge-1 to @1111/, Event.where(action: "updated").last.summary)
+  end
+
+  test "a malformed image never reaches the box, even posted straight to confirm" do
+    sign_in_as @user
+    with_fake_vilice do |vilice|
+      assert_no_difference -> { Event.count } do
+        post machine_mutation_path(@machine), params: { act: "update", name: "stray", from: "box", image: "x; rm -rf /" }
+      end
+      assert_empty vilice.calls
+    end
+  end
+
   # The box's words are Podman's, so the colour is read off how they begin.
   test "an app that is up reads green, a stopped one grey, an exited one red" do
     sign_in_as @user

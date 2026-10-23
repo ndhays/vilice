@@ -820,10 +820,12 @@ rewritten at display; only its *case* is, and case is not a fact.
 
 ## The hero interaction — the mutate ceremony
 
-One component for *any* witnessed act (deploy, rollback, start/stop/restart, remove,
-backup, restore, apply-updates, route, registry-logout):
+One component for *any* witnessed act (deploy, rollback, update, start/stop/restart,
+remove, backup, restore, apply-updates, route, registry-logout):
 
-1. **Compose** — pick what (image digest, target). Only acts that need it (deploy).
+1. **Compose** — pick what (image digest, target). Only acts that need it: deploy (the
+   image, with the App's hostname, port and health) and update (the image alone — a tag,
+   or a digest with anything after it, stays here and says why).
 2. **Preview the record entry** — show the exact accountable line before it runs:
    `nick · deploy · acme-web · @sha256:abc → db-1`, rendered with the real chain styling,
    nothing written. The record-before-act invariant *is* the confirm dialog.

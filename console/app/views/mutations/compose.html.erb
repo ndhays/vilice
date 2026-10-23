@@ -1,25 +1,39 @@
 <%# Compose — the ceremony's first step for an act that needs operator input.
     Deploy: pick the image digest (hostname/port/health prefilled from the App,
-    overridable). Submitting GETs back to `new` with the inputs, which then renders
-    the preview. Nothing is written here. %>
+    overridable). Update: only the image — everything else is what the box holds.
+    Submitting GETs back to `new` with the inputs, which then renders the preview.
+    Nothing is written here. %>
 <%= turbo_frame_tag @frame do %>
   <div class="ceremony">
-    <div class="kicker">Compose · deploy <%= @mutation.app.name %> → <%= @machine.name %></div>
+    <div class="kicker">Compose · <%= @mutation.act.verb %> <%= @mutation.name %> → <%= @machine.name %></div>
+    <% if (problem = @mutation.image_problem) %>
+      <div class="flash alert"><%= problem %></div>
+    <% end %>
 
     <%= form_with url: new_machine_mutation_path(@machine), method: :get, class: "compose" do %>
       <%= hidden_field_tag :act, @mutation.act.key %>
-      <%= hidden_field_tag :app_id, @mutation.app.id %>
+      <% if @mutation.app %>
+        <%= hidden_field_tag :app_id, @mutation.app.id %>
+      <% else %>
+        <%= hidden_field_tag :name, @mutation.name %>
+      <% end %>
       <%= hidden_field_tag :from, @from %>
       <%= hidden_field_tag :frame, @frame %>
 
       <label class="compose-field">
         <span>Image</span>
-        <%= text_field_tag :image, @mutation.app.image, required: true,
+        <%= text_field_tag :image, @mutation.image || @mutation.app&.image, required: true,
               autocomplete: "off", spellcheck: false,
               placeholder: "ghcr.io/acme/web@sha256:…" %>
-        <small class="muted">Pin a digest (<code>@sha256:…</code>) — the one thing this deploy changes.</small>
+        <% if @mutation.act.asks_image? %>
+          <small class="muted">Pin a digest (<code>@sha256:…</code>). Only the image changes:
+            settings, secrets, storage and hostnames stay as the box has them, and none is sent.</small>
+        <% else %>
+          <small class="muted">Pin a digest (<code>@sha256:…</code>) — the one thing this deploy changes.</small>
+        <% end %>
       </label>
 
+      <% if @mutation.act.compose? %>
       <div class="compose-row">
         <label class="compose-field"><span>Hostname</span>
           <%= text_field_tag :hostname, @mutation.hostname, autocomplete: "off" %></label>
@@ -28,6 +42,7 @@
         <label class="compose-field compose-narrow"><span>Health</span>
           <%= text_field_tag :health, @mutation.health, placeholder: "/" %></label>
       </div>
+      <% end %>
 
       <div class="ceremony-actions">
         <%= button_tag class: "btn mutate" do %>

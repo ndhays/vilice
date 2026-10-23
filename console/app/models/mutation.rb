@@ -9,14 +9,21 @@
 # "confirm" shows precisely what will be written
 # (decisions/open/ui-shape.md §"the mutate ceremony").
 class Mutation
-  Act = Struct.new(:key, :verb, :label, :past, :target, :compose, :build, keyword_init: true) do
+  Act = Struct.new(:key, :verb, :label, :past, :target, :compose, :asks_image, :build, keyword_init: true) do
     def app_scoped? = target == :app
+    # Composes a whole spec from a stored App (deploy).
     def compose? = compose == true
+    # Asks only for an image, and works by name for any app on the box (update).
+    def asks_image? = asks_image == true
   end
 
   # A registry host, optionally with a port — the same rule the box applies
   # (`validRegistry`). Checked here too, because the value is written into a command.
   REGISTRY_FORMAT = /\A[A-Za-z0-9][A-Za-z0-9._-]*(:\d+)?\z/
+
+  # An image written into a command: pinned by digest, and nothing in it that would
+  # split the command it rides on. The box checks it again.
+  IMAGE_FORMAT = %r{\A[a-z0-9][a-z0-9._/:-]*@sha256:[0-9a-f]{64}\z}
 
   # Keyed by the name the ceremony is asked for. `verb` is the vilice command the
   # button is named for; the two differ only where one command has two forms
@@ -43,6 +50,12 @@ class Mutation
     "rollback"      => Act.new(verb: "rollback", label: "Roll back", past: "rolled back",
                                target: :app,
                                build: ->(_m, i, _p) { "rollback #{i.name} --json" }),
+    # A new image for an app the box already runs, everything else as the box holds it —
+    # rollback pointed forward (decisions/update-is-rollback-pointed-forward.md). By name,
+    # so it works for any app on the box, however it was deployed; no secret is sent.
+    "update"        => Act.new(verb: "update", label: "Update", past: "updated",
+                               target: :app, asks_image: true,
+                               build: ->(_m, i, p) { "update #{i.name} --image #{p[:image]} --json" }),
     # Destructive: takes the app off the box (units, secrets, route). The
     # ceremony's preview+confirm is the guard.
     "remove"        => Act.new(verb: "remove", label: "Remove", past: "removed",
@@ -130,11 +143,25 @@ class Mutation
     @params = (params || {}).to_h.symbolize_keys
   end
 
-  def needs_compose? = act.compose?
-  # A compose act is ready once the operator has picked an image; others always are.
-  def composed? = !needs_compose? || image.present?
+  def needs_compose? = act.compose? || act.asks_image?
+  # A compose act is ready once the operator has picked an image; others always are. An
+  # image that goes into the command must be pinned and plain, or the act stays at compose,
+  # saying why (image_problem).
+  def composed? = !needs_compose? || (image.present? && image_problem.nil?)
 
-  def command = act.build.call(machine, name && AppRef.new(name: name), params)
+  def image_problem
+    return unless act.asks_image? && image.present? && !image.match?(IMAGE_FORMAT)
+
+    "Give the image pinned by digest — ref@sha256: and 64 hex characters — and nothing else."
+  end
+
+  def command
+    # The last word on what reaches the command line: never a malformed image, however
+    # this was reached.
+    raise ArgumentError, "image is not a pinned digest" if act.asks_image? && !image.to_s.match?(IMAGE_FORMAT)
+
+    act.build.call(machine, name && AppRef.new(name: name), params)
+  end
 
   # Two acts ship desired state on stdin: deploy sends one app's spec, route sends the
   # whole edge table. Both are derived at send time rather than read from a stored copy.
@@ -150,6 +177,7 @@ class Mutation
   def summary
     case act.key
     when "deploy"          then "#{name} on #{machine.name} @#{short_digest}"
+    when "update"          then "#{name} on #{machine.name} to @#{short_digest}"
     when "route"           then route_summary
     when "backup-record"   then "the record on #{machine.name}"
     when "registry-logout" then "#{machine.name} of #{params[:registry]}"

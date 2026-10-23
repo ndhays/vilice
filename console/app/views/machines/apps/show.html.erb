@@ -150,6 +150,13 @@
               state: no_previous ? "Nothing to go back to: this is the first image deployed here" : "Go back to the image it ran before",
               button: (act_button(@machine, "rollback", frame: "ceremony-deploy", **on) unless no_previous) %>
       <% end %>
+      <%# A new image, keeping everything the box holds for it — for any app here, however
+          it was deployed, since the box has its spec and secrets (vilice update). %>
+      <% if @box_app %>
+        <%= render "machines/act", verb: "update",
+              state: "Run a new image, keeping its settings, secrets and storage",
+              button: act_button(@machine, "update", frame: "ceremony-deploy", **on) %>
+      <% end %>
       <%= turbo_frame_tag "ceremony-deploy" %>
     <% end %>
   <% end %>
