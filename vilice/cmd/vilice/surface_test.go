@@ -26,10 +26,10 @@ func TestAssembledSurface(t *testing.T) {
 		"harden", "prepare", "uninstall", "authorize", "revoke",
 		"apply-updates", "verify", "record", "actors",
 		// the app layer
-		"deploy", "rollback", "start", "stop", "restart", "remove",
+		"deploy", "rollback", "update", "start", "stop", "restart", "remove",
 		"route",
 		"backup", "restore", "registry-login", "registry-logout",
-		"status", "logs", "doctor", "snapshot",
+		"status", "logs", "doctor", "snapshot", "run-update",
 	}
 	for _, name := range want {
 		if _, ok := core.Lookup(name); !ok {

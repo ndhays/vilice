@@ -95,6 +95,11 @@ type Command struct {
 	// finishes reading documents nothing.
 	Examples []Example
 	Run      func(args []string) Result
+	// RecordNote replaces the help page's "Record:" line for a command the dispatcher
+	// does not record because it is not a person's act — the timer's snapshot, the
+	// background half of an update. Saying "not recorded" would be true of the
+	// mechanism and misleading about the record.
+	RecordNote string
 	// SkipBinaryCheck exempts a verb from the running-binary integrity check, so
 	// it still works on a box whose binary was replaced or never recorded. Only
 	// the verbs an operator inspects and repairs with are exempt: the root
@@ -234,6 +239,15 @@ func viliceUID() (int, bool) {
 	}
 	uid, err := strconv.Atoi(u.Uid)
 	return uid, err == nil
+}
+
+// RunsAsVilice reports whether this process is the account an app-layer verb must run
+// as — the same rule the gate applies to operate scope. A system-scoped verb is not
+// gated (snapshot runs as root, from its timer), so one that touches Podman state has
+// to ask for itself: run as anyone else, the state lands in that user's home.
+func RunsAsVilice() bool {
+	uid, found := viliceUID()
+	return !wrongUser(ScopeOperate, os.Geteuid(), uid, found)
 }
 
 // parseInvocation pulls out the --json flag (in any position) and returns the

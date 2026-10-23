@@ -81,6 +81,23 @@ the moment you need it. Anything older is a deploy of that digest.`,
 				{Cmd: "vilice rollback blog", What: "Put the previous image back."},
 			},
 			Run: rollbackCmd},
+		{Name: "update", Scope: core.ScopeOperate, Summary: "Deploy a new image, keeping everything else",
+			Long: `Deploys the app's saved spec again with a new image — env, secrets,
+volumes and hostnames are the ones the box already holds, so none is
+sent. It is rollback pointed forward: the same health-check-then-flip
+path, and rollback afterwards puts the old image back.
+
+It runs in the background and answers at once, because the caller may
+be the app being replaced. status --json shows how it went, under the
+app's "update"; the unit's output is in the _vilice user's journal.`,
+			Usage: "<app> --image <ref@sha256:…>",
+			Flags: []core.Flag{
+				{Name: "image", Arg: "<ref>", What: "The new image, pinned by digest: ref@sha256:… Required."},
+			},
+			Examples: []core.Example{
+				{Cmd: "vilice update console --image zot.example.com/console@sha256:ab12…", What: "Move the console to a new build; its secrets stay where they are."},
+			},
+			Run: updateCmd},
 		{Name: "start", Scope: core.ScopeOperate, Summary: "Start an app",
 			Long: `Starts the app's systemd unit. Its spec is unchanged — this is the
 lifecycle switch, not a deploy.`,
@@ -264,7 +281,21 @@ it is not a command you type.
 
 It is what gives the record a heartbeat without a resident daemon —
 systemd provides the residency, Vilice provides the entry.`,
-			Run: snapshotCmd},
+			// Not recorded *by* the dispatcher because it is the thing doing the
+			// recording; "not recorded" would be true of the mechanism and false to the reader.
+			RecordNote: "this command is the record's heartbeat — it writes the entry",
+			Run:        snapshotCmd},
+
+		// The background half of `update`, in a transient unit `update` starts.
+		{Name: "run-update", Scope: core.ScopeSystem,
+			Summary: "Carry out an update (started by update)",
+			Long: `Carries out the update that "vilice update" recorded and started: the
+saved spec with the new image, through the deploy path. It takes only
+the app's name and runs only a request still waiting, so it can do
+nothing nobody asked for. Not a command you type.`,
+			Usage:      "<app>",
+			RecordNote: "the act was recorded by update; this records the new spec's digest",
+			Run:        runUpdateCmd},
 	}
 }
 

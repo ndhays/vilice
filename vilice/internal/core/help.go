@@ -116,13 +116,10 @@ func flagColumn(flags []Flag) int {
 // a reader should not have to infer which side of it a command is on.
 func recordLine(cmd Command) string {
 	switch {
+	case cmd.RecordNote != "":
+		return cmd.RecordNote
 	case recordable(cmd, nil):
 		return "written before the command runs"
-	case cmd.Scope == ScopeSystem:
-		// snapshot is not recorded *by* the dispatcher because it is the thing
-		// doing the recording. Saying "not recorded" here would be true of the
-		// mechanism and false to the reader.
-		return "this command is the record's heartbeat — it writes the entry"
 	}
 	return "not recorded — this command reads, it does not act"
 }
@@ -183,7 +180,7 @@ var Groups = []struct {
 	{"Run as _vilice", "Authorize", ScopeGrant},
 	{"Run as _vilice", "Operate", ScopeOperate},
 	{"Run as _vilice", "Observe", ScopeObserve},
-	{"System-only", "Record", ScopeSystem},
+	{"Run by systemd", "Run by systemd", ScopeSystem},
 }
 
 func printGroup(w io.Writer, title string, s Scope) {

@@ -46,6 +46,9 @@ type appStatus struct {
 	// web container only: an app's processes and accessories are units of their own.
 	// Absent when the app is not running or systemd does not say.
 	MemoryBytes uint64 `json:"memory_bytes,omitempty"`
+	// The app's last `update`, if it has had one: what was asked for, and how it went.
+	// Read by whoever asked — often the new version of the app itself.
+	Update *updateRequest `json:"update,omitempty"`
 }
 
 // stateStopped is what status says of an app that is deployed and not running.
@@ -386,13 +389,14 @@ func withDeployed(running []appStatus, deployed []appState) []appStatus {
 		if st, ok := byName[running[i].Name]; ok {
 			running[i].Hostnames = st.Hostnames
 			running[i].Rollback = st.PrevImage != ""
+			running[i].Update = lastUpdate(st.Name)
 			seen[st.Name] = true
 		}
 	}
 	for _, st := range deployed {
 		if !seen[st.Name] {
 			running = append(running, appStatus{Name: st.Name, Image: st.Image, State: stateStopped,
-				Hostnames: st.Hostnames, Rollback: st.PrevImage != ""})
+				Hostnames: st.Hostnames, Rollback: st.PrevImage != "", Update: lastUpdate(st.Name)})
 		}
 	}
 	return running

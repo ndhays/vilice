@@ -135,6 +135,7 @@ func removeLocked(app string) core.Result {
 			}
 		}
 	}
+	removeUpdate(app) // its last update goes with it; a later app of the same name starts clean
 	if err := removeApp(app); err != nil {
 		return core.Result{Code: "io_error", Message: err.Error()}
 	}

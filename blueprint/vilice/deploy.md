@@ -421,6 +421,36 @@ knows about a fleet, and the box is told its table by a named actor like everyth
 
 Re-deploy the last-good image. Same path as `deploy`.
 
+## `vilice update <app> --image <ref@sha256:…>`
+
+Deploy the app's **saved spec** again with a new image — rollback pointed forward. Env,
+secret names, volumes, hostnames, `stop_first`: all are the spec the box already holds,
+and the secret values are already in Podman's store, so **nothing secret is sent**. That
+is what lets an app update itself without handling its own secrets: the console updates
+the console from its Settings page.
+
+- **The act is `update`.** Recorded like any verb, digest-pinned image only (a tag is
+  refused), refused while another update of the app is waiting or running (`app_busy`) or
+  when the image is the one already running (`unchanged`). It writes the request to
+  `apps/updates/<app>.json` and starts a transient unit, `vilice-update-<app>-<time>`, under
+  the `_vilice` user's systemd, then answers at once.
+- **The work is `run-update`,** system-scoped: never reachable over scoped SSH, run by that
+  unit. It takes only the app's name and runs only a request still `started`, so it can do
+  nothing nobody asked for and cannot be replayed. It records the new spec's digest
+  (`update-spec`, as deploy records `deploy-spec`), then takes the app's lock and runs the
+  ordinary deploy path — health check, flip, retire, prune.
+- **Background, because the caller may be the app being replaced.** Blue/green stops the
+  old colour once the new one is healthy; when the console updates itself, that colour is
+  the process holding the SSH connection. The unit belongs to systemd, not to the
+  session, so the update finishes either way.
+- **How it went** is in `status --json`, under the app's `update` (`started` → `running` →
+  `ok` | `failed`, with the error); the unit's output is in the `_vilice` user's journal.
+  `rollback` afterwards puts the previous image back. `remove` deletes the request with
+  the app.
+
+The why, and why it is not the partial edit `route` refuses, is in
+[`update-is-rollback-pointed-forward.md`](../../decisions/update-is-rollback-pointed-forward.md).
+
 ## Lifecycle
 
 Lifecycle drives the active color's user service through `systemctl --user`. `stop`
@@ -438,6 +468,7 @@ web container alone; an app's processes and accessories are units of their own.
 
 | Command | Does |
 |---|---|
+| `vilice update <app> --image <ref>` | Deploy the saved spec with a new image, in the background. |
 | `vilice start <app>` | Boot-enable the active color and start it. |
 | `vilice stop <app>` | Stop it and keep it down across reboot. |
 | `vilice restart <app>` | Restart the active color in place. |
