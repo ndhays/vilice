@@ -40,6 +40,10 @@ class AppTemplatesController < ApplicationController
   end
 
   def destroy
+    if (in_use = in_use_message([ @app_template ]))
+      return redirect_to @app_template, alert: in_use
+    end
+
     AppTemplate.transaction do
       @app_template.destroy!
       record("removed", "#{@app_template.name} from the App Library")
@@ -85,7 +89,9 @@ class AppTemplatesController < ApplicationController
   def remove_selected
     apps  = AppTemplate.where(id: Array(params[:ids]).reject(&:blank?))
     names = apps.order(:name).pluck(:name)
-    if names.any?
+    if (in_use = in_use_message(apps))
+      redirect_to app_templates_path, alert: in_use
+    elsif names.any?
       AppTemplate.transaction do
         apps.destroy_all
         record("removed", "#{names.size} #{'app'.pluralize(names.size)} from the App Library",
@@ -98,6 +104,19 @@ class AppTemplatesController < ApplicationController
   end
 
   private
+
+  # A template an app was made from is that app's release history: the app points at one
+  # of its versions, so removing it would take the version out from under the app (the
+  # database refuses, and that used to surface as an error page). Say which apps. There
+  # is no way through yet — an app cannot be deleted (decisions/open/apps-templates-machines.md).
+  def in_use_message(templates)
+    used = App.where(app_template: templates).includes(:app_template).order(:name).to_a
+    return if used.empty?
+
+    listed = used.group_by(&:app_template).map { |t, apps| "#{t.name} (used by #{apps.map(&:name).to_sentence})" }
+    "Not removed: #{listed.to_sentence}. An app keeps the template it was made from, " \
+      "for its versions."
+  end
 
   def set_app
     @app_template = AppTemplate.find(params[:id])

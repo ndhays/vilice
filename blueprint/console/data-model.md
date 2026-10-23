@@ -146,6 +146,12 @@ open heartbeat question.
   `secret_files` is a list of `{ name, path }` — values mounted as files off-record (a
   config, an htpasswd). Names follow the box's env rule (`[A-Za-z_][A-Za-z0-9_]*`); a name
   can't be both an env var and a file. Edited on the App page; carried in the manifest.
+  **Copied onto the App at create** (`config["inputs"]`, the same shape), like the release
+  command — the App reads its own copy, so editing the library entry later never changes
+  what an app sends on its next deploy (`App#inputs`).
+- **A template an app was made from is not removed.** The app points at one of its
+  versions, so removal is refused with the apps named, rather than failing in the
+  database.
 - **Validations mirror the box** (`vilice` `validateState`/`validClient`), so a bad
   value fails in Vilice Console — before the act — not cryptically at deploy: `name` is
   box-safe `[A-Za-z0-9_-]` starting with a letter or digit (it seeds the app name,

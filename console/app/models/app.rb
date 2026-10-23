@@ -273,28 +273,27 @@ class App < ApplicationRecord
   end
 
   # ── What the box will ask for ───────────────────────────────────────────────
-  # Declared on the App (and on its accessories), never here: the library carries the
-  # shape, the app carries the values. One reading of that shape, used by the form,
-  # by the envelope, and by the check that runs before the ceremony.
+  # The names the app takes values for — its env vars (and which are secret) and its
+  # secret files — copied from the library at create into `config["inputs"]`, in the
+  # library's own shape. Copied, never followed, like the release command and the image:
+  # editing or deleting the library entry must not change what an app sends on its next
+  # deploy, and following it once meant a deleted entry silently dropped every secret
+  # (blueprint/console/data-model.md). The app carries the values beside them.
+  def inputs = config["inputs"] || {}
+  def declared_env = Array(inputs["env"])
 
-  def secret_env_names = app_template ? app_template.secret_keys : []
+  def secret_env_names = declared_env.select { |e| e["secret"] }.filter_map { |e| e["key"] }
 
   # Secret files, as the box wants them: `{ name => container path }`.
-  def secret_file_paths
-    return {} unless app_template
-
-    app_template.secret_files.to_h { |f| [ f["name"], f["path"] ] }
-  end
+  def secret_file_paths = Array(inputs["secret_files"]).to_h { |f| [ f["name"], f["path"] ] }
 
   # Plain env var names — recorded in the clear, so their values are part of the spec
   # rather than of the values half.
-  def plain_env_names = app_template ? app_template.env_recorded : []
+  def plain_env_names = declared_env.reject { |e| e["secret"] }.filter_map { |e| e["key"] }.sort
 
   # Every name that needs a value, an accessory's included: a database password is the
   # app's to supply even though the database is the thing that reads it.
   def declared_secret_names
-    return [] unless app_template
-
     (secret_env_names + secret_file_paths.keys +
       accessories.flat_map { |a| Array(a["secrets"]) }).uniq
   end

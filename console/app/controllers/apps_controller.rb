@@ -225,6 +225,9 @@ class AppsController < ApplicationController
       config["accessories"] = template.accessories if template.accessories.present?
       config["processes"]   = template.processes if template.processes.present?
       config["stop_first"]  = true if template.stop_first
+      # The names it takes values for, copied like the rest (App#inputs).
+      inputs = { "env" => template.env.presence, "secret_files" => template.secret_files.presence }.compact
+      config["inputs"] = inputs if inputs.any?
     end
     config
   end

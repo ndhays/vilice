@@ -522,6 +522,49 @@ class AppsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".ceremony .note", /down until the new one is healthy/
   end
 
+  # The names an app takes values for are copied at create, like the release command —
+  # never read live from the library entry. Read live, deleting the entry dropped every
+  # secret and file from the app's next deploy, and editing it changed the app unseen.
+  test "an app copies its env and file declarations, and keeps them when the entry changes or goes" do
+    sign_in_as @user
+    @app_template.update!(env: [ { "key" => "LOG" }, { "key" => "TOKEN", "secret" => true } ],
+                          secret_files: [ { "name" => "config", "path" => "/etc/app/config.json" } ])
+    post apps_path(project_id: @project), params: { app: {
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    app = App.last
+    app.update!(secret_values: { "TOKEN" => "t", "config" => "{}" })
+    before = app.deploy_envelope(image: "img@sha256:#{'a' * 64}")
+
+    @app_template.update!(env: [], secret_files: [])
+    assert_equal before, app.reload.deploy_envelope(image: "img@sha256:#{'a' * 64}"), "editing the entry changes nothing"
+
+    after = app.reload.deploy_envelope(image: "img@sha256:#{'a' * 64}")
+    assert_equal %w[ TOKEN ], after.dig(:app, :secrets)
+    assert_equal({ "config" => "/etc/app/config.json" }, after.dig(:app, :secret_files))
+    assert_equal({ "TOKEN" => "t", "config" => "{}" }, after[:secret_values])
+  end
+
+  # Removing a template an app was made from used to end on an error page: the app points
+  # at one of its versions, and the database refused. Now it is refused in a sentence.
+  test "a template still in use is not removed, and the page says by which apps" do
+    sign_in_as @user
+    post apps_path(project_id: @project), params: { app: {
+      app_template_id: @app_template.id, machine_id: @operator.id, hostname: "acme.example"
+    } }
+    app = App.last
+
+    assert_no_difference -> { AppTemplate.count } do
+      delete app_template_path(@app_template)
+    end
+    assert_match(/Not removed: #{@app_template.name} \(used by #{app.name}\)/, flash[:alert])
+
+    assert_no_difference -> { AppTemplate.count } do
+      delete remove_selected_app_templates_path, params: { ids: [ @app_template.id ] }
+    end
+    assert_match(/still|used by/, flash[:alert])
+  end
+
   # ── Accessories reach the box ──────────────────────────────────────────────
   test "an app copies the app's accessories and carries them in the envelope" do
     sign_in_as @user
