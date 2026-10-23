@@ -79,10 +79,9 @@ Each act now sits in the card it acts on, and every app on a box has its own pag
 ([`../acts-sit-with-what-they-act-on.md`](../acts-sit-with-what-they-act-on.md)). That
 left these:
 
-- **Two places for an app's lifecycle verbs.** The App page still lists them per
-  placement; the app's page on its box has the same ones. Either the App page keeps only
-  what spans boxes (the intention, and a deploy to every placement) and links down, or
-  the duplication is accepted. Not decided.
+- **Two places for an app's lifecycle verbs** — moved to
+  [`apps-templates-machines.md`](apps-templates-machines.md), with the other questions
+  about what the App page and the machine page each do.
 - **The app-on-a-box page has no chain of its own.** It links to the machine's record
   filtered by the app's name. The page pattern says the chain is the body of every
   entity page.
