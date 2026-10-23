@@ -40,6 +40,25 @@ Folded into harden/: <changes, or none>
 
 <!-- newest entries on top -->
 
+## v0.4.4 — 2026-10-23
+
+Code (make audit)
+- govulncheck: **clean** — "No vulnerabilities found."
+- gosec:       **clean** (policy: G301/G302/G304/G306 excluded; G204 annotated)
+- toolchain:   go1.27.3 (the `toolchain` line in go.mod; still the latest release)
+
+New surface since v0.4.3, read for this entry: `update` (operate scope, recorded, a
+digest-pinned image only) starts a transient `systemd-run --user` unit that runs
+`run-update` — system-scoped, so refused over scoped SSH by name, refused as any account
+but `_vilice`, and able to run only a request `update` wrote and left waiting.
+
+Box (make audit-box HOST=<box>)
+- **Not run.** Still no ssh-audit, nmap or Lynis baseline for any version; the open item
+  in `decisions/open/vilice-open-questions.md`.
+- harden --check: not read for this entry.
+
+Folded into harden/: none.
+
 ## v0.4.3 — 2026-10-22
 
 Code (make audit)
