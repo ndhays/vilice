@@ -68,6 +68,14 @@
       <%= f.text_area :secrets, rows: 2, class: "mono", spellcheck: false, autocomplete: "off",
             placeholder: "SECRET_KEY_BASE=…" %>
       <small class="muted">Never recorded: only the names are written down.</small></label>
+    <%# One box per file the template declares — a config file, an htpasswd. Its contents
+        go to the box on stdin and are mounted at the path; like a secret, never recorded. %>
+    <% @deploy.file_paths.each do |name, path| %>
+      <label class="field"><span class="mono"><%= name %> <%= hint "The whole file. Mounted at #{path} in the container; sent on stdin, never recorded, stored or shown again." %></span>
+        <%= text_area_tag "box_deploy[files][#{name}]", @deploy.files[name], rows: 6, class: "mono",
+              spellcheck: false, autocomplete: "off" %>
+        <small class="muted">A file, mounted at <span class="mono"><%= path %></span>. Never recorded.</small></label>
+    <% end %>
     <label class="field"><span>Storage <%= hint "Named volumes that survive every redeploy. One name:/path/in/container per line." %></span>
       <%= f.text_area :volumes, rows: 2, class: "mono", spellcheck: false, placeholder: "storage:/rails/storage" %></label>
   </fieldset>

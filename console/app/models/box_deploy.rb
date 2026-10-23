@@ -28,6 +28,10 @@ class BoxDeploy
   attribute :extras, :string      # JSON: spec fields the form has no field for
   attribute :pasted, :string      # JSON: a whole spec, instead of the fields
   attribute :template_id, :integer
+  # Secret files' contents, by name: `{ "config" => "{…}" }`. Off-record, like secrets;
+  # which files there are, and where each is mounted, rides `extras` as the spec has it.
+  attr_writer :files
+  def files = (@files || {}).to_h.transform_values(&:to_s)
 
   validates :name, presence: true,
                    format: { with: AppTemplate::NAME_FORMAT, allow_blank: true,
@@ -35,6 +39,7 @@ class BoxDeploy
   validate :spec_is_readable
   validate :image_given, unless: :pasted?
   validate :pairs_well_formed, unless: :pasted?
+  validate :files_given, unless: :pasted?
 
   # Prefill from a template: its defaults and its latest version's image. Secret names
   # are listed with no value — the value is the operator's to type, every time.
@@ -50,7 +55,10 @@ class BoxDeploy
 
   def self.extras_of(template)
     x = { "release" => template.release.presence, "accessories" => template.accessories.presence,
-          "processes" => template.processes.presence, "stop_first" => (true if template.stop_first) }.compact
+          "processes" => template.processes.presence, "stop_first" => (true if template.stop_first),
+          # Which files, and where: a template configured by files (Zot's config.json) is
+          # broken without them, so they travel like the rest; the contents are typed.
+          "secret_files" => template.secret_files.to_h { |f| [ f["name"], f["path"] ] }.presence }.compact
     x.empty? ? nil : JSON.generate(x)
   end
 
@@ -69,7 +77,11 @@ class BoxDeploy
     s.merge(parsed(extras) || {})
   end
 
-  def secret_values = pasted? ? {} : pairs(secrets)
+  # The files the spec declares — `{ name => container path }` — for the form's boxes.
+  def file_paths = pasted? ? {} : (parsed(extras) || {}).fetch("secret_files", {})
+
+  # Env secrets and file contents alike: both ride stdin, and neither is recorded.
+  def secret_values = pasted? ? {} : pairs(secrets).merge(files.slice(*file_paths.keys))
 
   # What goes to the box on stdin.
   def envelope
@@ -132,5 +144,13 @@ class BoxDeploy
       end
     end
     pairs(secrets).each { |k, v| errors.add(:secrets, "#{k} has no value") if v.blank? }
+  end
+
+  # A declared file left empty would mount an empty file, and the app would fail at
+  # boot for a reason nothing on the page named.
+  def files_given
+    file_paths.each do |name, path|
+      errors.add(:base, "#{name} (#{path}) needs its contents") if files[name].to_s.strip.empty?
+    end
   end
 end

@@ -22,6 +22,9 @@
     <% if (secrets = spec["secrets"]).present? %>
       <dt>Never recorded</dt><dd class="mono"><%= secrets.join(", ") %></dd>
     <% end %>
+    <% if (files = spec["secret_files"]).present? %>
+      <dt>Files, never recorded</dt><dd class="mono"><%= files.map { |n, p| "#{n} → #{p}" }.join(", ") %></dd>
+    <% end %>
     <% if (volumes = spec["volumes"]).present? %>
       <dt>Storage</dt><dd class="mono"><%= volumes.join(", ") %></dd>
     <% end %>
@@ -58,6 +61,9 @@
         data: { turbo: false, controller: "busy", action: "submit->busy#start" } do |f| %>
     <% %i[name image hostnames port health env secrets volumes extras pasted template_id].each do |attr| %>
       <%= f.hidden_field attr %>
+    <% end %>
+    <% @deploy.files.each do |name, contents| %>
+      <%= hidden_field_tag "box_deploy[files][#{name}]", contents %>
     <% end %>
     <div class="ceremony-actions">
       <%= button_tag name: "confirm", value: "1", class: "btn mutate cmd" do %>

@@ -85,6 +85,64 @@ class Machines::AppsControllerTest < ActionDispatch::IntegrationTest
     assert_equal true, JSON.parse(css_select("input[name='box_deploy[extras]']").first["value"])["stop_first"]
   end
 
+  # A template configured by files (Zot: config.json, htpasswd) used to lose them here —
+  # the form carried its env secrets and silently dropped the files, so the box got a
+  # spec with nothing to mount and the app failed at boot.
+  ZOT_FILES = [ { "name" => "config", "path" => "/etc/zot/config.json" },
+                { "name" => "htpasswd", "path" => "/etc/zot/htpasswd" } ].freeze
+
+  def zot_template
+    AppTemplate.create!(name: "zot", port: 5000, health: "/v2/", secret_files: ZOT_FILES)
+               .tap { |t| t.versions.create!(tag: "v1", image: IMAGE, latest: true) }
+  end
+
+  test "a template's secret files get a box each, and reach the box mounted and unrecorded" do
+    sign_in_as @user
+    template = zot_template
+    deploying { get new_machine_box_app_path(@machine, template_id: template.id) }
+    assert_select "textarea[name=?]", "box_deploy[files][config]"
+    assert_select "textarea[name=?]", "box_deploy[files][htpasswd]"
+    extras = css_select("input[name='box_deploy[extras]']").first["value"]
+
+    fields = { name: "zot", image: IMAGE, hostnames: "r.example.com", port: "5000", extras: extras,
+               files: { "config" => '{"storage":{}}', "htpasswd" => "readonly:$2y$05$hash\n" } }
+    called = stub_mutate do
+      deploying { post machine_box_apps_path(@machine), params: { box_deploy: fields, confirm: "1" } }
+    end
+
+    envelope = JSON.parse(called[:stdin])
+    assert_equal({ "config" => "/etc/zot/config.json", "htpasswd" => "/etc/zot/htpasswd" },
+                 envelope.dig("app", "secret_files"))
+    assert_equal '{"storage":{}}', envelope.dig("secret_values", "config")
+    assert_equal "readonly:$2y$05$hash\n", envelope.dig("secret_values", "htpasswd")
+    assert_not_includes called[:command], "readonly:"
+  end
+
+  test "the files survive the preview, so confirming sends what was typed" do
+    sign_in_as @user
+    extras = JSON.generate("secret_files" => { "config" => "/etc/zot/config.json" })
+    fields = { name: "zot", image: IMAGE, hostnames: "r.example.com", extras: extras, files: { "config" => "{}" } }
+    stub_mutate(refuse: true) do
+      deploying { post machine_box_apps_path(@machine), params: { box_deploy: fields } }
+    end
+    assert_select "input[type=hidden][name=?][value=?]", "box_deploy[files][config]", "{}"
+    assert_select ".ceremony .facts dd", %r{config → /etc/zot/config\.json}
+  end
+
+  test "a declared file left empty is refused before anything is sent" do
+    sign_in_as @user
+    extras = JSON.generate("secret_files" => { "config" => "/etc/zot/config.json" })
+    stub_mutate(refuse: true) do
+      deploying do
+        post machine_box_apps_path(@machine),
+             params: { box_deploy: { name: "zot", image: IMAGE, hostnames: "r.example.com", extras: extras,
+                                     files: { "config" => "  " } }, confirm: "1" }
+      end
+    end
+    assert_response :unprocessable_entity
+    assert_select "body", %r{config \(/etc/zot/config\.json\) needs its contents}
+  end
+
   test "a pasted spec replaces the fields, whether spec or whole envelope" do
     sign_in_as @user
     [ { "image" => IMAGE, "hostnames" => [ "p.example.com" ] },

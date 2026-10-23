@@ -87,6 +87,6 @@ class Machines::AppsController < ApplicationController
 
   def deploy_params
     params.fetch(:box_deploy, {}).permit(:name, :image, :hostnames, :port, :health, :env,
-                                         :secrets, :volumes, :extras, :pasted, :template_id)
+                                         :secrets, :volumes, :extras, :pasted, :template_id, files: {})
   end
 end

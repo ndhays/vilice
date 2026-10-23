@@ -467,8 +467,8 @@ enough to make a group read as a group.
   app whose intention and drift should stay in view is added under Apps instead, and
   the page says so. The form has the common fields in three steps — **What to run**
   (name on the box, image), **Where it answers** (hostnames, port, health), **Settings**
-  (environment, written to the record; secrets, whose values are never recorded;
-  storage) — and can **start from a template**, a plain GET that fills every field from
+  (environment, written to the record; secrets, whose values are never recorded; a box
+  for each secret file the template declares, its contents sent the same way; storage) — and can **start from a template**, a plain GET that fills every field from
   an App Template and its latest version, carrying what the form has no field for
   (release, accessories, processes, stop_first) along untouched. *Paste a spec instead* is the
   escape hatch, closed by default; a pasted spec or whole envelope replaces the fields.
