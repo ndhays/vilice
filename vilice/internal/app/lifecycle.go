@@ -10,6 +10,9 @@ import (
 
 // --- rollback ---
 
+// The deploy itself drives Podman and systemd; tests stand in for it here.
+var deployForRollback = runDeploy
+
 func rollbackCmd(args []string) core.Result {
 	_, pos := core.ParseArgs(args)
 	name := firstPos(pos)
@@ -24,8 +27,17 @@ func rollbackCmd(args []string) core.Result {
 		return core.Result{Code: "no_previous", Message: "no last-good image to roll back to"}
 	}
 	st.Image = st.PrevImage
-	return resultOrErr(withAppLock(name, func() error { return runDeploy(&st) }),
-		"rollback_failed", fmt.Sprintf("rolled %q back to %s", name, shortDigest(st.Image)))
+	// The spec changed — its image did — so its digest is recomputed and recorded before
+	// the box is touched, as deploy and update record theirs. Left stale, a backup taken
+	// after a rollback named a spec that was not the one running, and the release step
+	// named its container after the spec it was replacing.
+	st.Digest = appDigest(st)
+	return resultOrErr(withAppLock(name, func() error {
+		if err := core.Record(core.ActorName(), string(core.ScopeOperate), "rollback-spec", []string{name, st.Digest}); err != nil {
+			return &codedError{code: "record_failed", retryable: true, msg: err.Error()}
+		}
+		return deployForRollback(&st)
+	}), "rollback_failed", fmt.Sprintf("rolled %q back to %s", name, shortDigest(st.Image)))
 }
 
 // --- lifecycle ---

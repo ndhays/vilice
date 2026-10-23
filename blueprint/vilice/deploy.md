@@ -419,7 +419,9 @@ knows about a fleet, and the box is told its table by a named actor like everyth
 
 ## `vilice rollback <app>`
 
-Re-deploy the last-good image. Same path as `deploy`.
+Re-deploy the last-good image. Same path as `deploy`. The spec's digest is recomputed for
+the rolled-back image and recorded (`rollback-spec`) before the box is touched, as
+`deploy-spec` and `update-spec` are.
 
 ## `vilice update <app> --image <ref@sha256:…>`
 

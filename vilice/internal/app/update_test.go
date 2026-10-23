@@ -181,3 +181,29 @@ func TestRunUpdateRefusesTheWrongAccount(t *testing.T) {
 		t.Errorf("got %q", res.Code)
 	}
 }
+
+// rollback is the same move backwards, and its spec changes the same way: the digest must
+// be the rolled-back spec's, and recorded before the box is touched.
+func TestRollbackRecomputesAndRecordsTheDigest(t *testing.T) {
+	dir := updateBox(t)
+	st, _ := loadApp("web")
+	st.PrevImage = newImage
+	if err := saveApp(st); err != nil {
+		t.Fatal(err)
+	}
+	stale := st.Digest
+	var deployed appState
+	deployForRollback = func(s *appState) error { deployed = *s; return nil }
+	t.Cleanup(func() { deployForRollback = runDeploy })
+
+	if res := rollbackCmd([]string{"web"}); res.Code != "ok" {
+		t.Fatalf("rollback: %s %s", res.Code, res.Message)
+	}
+	if deployed.Image != newImage || deployed.Digest == stale || deployed.Digest != appDigest(deployed) {
+		t.Errorf("rolled back to %s with digest %s (stale %s)", deployed.Image, deployed.Digest, stale)
+	}
+	record, _ := os.ReadFile(filepath.Join(dir, "record.log"))
+	if !strings.Contains(string(record), "rollback-spec") || !strings.Contains(string(record), deployed.Digest) {
+		t.Errorf("the rolled-back spec's digest must be recorded:\n%s", record)
+	}
+}
