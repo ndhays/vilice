@@ -136,6 +136,11 @@ Rails.application.routes.draw do
   # This operator's own theme and mode. Personal, not fleet policy — and reachable
   # from the rail's toggle as well as the Settings form.
   patch "settings/appearance", to: "settings#appearance", as: :settings_appearance
+  # This console's own box and app name, and updating itself to a new image there
+  # (decisions/update-is-rollback-pointed-forward.md). The update is a ceremony-less act:
+  # the form is its preview, and it is recorded before it runs, like registry-login.
+  patch "settings/self", to: "settings#self_box", as: :settings_self
+  post "settings/update_console", to: "settings#update_console", as: :settings_update_console
   # Dev-only: wipe all fleet data for a clean slate (guarded in the controller).
   delete "settings/data", to: "settings#destroy_data", as: :settings_data
 end

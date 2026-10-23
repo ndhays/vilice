@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_23_110000) do
   create_table "app_templates", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "description"
@@ -164,6 +164,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
     t.datetime "created_at", null: false
     t.boolean "apps_library_only", default: true, null: false
     t.datetime "updated_at", null: false
+    t.integer "self_machine_id"
+    t.string "self_app_name", default: "console", null: false
+    t.index ["self_machine_id"], name: "index_settings_on_self_machine_id"
   end
 
   create_table "snapshots", force: :cascade do |t|
@@ -226,6 +229,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
   add_foreign_key "project_machines", "machines"
   add_foreign_key "project_machines", "projects"
   add_foreign_key "sessions", "users"
+  add_foreign_key "settings", "machines", column: "self_machine_id", on_delete: :nullify
   add_foreign_key "snapshots", "machines"
   add_foreign_key "versions", "app_templates"
 end

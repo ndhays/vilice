@@ -343,6 +343,14 @@ open heartbeat question.
   flow: apps come from the App Library unless the operator turns it off (then a
   custom image is allowed). A **guardrail, not security** — see
   `../../decisions/open/app-library.md`.
+- `self_machine` (→ Machine, nullified if it goes) and `self_app_name` (default
+  `console`) — where this console runs, chosen on Settings and recorded. They are what
+  *Update* on Settings → *This Console* acts on: `vilice update <self_app_name> --image …`
+  over that machine's operate key, which re-deploys the box's saved spec with only the
+  image changed, in the background
+  ([`update-is-rollback-pointed-forward.md`](../../decisions/update-is-rollback-pointed-forward.md)).
+  Stored, not an env var: an update changes only the image, so an env var could only be
+  set by the full deploy it replaces.
 
 ## Observe side — a lens, not the source of truth
 

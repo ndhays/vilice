@@ -41,29 +41,21 @@ arrives as a build context too.
 
 ## Vilice Console deploys Vilice Console — the self-update POC
 
-The sharpest proof of the whole model: **Vilice Console updates itself by SSHing into the
-Vilice on its own box** — the same scoped, recorded connection it uses for any machine,
-just pointed at localhost. No special self-update path, no in-process magic: Vilice Console-
-on-the-box is simply one more machine in the fleet, and its own deploy rides the exact
-operate-scoped, witnessed channel as everything else. If the platform can replace its own
-control plane through its own front door, the front door is real.
+**Built (2026-10-23).** The console updates itself from Settings → *This Console*: it
+runs `vilice update <app> --image …` on the machine you say it runs on, over that
+machine's ordinary operate key — no special path, the machine is one more `Machine` row.
+`update` re-deploys the spec the box holds with only the image changed, so the console's
+secrets are never sent, and it runs in a transient systemd unit, so the connection need
+not outlive the process issuing it — the unit does
+([`update-is-rollback-pointed-forward.md`](../update-is-rollback-pointed-forward.md)). The
+question of a standing connection to its own box needed no answer: one connection per
+act, like any machine.
 
-Mechanically it's the normal blue/green Quadlet deploy aimed at the local box: pull the
-new Vilice Console image, start the inactive color, health-check, flip Caddy, drain the old —
-the running Vilice Console hands off to its successor and exits on SIGTERM. The interesting
-edges: the connection must outlive the process issuing it (the old color is draining while
-the new one takes traffic), and this is exactly the case the OOM-override section guards —
-self-deploy is when Vilice Console-on-the-box is most load-sensitive.
-
-Open: does Vilice Console hold a standing scoped connection to its own Vilice, or open one
-per deploy like any other machine? Lean toward **no special case** — localhost is just a
-`Machine` row with an operate key — which keeps the POC honest. Ties to "Vilice Console runs
-anywhere", the OOM per-app override, and the replica/deploy strategy below.
-
-The general form — letting *any* app redeploy itself through a narrow, app-pinned grant —
-is the **self-update scope** open question in
-[vilice-open-questions.md](vilice-open-questions.md). Vilice Console-deploys-Vilice Console is
-just that scope's first customer.
+Still open here: the OOM per-app override (self-update is when the console is most
+load-sensitive), and the general form — letting *any* app redeploy itself through a
+narrow, app-pinned grant, the **self-update scope** in
+[vilice-open-questions.md](vilice-open-questions.md). The console today uses an operate
+key, which can do more than update itself.
 
 **Two halves, one version.** "Update Vilice Console" is really two moves on different
 channels: the **Vilice Console container** is redeployed like any app (the blue/green deploy

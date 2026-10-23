@@ -25,6 +25,72 @@
   <% end %>
 </div>
 
+<%# This console, on its own box: where it runs, and updating it there. `vilice update`
+    re-deploys the spec the box holds with only the image changed, so the console's
+    secrets stay where they are (decisions/update-is-rollback-pointed-forward.md). %>
+<div class="card setting" id="this-console">
+  <div class="title">This Console</div>
+  <% box = @setting.self_machine %>
+  <% if box && @self_on_box %>
+    <dl class="facts">
+      <dt>Runs as</dt><dd><span class="mono"><%= @setting.self_app_name %></span> on <%= link_to box.name, box %></dd>
+      <dt>Image</dt><dd><%= digest_chip(@self_on_box["image"]) %></dd>
+      <% if (last = @self_on_box["update"]) %>
+        <dt>Last update</dt>
+        <dd>
+          <% if last["state"] == "ok" %>
+            to <%= digest_chip(last["image"]) %>, done
+          <% elsif last["state"] == "failed" %>
+            <strong>failed</strong> — to <%= digest_chip(last["image"]) %>:
+            <span class="mono"><%= last["message"].to_s.truncate(300) %></span>
+          <% else %>
+            to <%= digest_chip(last["image"]) %>, <%= last["state"] %>…
+          <% end %>
+        </dd>
+      <% end %>
+    </dl>
+    <%= form_with url: settings_update_console_path, method: :post, class: "stack-form",
+          data: { controller: "busy", action: "submit->busy#start" } do |f| %>
+      <label class="field">
+        <span>New image</span>
+        <%= f.text_field :image, class: "mono", required: true, autocomplete: "off", spellcheck: false,
+              placeholder: "registry.example.com/vilice-console@sha256:…" %>
+        <small class="muted">Pinned by digest, as <span class="mono">make push</span> prints it.
+          Only the image changes: settings, secrets and storage stay as they are on the box.</small>
+      </label>
+      <p class="ceremony-runs">Recorded, then run over scoped SSH:</p>
+      <%= command_block("vilice update #{@setting.self_app_name} --image <image>") %>
+      <p class="note muted">It runs in the background on the box. This version keeps answering
+        until the new one passes its health check; if it fails, nothing changes, and the
+        reason shows here.</p>
+      <div class="card-actions">
+        <%= button_tag vilice_verb("update"), class: "btn mutate cmd" %>
+      </div>
+    <% end %>
+  <% elsif box %>
+    <p class="note"><%= box.name %> reports no app named <span class="mono"><%= @setting.self_app_name %></span>
+      — check the name below, or that the box answers.</p>
+  <% else %>
+    <p class="note muted">To update this console from here, say which machine it runs on.
+      That machine needs an operate key.</p>
+  <% end %>
+  <details class="paste-spec" <%= "open" unless box %>>
+    <summary>Where this console runs</summary>
+    <%= form_with url: settings_self_path, method: :patch, class: "stack-form" do |f| %>
+      <label class="field"><span>Machine</span>
+        <%= select_tag :self_machine_id, options_from_collection_for_select(@self_machines, :id, :name, box&.id),
+              include_blank: "Not set" %></label>
+      <label class="field"><span>App name on that machine</span>
+        <%= text_field_tag :self_app_name, @setting.self_app_name, class: "mono", autocomplete: "off", spellcheck: false %></label>
+      <div class="card-actions">
+        <%= button_tag class: "btn" do %>
+          <%= safe_join([ icon("save", size: 14), "Save" ]) %>
+        <% end %>
+      </div>
+    <% end %>
+  </details>
+</div>
+
 <%# Appearance — yours, not the fleet's, so it saves on its own. A theme is a set of
     token values; mode picks its light or dark half, or follows your system. %>
 <div class="card setting appearance">

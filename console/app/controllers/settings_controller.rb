@@ -6,6 +6,10 @@ class SettingsController < ApplicationController
     @machine_count = Machine.count
     @shared_count  = Machine.shared.count
     @version       = ViliceConsole::VERSION
+    # This console on its own box: the machines it could be, and what that box reports
+    # about it (the cached status read, the same one the machine page uses).
+    @self_machines = Machine.order(:name)
+    @self_on_box   = @setting.self_on_box
   end
 
   # Toggle fleet policy — a recorded control-plane act.
@@ -18,6 +22,53 @@ class SettingsController < ApplicationController
                     summary: "apps #{restricted ? 'to' : 'beyond'} App Library templates")
     end
     redirect_to settings_path, notice: "Settings updated."
+  end
+
+  # Where this console runs — the machine and its app name there. A recorded act: it
+  # decides which box the Update button below acts on.
+  def self_box
+    setting = Setting.current
+    machine = Machine.find_by(id: params[:self_machine_id].presence)
+    Setting.transaction do
+      setting.update!(self_machine: machine, self_app_name: params[:self_app_name].to_s.strip.presence || "console")
+      Event.record!(actor: Current.user.email_address, action: machine ? "set" : "cleared",
+                    machine: machine,
+                    summary: machine ? "this console runs as #{setting.self_app_name} on #{machine.name}" : "which box this console runs on")
+    end
+    redirect_to settings_path(anchor: "this-console"), notice: "Saved where this console runs."
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to settings_path(anchor: "this-console"), alert: e.record.errors.full_messages.to_sentence
+  end
+
+  # Update this console to a new image, on its own box. `vilice update` re-deploys the
+  # spec the box holds with only the image changed — the console's secrets stay where
+  # they are, and none is sent — and runs in the background, because this process is the
+  # one being replaced. The new version, once healthy, is what answers the next request.
+  def update_console
+    setting = Setting.current
+    machine = setting.self_machine
+    image   = params[:image].to_s.strip
+
+    if machine.nil?
+      return redirect_to settings_path(anchor: "this-console"), alert: "Choose the machine this console runs on first."
+    elsif !machine.operate?
+      return redirect_to settings_path(anchor: "this-console"), alert: "#{machine.name}'s key is observe-only; updating needs operate."
+    elsif !image.match?(Setting::IMAGE_FORMAT)
+      return redirect_to settings_path(anchor: "this-console"),
+                         alert: "Give the image pinned by digest — ref@sha256: and 64 hex characters, as make push prints it."
+    end
+
+    outcome = Vilice::Mutate.run(
+      machine, "update #{setting.self_app_name} --image #{image} --json",
+      actor: Current.user.email_address, action: "updated",
+      summary: "#{setting.self_app_name} on #{machine.name} to #{image[/sha256:\h{12}/]}"
+    )
+    if outcome[:result][:ok]
+      redirect_to settings_path(anchor: "this-console"),
+                  notice: "Updating. The new version takes over once it passes its health check — reload in a minute."
+    else
+      redirect_to settings_path(anchor: "this-console"), alert: outcome[:result][:error]
+    end
   end
 
   # Appearance — this operator's own theme and mode. Not a recorded act: it changes
