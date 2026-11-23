@@ -1,0 +1,12 @@
+#!/bin/sh
+# $OUT is the build, $VERSION the version, $ENV is prod.
+# Anything worth keeping (a digest, a URL) goes in $DEPLOY_NOTES; it's kept in the tag.
+# What to do now, for whoever deployed (where it is, how to open it), goes in
+# $DEPLOY_NEXT: shown when the deploy ends, never kept in the tag.
+# Run only tools the build installed: whatever this starts gets the secrets.
+set -eu
+# To deploy only what main's upstream already has (a shared repo, or a backup),
+# uncomment this. See thalweg's practices: blueprint/practices.md.
+# git merge-base --is-ancestor HEAD 'main@{upstream}' || { echo "Push main first." >&2; exit 1; }
+echo "bin/deploy: fill me in" >&2
+exit 1

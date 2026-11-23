@@ -1,0 +1,12 @@
+# What thalweg needs to deploy this. Every key has a default.
+name = "vilice"
+about = ""  # what it's for, in one line
+shape = "other"  # how it ships
+
+[build]
+run = "bin/build"   # puts the build in $OUT; gets no secrets
+
+[deploy]
+run = "bin/deploy"  # deploys $OUT; gets only these secrets
+secrets = []
+watch = []          # files to show before deploying, beyond the usual ones
