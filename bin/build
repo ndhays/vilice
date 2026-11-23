@@ -1,0 +1,8 @@
+#!/bin/sh
+# Installs the site's packages from its lockfile, here where there are no secrets,
+# so bin/deploy (which holds the Cloudflare token) doesn't fetch them itself.
+# The release is built and signed in bin/deploy: the signing key is outside this
+# sandbox, and a release is built from the commit, in the worktree, by `make release`.
+set -eu
+cd site
+npm ci --no-audit --no-fund

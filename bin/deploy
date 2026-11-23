@@ -1,12 +1,48 @@
 #!/bin/sh
-# $OUT is the build, $VERSION the version, $ENV is prod.
-# Anything worth keeping (a digest, a URL) goes in $DEPLOY_NOTES; it's kept in the tag.
-# What to do now, for whoever deployed (where it is, how to open it), goes in
-# $DEPLOY_NEXT: shown when the deploy ends, never kept in the tag.
-# Run only tools the build installed: whatever this starts gets the secrets.
+# Publishes Vilice, in the order the root Makefile keeps (decisions/the-name-is-vilice.md):
+#   1. the signed release, if ./VERSION hasn't been released yet (`make release`);
+#   2. get.vilice.org, then vilice.org (`make publish`, which checks the Codeberg key).
+# A rollback runs this on an older commit: its VERSION is already released, so only
+# the sites go back. A version is never rebuilt.
+#
+# thalweg's $VERSION is a date and names this deploy; Vilice's version is ./VERSION.
+# $DEPLOY_NOTES are kept in the tag; $DEPLOY_NEXT is shown when the deploy ends.
 set -eu
-# To deploy only what main's upstream already has (a shared repo, or a backup),
-# uncomment this. See thalweg's practices: blueprint/practices.md.
-# git merge-base --is-ancestor HEAD 'main@{upstream}' || { echo "Push main first." >&2; exit 1; }
-echo "bin/deploy: fill me in" >&2
-exit 1
+# Vilice is public: deploy only what's on main's upstream. `git fetch` first if
+# someone else may have pushed.
+git merge-base --is-ancestor HEAD 'main@{upstream}' || { echo "Push main first." >&2; exit 1; }
+
+vilice=$(cat VERSION)
+# vilice/Makefile reads VERSION from the environment before ./VERSION, and thalweg's
+# would win: a release stamped and filed as 2026.11.23.
+unset VERSION
+
+: "${RELEASES:?set RELEASES in thalweg.toml}"
+case $RELEASES in "~/"*) RELEASES="$HOME/${RELEASES#\~/}" ;; esac
+[ -d "$RELEASES/vilice" ] || {
+  echo "No $RELEASES/vilice. get.vilice.org serves every release from there, so" >&2
+  echo "  publishing without it would take the old ones down. Copy the releases" >&2
+  echo "  there first: cp -a CLONE/release/published/. $RELEASES/" >&2
+  exit 1; }
+
+if [ -e "$RELEASES/vilice/$vilice" ]; then
+  echo "Vilice $vilice is already released: publishing the sites only."
+  new=
+else
+  make release RELEASE_DEST="$RELEASES"
+  new=1
+fi
+
+# The site reads the releases from release/published (gitignored), as `make release`
+# leaves them in a clone.
+mkdir -p release/published
+cp -R "$RELEASES/." release/published/
+
+make publish
+
+echo "Vilice $vilice" >> "$DEPLOY_NOTES"
+echo "https://vilice.org" >> "$DEPLOY_NOTES"
+if [ -n "$new" ]; then
+  echo "Released Vilice $vilice. Tag it where you push tags:" >> "$DEPLOY_NEXT"
+  echo "  git tag -a v$vilice $(git rev-parse --short HEAD) -m \"Vilice $vilice\"" >> "$DEPLOY_NEXT"
+fi

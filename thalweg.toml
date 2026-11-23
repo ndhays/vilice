@@ -1,12 +1,21 @@
 # What thalweg needs to deploy this. Every key has a default.
 name = "vilice"
-about = ""  # what it's for, in one line
-shape = "other"  # how it ships
+about = "The signed Vilice release, then get.vilice.org, then vilice.org"
+url = "https://vilice.org"
+shape = "publish"  # how it ships
 
 [build]
-run = "bin/build"   # puts the build in $OUT; gets no secrets
+run = "bin/build"   # installs the site's packages; gets no secrets
 
 [deploy]
-run = "bin/deploy"  # deploys $OUT; gets only these secrets
-secrets = []
-watch = []          # files to show before deploying, beyond the usual ones
+run = "bin/deploy"  # `make release` if VERSION is new, then `make publish`
+secrets = ["CLOUDFLARE_API_TOKEN"]
+# What decides which bytes ship and where they go, beyond the usual watched files.
+watch = ["VERSION", "Makefile", "vilice/Makefile", "install.sh",
+         "site/wrangler.get.jsonc", "site/wrangler.site.jsonc", "site/get.ori",
+         "site/scripts/check-release.js"]
+
+[env]
+# Every release ever published, as vilice/VERSION/…: get.vilice.org serves all of
+# them from here, so it has to outlive the worktree a deploy runs in.
+RELEASES = "~/Releases"
