@@ -180,10 +180,10 @@ stable alias ([`accessories-belong-to-one-app.md`](../accessories-belong-to-one-
 
 ## The subuid range is fixed, and can overlap
 
-`prepare` gives `_vilice` the range `100000:65536`, always. Ubuntu cloud images give
-their login user (`ubuntu`) the same one, so the two overlap: a container user under
-`_vilice` and one under `ubuntu` can map to the same host uid. Containers work, and the
-`ubuntu` user rarely runs any — but two accounts' "unprivileged" users being the same
+`prepare` gives `_vilice` the range `100000:65536`, always. Debian cloud images give
+their login user (`debian`) the same one, so the two overlap: a container user under
+`_vilice` and one under `debian` can map to the same host uid. Containers work, and the
+`debian` user rarely runs any — but two accounts' "unprivileged" users being the same
 uid is a weaker boundary than the design means to offer
 ([`what-a-container-can-reach.md`](../what-a-container-can-reach.md)). Open: pick the next
 free range instead (what `useradd` does for a non-system user), and what to do about a
@@ -361,7 +361,7 @@ built. Open:
   addresses, and per-address limits would block the site. How does a host learn its
   balancer's address, and does Vilice keep Cloudflare's ranges current, or leave CDN boxes
   out?
-- **Loading without wiping ufw.** Ubuntu's `/etc/nftables.conf` starts with
+- **Loading without wiping ufw.** Debian's `/etc/nftables.conf` starts with
   `flush ruleset`, which would remove ufw's rules, SSH included. The likely answer is a
   Vilice-owned file that replaces only `table inet vilice`, loaded by its own unit at boot.
 - **The rules.** The open-connection cap must sit in a set keyed by address; a bare
@@ -382,6 +382,23 @@ and any app-level limit count every visitor as one. The fix is `trusted_proxies`
 host's Caddy (the balancer's private address, or the CDN's ranges), rendered through the
 same allow-list as everything else. Shares the "how does a host know its balancer" question
 above.
+
+## Debian 13 — what only a real box can settle
+
+The switch ([`debian-only.md`](../debian-only.md)) was written without a Debian box. Before
+0.5.0 ships, on a fresh Debian 13 box (`script/devbox.sh up`, then `make audit-box`):
+
+- **The update policy loads as written.** `unattended-upgrade --dry-run -d` lists the
+  security and point-update origins and nothing else; `harden --check` reports true.
+- **Restarts after a library update.** Debian leaves `/run/reboot-required` mostly for
+  kernels, and has no `needrestart` by default, so a patched OpenSSL can sit unused in a
+  running sshd or Caddy until the next reboot. Does harden install `needrestart` (restart
+  services automatically), or is the reboot window enough?
+- **Podman 5.4.** The container-reach measurements
+  ([`what-a-container-can-reach.md`](../what-a-container-can-reach.md)) were on Podman 5.7.
+  Re-run them on 5.4 with pasta; confirm `dbus-user-session` gives `_vilice` a working
+  systemd user session for Quadlet.
+- **`doctor`** passes on a prepared box.
 
 ## Further hardening (later)
 

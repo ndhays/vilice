@@ -19,6 +19,7 @@ The settled *why*, one line per document. What the system *is* lives in
 - [connection-limits-in-nftables](connection-limits-in-nftables.md) — a flood is limited per address in the kernel, not by a Caddy module. Not built.
 - [what-a-container-can-reach](what-a-container-can-reach.md) — measured: not another app's port; yes the cloud metadata service.
 - [the-vpn-is-not-a-control-path](the-vpn-is-not-a-control-path.md) — a private network may carry app traffic, never the operator. Not built.
+- [debian-only](debian-only.md) — Debian 13 and nothing else; `prepare` and `harden` refuse any other OS.
 - [borrowed-substrate](borrowed-substrate.md) — OpenSSH, Caddy, Podman, systemd and restic do the deep work.
 - [security-audit](security-audit.md) — how the code, the box and the gate are each measured, and what runs when.
 

@@ -12,12 +12,14 @@ command runs as the unprivileged `_vilice` user.
 
 ## `vilice harden` — optional, runs first
 
-A self-contained, **generic** Ubuntu lockdown. It is a folder of numbered bash steps
+A self-contained, **generic** Debian 13 lockdown. It is a folder of numbered bash steps
 (`vilice/harden/`), embedded into the binary and run in order; the single signed
 binary still carries everything. The steps:
 
-- **ssh** — key-only, no passwords, classic `ssh.service` (Ubuntu's `ssh.socket`
-  ignores the `Port` directive). On a fresh root box root stays key-only
+- **os** — Debian 13, or it stops. Not a warning: the later steps' claims (which updates
+  install themselves) are true only on the OS they were written and measured on.
+- **ssh** — key-only, no passwords, classic `ssh.service` (an enabled `ssh.socket`
+  would ignore the `Port` directive). On a fresh root box root stays key-only
   (`prohibit-password`) — *not* locked out, since the two root commands need a way back;
   it's the break-glass. Root login is closed entirely (`PermitRootLogin no`) only when a
   non-root admin account (uid ≥ 1000, login shell, keyed) can already log in by key — so
@@ -30,7 +32,10 @@ binary still carries everything. The steps:
   *before* UFW is enabled, for the same reason. **Web ports are not harden's business**:
   80/443 are opened by `prepare <role>`, because whether a box serves web is a fact about
   its role, not about its lockdown.
-- **unattended-upgrades** — automatic *security* patches, with a reboot window. Full
+- **unattended-upgrades** — automatic patches from Debian's own two origins, the security
+  archive and the stable point updates (where Debian puts security fixes too minor for an
+  advisory), and nothing else: not `-updates`, backports or third-party repos. The
+  drop-in clears the shipped lists, so it is the whole policy. A reboot window. Full
   upgrades stay deliberate (`apply-updates`).
 - **swap** and **persistent journald**.
 

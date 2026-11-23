@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Shared helpers and tunables for the harden steps.
 #
-# This whole folder is GENERIC Ubuntu hardening. It knows nothing about vilice —
+# This whole folder is GENERIC Debian 13 hardening. It knows nothing about vilice —
 # no _vilice user, no record, no Podman. It can be run on its own; vilice just
 # carries it (embedded) and can invoke it as an optional first step.
 

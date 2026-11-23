@@ -38,7 +38,8 @@ curl -fsSL https://get.vilice.org/install.sh | sudo bash -s -- {{version}}
 
 ## Set Up a Box
 
-Three steps turn a fresh Ubuntu box into one Vilice runs. Each command has
+Three steps turn a fresh Debian 13 box into one Vilice runs. Debian 13 is the only OS
+Vilice runs on: `harden` and `prepare` refuse any other. Each command has
 [its own page](/commands/).
 
 **Harden it** — optional, and first. Key-only SSH, a firewall with only the SSH port open,
@@ -79,7 +80,7 @@ curl -fsSL https://get.vilice.org/install.sh | sudo bash -s -- {{version}} && su
 Part of Vilice's reliability is its controlled access plane: every command is gated by a
 scoped SSH key, and every action that changes the box is written to a hash-chained log on
 the machine — *before* it is executed, so nothing happens off the books. Security starts by
-locking down a fresh Ubuntu box with standard commands and tooling, and then preparing that
+locking down a fresh Debian box with standard commands and tooling, and then preparing that
 machine for its purpose as an app host or a load balancer.
 
 That holds because **no key gets a shell**. Vilice is the accountable control plane, not
@@ -101,9 +102,9 @@ by open source tools that already do it well:
 - [**Podman**](https://podman.io) — rootless containers, run as Quadlet units under systemd.
 - [**Caddy**](https://caddyserver.com) — hostname routing and automatic HTTPS.
 - [**restic**](https://restic.net) — encrypted, deduplicated backups to a repo you own.
-- [**UFW**](https://help.ubuntu.com/community/UFW) — the firewall: deny inbound, and open only what the box's role serves.
+- [**UFW**](https://wiki.debian.org/Uncomplicated%20Firewall%20%28ufw%29) — the firewall: deny inbound, and open only what the box's role serves.
 - [**fail2ban**](https://www.fail2ban.org) — bans repeated SSH authentication failures.
-- [**unattended-upgrades**](https://wiki.debian.org/UnattendedUpgrades) — automatic security patching, on a schedule you can see.
+- [**unattended-upgrades**](https://wiki.debian.org/UnattendedUpgrades) — Debian's security and point updates, on a schedule you can see.
 
 </div>
 

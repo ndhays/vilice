@@ -254,7 +254,7 @@ func collectUpdates() map[string]any {
 	return map[string]any{"count": count, "security": len(security), "packages": security}
 }
 
-// rebootRequiredPath is the flag file Debian and Ubuntu packages leave when an update
+// rebootRequiredPath is the flag file Debian packages leave when an update
 // only takes effect after a restart. Its sibling, `<path>.pkgs`, lists who asked.
 const rebootRequiredPath = "/run/reboot-required"
 

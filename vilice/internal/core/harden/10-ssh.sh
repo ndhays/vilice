@@ -3,8 +3,8 @@
 # (PermitRootLogin no) when some non-root account can already log in by key,
 # otherwise kept key-only (prohibit-password) so a fresh box isn't locked out.
 #
-# Ubuntu 26.04 enables ssh.socket by default, which intercepts port 22 and ignores
-# the Port directive — switch to the classic daemon. Refuses to disable passwords
+# Debian ships ssh.socket disabled; if someone enabled it, it would intercept the port
+# and ignore the Port directive, so make sure the classic daemon is what listens. Refuses to disable passwords
 # if no key-based login exists at all, to avoid locking everyone out.
 set -euo pipefail
 STEP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

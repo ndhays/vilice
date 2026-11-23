@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Automatic security patches via unattended-upgrades. Security-only; a maintenance
-# window handles reboots when a kernel update needs one. Manual/full upgrades stay
+# Automatic patches via unattended-upgrades, from Debian's own two origins: the
+# security archive, and the stable release's point updates (where Debian puts the
+# security fixes too minor for an advisory). Nothing else: not -updates, not
+# backports, not third-party repos like Caddy's. A maintenance window handles reboots
+# when an update needs one. Manual/full upgrades stay
 # deliberate (that's `vilice apply-updates`).
 set -euo pipefail
 STEP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,11 +26,14 @@ OVERRIDE="/etc/apt/apt.conf.d/52-harden-unattended"
 PERIODIC="/etc/apt/apt.conf.d/20auto-upgrades"
 
 read -r -d '' DESIRED_OVERRIDE <<EOF || true
-// Generic harden policy: security updates only, auto-reboot in a window.
-Unattended-Upgrade::Allowed-Origins {
-  "\${distro_id}:\${distro_codename}-security";
-  "\${distro_id}ESMApps:\${distro_codename}-apps-security";
-  "\${distro_id}ESM:\${distro_codename}-infra-security";
+// Generic harden policy: Debian security + point updates, auto-reboot in a window.
+// The lists are cleared first, so this file is the whole policy whatever the package's
+// 50unattended-upgrades says (apt appends list entries across files).
+#clear Unattended-Upgrade::Allowed-Origins;
+#clear Unattended-Upgrade::Origins-Pattern;
+Unattended-Upgrade::Origins-Pattern {
+  "origin=Debian,codename=\${distro_codename}-security,label=Debian-Security";
+  "origin=Debian,codename=\${distro_codename},label=Debian";
 };
 Unattended-Upgrade::Automatic-Reboot "$UNATTENDED_REBOOT";
 Unattended-Upgrade::Automatic-Reboot-Time "$UNATTENDED_REBOOT_TIME";
@@ -58,8 +64,14 @@ fi
 for timer in apt-daily.timer apt-daily-upgrade.timer; do
   systemctl enable --now "$timer" >/dev/null 2>&1 || true
 done
-if apt-config dump | grep -q "Unattended-Upgrade::Automatic-Reboot \"$UNATTENDED_REBOOT\""; then
-  ok "unattended-upgrades configured"
+# What apt actually loaded, not what we wrote: the security origin is in, and nothing
+# is left from another file's list.
+dump="$(apt-config dump)"
+if printf '%s\n' "$dump" | grep -q "Unattended-Upgrade::Automatic-Reboot \"$UNATTENDED_REBOOT\"" \
+   && printf '%s\n' "$dump" | grep -q 'label=Debian-Security' \
+   && [ "$(printf '%s\n' "$dump" | grep -c '^Unattended-Upgrade::Origins-Pattern:: ')" -eq 2 ] \
+   && ! printf '%s\n' "$dump" | grep -q '^Unattended-Upgrade::Allowed-Origins:: '; then
+  ok "unattended-upgrades configured (Debian security + point updates)"
 else
   fail "unattended-upgrades config did not load"
   exit 1

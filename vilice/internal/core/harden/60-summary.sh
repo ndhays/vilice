@@ -18,6 +18,6 @@ printf '\n%s\n  Box hardened — %s\n%s\n' "$rule" "$osname" "$rule"
 printf '  SSH:       key-only, no passwords\n'
 printf '  Firewall:  ufw active — open: %s\n' "$ports"
 printf '  fail2ban:  %s (sshd jail)\n' "$(systemctl is-active fail2ban 2>/dev/null || echo unknown)"
-printf '  Updates:   unattended security upgrades enabled\n'
+printf '  Updates:   unattended (Debian security + point updates)\n'
 printf '  Swap:      %s\n' "$swap"
 printf '\n  Next: sudo vilice prepare host   (or: balancer)\n\n'

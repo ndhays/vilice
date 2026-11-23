@@ -84,8 +84,8 @@ These are the places I am least sure of. Each is a question, not a known bug.
 12. Which sshd settings outside the key line could undo the forced command for the
     `_vilice` account: a second `AuthorizedKeysFile`, a `Match` block, `ForceCommand`,
     certificates and `TrustedUserCAKeys`, `authorized_principals`?
-13. Does `restrict` cover everything it should on the OpenSSH versions Ubuntu 24.04 and
-    26.04 ship, including anything added to OpenSSH after `restrict` was?
+13. Does `restrict` cover everything it should on the OpenSSH version Debian 13
+    ships, including anything added to OpenSSH after `restrict` was?
 
 **Recording**
 

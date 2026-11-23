@@ -1,6 +1,6 @@
 package core
 
-// `harden` runs a self-contained, generic Ubuntu hardening unit (the harden/ folder).
+// `harden` runs a self-contained, generic Debian hardening unit (the harden/ folder).
 // Those scripts know nothing about vilice — no _vilice user, no record, no Podman.
 // vilice just carries them embedded and runs them in order. Optional and standalone:
 // the typical first step on a fresh box, or skipped entirely. See blueprint/vilice/
@@ -32,6 +32,9 @@ func hardenCmd(args []string) Result {
 
 	if os.Geteuid() != 0 {
 		return Result{Code: "not_root", Message: "harden must run as root"}
+	}
+	if r := requireSupportedOS(); r != nil {
+		return *r
 	}
 
 	dir, err := os.MkdirTemp("", "vilice-harden-")

@@ -44,14 +44,17 @@ func tools(role string) []tool {
 }
 
 // Substrate is what the operator is consenting to when `prepare` asks. The apt
-// package names, which are not quite the tool names: `podman` wants `uidmap` with it,
-// and Caddy comes from its own repo, so apt cannot simulate it until that repo exists.
+// package names, which are not quite the tool names: rootless `podman` wants `uidmap`
+// (subuid mapping), `passt` (pasta, its default network) and `dbus-user-session` (the
+// _vilice user's systemd bus) — named here, not left to apt's Recommends, so a box that
+// turned Recommends off still gets them. Caddy comes from its own repo, so apt cannot
+// simulate it until that repo exists.
 func (Layer) Substrate(role string) core.Substrate {
 	if role == core.RoleBalancer {
 		return core.Substrate{Note: "Caddy from its official apt repo"}
 	}
 	return core.Substrate{
-		Packages: []string{"podman", "uidmap", "restic"},
+		Packages: []string{"podman", "uidmap", "passt", "dbus-user-session", "restic"},
 		Note:     "plus Caddy from its official apt repo",
 	}
 }
@@ -83,7 +86,7 @@ func installPodman() error {
 		fmt.Println("podman already present")
 		return nil
 	}
-	return core.Sh("apt-get install -y podman uidmap")
+	return core.Sh("apt-get install -y podman uidmap passt dbus-user-session")
 }
 
 func installRestic() error {

@@ -32,10 +32,11 @@ fail2ban=$(jbool systemctl is-active --quiet fail2ban)
 # Allowed ports, for the open-port narrative (best-effort).
 ports=$(ufw status 2>/dev/null | awk '/ALLOW/{print $1}' | sort -u | paste -sd',' - || true)
 
-# --- 30-unattended: security auto-updates configured ---
+# --- 30-unattended: security auto-updates configured, from Debian's security archive ---
 unattended=false
 if pkg_installed unattended-upgrades \
-   && grep -rqs 'Unattended-Upgrade "1"' /etc/apt/apt.conf.d/ 2>/dev/null; then
+   && grep -rqs 'Unattended-Upgrade "1"' /etc/apt/apt.conf.d/ 2>/dev/null \
+   && apt-config dump 2>/dev/null | grep -q 'label=Debian-Security'; then
   unattended=true
 fi
 

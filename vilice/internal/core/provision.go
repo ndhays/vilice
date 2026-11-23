@@ -28,6 +28,9 @@ func prepareCmd(args []string) Result {
 	if os.Geteuid() != 0 {
 		return Result{Code: "not_root", Message: "prepare must run as root"}
 	}
+	if r := requireSupportedOS(); r != nil {
+		return *r
+	}
 	yes := hasFlag(args, "-y", "--yes")
 
 	role, err := roleFromArgs(args)
@@ -366,18 +369,61 @@ func printPrepareSummary() {
 	fmt.Printf("    vilice authorize <pubkey> --client <name> --scope operate\n\n")
 }
 
-// osPretty reads PRETTY_NAME from /etc/os-release (shared with harden.go).
+// osPretty is PRETTY_NAME from /etc/os-release (shared with harden.go).
 func osPretty() string {
-	b, err := os.ReadFile("/etc/os-release")
-	if err != nil {
-		return "Linux"
-	}
-	for _, ln := range strings.Split(string(b), "\n") {
-		if strings.HasPrefix(ln, "PRETTY_NAME=") {
-			return strings.Trim(strings.TrimPrefix(ln, "PRETTY_NAME="), `"`)
-		}
+	if name := readOSRelease("/etc/os-release")["PRETTY_NAME"]; name != "" {
+		return name
 	}
 	return "Linux"
+}
+
+// The one OS Vilice prepares and hardens. harden's steps make security claims — which
+// updates install themselves, which origins they come from — that hold only on the OS
+// they were written for and measured on, so any other is refused rather than warned
+// about. A new Debian release is a Vilice release that adds it, after a box audit.
+// See decisions/debian-only.md.
+const (
+	supportedOSID      = "debian"
+	supportedOSVersion = "13"
+	supportedOSName    = "Debian 13"
+)
+
+// readOSRelease parses an os-release file into its KEY=value pairs, unquoted. A missing
+// or unreadable file is an empty map, which checkOS refuses.
+func readOSRelease(path string) map[string]string {
+	b, err := os.ReadFile(path) // #nosec G304 -- a fixed system path, or a test's fixture
+	if err != nil {
+		return map[string]string{}
+	}
+	m := map[string]string{}
+	for _, ln := range strings.Split(string(b), "\n") {
+		k, v, ok := strings.Cut(strings.TrimSpace(ln), "=")
+		if !ok || strings.HasPrefix(k, "#") {
+			continue
+		}
+		m[k] = strings.Trim(v, `"'`)
+	}
+	return m
+}
+
+// checkOS refuses anything but the supported OS, naming what it found.
+func checkOS(release map[string]string) error {
+	if release["ID"] == supportedOSID && release["VERSION_ID"] == supportedOSVersion {
+		return nil
+	}
+	found := release["PRETTY_NAME"]
+	if found == "" {
+		found = "an OS without /etc/os-release"
+	}
+	return fmt.Errorf("Vilice runs on %s only; this box is %s", supportedOSName, found)
+}
+
+// requireSupportedOS is the gate prepare and harden pass before changing anything.
+func requireSupportedOS() *Result {
+	if err := checkOS(readOSRelease("/etc/os-release")); err != nil {
+		return &Result{Code: "unsupported_os", Message: err.Error()}
+	}
+	return nil
 }
 
 func CmdFirstLine(name string, args ...string) string {

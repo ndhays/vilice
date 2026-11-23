@@ -152,7 +152,7 @@ vilice deploy console < envelope.json
 ```
 
 To keep the value out of a second file, build the envelope in the pipe instead. `jq` does
-that in one line, though it is not on a fresh Ubuntu box — `sudo apt install jq` first:
+that in one line, though it is not on a fresh Debian box — `sudo apt install jq` first:
 
 ```bash
 jq --arg key "$RAILS_MASTER_KEY" \
@@ -162,7 +162,7 @@ jq --arg key "$RAILS_MASTER_KEY" \
 
 The deploy scripts in
 [`examples/`](https://github.com/ndhays/vilice/tree/main/examples) build
-the same envelope with `python3`, which every Ubuntu box already has.
+the same envelope with `python3` instead (`sudo apt install python3` if the box has none).
 
 ## Examples
 
