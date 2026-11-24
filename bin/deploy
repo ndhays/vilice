@@ -22,7 +22,7 @@ case $RELEASES in "~/"*) RELEASES="$HOME/${RELEASES#\~/}" ;; esac
 [ -d "$RELEASES/vilice" ] || {
   echo "No $RELEASES/vilice. get.vilice.org serves every release from there, so" >&2
   echo "  publishing without it would take the old ones down. Copy the releases" >&2
-  echo "  there first: cp -a CLONE/release/published/. $RELEASES/" >&2
+  echo "  there first: cp -a CLONE/release/published/vilice $RELEASES/" >&2
   exit 1; }
 
 if [ -e "$RELEASES/vilice/$vilice" ]; then
@@ -34,9 +34,10 @@ else
 fi
 
 # The site reads the releases from release/published (gitignored), as `make release`
-# leaves them in a clone.
-mkdir -p release/published
-cp -R "$RELEASES/." release/published/
+# leaves them in a clone. Only vilice/: RELEASES may be shared with other projects'
+# releases, and get.vilice.org serves everything in that folder.
+mkdir -p release/published/vilice
+cp -R "$RELEASES/vilice/." release/published/vilice/
 
 make publish
 

@@ -17,5 +17,6 @@ watch = ["VERSION", "Makefile", "vilice/Makefile", "install.sh",
 
 [env]
 # Every release ever published, as vilice/VERSION/…: get.vilice.org serves all of
-# them from here, so it has to outlive the worktree a deploy runs in.
-RELEASES = "~/Releases"
+# them from here, so it has to outlive the worktree a deploy runs in. Shared with this
+# host's other projects; bin/deploy publishes only vilice/.
+RELEASES = "~/releases"
