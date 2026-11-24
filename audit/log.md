@@ -40,11 +40,10 @@ Folded into harden/: <changes, or none>
 
 <!-- newest entries on top -->
 
-## Draft: v0.5.0 — measured 2026-11-24, not final
+## v0.5.0 — 2026-11-24
 
-Becomes `## v0.5.0 — <date>` once the box is measured again after
-`harden/45-permissions.sh` and `harden --check` is read. (`make release` looks for that
-heading; this one deliberately doesn't match it.)
+The Debian 13 release: `prepare` and `harden` refuse any other OS
+(`decisions/debian-only.md`).
 
 Code (make audit)
 - govulncheck: **clean** after a toolchain bump. go1.27.3 had GO-2026-6859 (net/http
@@ -57,10 +56,11 @@ version)
 - ssh-audit:   **no fails or warnings**, after harden's algorithm set.
 - open ports:  **22** (80/443 allowed but closed: no apps deployed, so Caddy isn't
   listening; everything else filtered).
-- lynis index: **67 → 74** (44 → 35 suggestions). The one warning, PKGS-7388, is a false
-  alarm (Lynis doesn't read deb822 `.sources`). Every suggestion left out, and why:
-  `decisions/security-audit.md`.
-- harden --check: <to read after the last harden>
+- lynis index: **67 → 74** (44 → 35 suggestions), and 74 again after cron and
+  sshd_config went root-only: what is left is what was left out on purpose. The one
+  warning, PKGS-7388, is a false alarm (Lynis doesn't read deb822 `.sources`). Every
+  suggestion left out, and why: `decisions/security-audit.md`.
+- harden --check: **hardened** — all six, `kernel_hardened` included.
 
 Folded into harden/ from this audit: modern sshd algorithms only, and a rejected drop-in
 put back; needrestart (automatic); Caddy's repo in the update policy (by `prepare`);

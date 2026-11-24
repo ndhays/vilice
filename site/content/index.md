@@ -42,8 +42,9 @@ Three steps turn a fresh Debian 13 box into one Vilice runs. Debian 13 is the on
 Vilice runs on: `harden` and `prepare` refuse any other. Each command has
 [its own page](/commands/).
 
-**Harden it** — optional, and first. Key-only SSH, a firewall with only the SSH port open,
-and automatic security updates. Log in with a key, not a password, before you run it.
+**Harden it** — optional, and first. Key-only SSH with modern algorithms, a firewall with
+only the SSH port open, automatic security updates that restart what they patch, and
+kernel settings. Log in with a key, not a password, before you run it.
 
 ```bash
 sudo vilice harden

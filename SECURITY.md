@@ -57,9 +57,17 @@ Vilice refuses to run them as root. Consequences:
   admin account (uid ≥ 1000, login shell, keyed) can already log in by key; the `_vilice`
   system user (uid < 1000) never triggers this. The root password stays as a console
   break-glass either way;
+- only modern SSH algorithms (key exchange, ciphers, MACs, host keys), as ssh-audit
+  grades them;
 - a host firewall (UFW) and intrusion mitigation (fail2ban);
-- automatic security updates (unattended-upgrades);
-- OS, logging, and swap baseline settings.
+- automatic updates from Debian's security archive and point releases
+  (unattended-upgrades), with the services they patch restarted (needrestart);
+- kernel settings, and unused network protocols (dccp, sctp, rds, tipc) blocked;
+- cron and sshd's configuration readable by root only;
+- logging and swap baseline settings.
+
+It runs on Debian 13 only, and refuses any other OS: its claims about updates are true
+only where they were written and measured.
 
 It is deliberately generic: it knows nothing about Vilice and can stand alone.
 

@@ -20,10 +20,13 @@ var Commands = []Command{
 	// a tampered install off the box.
 	{Name: "harden", Scope: ScopeRoot, SkipBinaryCheck: true,
 		Summary: "Optional OS / sshd hardening (first, before prepare)",
-		Long: `Locks down the operating system: key-only SSH, a firewall holding open
-sshd's port alone, and fail2ban. These scripts know nothing about
-Vilice — no _vilice user, no record, no containers — so a box is
-hardened whether or not it ever runs an app.
+		Long: `Locks down a Debian 13 box, and refuses any other OS: key-only SSH with
+modern algorithms only, a firewall holding open sshd's port alone,
+fail2ban, unattended updates from Debian's security and point releases
+with the services they patch restarted, kernel settings, unused network
+protocols blocked, and cron and sshd's config root-only. These
+scripts know nothing about Vilice — no _vilice user, no record, no
+containers — so a box is hardened whether or not it ever runs an app.
 
 Hardening is deliberately separate from prepare, and optional. The
 accountability floor never lives here, so an un-hardened box is still

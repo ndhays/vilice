@@ -385,13 +385,11 @@ above.
 
 ## Debian 13 — what only a real box can settle
 
-The switch ([`debian-only.md`](../debian-only.md)) was written without a Debian box. Before
-0.5.0 ships, on a fresh Debian 13 box (`script/devbox.sh up`, then `make audit-box`):
+The first Debian 13 box settled the update policy, `doctor` and the box audit
+(`audit/log.md`, v0.5.0). Still to watch on one:
 
-- **The update policy loads as written.** With this harden (the first box ran 0.4.4's,
-  which still listed Ubuntu's ESM origins), `unattended-upgrade --dry-run -d` lists
-  Debian's two origins, Caddy's after `prepare`, and nothing else; `harden --check`
-  reports true.
+- **Caddy's origin.** After `prepare`, `unattended-upgrade --dry-run -d` lists
+  `origin=cloudsmith/caddy/stable` among the allowed origins.
 - **needrestart under unattended-upgrades.** After an update that touches a library sshd
   uses, the next unattended run restarts sshd (journal) and leaves `user@*.service` and
   the apps alone. `needrestart -r a -b` shows what it would do.
