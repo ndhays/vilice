@@ -17,7 +17,14 @@ vilice=$(cat VERSION)
 # would win: a release stamped and filed as 2026.11.23.
 unset VERSION
 
+# The release signing key comes from thalweg's secrets, and each secret goes only to
+# the step that needs it: the key to `make release`, the Cloudflare token to
+# `make publish`. Both steps run tools fetched at build time (go run, npm, wrangler).
+signing_key=${VILICE_SIGNING_KEY:-}
+unset VILICE_SIGNING_KEY
+
 : "${RELEASES:?set RELEASES in thalweg.toml}"
+# shellcheck disable=SC2088 # matching a literal ~, as [env] keeps it
 case $RELEASES in "~/"*) RELEASES="$HOME/${RELEASES#\~/}" ;; esac
 [ -d "$RELEASES/vilice" ] || {
   echo "No $RELEASES/vilice. get.vilice.org serves every release from there, so" >&2
@@ -29,9 +36,17 @@ if [ -e "$RELEASES/vilice/$vilice" ]; then
   echo "Vilice $vilice is already released: publishing the sites only."
   new=
 else
-  make release RELEASE_DEST="$RELEASES"
+  [ -n "$signing_key" ] || { echo "VILICE_SIGNING_KEY is empty: thalweg secret set VILICE_SIGNING_KEY" >&2; exit 1; }
+  # On disk only while the release is signed: openssl reads a file.
+  key_file=$(mktemp)
+  trap 'rm -f "$key_file"' EXIT
+  printf '%s' "$signing_key" > "$key_file"
+  env -u CLOUDFLARE_API_TOKEN -u CLOUDFLARE_ACCOUNT_ID \
+    make release RELEASE_DEST="$RELEASES" SIGNING_KEY="$key_file"
+  rm -f "$key_file"
   new=1
 fi
+unset signing_key
 
 # The site reads the releases from release/published (gitignored), as `make release`
 # leaves them in a clone. Only vilice/: RELEASES may be shared with other projects'

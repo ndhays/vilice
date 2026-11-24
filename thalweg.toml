@@ -8,8 +8,8 @@ shape = "publish"  # how it ships
 run = "bin/build"   # installs the site's packages; gets no secrets
 
 [deploy]
-run = "bin/deploy"  # `make release` if VERSION is new, then `make publish`
-secrets = ["CLOUDFLARE_API_TOKEN"]
+run = "bin/deploy"  # `make release` if VERSION is new, then `make publish`; gets only these secrets
+secrets = ["CLOUDFLARE_API_TOKEN", "VILICE_SIGNING_KEY"]  # the key: the ed25519 PEM matching vilice/release-key.pub
 # What decides which bytes ship and where they go, beyond the usual watched files.
 watch = ["VERSION", "Makefile", "vilice/Makefile", "install.sh",
          "site/wrangler.get.jsonc", "site/wrangler.site.jsonc", "site/get.ori",
