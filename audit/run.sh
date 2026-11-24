@@ -58,7 +58,12 @@ fi
 
 # ── nmap: what's actually reachable ────────────────────────────────────────
 if have nmap; then
-  run_step nmap nmap -Pn -p- --open "$(ssh_host_only)"
+  # Every port, so an unexpected one can't hide. ufw drops rather than refuses, so each
+  # closed port waits out a timeout: without a floor on the rate this takes most of an
+  # hour and looks hung. About two minutes this way.
+  echo
+  echo "nmap: scanning all 65535 ports on $(ssh_host_only), about two minutes…"
+  run_step nmap nmap -Pn -p- --open -T4 --max-retries 1 --min-rate 1000 "$(ssh_host_only)"
   # Flag any open port outside the expected set.
   opened=$(awk '/^[0-9]+\/tcp +open/{sub("/.*","",$1); print $1}' "$OUT/nmap.txt" | sort -un | paste -sd',' -)
   echo "  open ports: ${opened:-none}   (expected: $EXPECTED_PORTS)"

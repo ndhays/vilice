@@ -25,6 +25,11 @@ binary still carries everything. The steps:
   non-root admin account (uid ≥ 1000, login shell, keyed) can already log in by key — so
   the box is never left with no key-based login. The `_vilice` user is a system account
   (uid < 1000) and never trips this; it's irrelevant to the root-login decision.
+  Only modern algorithms, as ssh-audit grades them: post-quantum hybrid or curve25519 key
+  exchange; AES-GCM/CTR ciphers (no chacha20-poly1305, the Terrapin-exposed one); MACs
+  encrypt-then-MAC only; host keys ed25519 or RSA with SHA-2. Users' own key types are not
+  narrowed. A drop-in sshd rejects is put back before anything reloads, so a bad one can
+  never be what the next boot starts with.
 - **firewall** — UFW (deny inbound, allow outbound, **allow sshd's port and nothing
   else**) and fail2ban (ban repeated sshd auth failures). The port allowed is the one
   `sshd` is actually configured for, never the constant 22 — a rule that assumes 22 locks

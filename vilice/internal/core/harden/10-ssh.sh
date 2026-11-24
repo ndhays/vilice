@@ -4,8 +4,16 @@
 # otherwise kept key-only (prohibit-password) so a fresh box isn't locked out.
 #
 # Debian ships ssh.socket disabled; if someone enabled it, it would intercept the port
-# and ignore the Port directive, so make sure the classic daemon is what listens. Refuses to disable passwords
-# if no key-based login exists at all, to avoid locking everyone out.
+# and ignore the Port directive, so make sure the classic daemon is what listens.
+# Refuses to disable passwords if no key-based login exists at all, to avoid locking
+# everyone out.
+#
+# Algorithms: only modern ones, per ssh-audit. Key exchange is post-quantum hybrid or
+# curve25519; ciphers are AES-GCM/CTR (no chacha20-poly1305, the Terrapin-exposed one,
+# no CBC); MACs are encrypt-then-MAC only (no SHA-1, no encrypt-and-MAC); host keys are
+# ed25519 or RSA signed with SHA-2 (no ECDSA, no ssh-rsa/SHA-1). Every client Vilice
+# expects is a current OpenSSH. What a *user's* key may be (ecdsa included) is left
+# alone: narrowing that could lock someone out.
 set -euo pipefail
 STEP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$STEP_DIR/common.sh"
@@ -62,20 +70,35 @@ PasswordAuthentication no
 KbdInteractiveAuthentication no
 PubkeyAuthentication yes
 PermitEmptyPasswords no
+KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org
+Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com
+HostKeyAlgorithms ssh-ed25519,ssh-ed25519-cert-v01@openssh.com,sk-ssh-ed25519@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,rsa-sha2-512,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256,rsa-sha2-256-cert-v01@openssh.com
 EOF
 
+# The old drop-in is kept until the new one validates. A config sshd rejects must not
+# stay on disk: the next restart or reboot would leave the box with no sshd at all.
+OLD="" WROTE=false
 if [ -f "$DROPIN" ] && diff -q <(echo "$CONF") "$DROPIN" >/dev/null 2>&1; then
   ok "sshd drop-in already current"
 else
+  if [ -f "$DROPIN" ]; then OLD="$(mktemp)"; cp -p "$DROPIN" "$OLD"; fi
   echo "$CONF" > "$DROPIN"
   chmod 644 "$DROPIN"
+  WROTE=true
   ok "wrote $DROPIN"
 fi
 
 if ! sshd -t; then
-  fail "sshd config invalid — leaving drop-in in place for inspection, not reloading"
+  if [ "$WROTE" = true ]; then
+    if [ -n "$OLD" ]; then mv "$OLD" "$DROPIN"; else rm -f "$DROPIN"; fi
+    fail "sshd rejected the new config — put the previous one back, not reloading"
+  else
+    fail "sshd config invalid (not from this step) — not reloading"
+  fi
   exit 1
 fi
+if [ -n "$OLD" ]; then rm -f "$OLD"; fi
 # Reload (not restart) so the live session survives; restart only if not running.
 systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || systemctl restart ssh
 ok "sshd hardened (key-only, no passwords; root login: $ROOT_LOGIN)"
