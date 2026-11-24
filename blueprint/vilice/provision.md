@@ -29,7 +29,14 @@ binary still carries everything. The steps:
   exchange; AES-GCM/CTR ciphers (no chacha20-poly1305, the Terrapin-exposed one); MACs
   encrypt-then-MAC only; host keys ed25519 or RSA with SHA-2. Users' own key types are not
   narrowed. A drop-in sshd rejects is put back before anything reloads, so a bad one can
-  never be what the next boot starts with.
+  never be what the next boot starts with. Also `LogLevel VERBOSE` (which key logged in),
+  no X11 or agent forwarding, and encrypted client-alive probes in place of TCP
+  keepalives.
+- **kernel** — sysctls that close common paths from unprivileged code to kernel bugs,
+  hide kernel addresses, and stop the box acting as a router (`/etc/sysctl.d/90-harden.conf`),
+  and the dccp, sctp, rds and tipc modules blocked from loading
+  (`/etc/modprobe.d/harden-protocols.conf`). `harden --check` reports it as
+  `kernel_hardened`.
 - **firewall** — UFW (deny inbound, allow outbound, **allow sshd's port and nothing
   else**) and fail2ban (ban repeated sshd auth failures). The port allowed is the one
   `sshd` is actually configured for, never the constant 22 — a rule that assumes 22 locks

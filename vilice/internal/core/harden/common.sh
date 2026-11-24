@@ -15,6 +15,29 @@ UNATTENDED_REBOOT_TIME="${UNATTENDED_REBOOT_TIME:-04:00}"
 UNATTENDED_RANDOM_SLEEP="${UNATTENDED_RANDOM_SLEEP:-1800}"
 SWAP_SIZE="${SWAP_SIZE:-2G}"
 
+# Kernel settings 25-kernel.sh applies and check.sh verifies: one list, so they can't
+# drift apart. The why for each is in 25-kernel.sh.
+# shellcheck disable=SC2034 # read by 25-kernel.sh and check.sh
+HARDEN_SYSCTLS=(
+  "dev.tty.ldisc_autoload=0"
+  "fs.protected_fifos=2"
+  "kernel.kptr_restrict=2"
+  "kernel.sysrq=0"
+  "kernel.unprivileged_bpf_disabled=1"
+  "kernel.yama.ptrace_scope=1"
+  "net.core.bpf_jit_harden=2"
+  "net.ipv4.conf.all.log_martians=1"
+  "net.ipv4.conf.default.log_martians=1"
+  "net.ipv4.conf.all.rp_filter=2"
+  "net.ipv4.conf.default.rp_filter=2"
+  "net.ipv4.conf.all.send_redirects=0"
+  "net.ipv4.conf.default.send_redirects=0"
+)
+# Network protocols nothing on the box uses, whose modules the kernel would otherwise
+# load on demand — from inside a rootless container too.
+# shellcheck disable=SC2034 # read by 25-kernel.sh and check.sh
+HARDEN_UNUSED_PROTOCOLS=(dccp sctp rds tipc)
+
 C_GREEN='\033[0;32m'; C_YELLOW='\033[0;33m'; C_RED='\033[0;31m'; C_RESET='\033[0m'
 info() { printf '  %s\n' "$*"; }
 ok()   { printf "  ${C_GREEN}OK${C_RESET}   %s\n" "$*"; }

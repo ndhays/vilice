@@ -46,5 +46,14 @@ if pkg_installed unattended-upgrades \
   unattended=true
 fi
 
-printf '{"ssh_root_login_disabled":%s,"password_auth_disabled":%s,"firewall_active":%s,"fail2ban_active":%s,"unattended_upgrades":%s,"open_ports":"%s"}\n' \
-  "$ssh_root" "$ssh_pass" "$ufw_active" "$fail2ban" "$unattended" "$ports"
+# --- 25-kernel: every setting live, every unused protocol blocked ---
+kernel=true
+for kv in "${HARDEN_SYSCTLS[@]}"; do
+  [ "$(sysctl -n "${kv%%=*}" 2>/dev/null)" = "${kv#*=}" ] || kernel=false
+done
+for p in "${HARDEN_UNUSED_PROTOCOLS[@]}"; do
+  modprobe -n -v "$p" 2>/dev/null | grep -q '/bin/false' || kernel=false
+done
+
+printf '{"ssh_root_login_disabled":%s,"password_auth_disabled":%s,"firewall_active":%s,"fail2ban_active":%s,"unattended_upgrades":%s,"kernel_hardened":%s,"open_ports":"%s"}\n' \
+  "$ssh_root" "$ssh_pass" "$ufw_active" "$fail2ban" "$unattended" "$kernel" "$ports"

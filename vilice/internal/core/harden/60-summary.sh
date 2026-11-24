@@ -19,5 +19,6 @@ printf '  SSH:       key-only, no passwords\n'
 printf '  Firewall:  ufw active — open: %s\n' "$ports"
 printf '  fail2ban:  %s (sshd jail)\n' "$(systemctl is-active fail2ban 2>/dev/null || echo unknown)"
 printf '  Updates:   unattended (Debian security + point updates), services restarted\n'
+printf '  Kernel:    hardened settings, unused protocols blocked\n'
 printf '  Swap:      %s\n' "$swap"
 printf '\n  Next: sudo vilice prepare host   (or: balancer)\n\n'

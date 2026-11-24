@@ -400,6 +400,13 @@ The switch ([`debian-only.md`](../debian-only.md)) was written without a Debian 
   Re-run them on 5.4 with pasta; confirm `dbus-user-session` gives `_vilice` a working
   systemd user session for Quadlet.
 
+## Sandboxing Vilice's own systemd units
+
+Lynis (BOOT-5264) flags services without systemd's sandboxing options. Vilice writes
+`vilice-snapshot.service` and every app's Quadlet unit: which of `ProtectSystem`,
+`ProtectHome`, `NoNewPrivileges`, `PrivateTmp` and the like can each take without breaking
+what it does? Its own job, not harden's.
+
 ## Further hardening (later)
 
 None are near-term:

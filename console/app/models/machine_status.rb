@@ -23,7 +23,8 @@ class MachineStatus
     "password_auth_disabled"  => "password auth enabled",
     "firewall_active"         => "firewall inactive",
     "fail2ban_active"         => "fail2ban not running",
-    "unattended_upgrades"     => "unattended upgrades off"
+    "unattended_upgrades"     => "unattended upgrades off",
+    "kernel_hardened"         => "kernel not hardened"
   }.freeze
 
   def initialize(result)

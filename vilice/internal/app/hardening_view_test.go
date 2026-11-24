@@ -21,7 +21,7 @@ func TestCollectHardening(t *testing.T) {
 
 	body := `{"ssh_root_login_disabled":true,"password_auth_disabled":true,` +
 		`"firewall_active":true,"fail2ban_active":true,"unattended_upgrades":true,` +
-		`"checked_at":"2026-06-10T00:00:00Z"}`
+		`"kernel_hardened":true,"checked_at":"2026-06-10T00:00:00Z"}`
 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}

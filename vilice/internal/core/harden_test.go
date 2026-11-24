@@ -31,6 +31,7 @@ func TestHardeningDrift(t *testing.T) {
 	full := HardeningPosture{
 		SSHRootLoginDisabled: true, PasswordAuthDisabled: true,
 		FirewallActive: true, Fail2banActive: true, UnattendedUpgrades: true,
+		KernelHardened: true,
 	}
 	if !full.Hardened() {
 		t.Errorf("a fully-hardened posture should report hardened(); drift = %v", full.Drift())

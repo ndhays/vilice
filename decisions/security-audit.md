@@ -69,6 +69,52 @@ Observe is **not** escalated. Root publishes a fact (`/var/lib/vilice/hardening.
 out of `doctor`, which runs as `_vilice` and answers "ready to deploy?"; `doctor` prints
 a pointer.
 
+## Lynis is read, not obeyed
+
+Lynis scores a box against a general profile, and a number of its suggestions don't fit
+this one. Each is either folded into `harden/` or left out here, with the reason, so the
+hardening index is explained rather than chased. From the first Debian 13 box
+(2026-11-24, index 67, 1 warning, 44 suggestions):
+
+**Folded in.** Kernel settings (KRNL-6000, `harden/25-kernel.sh`), except
+`kernel.modules_disabled`, and `rp_filter` loose (2) rather than strict; the unused
+protocols dccp, sctp, rds and tipc (NETW-3200); and from SSH-7408 `LogLevel VERBOSE`,
+`X11Forwarding no`, `AllowAgentForwarding no`, `ClientAliveCountMax 2` (with an
+interval, so it does something) and `TCPKeepAlive no`.
+
+**Left out, and why:**
+
+- **PKGS-7388, the one warning: "no security repository".** A false alarm. Debian 13
+  lists repositories in deb822 `.sources` files, which this Lynis doesn't read;
+  `trixie-security` is in `debian.sources`.
+- **`kernel.modules_disabled=1`.** Stops every module load after boot; Podman, ufw and
+  nftables load modules as they go.
+- **`rp_filter=1`.** Strict drops real traffic on a box with a private network as well as
+  the public one. Loose still drops what no route leads back to.
+- **SSH: `AllowTcpForwarding no`, `MaxAuthTries 3`, `MaxSessions 2`, another port.**
+  Vilice's keys are `restrict`ed already, and an operator's tunnels are theirs; with no
+  passwords, fewer tries mostly locks out someone with several keys loaded; moving the
+  port hides nothing from a scan.
+- **Passwords (AUTH-9230/9262/9286).** Nobody logs in with one.
+- **umask 027 (AUTH-9328).** The record and units are world-readable by design, and the
+  caddy user reads route files root writes.
+- **GRUB password, separate /home and /var, USB and FireWire storage (BOOT-5122,
+  FILE-6310, USB-1000, STRG-1846).** On a cloud VM the provider account is the console.
+- **Banners (BANN-7126/7130).** Theatre.
+- **apt-listbugs, apt-listchanges (DEB-0810/0811).** They stop and ask; updates here are
+  unattended.
+- **libpam-tmpdir, debsums, apt-show-versions (DEB-0280, PKGS-7370/7394).** Little gain
+  for a change to every session or another tool to keep.
+- **Malware scanner, file integrity, auditd, process accounting, sysstat (HRDN-7230,
+  FINT-4350, ACCT-9622/9626/9628).** A large surface for what is left: Vilice records its
+  own acts, and the digest of the binary a box authorizes.
+- **Lynis's own age, DNS domain, unused firewall rules, automation tools (LYNIS,
+  NAME-4028, FIRE-4513, TOOL-5002).** Informational.
+
+**Still open:** off-host logs (LOGG-2154) and sandboxing Vilice's own systemd units
+(BOOT-5264) — see `decisions/open/vilice-open-questions.md`; and FILE-7524, whose files
+weren't captured yet.
+
 ## Roads not taken
 
 - **OpenSCAP.** Enterprise compliance machinery with weak Ubuntu content. `Lynis` covers

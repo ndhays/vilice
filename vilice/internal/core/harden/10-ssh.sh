@@ -14,6 +14,14 @@
 # ed25519 or RSA signed with SHA-2 (no ECDSA, no ssh-rsa/SHA-1). Every client Vilice
 # expects is a current OpenSSH. What a *user's* key may be (ecdsa included) is left
 # alone: narrowing that could lock someone out.
+#
+# Also: VERBOSE logs which key each login used. No X11 or agent forwarding: an agent
+# forwarded to the box is usable by anyone root on it. Dead sessions are found by
+# encrypted client-alive probes (300s x 2) rather than spoofable TCP keepalives.
+# Left at OpenSSH's defaults on purpose: AllowTcpForwarding (Vilice's keys are
+# `restrict`ed already, and an operator's tunnels are theirs), MaxAuthTries (with no
+# passwords, a lower number mostly locks out someone with several keys loaded),
+# MaxSessions, and the port (moving it hides nothing from a scan).
 set -euo pipefail
 STEP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$STEP_DIR/common.sh"
@@ -70,6 +78,12 @@ PasswordAuthentication no
 KbdInteractiveAuthentication no
 PubkeyAuthentication yes
 PermitEmptyPasswords no
+LogLevel VERBOSE
+X11Forwarding no
+AllowAgentForwarding no
+ClientAliveInterval 300
+ClientAliveCountMax 2
+TCPKeepAlive no
 KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org
 Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
 MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com

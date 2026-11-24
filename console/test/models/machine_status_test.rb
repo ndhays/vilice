@@ -27,6 +27,7 @@ class MachineStatusTest < ActiveSupport::TestCase
     {
       "ssh_root_login_disabled" => true, "password_auth_disabled" => true,
       "firewall_active" => true, "fail2ban_active" => true, "unattended_upgrades" => true,
+      "kernel_hardened" => true,
       "checked_at" => "2026-06-10T12:00:00Z"
     }.merge(over.transform_keys(&:to_s))
   end

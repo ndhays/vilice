@@ -83,6 +83,7 @@ type HardeningPosture struct {
 	FirewallActive       bool   `json:"firewall_active"`
 	Fail2banActive       bool   `json:"fail2ban_active"`
 	UnattendedUpgrades   bool   `json:"unattended_upgrades"`
+	KernelHardened       bool   `json:"kernel_hardened"`
 	OpenPorts            string `json:"open_ports,omitempty"`
 	CheckedAt            string `json:"checked_at,omitempty"`
 	MachineID            string `json:"machine_id,omitempty"`
@@ -106,6 +107,9 @@ func (p HardeningPosture) Drift() []string {
 	}
 	if !p.UnattendedUpgrades {
 		d = append(d, "unattended upgrades off")
+	}
+	if !p.KernelHardened {
+		d = append(d, "kernel not hardened")
 	}
 	return d
 }
@@ -207,6 +211,7 @@ func renderHardening(p HardeningPosture) string {
 	fmt.Fprintf(&b, "%s firewall active\n", mark(p.FirewallActive))
 	fmt.Fprintf(&b, "%s fail2ban running\n", mark(p.Fail2banActive))
 	fmt.Fprintf(&b, "%s unattended upgrades\n", mark(p.UnattendedUpgrades))
+	fmt.Fprintf(&b, "%s kernel hardened\n", mark(p.KernelHardened))
 	if d := p.Drift(); len(d) > 0 {
 		fmt.Fprintf(&b, "\ndrift: %s", strings.Join(d, "; "))
 	} else {
