@@ -20,8 +20,10 @@ sshd_eff="$(sshd -T 2>/dev/null || true)"
 root_login="$(printf '%s\n' "$sshd_eff" | awk '/^permitrootlogin /{print $2}')"
 passwd_auth="$(printf '%s\n' "$sshd_eff" | awk '/^passwordauthentication /{print $2}')"
 # Hardened = root login is not allowed (no / forced-commands-only / prohibit-password
-# all close password+shell root SSH) and password auth is off.
-case "$root_login" in no|forced-commands-only|prohibit-password) ssh_root=true ;; *) ssh_root=false ;; esac
+# all close password+shell root SSH) and password auth is off. `sshd -T` prints
+# prohibit-password by its old name, without-password, so that is the one it reports for
+# a box 10-ssh.sh left key-only (no non-root admin yet).
+case "$root_login" in no|forced-commands-only|prohibit-password|without-password) ssh_root=true ;; *) ssh_root=false ;; esac
 [ "$passwd_auth" = "no" ] && ssh_pass=true || ssh_pass=false
 
 # --- 20-firewall: ufw active, fail2ban running ---

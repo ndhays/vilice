@@ -31,6 +31,9 @@ mkdir -p "$OUT"
 echo "writing raw output to $OUT"
 
 have() { command -v "$1" >/dev/null 2>&1; }
+# Each tool that couldn't run. A skipped tool measured nothing, so the run fails at the
+# end: an audit that can't fail isn't one, and "done." over three skips read as a pass.
+missing=()
 ssh_host_only() { printf '%s' "${HOST##*@}"; }  # strip user@ for network tools
 
 run_step() {
@@ -49,7 +52,8 @@ run_step() {
 if have ssh-audit; then
   run_step ssh-audit ssh-audit "$(ssh_host_only)"
 else
-  echo "ssh-audit not installed — skip (pip install ssh-audit, or apt install ssh-audit)"
+  echo "ssh-audit not installed here — skipped (pipx install ssh-audit, or your package manager)"
+  missing+=("ssh-audit (here)")
 fi
 
 # ── nmap: what's actually reachable ────────────────────────────────────────
@@ -61,7 +65,8 @@ if have nmap; then
   extra=$(comm -23 <(tr ',' '\n' <<<"$opened" | sort -u) <(tr ',' '\n' <<<"$EXPECTED_PORTS" | sort -u) | paste -sd',' -)
   [ -n "$extra" ] && echo "  ⚠ unexpected open ports: $extra"
 else
-  echo "nmap not installed — skip (apt install nmap)"
+  echo "nmap not installed here — skipped (your package manager: nmap)"
+  missing+=("nmap (here)")
 fi
 
 # ── lynis: on-box OS hardening audit ───────────────────────────────────────
@@ -73,9 +78,16 @@ if ssh "$HOST" 'command -v lynis >/dev/null 2>&1'; then
   grep -E 'Hardening index|Warning|Suggestion' "$OUT/lynis.txt" | head -n 30 | sed 's/^/  /' || true
   echo "  full report → $OUT/lynis.txt"
 else
-  echo "  lynis not installed on $HOST — skip (apt install lynis there)"
+  echo "  lynis not installed on $HOST — skipped (sudo apt install lynis, there)"
+  missing+=("lynis (on $HOST)")
 fi
 
 echo
+if [ "${#missing[@]}" -gt 0 ]; then
+  list="$(printf '%s, ' "${missing[@]}")"
+  echo "INCOMPLETE — not measured: ${list%, }."
+  echo "Install them and run it again; an entry in audit/log.md needs all three."
+  exit 1
+fi
 echo "done. Read the findings, fold regressions into harden/, and record the verdict in"
 echo "audit/log.md (date, ssh-audit grade, open ports, Lynis index, govulncheck/gosec)."
