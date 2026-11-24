@@ -37,6 +37,9 @@ binary still carries everything. The steps:
   and the dccp, sctp, rds and tipc modules blocked from loading
   (`/etc/modprobe.d/harden-protocols.conf`). `harden --check` reports it as
   `kernel_hardened`.
+- **permissions** — `/etc/crontab`, the `/etc/cron.*` directories and
+  `/etc/ssh/sshd_config` root-only, set with `dpkg-statoverride` so a package upgrade
+  keeps the mode. Nothing reads them as another user.
 - **firewall** — UFW (deny inbound, allow outbound, **allow sshd's port and nothing
   else**) and fail2ban (ban repeated sshd auth failures). The port allowed is the one
   `sshd` is actually configured for, never the constant 22 — a rule that assumes 22 locks

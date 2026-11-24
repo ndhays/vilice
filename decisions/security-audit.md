@@ -80,7 +80,12 @@ hardening index is explained rather than chased. From the first Debian 13 box
 `kernel.modules_disabled`, and `rp_filter` loose (2) rather than strict; the unused
 protocols dccp, sctp, rds and tipc (NETW-3200); and from SSH-7408 `LogLevel VERBOSE`,
 `X11Forwarding no`, `AllowAgentForwarding no`, `ClientAliveCountMax 2` (with an
-interval, so it does something) and `TCPKeepAlive no`.
+interval, so it does something) and `TCPKeepAlive no`. From FILE-7524, `/etc/crontab`,
+the `/etc/cron.*` directories and `/etc/ssh/sshd_config` made root-only
+(`harden/45-permissions.sh`, by `dpkg-statoverride` so upgrades keep the mode).
+
+After the first round the index went from 67 to 74 (35 suggestions, the same one
+warning), before FILE-7524 was folded in.
 
 **Left out, and why:**
 
@@ -108,12 +113,13 @@ interval, so it does something) and `TCPKeepAlive no`.
 - **Malware scanner, file integrity, auditd, process accounting, sysstat (HRDN-7230,
   FINT-4350, ACCT-9622/9626/9628).** A large surface for what is left: Vilice records its
   own acts, and the digest of the binary a box authorizes.
+- **`/etc/at.deny` at 600 (FILE-7524).** Debian ships it 640 root:daemon because `at`
+  reads it through that group; 600 breaks `at` and protects nothing more.
 - **Lynis's own age, DNS domain, unused firewall rules, automation tools (LYNIS,
   NAME-4028, FIRE-4513, TOOL-5002).** Informational.
 
 **Still open:** off-host logs (LOGG-2154) and sandboxing Vilice's own systemd units
-(BOOT-5264) — see `decisions/open/vilice-open-questions.md`; and FILE-7524, whose files
-weren't captured yet.
+(BOOT-5264) — see `decisions/open/vilice-open-questions.md`.
 
 ## Roads not taken
 

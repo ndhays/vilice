@@ -38,6 +38,18 @@ HARDEN_SYSCTLS=(
 # shellcheck disable=SC2034 # read by 25-kernel.sh and check.sh
 HARDEN_UNUSED_PROTOCOLS=(dccp sctp rds tipc)
 
+# Files and directories 45-permissions.sh makes root-only ("MODE PATH").
+# shellcheck disable=SC2034 # read by 45-permissions.sh
+HARDEN_ROOT_ONLY=(
+  "600 /etc/crontab"
+  "700 /etc/cron.d"
+  "700 /etc/cron.hourly"
+  "700 /etc/cron.daily"
+  "700 /etc/cron.weekly"
+  "700 /etc/cron.monthly"
+  "600 /etc/ssh/sshd_config"
+)
+
 C_GREEN='\033[0;32m'; C_YELLOW='\033[0;33m'; C_RED='\033[0;31m'; C_RESET='\033[0m'
 info() { printf '  %s\n' "$*"; }
 ok()   { printf "  ${C_GREEN}OK${C_RESET}   %s\n" "$*"; }
