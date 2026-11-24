@@ -66,14 +66,20 @@ for timer in apt-daily.timer apt-daily-upgrade.timer; do
 done
 # What apt actually loaded, not what we wrote: both Debian origins are in, and nothing
 # is left of the package's Allowed-Origins. (A later drop-in may add an origin of its
-# own, as prepare does for Caddy's repo.)
+# own, as prepare does for Caddy's repo.) apt-config prints ${distro_codename} as
+# written — unattended-upgrades fills it in when it runs — so match it literally.
 dump="$(apt-config dump)"
-if printf '%s\n' "$dump" | grep -q "Unattended-Upgrade::Automatic-Reboot \"$UNATTENDED_REBOOT\"" \
-   && printf '%s\n' "$dump" | grep -q 'codename=[a-z]*-security,label=Debian-Security"' \
-   && printf '%s\n' "$dump" | grep -q 'codename=[a-z]*,label=Debian"' \
-   && ! printf '%s\n' "$dump" | grep -q '^Unattended-Upgrade::Allowed-Origins:: '; then
+loaded() { printf '%s\n' "$dump" | grep -qF -- "$1"; }
+problem=""
+loaded "Unattended-Upgrade::Automatic-Reboot \"$UNATTENDED_REBOOT\";" || problem="the reboot setting"
+# shellcheck disable=SC2016 # ${distro_codename} is apt's, not the shell's
+loaded 'codename=${distro_codename}-security,label=Debian-Security";' || problem="the security origin"
+# shellcheck disable=SC2016
+loaded 'codename=${distro_codename},label=Debian";' || problem="the point-update origin"
+loaded 'Unattended-Upgrade::Allowed-Origins:: ' && problem="a leftover Allowed-Origins entry"
+if [ -z "$problem" ]; then
   ok "unattended-upgrades configured (Debian security + point updates)"
 else
-  fail "unattended-upgrades config did not load"
+  fail "unattended-upgrades config did not load: $problem (see: apt-config dump | grep Unattended)"
   exit 1
 fi
