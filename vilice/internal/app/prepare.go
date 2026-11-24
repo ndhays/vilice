@@ -133,6 +133,11 @@ const caddyAdminSocket = "/run/caddy-admin/admin.sock"
 // entry recreates it before Caddy starts. The directory is setgid: a socket created in it
 // takes the _vilice group, and `|0220` lets that group write to it — connecting to a
 // socket needs write permission, so that is the whole grant.
+//
+// Caddy faces the internet and comes from its own repo, which harden's update policy
+// (Debian's origins only) leaves out. So prepare, which added that repo, adds it to the
+// policy too: one apt drop-in, read after harden's (53 > 52), inert on a box harden
+// never touched. See decisions/debian-only.md.
 func configureCaddy() error {
 	return core.Sh(fmt.Sprintf(`
 set -euo pipefail
@@ -150,6 +155,10 @@ cat > /etc/tmpfiles.d/caddy-admin.conf <<'TMPFILES'
 d %[3]s 2750 caddy %[1]s -
 TMPFILES
 systemd-tmpfiles --create /etc/tmpfiles.d/caddy-admin.conf
+cat > /etc/apt/apt.conf.d/53-vilice-caddy-updates <<'APT'
+// Managed by vilice: Caddy's own repo gets its updates unattended, like Debian's.
+Unattended-Upgrade::Origins-Pattern { "origin=cloudsmith/caddy/stable,codename=any-version"; };
+APT
 cat > /etc/caddy/Caddyfile <<'CADDY'
 # Managed by vilice — base config. App routes live in /etc/caddy/vilice/*.caddy
 {

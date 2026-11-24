@@ -37,6 +37,9 @@ binary still carries everything. The steps:
   advisory), and nothing else: not `-updates`, backports or third-party repos. The
   drop-in clears the shipped lists, so it is the whole policy. A reboot window. Full
   upgrades stay deliberate (`apply-updates`).
+- **restarts** — `needrestart`, automatic: after an update replaces a library, the
+  services still using the old one are restarted (never `user@*.service`, so apps keep
+  running). Without it a patch sits on disk until the next reboot.
 - **swap** and **persistent journald**.
 
 Three properties define it:
@@ -121,6 +124,10 @@ exactly two things a box does here; a third arrives when a third is real, not fo
   reach it, and nobody else can. `doctor` checks both halves: the socket opens, and
   nothing answers on 2019. See
   [`caddy-admin-socket.md`](../../decisions/caddy-admin-socket.md).
+- **Caddy's updates:** Caddy comes from its own repo, which harden's update policy leaves
+  out, so `prepare` adds that one origin (`/etc/apt/apt.conf.d/53-vilice-caddy-updates`).
+  Caddy faces the internet; its fixes install unattended like Debian's. Inert on a box
+  that was never hardened.
 - **The role's ports:** `prepare` opens 80/443 for both current roles. It does this only
   when UFW is present and active — **`prepare` never installs or enables a firewall**,
   because that is `harden`'s job and `harden` is optional. A box prepared without hardening

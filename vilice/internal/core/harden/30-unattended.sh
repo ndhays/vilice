@@ -64,12 +64,13 @@ fi
 for timer in apt-daily.timer apt-daily-upgrade.timer; do
   systemctl enable --now "$timer" >/dev/null 2>&1 || true
 done
-# What apt actually loaded, not what we wrote: the security origin is in, and nothing
-# is left from another file's list.
+# What apt actually loaded, not what we wrote: both Debian origins are in, and nothing
+# is left of the package's Allowed-Origins. (A later drop-in may add an origin of its
+# own, as prepare does for Caddy's repo.)
 dump="$(apt-config dump)"
 if printf '%s\n' "$dump" | grep -q "Unattended-Upgrade::Automatic-Reboot \"$UNATTENDED_REBOOT\"" \
-   && printf '%s\n' "$dump" | grep -q 'label=Debian-Security' \
-   && [ "$(printf '%s\n' "$dump" | grep -c '^Unattended-Upgrade::Origins-Pattern:: ')" -eq 2 ] \
+   && printf '%s\n' "$dump" | grep -q 'codename=[a-z]*-security,label=Debian-Security"' \
+   && printf '%s\n' "$dump" | grep -q 'codename=[a-z]*,label=Debian"' \
    && ! printf '%s\n' "$dump" | grep -q '^Unattended-Upgrade::Allowed-Origins:: '; then
   ok "unattended-upgrades configured (Debian security + point updates)"
 else

@@ -388,17 +388,17 @@ above.
 The switch ([`debian-only.md`](../debian-only.md)) was written without a Debian box. Before
 0.5.0 ships, on a fresh Debian 13 box (`script/devbox.sh up`, then `make audit-box`):
 
-- **The update policy loads as written.** `unattended-upgrade --dry-run -d` lists the
-  security and point-update origins and nothing else; `harden --check` reports true.
-- **Restarts after a library update.** Debian leaves `/run/reboot-required` mostly for
-  kernels, and has no `needrestart` by default, so a patched OpenSSL can sit unused in a
-  running sshd or Caddy until the next reboot. Does harden install `needrestart` (restart
-  services automatically), or is the reboot window enough?
+- **The update policy loads as written.** With this harden (the first box ran 0.4.4's,
+  which still listed Ubuntu's ESM origins), `unattended-upgrade --dry-run -d` lists
+  Debian's two origins, Caddy's after `prepare`, and nothing else; `harden --check`
+  reports true.
+- **needrestart under unattended-upgrades.** After an update that touches a library sshd
+  uses, the next unattended run restarts sshd (journal) and leaves `user@*.service` and
+  the apps alone. `needrestart -r a -b` shows what it would do.
 - **Podman 5.4.** The container-reach measurements
   ([`what-a-container-can-reach.md`](../what-a-container-can-reach.md)) were on Podman 5.7.
   Re-run them on 5.4 with pasta; confirm `dbus-user-session` gives `_vilice` a working
   systemd user session for Quadlet.
-- **`doctor`** passes on a prepared box.
 
 ## Further hardening (later)
 

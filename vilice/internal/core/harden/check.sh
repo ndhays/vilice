@@ -34,11 +34,15 @@ fail2ban=$(jbool systemctl is-active --quiet fail2ban)
 # Allowed ports, for the open-port narrative (best-effort).
 ports=$(ufw status 2>/dev/null | awk '/ALLOW/{print $1}' | sort -u | paste -sd',' - || true)
 
-# --- 30-unattended: security auto-updates configured, from Debian's security archive ---
+# --- 30-unattended + 35-restart: updates install themselves and take effect ---
+# Installed from Debian's security archive, and the services using a replaced library
+# restarted by needrestart. Either half alone leaves the box running unpatched code.
 unattended=false
 if pkg_installed unattended-upgrades \
    && grep -rqs 'Unattended-Upgrade "1"' /etc/apt/apt.conf.d/ 2>/dev/null \
-   && apt-config dump 2>/dev/null | grep -q 'label=Debian-Security'; then
+   && apt-config dump 2>/dev/null | grep -q 'label=Debian-Security' \
+   && pkg_installed needrestart \
+   && grep -rqsxF "\$nrconf{restart} = 'a';" /etc/needrestart/conf.d/ 2>/dev/null; then
   unattended=true
 fi
 

@@ -40,6 +40,19 @@ Debian ships fixes for security issues too minor for an advisory in point releas
 `-updates`, backports and third-party repositories (Caddy's), and it clears the package's
 own lists, so the drop-in is the whole policy.
 
+Two things were added once a Debian box showed what was missing:
+
+- **Caddy's repo is allowed too**, by `prepare`, which added it
+  (`origin=cloudsmith/caddy/stable`). Caddy is the one program facing the internet, and
+  left out its fixes waited for someone to run `apply-updates`. Debian's own Caddy
+  (2.6.2, security-supported) was the other way, but it predates the socket permission
+  syntax (`|0220`) the admin socket relies on.
+- **`needrestart`, automatic.** An installed fix to a library does nothing for a daemon
+  still holding the old one, and Debian flags a reboot mostly for kernels. needrestart
+  restarts those services after each update; by its own defaults it never restarts
+  `user@*.service`, so apps keep running. `harden --check` counts updates as configured
+  only when both halves are.
+
 ## Roads not taken
 
 - **Keep both.** The cost above, for a choice most users make once.
